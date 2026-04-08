@@ -1,0 +1,195 @@
+/* Admin Management Table and Dialog Styles */
+
+.custom-admin-table .p-datatable-header,
+.p-paginator {
+    background-color: #2F5597 !important;
+    color: #ffffff !important;
+    padding: 0.5rem 1rem !important;
+}
+
+.custom-admin-table .p-datatable-header h4 {
+    color: #ffffff !important;
+}
+
+.p-paginator .p-paginator-current,
+.p-paginator .p-paginator-pages .p-paginator-page,
+.p-paginator .p-paginator-first,
+.p-paginator .p-paginator-prev,
+.p-paginator .p-paginator-next,
+.p-paginator .p-paginator-last {
+    color: #ffffff !important;
+    background-color: transparent !important;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+    background-color: #ffffff !important;
+    color: #2F5597 !important;
+}
+
+.custom-admin-table th,
+.custom-admin-table td {
+    border: 1px solid #000000 !important;
+}
+
+.custom-admin-table table {
+    border-collapse: collapse !important;
+    border: 1px solid #000000 !important;
+}
+
+.custom-admin-table .p-datatable-wrapper {
+    border: none !important;
+}
+
+.custom-admin-table .p-paginator-bottom {
+    display: none !important;
+}
+
+/* Dialog Styles */
+.custom-admin-dialog .p-dialog-header,
+.custom-admin-dialog .p-dialog-content,
+.custom-admin-dialog .p-dialog-footer {
+    background-color: #060238;
+    color: #000000;
+}
+
+.custom-admin-dialog .p-dialog-header {
+    padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+}
+
+.custom-admin-dialog .p-dialog-content {
+    padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+    overflow-y: auto !important;
+    /* Force allow vertical scrollbar to prevent bleeding */
+}
+
+.custom-admin-dialog .field {
+    margin-bottom: 0.25rem !important;
+}
+
+.custom-admin-dialog .p-dialog-footer {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.custom-admin-dialog .p-dialog-title {
+    color: #000000 !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+}
+
+.custom-admin-dialog .p-dialog-header-icons,
+.custom-admin-dialog .p-dialog-header-icon {
+    width: 28px !important;
+    height: 28px !important;
+    margin: 0 !important;
+    color: #495057 !important;
+}
+
+/* Input Fields and Dropdowns */
+.custom-admin-dialog .p-inputtext:not(.p-dropdown-label),
+.custom-admin-dialog .p-dropdown {
+    background-color: #ffffff !important;
+    border: 1px solid #ced4da !important;
+    color: #495057 !important;
+}
+
+.custom-admin-dialog .p-dropdown * {
+    color: #495057 !important;
+}
+
+.custom-admin-dialog .p-dropdown,
+.custom-admin-dialog .p-inputtext:not(textarea):not(.p-dropdown-label) {
+    height: 42px !important;
+}
+
+.custom-admin-dialog .p-dropdown .p-dropdown-trigger {
+    width: 2.5rem;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #495057 !important;
+}
+
+.custom-admin-dialog .p-dropdown .p-dropdown-trigger-icon {
+    display: inline-block !important;
+    visibility: visible !important;
+}
+
+/* Global Utility Classes for Admin UI */
+.admin-table-header {
+    background-color: #2F5597 !important;
+    color: #ffffff !important;
+}
+
+.search-input-wrapper .p-inputtext {
+    padding-left: 2.5rem !important;
+    color: #000000 !important;
+    background-color: #ffffff !important;
+}
+
+/* Enforce clear paginator dropdown styles */
+.p-paginator .p-dropdown {
+    background-color: #ffffff !important;
+    border: 1px solid #ced4da !important;
+}
+
+.p-paginator .p-dropdown .p-dropdown-label,
+.p-paginator .p-dropdown .p-dropdown-trigger,
+.p-paginator .p-dropdown .p-dropdown-trigger-icon {
+    color: #000000 !important;
+}
+
+/* Print System Styles */
+.print-only-table {
+    display: none;
+}
+
+@media print {
+    /* Prevent empty second pages caused by viewport height retention */
+    html, body, #root, .min-h-screen {
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    body * {
+        visibility: hidden;
+    }
+    .print-only-table, .print-only-table *,
+    .print-visible-section, .print-visible-section * {
+        visibility: visible;
+    }
+    .print-only-table, .print-visible-section {
+        position: absolute;
+        left: 0;
+        top: 0;
+        display: block !important;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    .print-header {
+        text-align: center;
+        margin-bottom: 20px;
+        font-family: sans-serif;
+        color: #000;
+    }
+    .print-data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: sans-serif;
+    }
+    .print-data-table th, .print-data-table td {
+        border: 1px solid #000;
+        padding: 8px;
+        text-align: left;
+        color: #000;
+    }
+    .print-data-table th {
+        background-color: #f2f2f2 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        font-weight: bold;
+    }
+}
