@@ -1,0 +1,4 @@
+(sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.location_id does not exist
+[SQL: SELECT users.id, users.email, users.hashed_password, users.role, users.is_active, users.location_id, users.name, users.address, users.mobile_number, users.dob, users.gender, users.enrollment_number, users.activation_email_sent, users.created_at 
+FROM users]
+(Background on this error at: https://sqlalche.me/e/20/f405)

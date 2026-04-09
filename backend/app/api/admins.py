@@ -1,7 +1,8 @@
 import secrets
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.exc import IntegrityError
 from typing import List
 from uuid import UUID
 
@@ -10,6 +11,7 @@ from app.db.models import Admin, User, Location, UserRole
 from app.schemas.admin import AdminCreate, AdminUpdate, AdminResponse
 from app.api.auth import get_current_user
 from app.core.security import get_password_hash
+from app.services.email_service import send_admin_creation_email
 
 router = APIRouter()
 
@@ -49,7 +51,7 @@ async def get_admins(db: AsyncSession = Depends(get_db), current_user: User = De
     return admins_list
 
 @router.post("/", response_model=AdminResponse, status_code=status.HTTP_201_CREATED)
-async def create_admin(admin_in: AdminCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_super_admin)):
+async def create_admin(admin_in: AdminCreate, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_super_admin)):
     result = await db.execute(select(User).where(User.email == admin_in.email))
     existing_user = result.scalar_one_or_none()
     if existing_user:
@@ -84,11 +86,7 @@ async def create_admin(admin_in: AdminCreate, db: AsyncSession = Depends(get_db)
     await db.commit()
     await db.refresh(new_admin)
 
-    print(f"\\n--- MOCK EMAIL SENDER ---")
-    print(f"To: {admin_in.email}")
-    print(f"Subject: Your Admin Account Created")
-    print(f"Body: Welcome {admin_in.name}! Your admin account password is: {raw_password}")
-    print(f"-------------------------\\n")
+    background_tasks.add_task(send_admin_creation_email, admin_in.email, admin_in.name, raw_password)
 
     return AdminResponse(
         id=new_admin.id,
@@ -171,9 +169,23 @@ async def delete_admin(admin_id: UUID, db: AsyncSession = Depends(get_db), curre
     usr_res = await db.execute(select(User).where(User.id == admin.user_id))
     user = usr_res.scalar_one_or_none()
     
-    await db.delete(admin)
-    if user:
-         await db.delete(user)
-         
-    await db.commit()
+    try:
+        await db.delete(admin)
+        if user:
+             await db.delete(user)
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        import traceback
+        error_info = traceback.format_exc()
+        # writing to a safe backend log file for local checks
+        with open("delete_error.log", "a") as f:
+            f.write(f"Error deleting admin {admin_id}: {error_info}\n")
+        
+        err_msg = str(e.__cause__) if e.__cause__ else str(e)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Database constraint or deletion error: {type(e).__name__} - {err_msg}"
+        )
+        
     return None

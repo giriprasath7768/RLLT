@@ -5,6 +5,8 @@ import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { parseDayForOilChart } from '../../utils/chartDataSplitter';
+import { jsPDF } from 'jspdf';
+import { Dialog } from 'primereact/dialog';
 
 const ImageUploadPlaceholder = ({ state, setState, label }) => {
     const imageUrl = typeof state === 'object' && state !== null ? state.url : state;
@@ -133,6 +135,8 @@ const OilChart = () => {
                 newRows[i].chaps = extractedBooks[i].chaps;
                 newRows[i].verses = extractedBooks[i].verses;
                 newRows[i].time = extractedBooks[i].time;
+                newRows[i].isEvening = extractedBooks[i].isEvening;
+                newRows[i].themeColor = extractedBooks[i].isEvening ? "#0033CC" : "#00b050";
             }
             
             setRows(newRows);
@@ -175,7 +179,7 @@ const OilChart = () => {
             const m = parseInt(r.time) || 0;
             return acc + m;
         }, 0);
-        return rows.length > 0 ? (totalMins / rows.length).toFixed(0) : 0;
+        return totalMins.toString();
     }, [rows]);
 
     const totalChapters = useMemo(() => rows.reduce((acc, r) => acc + (parseInt(r.chaps) || 0), 0), [rows]);
@@ -183,6 +187,146 @@ const OilChart = () => {
 
     // Unified Grid Definition
     const gridCols = "45px minmax(200px, 1fr) 40px 180px 80px minmax(200px, 1fr) 45px";
+
+    const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [readyShareFile, setReadyShareFile] = useState(null);
+
+    const generatePdfBlob = async (returnCanvasOnly = false) => {
+        setIsProcessingPdf(true);
+        try {
+            if (!window.html2canvas) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            const element = document.getElementById('printable-oilchart');
+            
+            const EXACT_WIDTH = 1220; 
+            
+            const canvas = await window.html2canvas(element, { 
+                scale: 1, 
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                width: EXACT_WIDTH,
+                windowWidth: EXACT_WIDTH,
+                onclone: (clonedDoc) => {
+                    const clonedElement = clonedDoc.getElementById('printable-oilchart');
+                    clonedElement.style.position = 'absolute';
+                    clonedElement.style.left = '0px';
+                    clonedElement.style.top = '0px';
+                    clonedElement.style.width = `${EXACT_WIDTH}px`; 
+                    clonedElement.style.minWidth = `${EXACT_WIDTH}px`; 
+                    clonedElement.style.maxWidth = `${EXACT_WIDTH}px`; 
+                    clonedElement.style.margin = '0';
+                }
+            });
+
+            if (returnCanvasOnly) {
+                return canvas; 
+            }
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            
+            const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
+            const width = canvasWidth * ratio;
+            const height = canvasHeight * ratio;
+            
+            const marginX = (pdfWidth - width) / 2;
+            const marginY = (pdfHeight - height) / 2;
+
+            pdf.addImage(imgData, 'PNG', marginX, marginY, width, height);
+            return pdf;
+        } catch (e) {
+            console.error('PDF generation error', e);
+            throw e;
+        } finally {
+            setIsProcessingPdf(false);
+        }
+    };
+
+    const handleExportPdf = async () => {
+        try {
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Generating PDF display...', life: 2000 });
+            const pdf = await generatePdfBlob();
+            const fileName = `RLLT_OilChart_Mod${mdl}_Fct${fct}_Phase${phs}.pdf`;
+            pdf.save(fileName);
+            toast.current?.show({ severity: 'success', summary: 'Exported', detail: 'PDF generated successfully.', life: 2000 });
+        } catch (e) {
+            toast.current?.show({ severity: 'error', summary: 'Export Failed', detail: 'Failed to generate PDF.', life: 3000 });
+        }
+    };
+
+    const handleShare = async () => {
+        try {
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing chart file for sharing...', life: 2000 });
+            const pdf = await generatePdfBlob();
+            const fileName = `RLLT_OilChart_Mod${mdl}_Fct${fct}_Phase${phs}.pdf`;
+            const blob = pdf.output('blob');
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+            
+            setReadyShareFile([file]);
+            setShowShareModal(true);
+        } catch (e) {
+            console.error(e);
+            toast.current?.show({ severity: 'error', summary: 'Action Failed', detail: 'Could not process PDF document.', life: 3000 });
+        }
+    };
+
+    const executeNativeShare = async () => {
+        if (!readyShareFile) return;
+        setShowShareModal(false);
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'RLLT Oil Chart',
+                    text: 'Please find the RLLT chart attached.',
+                    files: readyShareFile
+                });
+                toast.current?.show({ severity: 'success', summary: 'Shared Successfully', detail: 'Chart OS Sharing launched!', life: 3000 });
+            } else {
+                throw new Error("Share API missing");
+            }
+        } catch (shareErr) {
+            console.warn("Share API failed or rejected, falling back to direct download.", shareErr);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(readyShareFile[0]);
+            a.download = readyShareFile[0].name;
+            a.click();
+            toast.current?.show({ severity: 'warn', summary: 'File Downloaded', detail: 'Native Desktop Share API blocked the file. Falling back to native download.', life: 5000 });
+        }
+    };
+
+    const handlePrint = async () => {
+        try {
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing high-quality print layout...', life: 2000 });
+            const pdf = await generatePdfBlob();
+            pdf.autoPrint();
+            const blobUrl = pdf.output('bloburl');
+            const printWindow = window.open(blobUrl, '_blank');
+            if (!printWindow) {
+                toast.current?.show({ severity: 'warn', summary: 'Popup Blocked', detail: 'Please allow popups for this site to view the print format.', life: 5000 });
+            }
+        } catch (e) {
+            console.error(e);
+            toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare perfect document for printing.', life: 3000 });
+        }
+    };
 
     return (
         <>
@@ -196,6 +340,50 @@ const OilChart = () => {
                 .right-bar-segment { display: flex; align-items: center; justify-content: center; overflow: hidden; }
             `}</style>
             <Toast ref={toast} />
+
+            <Dialog 
+                header={
+                    <div className="flex items-center gap-2 text-indigo-900 border-b border-gray-200 pb-2">
+                        <i className="pi pi-share-alt text-xl"></i>
+                        <span className="font-bold">Ready to Share</span>
+                    </div>
+                }
+                visible={showShareModal} 
+                onHide={() => setShowShareModal(false)}
+                className="w-[90vw] md:w-[400px] shadow-2xl rounded-2xl overflow-hidden"
+                contentClassName="p-6 bg-gray-50 flex flex-col items-center justify-center text-center gap-6"
+                headerClassName="bg-gray-50 pt-6 px-6 pb-2"
+                showHeader={true}
+                dismissableMask={true}
+                closable={false}
+            >
+                <div className="flex flex-col items-center">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4 animate-bounce">
+                        <i className="pi pi-file-pdf text-4xl"></i>
+                    </div>
+                    <h2 className="text-xl font-black text-gray-800 mb-2">PDF Generated!</h2>
+                    <p className="text-gray-500 font-medium leading-relaxed px-4">
+                        Your chart file is ready. Due to browser security on Desktop Chrome, please click below to launch the final native Share panel!
+                    </p>
+                </div>
+                <div className="w-full flex gap-3 mt-2">
+                    <Button 
+                        label="Cancel" 
+                        icon="pi pi-times" 
+                        severity="secondary" 
+                        outlined 
+                        className="flex-1 font-bold tracking-wide rounded-xl border-gray-300 text-gray-600 hover:bg-gray-100" 
+                        onClick={() => setShowShareModal(false)} 
+                    />
+                    <Button 
+                        label="Share Now" 
+                        icon="pi pi-send" 
+                        className="flex-[2] font-black tracking-wider shadow-lg bg-green-600 border-none hover:bg-green-700 rounded-xl" 
+                        onClick={executeNativeShare} 
+                        autoFocus
+                    />
+                </div>
+            </Dialog>
 
             {/* Outer Encapsulating White Card */}
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6">
@@ -214,13 +402,17 @@ const OilChart = () => {
                     </div>
                     
                     {availableDays.length > 0 && (
-                        <div className="flex items-center gap-3 bg-white p-2 px-4 rounded-lg shadow">
+                        <div className="flex items-center gap-3 bg-white p-2 px-4 rounded-lg shadow mr-6">
                             <span className="text-black font-bold text-sm whitespace-nowrap">Select Day:</span>
                             <Dropdown value={selectedDayObj} options={availableDays} optionLabel="label" placeholder="Select a Day..." className="w-[150px] bg-gray-50 border border-gray-200 text-black font-medium h-10 flex items-center text-sm rounded-md px-2" onChange={(e) => handleDaySelect(e.value)} />
                         </div>
                     )}
 
-                    <Button icon="pi pi-print" className="p-button-secondary bg-white/10 hover:bg-white/20 border-white/20 text-white h-14 w-14 rounded-lg shadow-lg" onClick={() => window.print()} />
+                    <div className="flex gap-2 justify-center xl:justify-end w-full mt-2 xl:mt-0 xl:w-auto">
+                        <Button icon="pi pi-file-pdf" tooltip="Export to PDF" loading={isProcessingPdf} className="bg-orange-500 text-white border-none w-10 h-10 p-0 flex justify-center items-center rounded-lg shadow-md hover:bg-orange-600 transition-colors" onClick={handleExportPdf} />
+                        <Button icon="pi pi-print" tooltip="Browser Print" loading={isProcessingPdf} className="bg-slate-500 text-white border-none w-10 h-10 p-0 flex justify-center items-center rounded-lg shadow-md hover:bg-slate-600 transition-colors" onClick={handlePrint} />
+                        <Button icon="pi pi-share-alt" tooltip="Share Chart PDF" loading={isProcessingPdf} className="bg-emerald-500 text-white border-none w-10 h-10 p-0 flex justify-center items-center rounded-lg shadow-md hover:bg-emerald-600 transition-colors" onClick={handleShare} />
+                    </div>
                 </div>
             </div>
 
@@ -317,12 +509,12 @@ const OilChart = () => {
                                         </span>
                                     </div>
                                     {/* Col 2 */}
-                                    <div className="w-[20.40%] shrink-0 flex flex-col p-2 relative box-border bg-white">
-                                        <span className="absolute left-2 top-2 text-[#00b050] font-black text-[14px]" style={{fontFamily: 'Arial, Helvetica, sans-serif'}}>{idx + 1}.</span>
+                                    <div className="w-[20.40%] shrink-0 flex p-2 relative box-border bg-white items-start">
+                                        <span className={`${row.isEvening ? 'text-[#0033CC]' : 'text-[#00b050]'} font-black mr-1 mt-[2px]`} style={{ fontSize: getFS(15), fontFamily: 'Arial, Helvetica, sans-serif' }}>{idx + 1}.</span>
                                         <textarea 
                                             value={row.books} 
                                             onChange={e => updateRow(idx, 'books', e.target.value)}
-                                            className="flex-1 w-full bg-transparent outline-none resize-none font-bold text-[#00b050] pt-4 pl-4 uppercase"
+                                            className={`flex-1 w-full h-full bg-transparent outline-none resize-none font-bold uppercase mt-[2px] ${row.isEvening ? 'text-[#0033CC]' : 'text-[#00b050]'}`}
                                             style={{ fontSize: getFS(15), fontFamily: 'Arial, Helvetica, sans-serif' }}
                                         />
                                     </div>
@@ -336,9 +528,9 @@ const OilChart = () => {
                                         />
                                     </div>
                                     {/* Col 4 */}
-                                    <div className="w-[32.65%] shrink-0 flex flex-col p-2 relative box-border bg-white">
+                                    <div className="w-[32.65%] shrink-0 flex p-2 relative box-border bg-white items-start">
                                         <span 
-                                            className="absolute left-6 top-[13px] editable-dot shadow-sm cursor-pointer flex-shrink-0" 
+                                            className="editable-dot shadow-sm cursor-pointer flex-shrink-0 mt-[4px] mr-2 ml-4" 
                                             style={{ backgroundColor: row.themeColor, width: '12px', height: '12px' }}
                                             onClick={() => {
                                                 const colors = ["#00b050", "#002060", "#f1c40f", "#ff0000"];
@@ -349,12 +541,12 @@ const OilChart = () => {
                                         <textarea 
                                             value={row.theme} 
                                             onChange={e => updateRow(idx, 'theme', e.target.value)}
-                                            className="flex-1 w-full bg-transparent outline-none resize-none font-bold text-[14px] font-serif uppercase text-black pt-[10px] pl-[34px]"
+                                            className="flex-1 w-full h-full bg-transparent outline-none resize-none font-bold text-[14px] font-serif uppercase text-black mt-[1px]"
                                         />
                                     </div>
                                     {/* Col 5 */}
-                                    <div className="w-[6.12%] shrink-0 flex items-center justify-center group relative box-border bg-white">
-                                        <div className="flex items-center justify-center text-[#00b050] font-bold" style={{fontFamily: 'Arial, Helvetica, sans-serif'}}>
+                                    <div className="w-[6.12%] shrink-0 flex items-start justify-center pt-[10px] group relative box-border bg-white">
+                                        <div className={`flex items-center justify-center font-bold ${row.isEvening ? 'text-[#0033CC]' : 'text-[#00b050]'}`} style={{fontFamily: 'Arial, Helvetica, sans-serif'}}>
                                             <input 
                                                 value={row.time} 
                                                 onChange={e => updateRow(idx, 'time', e.target.value)}

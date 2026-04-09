@@ -29,3 +29,7 @@ class UserRegister(BaseModel):
     mobile_number: str
     dob: date
     gender: str
+
+class ResetPasswordConfirmRequest(BaseModel):
+    token: str
+    new_password: str

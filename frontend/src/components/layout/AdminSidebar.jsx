@@ -1,48 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Sidebar as PrimeSidebar } from 'primereact/sidebar';
-
-const menuItems = [
-    { label: 'Dashboard', icon: 'pi pi-home', to: '/dashboard/super-admin' },
-    { label: 'Manage Admin', icon: 'pi pi-shield', to: '/admin/manage-admin' },
-    { label: 'Manage Leaders', icon: 'pi pi-users', to: '/admin/manage-leaders' },
-    { label: 'Manage Students', icon: 'pi pi-id-card', to: '/admin/manage-students' },
-    { label: 'Manage Assessment', icon: 'pi pi-file-edit', to: '/admin/manage-assessment' },
-    { 
-        label: 'Chart Creation', 
-        icon: 'pi pi-chart-bar', 
-        items: [
-            { label: 'Main Chart', icon: 'pi pi-chart-line', to: '/admin/charts' },
-            { label: 'V-Card Chart', icon: 'pi pi-id-card', to: '/admin/chart-listing/vcard-chart' },
-            { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/twenty-four-seven-chart' }
-        ]
-    },
-    { 
-        label: 'Chart Listing', 
-        icon: 'pi pi-list', 
-        items: [
-            { label: 'Main Chart', icon: 'pi pi-eye', to: '/admin/chart-listing/main-chart' },
-            { label: 'Morning & Evening', icon: 'pi pi-calendar-plus', to: '/admin/chart-listing/morning-evening-chart' },
-            { label: 'DL Size Chart', icon: 'pi pi-table', to: '/admin/chart-listing/dl-size-chart' },
-            { label: 'C-Chart Index', icon: 'pi pi-chart-pie', to: '/admin/chart-listing/c-chart' },
-            { label: 'Oil Chart', icon: 'pi pi-calendar', to: '/admin/chart-listing/oil-chart' },
-            { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/chart-listing/twenty-four-seven-chart' },
-            { label: '24x7 Morning/Evening', icon: 'pi pi-calendar-plus', to: '/admin/chart-listing/twenty-four-seven-morning-evening-chart' }
-
-        ]
-    },
-    { 
-        label: 'Library', 
-        icon: 'pi pi-folder-open', 
-        items: [
-            { label: 'Book Master', icon: 'pi pi-book', to: '/admin/books' },
-            { label: 'Chapter Master', icon: 'pi pi-bookmark', to: '/admin/chapters' },
-            { label: 'RLLT Table Data', icon: 'pi pi-table', to: '/admin/rllt-data' }
-        ]
-    },
-    { label: 'Manage Training Contents', icon: 'pi pi-video', to: '/admin/manage-training' },
-    { label: 'Locations', icon: 'pi pi-map-marker', to: '/admin/locations' },
-];
+import axios from 'axios';
 
 const SidebarItem = ({ item, onClick }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -101,15 +60,67 @@ const SidebarItem = ({ item, onClick }) => {
     );
 };
 
-const SidebarContent = ({ onItemClick }) => (
-    <div className="flex flex-col py-4 h-full bg-[#1F2937]">
-        {menuItems.map((item, index) => (
-            <SidebarItem key={index} item={item} onClick={onItemClick} />
-        ))}
-    </div>
-);
-
 const AdminSidebar = ({ visible, onHide }) => {
+    const [userRole, setUserRole] = useState(null);
+
+    useEffect(() => {
+        axios.get('http://localhost:8000/api/me', { withCredentials: true })
+            .then(res => setUserRole(res.data.role))
+            .catch(err => console.error("Failed to fetch role", err));
+    }, []);
+
+    const menuItems = [
+        { label: 'Dashboard', icon: 'pi pi-home', to: userRole === 'admin' ? '/dashboard/admin' : '/dashboard/super-admin' },
+        ...(userRole === 'super_admin' ? [{ label: 'Manage Admin', icon: 'pi pi-shield', to: '/admin/manage-admin' }] : []),
+        { label: 'Manage Leaders', icon: 'pi pi-users', to: '/admin/manage-leaders' },
+        { label: 'Manage Students', icon: 'pi pi-id-card', to: '/admin/manage-students' },
+        { label: 'Manage Assessment', icon: 'pi pi-file-edit', to: '/admin/manage-assessment' },
+        { label: 'Assign Chart', icon: 'pi pi-calendar-plus', to: '/admin/assign-chart' },
+        { 
+            label: 'Chart Creation', 
+            icon: 'pi pi-chart-bar', 
+            items: [
+                { label: 'Main Chart', icon: 'pi pi-chart-line', to: '/admin/charts' },
+                { label: 'V-Card Chart', icon: 'pi pi-id-card', to: '/admin/chart-listing/vcard-chart' },
+                { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/twenty-four-seven-chart' }
+            ]
+        },
+        { 
+            label: 'Chart Listing', 
+            icon: 'pi pi-list', 
+            items: [
+                { label: 'Main Chart', icon: 'pi pi-eye', to: '/admin/chart-listing/main-chart' },
+                { label: 'Morning & Evening', icon: 'pi pi-calendar-plus', to: '/admin/chart-listing/morning-evening-chart' },
+                { label: 'DL Size Chart', icon: 'pi pi-table', to: '/admin/chart-listing/dl-size-chart' },
+                { label: 'C-Chart Index', icon: 'pi pi-chart-pie', to: '/admin/chart-listing/c-chart' },
+                { label: 'Oil Chart', icon: 'pi pi-calendar', to: '/admin/chart-listing/oil-chart' },
+                { label: 'Weekly Chart', icon: 'pi pi-calendar', to: '/admin/chart-listing/weekly-chart' },
+                { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/chart-listing/twenty-four-seven-chart' },
+                { label: '24x7 Morning/Evening', icon: 'pi pi-calendar-plus', to: '/admin/chart-listing/twenty-four-seven-morning-evening-chart' },
+                { label: '24x7 DL Size Chart', icon: 'pi pi-table', to: '/admin/chart-listing/twenty-four-seven-dl-size-chart' }
+            ]
+        },
+        { 
+            label: 'Library', 
+            icon: 'pi pi-folder-open', 
+            items: [
+                { label: 'Book Master', icon: 'pi pi-book', to: '/admin/books' },
+                { label: 'Chapter Master', icon: 'pi pi-bookmark', to: '/admin/chapters' },
+                { label: 'RLLT Table Data', icon: 'pi pi-table', to: '/admin/rllt-data' }
+            ]
+        },
+        { label: 'Manage Training Contents', icon: 'pi pi-video', to: '/admin/manage-training' },
+        ...(userRole === 'super_admin' ? [{ label: 'Locations', icon: 'pi pi-map-marker', to: '/admin/locations' }] : []),
+    ];
+
+    const SidebarContent = ({ onItemClick }) => (
+        <div className="flex flex-col py-4 h-full bg-[#1F2937]">
+            {menuItems.map((item, index) => (
+                <SidebarItem key={index} item={item} onClick={onItemClick} />
+            ))}
+        </div>
+    );
+
     return (
         <>
             {/* Desktop Sidebar */}

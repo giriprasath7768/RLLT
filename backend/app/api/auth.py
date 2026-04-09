@@ -12,7 +12,7 @@ from app.db.database import get_db
 from app.db.models import User, PasswordReset, UserRole
 from app.core import security
 from app.core.config import settings
-from app.schemas.user import Token, UserInfo, ForgotPasswordRequest, UserRegister
+from app.schemas.user import Token, UserInfo, ForgotPasswordRequest, UserRegister, ResetPasswordConfirmRequest
 from app.services.email_service import send_password_reset_email
 
 router = APIRouter()
@@ -119,9 +119,18 @@ async def forgot_password(
     """
     safe_message = "If this email is registered, a reset link has been sent."
 
+    from sqlalchemy import func
+    import logging
+    logger = logging.getLogger(__name__)
+
     # Look up user — if not found, return the safe message immediately
-    result = await db.execute(select(User).where(User.email == body.email))
+    result = await db.execute(select(User).where(func.lower(User.email) == func.lower(body.email.strip())))
     user = result.scalars().first()
+
+    if not user:
+        logger.warning(f"Forgot password attempt for unknown email: {body.email}")
+    else:
+        logger.info(f"Generating password reset token for: {user.email}")
 
     if user:
         # Generate a unique token and compute expiry
@@ -140,6 +149,37 @@ async def forgot_password(
         send_password_reset_email(to_email=user.email, reset_url=reset_url)
 
     return {"message": safe_message}
+
+@router.post("/reset-password", response_model=dict)
+async def reset_password(
+    body: ResetPasswordConfirmRequest,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    # 1. Look up token in PasswordReset
+    result = await db.execute(select(PasswordReset).where(PasswordReset.token == body.token))
+    reset_entry = result.scalars().first()
+
+    if not reset_entry:
+        raise HTTPException(status_code=400, detail="Invalid token.")
+
+    if reset_entry.expires_at.replace(tzinfo=None) < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Token has expired.")
+
+    # 2. Get user
+    result = await db.execute(select(User).where(User.id == reset_entry.user_id))
+    user = result.scalars().first()
+
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found.")
+
+    # 3. Update password
+    user.hashed_password = security.get_password_hash(body.new_password)
+    
+    # 4. Clean up token
+    await db.delete(reset_entry)
+    await db.commit()
+
+    return {"message": "Password has been successfully reset."}
 
 async def send_registration_email(email: str, name: str, enrollment_number: str, password: str):
     await asyncio.sleep(1)

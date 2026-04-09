@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import axios from 'axios';
 import Login from './components/Login';
 import AdminLayout from './components/layout/AdminLayout';
 import LocationCRUD from './pages/admin/LocationCRUD';
+import ResetPassword from './components/auth/ResetPassword';
 
 import AdminManagement from './pages/admin/AdminManagement';
 import ManageLeader from './pages/admin/ManageLeader';
@@ -18,22 +19,25 @@ import TwentyFourSevenMorningEveningChart from './pages/admin/TwentyFourSevenMor
 import MainChartView from './pages/admin/MainChartView';
 import MorningEveningChart from './pages/admin/MorningEveningChart';
 import DLSizeChart from './pages/admin/DLSizeChart';
+import TwentyFourSevenDLSizeChart from './pages/admin/TwentyFourSevenDLSizeChart';
 import CChart from './pages/admin/CChart';
 import VCardChart from './pages/admin/VCardChart';
 import OilChart from './pages/admin/OilChart';
+import WeeklyChart from './pages/admin/WeeklyChart';
 import RLLTTableData from './pages/admin/RLLTTableData';
+import AssignChart from './pages/admin/AssignChart';
 import Register from './pages/Register';
 import CreateContent from './pages/admin/CreateContent';
+import DashboardAdmin from './pages/admin/DashboardAdmin';
 
-
-// Placeholder dashboards
+// Dashboard Components
 const DashboardSuperAdmin = () => (
     <div className="p-10">
         <div className="mb-8">
             <h1 className="text-3xl font-black text-[#051220] tracking-tight mb-2">Dashboard</h1>
             <p className="text-gray-500">Welcome back, Super Administrator. Here's an overview of your platform.</p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                 <div className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Total Users</div>
@@ -51,7 +55,6 @@ const DashboardSuperAdmin = () => (
     </div>
 );
 
-const DashboardAdmin = () => <div className="p-8 text-gray-800"><h1>Admin Dashboard</h1></div>;
 const DashboardLeader = () => <div className="p-8 text-gray-800"><h1>Leader Dashboard</h1></div>;
 const DashboardStudent = () => <div className="p-8 text-gray-800"><h1>Student Dashboard</h1></div>;
 const DashboardTtomUser = () => <div className="p-8 text-gray-800"><h1>TTOM User Dashboard</h1></div>;
@@ -81,10 +84,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     if (!isAuthenticated) return <Navigate to="/login" replace />;
 
     if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
-        return <div className="p-8 text-red-500">Access Denied</div>;
+        return <div className="p-10 flex flex-col items-center justify-center h-full">
+            <i className="pi pi-lock text-6xl text-red-400 mb-4"></i>
+            <h2 className="text-2xl font-bold text-gray-800">Access Denied</h2>
+            <p className="text-gray-500 mt-2">You don't have permission to view this module.</p>
+        </div>;
     }
 
-    return <>{children}</>;
+    return children ? <>{children}</> : <Outlet />;
 };
 
 const AppRoutes = () => {
@@ -92,15 +99,30 @@ const AppRoutes = () => {
         <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-            <Route element={<ProtectedRoute allowedRoles={['super_admin']} children={<AdminLayout />} />}>
-                <Route path="/dashboard/super-admin" element={<DashboardSuperAdmin />} />
-                <Route path="/admin/manage-admin" element={<AdminManagement />} />
+            {/* Admin Layout mapping for both Super Admin and Admin */}
+            <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} children={<AdminLayout />} />}>
+
+                {/* Super Admin Restricted Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+                    <Route path="/dashboard/super-admin" element={<DashboardSuperAdmin />} />
+                    <Route path="/admin/manage-admin" element={<AdminManagement />} />
+                    <Route path="/admin/locations" element={<LocationCRUD />} />
+                </Route>
+
+                {/* Admin Restricted Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                    <Route path="/dashboard/admin" element={<DashboardAdmin />} />
+                </Route>
+
+                {/* Shared Admin/SuperAdmin Routes */}
                 <Route path="/admin/manage-leaders" element={<ManageLeader />} />
                 <Route path="/admin/manage-students" element={<ManageStudents />} />
                 <Route path="/admin/manage-assessment" element={<ManageAssessment />} />
                 <Route path="/admin/create-training" element={<CreateContent />} />
                 <Route path="/admin/manage-training" element={<CreateContent />} />
+                <Route path="/admin/assign-chart" element={<AssignChart />} />
                 <Route path="/admin/charts" element={<MainChart />} />
                 <Route path="/admin/twenty-four-seven-chart" element={<TwentyFourSevenChart />} />
                 <Route path="/admin/chart-listing/twenty-four-seven-chart" element={<TwentyFourSevenChartView />} />
@@ -108,18 +130,19 @@ const AppRoutes = () => {
                 <Route path="/admin/chart-listing/main-chart" element={<MainChartView />} />
                 <Route path="/admin/chart-listing/morning-evening-chart" element={<MorningEveningChart />} />
                 <Route path="/admin/chart-listing/dl-size-chart" element={<DLSizeChart />} />
+                <Route path="/admin/chart-listing/twenty-four-seven-dl-size-chart" element={<TwentyFourSevenDLSizeChart />} />
                 <Route path="/admin/chart-listing/c-chart" element={<CChart />} />
                 <Route path="/admin/chart-listing/vcard-chart" element={<VCardChart />} />
                 <Route path="/admin/chart-listing/oil-chart" element={<OilChart />} />
+                <Route path="/admin/chart-listing/weekly-chart" element={<WeeklyChart />} />
 
                 <Route path="/admin/books" element={<BookMaster />} />
                 <Route path="/admin/chapters" element={<ChapterMaster />} />
                 <Route path="/admin/rllt-data" element={<RLLTTableData />} />
-                <Route path="/admin/locations" element={<LocationCRUD />} />
                 <Route path="/admin/settings" element={<div className="p-10"><h1 className="text-2xl font-bold">Settings</h1></div>} />
             </Route>
 
-            <Route path="/dashboard/admin" element={<ProtectedRoute allowedRoles={['admin']}><DashboardAdmin /></ProtectedRoute>} />
+            {/* Other Dashboards */}
             <Route path="/dashboard/leader" element={<ProtectedRoute allowedRoles={['leader']}><DashboardLeader /></ProtectedRoute>} />
             <Route path="/dashboard/student" element={<ProtectedRoute allowedRoles={['student']}><DashboardStudent /></ProtectedRoute>} />
             <Route path="/dashboard/ttom" element={<ProtectedRoute allowedRoles={['ttom_user']}><DashboardTtomUser /></ProtectedRoute>} />

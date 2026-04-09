@@ -158,8 +158,14 @@ export const buildParsers = (booksDB, chaptersDB) => {
             if (seg.start === seg.end) return `${abbr} ${seg.start}`;
             return `${abbr} ${seg.start}-${seg.end}`;
         }).join(', ');
+
+        const fullStr = segments.map(seg => {
+            const name = seg.book.name;
+            if (seg.start === seg.end) return `${name} ${seg.start}`;
+            return `${name} ${seg.start}-${seg.end}`;
+        }).join(', ');
     
-        return { str, verses: totalVerses, art: totalArtFloat, chaps: chapArray.length };
+        return { str, fullStr, verses: totalVerses, art: totalArtFloat, chaps: chapArray.length };
     };
 
     return { processS3String, buildFromChapters };
@@ -261,7 +267,7 @@ export const parseDayForOilChart = (dayObj, booksDB, chaptersDB) => {
         if (chapters && chapters.length > 0) {
             const stats = buildFromChapters(chapters);
             rows.push({
-                books: stats.str,
+                books: stats.fullStr,
                 chaps: stats.chaps,
                 verses: stats.verses,
                 time: Math.round(stats.art).toString()
@@ -271,18 +277,19 @@ export const parseDayForOilChart = (dayObj, booksDB, chaptersDB) => {
 
     addPart(dayObj.m1b);
     addPart(dayObj.m2b);
+    addPart(dayObj.m3b);
 
-    if (dayObj.m3b) {
-        const m3Chapters = processS3String(dayObj.m3b);
-        if (m3Chapters && m3Chapters.length > 0) {
-            const halfIndex = Math.ceil(m3Chapters.length / 2);
-            const morningChapters = m3Chapters.slice(0, halfIndex);
-            const eveningChapters = m3Chapters.slice(halfIndex);
+    if (dayObj.m4b) {
+        const m4Chapters = processS3String(dayObj.m4b);
+        if (m4Chapters && m4Chapters.length > 0) {
+            const halfIndex = Math.ceil(m4Chapters.length / 2);
+            const morningChapters = m4Chapters.slice(0, halfIndex);
+            const eveningChapters = m4Chapters.slice(halfIndex);
 
             if (morningChapters.length > 0) {
                 const mStats = buildFromChapters(morningChapters);
                 rows.push({
-                    books: mStats.str,
+                    books: mStats.fullStr,
                     chaps: mStats.chaps,
                     verses: mStats.verses,
                     time: Math.round(mStats.art).toString()
@@ -291,10 +298,11 @@ export const parseDayForOilChart = (dayObj, booksDB, chaptersDB) => {
             if (eveningChapters.length > 0) {
                 const eStats = buildFromChapters(eveningChapters);
                 rows.push({
-                    books: eStats.str,
+                    books: eStats.fullStr,
                     chaps: eStats.chaps,
                     verses: eStats.verses,
-                    time: Math.round(eStats.art).toString()
+                    time: Math.round(eStats.art).toString(),
+                    isEvening: true
                 });
             }
         }

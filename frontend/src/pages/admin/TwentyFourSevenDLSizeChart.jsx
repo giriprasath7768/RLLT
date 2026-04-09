@@ -7,7 +7,7 @@ import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Dialog } from 'primereact/dialog';
 import { useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
-import { splitS3Data, parseTime, formatHrMinDetailed } from '../../utils/chartDataSplitter';
+import { splitS4Data, parseTime, formatHrMinDetailed } from '../../utils/chartDataSplitter';
 
 const formatSum = (totalMins, formatType) => {
     const rawMins = Math.round(totalMins);
@@ -37,7 +37,7 @@ const generateInitialData = (totalDays = 30) => {
     for (let c = 0; c < numChunks; c++) {
         const daysArray = [];
         for (let d = 1; d <= 5; d++) {
-            daysArray.push({ id: (c * 5) + d, day: (c * 5) + d, m1b: '', m1t: '', m2b: '', m2t: '', m3b: '', m3t: '', m3b_morning: '', m3b_evening: '', m3t_morning: '', m3t_evening: '', chap: 0, verse: 0, art: '', yes: false });
+            daysArray.push({ id: (c * 5) + d, day: (c * 5) + d, m1b: '', m1t: '', m2b: '', m2t: '', m3b: '', m3t: '', m4b: '', m4t: '', m4b_morning: '', m4b_evening: '', m4t_morning: '', m4t_evening: '', chap: 0, verse: 0, art: '', yes: false });
         }
         defaultData.push({
             id: `chunk_${c + 1}`,
@@ -48,20 +48,21 @@ const generateInitialData = (totalDays = 30) => {
             h1: "",
             h2: "",
             h3: "",
+            h4: "",
             days: daysArray
         });
     }
     return defaultData;
 };
 
-const DLSizeChart = () => {
+const TwentyFourSevenDLSizeChart = () => {
     const toast = useRef(null);
     const navigate = useNavigate();
     const [chunks, setChunks] = useState(generateInitialData());
     
     // Header States
     const [headerSubtitle, setHeaderSubtitle] = useState("NO CHART SELECTED");
-    const [headerTitle, setHeaderTitle] = useState("DL Size Chart");
+    const [headerTitle, setHeaderTitle] = useState("24x7 DL Size Chart");
     const [bannerText, setBannerText] = useState("");
     const [tLabel, setTLabel] = useState("T");
     const [logoUrl, setLogoUrl] = useState(null);
@@ -143,13 +144,13 @@ const DLSizeChart = () => {
                     try {
                         const parsed = JSON.parse(data.state_payload);
                         if (Array.isArray(parsed)) {
-                            const { morningEveningChunks } = splitS3Data(parsed, booksDB, chaptersDB);
+                            const { morningEveningChunks } = splitS4Data(parsed, booksDB, chaptersDB);
                             setChunks(morningEveningChunks);
                             
                             if (parsed.length === 8) {
-                                setHeaderTitle("DL Size Chart - 40 Days View");
+                                setHeaderTitle("24x7 DL Size Chart - 40 Days View");
                             } else {
-                                setHeaderTitle("DL Size Chart - 30 Days View");
+                                setHeaderTitle("24x7 DL Size Chart - 30 Days View");
                             }
                         } else {
                             setChunks(generateInitialData());
@@ -261,7 +262,7 @@ const DLSizeChart = () => {
         try {
             toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Generating PDF...', life: 2000 });
             const pdf = await generatePdfBlob();
-            pdf.save(`RLLT_DLSizeChart_Mod${selectedChart?.module}_Fct${selectedChart?.facet}_Phase${selectedChart?.phase}.pdf`);
+            pdf.save(`RLLT_24x7DLSizeChart_Mod${selectedChart?.module}_Fct${selectedChart?.facet}_Phase${selectedChart?.phase}.pdf`);
             toast.current?.show({ severity: 'success', summary: 'Exported', detail: 'PDF generated.', life: 2000 });
         } catch (e) {
             toast.current?.show({ severity: 'error', summary: 'Export Failed', detail: 'Failed to generate PDF.', life: 3000 });
@@ -354,8 +355,9 @@ const DLSizeChart = () => {
 
             const m1Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m1t), 0);
             const m2Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m2t), 0);
-            const mornArtTotal = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m3t_morning), 0);
-            const eveArtTotal = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m3t_evening), 0);
+            const m3Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m3t), 0);
+            const mornArtTotal = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m4t_morning), 0);
+            const eveArtTotal = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m4t_evening), 0);
 
             const greenColor = "#2ed573";
             const blueColor = "#0033CC";
@@ -364,17 +366,18 @@ const DLSizeChart = () => {
                 <div key={chunk.id} className="mb-0">
                     <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
                         <colgroup>
-                            <col style={{ width: '8%' }} /> {/* DAY */}
-                            <col style={{ width: '17%' }} /> {/* PRO */}
-                            <col style={{ width: '17%' }} /> {/* PSA */}
-                            <col style={{ width: '36%' }} /> {/* GEN */}
-                            <col style={{ width: '16%' }} /> {/* ART */}
-                            <col style={{ width: '6%' }} /> {/* YES */}
+                            <col style={{ width: '7%' }} /> {/* DAY */}
+                            <col style={{ width: '15%' }} /> {/* M1 */}
+                            <col style={{ width: '14%' }} /> {/* M2 */}
+                            <col style={{ width: '14%' }} /> {/* M3 */}
+                            <col style={{ width: '32%' }} /> {/* M4 Split */}
+                            <col style={{ width: '13%' }} /> {/* ART */}
+                            <col style={{ width: '5%' }} /> {/* YES */}
                         </colgroup>
                         <tbody className="text-black font-bold text-xs rllt-condensed">
                             {/* GOD'S PROMISES HEADER */}
                             <tr className="bg-white h-[32px]">
-                                <td colSpan={6} className="border-2 border-black px-1 align-middle overflow-hidden">
+                                <td colSpan={7} className="border-2 border-black px-1 align-middle overflow-hidden">
                                     <div className="flex items-center w-full h-full gap-2">
                                         <span className="font-extrabold text-black text-[12px] whitespace-nowrap">GOD'S PROMISES :</span>
                                         <div className="flex-1 text-center px-2">
@@ -395,7 +398,7 @@ const DLSizeChart = () => {
                             {/* COLUMN HEADERS */}
                             <tr className="bg-white text-center font-bold h-[20px]">
                                 <th className="border-2 border-black p-0" style={{ fontSize: getFS(10) }}>DAY</th>
-                                <th colSpan={3} className="border-2 border-black p-0 bg-white"></th>
+                                <th colSpan={4} className="border-2 border-black p-0 bg-white"></th>
                                 <th className="border-2 border-black p-0" style={{ fontSize: getFS(10) }}>ART</th>
                                 <th className="border-2 border-black p-0" style={{ fontSize: getFS(10) }}>YES</th>
                             </tr>
@@ -405,24 +408,29 @@ const DLSizeChart = () => {
                                 <tr key={d.id} className="bg-white text-center border-b-2 border-black h-[22px]">
                                     <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(11) }}>{d.day}</td>
                                     
-                                    {/* M1 TEXT (Green) */}
-                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight" style={{ color: greenColor, fontSize: getFS(10) }}>
+                                    {/* M1 TEXT */}
+                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight truncate" style={{ color: greenColor, fontSize: getFS(10) }}>
                                         {d.m1b}
                                     </td>
                                     
-                                    {/* M2 TEXT (Green) */}
-                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight" style={{ color: greenColor, fontSize: getFS(10) }}>
+                                    {/* M2 TEXT */}
+                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight truncate" style={{ color: greenColor, fontSize: getFS(10) }}>
                                         {d.m2b}
                                     </td>
+
+                                    {/* M3 TEXT */}
+                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight truncate" style={{ color: greenColor, fontSize: getFS(10) }}>
+                                        {d.m3b}
+                                    </td>
                                     
-                                    {/* M3 TEXT (Split Green / Blue) */}
-                                    <td className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(10) }}>
+                                    {/* M4 TEXT (Split Green / Blue) */}
+                                    <td className="border-2 border-black p-0 bg-white overflow-hidden" style={{ fontSize: getFS(10) }}>
                                         <div className="flex w-full h-full text-left leading-tight">
-                                            <div className="w-1/2 px-1 font-bold border-r border-gray-200 h-full flex items-center" style={{ color: greenColor }}>
-                                                {d.m3b_morning}
+                                            <div className="w-1/2 px-1 font-bold border-r border-gray-200 h-full flex items-center truncate overflow-hidden" style={{ color: greenColor }}>
+                                                {d.m4b_morning}
                                             </div>
-                                            <div className="w-1/2 px-1 font-bold h-full flex items-center" style={{ color: blueColor }}>
-                                                {d.m3b_evening}
+                                            <div className="w-1/2 px-1 font-bold h-full flex items-center truncate overflow-hidden" style={{ color: blueColor }}>
+                                                {d.m4b_evening}
                                             </div>
                                         </div>
                                     </td>
@@ -431,10 +439,10 @@ const DLSizeChart = () => {
                                     <td className="border-2 border-black p-0 bg-white font-bold text-center" style={{ fontSize: getFS(9) }}>
                                         <div className="flex w-full h-full items-center">
                                             <div className="w-1/2" style={{ color: greenColor }}>
-                                                {d.m3t_morning}
+                                                {d.m4t_morning}
                                             </div>
                                             <div className="w-1/2" style={{ color: blueColor }}>
-                                                {d.m3t_evening}
+                                                {d.m4t_evening}
                                             </div>
                                         </div>
                                     </td>
@@ -449,6 +457,7 @@ const DLSizeChart = () => {
                             <tr className="bg-white text-center font-extrabold h-[22px]">
                                 <td colSpan={2} className="border-2 border-black bg-white" style={{ fontSize: getFS(10) }}>{formatSum(m1Total, 'HrMins')}</td>
                                 <td className="border-2 border-black bg-white text-center" style={{ fontSize: getFS(10) }}>{formatSum(m2Total, 'HrMins')}</td>
+                                <td className="border-2 border-black bg-white text-center" style={{ fontSize: getFS(10) }}>{formatSum(m3Total, 'HrMins')}</td>
                                 
                                 <td className="border-2 border-black bg-white p-0">
                                    <div className="w-full text-center tracking-widest uppercase font-bold text-gray-500" style={{ fontSize: getFS(10) }}>
@@ -572,4 +581,4 @@ const DLSizeChart = () => {
     );
 };
 
-export default DLSizeChart;
+export default TwentyFourSevenDLSizeChart;

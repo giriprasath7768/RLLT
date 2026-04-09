@@ -35,6 +35,13 @@ async def get_leaders(db: AsyncSession = Depends(get_db), current_user: User = D
         .join(Admin, Leader.admin_id == Admin.id)
         .join(Location, Admin.location_id == Location.id)
     )
+    
+    if current_user.role == UserRole.admin:
+        admin_res = await db.execute(select(Admin).where(Admin.user_id == current_user.id))
+        admin_profile = admin_res.scalar_one_or_none()
+        if admin_profile:
+            query = query.where(Admin.location_id == admin_profile.location_id)
+            
     result = await db.execute(query)
     results = result.all()
     

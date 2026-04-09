@@ -17,8 +17,12 @@ class Settings(BaseSettings):
     AWS_REGION: str = "us-east-1"
     S3_BUCKET_NAME: str = "media-platform-bucket"
 
-    # AWS SES configuration
-    SES_SENDER_EMAIL: str = "noreply@appcreators.com"
+    # SMTP Settings (For Gmail or other generic SMTP servers)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = "your_gmail@gmail.com"
+    SMTP_PASSWORD: str = "your_app_password"
+    MAIL_FROM: str = "your_gmail@gmail.com"
 
     # Frontend URL for password reset links
     FRONTEND_URL: str = "https://appcreators.com"

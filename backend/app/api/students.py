@@ -7,7 +7,7 @@ from typing import List
 from uuid import UUID
 
 from app.db.database import get_db
-from app.db.models import User, UserRole
+from app.db.models import User, UserRole, Admin
 from app.schemas.student import StudentCreate, StudentUpdate, StudentResponse, StudentActivation
 from app.api.auth import get_current_user
 from app.core.security import get_password_hash
@@ -29,7 +29,15 @@ async def verify_admin_or_higher(current_user: User = Depends(get_current_user))
 
 @router.get("/", response_model=List[StudentResponse])
 async def get_students(db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
-    result = await db.execute(select(User).where(User.role == UserRole.student))
+    query = select(User).where(User.role == UserRole.student)
+    
+    if current_user.role == UserRole.admin:
+        admin_res = await db.execute(select(Admin).where(Admin.user_id == current_user.id))
+        admin = admin_res.scalar_one_or_none()
+        if admin and admin.location_id:
+            query = query.where(User.location_id == admin.location_id)
+            
+    result = await db.execute(query)
     return result.scalars().all()
 
 @router.post("/", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
@@ -38,6 +46,14 @@ async def create_student(student_in: StudentCreate, db: AsyncSession = Depends(g
     if result.scalars().first():
         raise HTTPException(status_code=400, detail="User with this email already exists")
     
+    # Determine location_id for the new student
+    assigned_location_id = None
+    if current_user.role == UserRole.admin:
+        admin_res = await db.execute(select(Admin).where(Admin.user_id == current_user.id))
+        admin = admin_res.scalar_one_or_none()
+        if admin:
+            assigned_location_id = admin.location_id
+
     import uuid
     enrollment = student_in.enrollment_number or f"ACR-{uuid.uuid4().hex[:8].upper()}"
     
@@ -51,7 +67,8 @@ async def create_student(student_in: StudentCreate, db: AsyncSession = Depends(g
         mobile_number=student_in.mobile_number,
         dob=student_in.dob,
         gender=student_in.gender,
-        enrollment_number=enrollment
+        enrollment_number=enrollment,
+        location_id=assigned_location_id
     )
     db.add(new_user)
     await db.commit()

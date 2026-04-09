@@ -20,6 +20,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.student)
     is_active = Column(Boolean, default=True)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=True)
 
     name = Column(String, nullable=True)
     address = Column(String, nullable=True)
@@ -112,6 +113,7 @@ class Assessment(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False, index=True)
     location_module = Column(String, nullable=False, index=True)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=True)
     question_number = Column(String, nullable=True)
     question_text = Column(String, nullable=False)
     seven_tnt = Column(String, nullable=True)
@@ -230,3 +232,17 @@ class Content(Base):
     chapter = relationship("Chapter", backref="contents")
 
     __table_args__ = (UniqueConstraint('book_id', 'chapter_id', name='uq_content_book_chapter'),)
+
+class Assignment(Base):
+    __tablename__ = "assignments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    chart_id = Column(String, nullable=True) # e.g. mapping ID
+    chart_type = Column(String, nullable=False) # e.g. "30-Day", "40-Day"
+    start_date = Column(DateTime(timezone=True), nullable=False)
+    end_date = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User", backref="assignments")

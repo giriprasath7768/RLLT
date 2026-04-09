@@ -1,89 +1,45 @@
-import boto3
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import logging
-from botocore.exceptions import ClientError, NoCredentialsError
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-
-def _get_ses_client():
-    """Create a boto3 SES client using configured AWS credentials."""
-    return boto3.client(
-        "ses",
-        region_name=settings.AWS_REGION,
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    )
-
+def _get_smtp_server():
+    """Initializes and returns an SMTP connection."""
+    try:
+        server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
+        server.starttls()
+        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+        return server
+    except Exception as e:
+        logger.error(f"Failed to connect to SMTP server: {e}")
+        return None
 
 def _build_reset_email_html(reset_url: str) -> str:
-    """
-    Build a professional HTML email body for password reset.
-    Supports Portuguese UTF-8 characters.
-    """
+    """Build a professional HTML email body for password reset."""
     return f"""\
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redefinição de Senha</title>
 </head>
-<body style="margin:0;padding:0;background-color:#0a1929;font-family:'Segoe UI',Arial,Helvetica,sans-serif;">
+<body style="margin:0;padding:0;background-color:#0a1929;font-family:'Segoe UI',Arial,sans-serif;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0a1929;">
     <tr>
       <td align="center" style="padding:40px 20px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0"
-               style="background-color:#0d2137;border-radius:16px;border:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
-          <!-- Header -->
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color:#0d2137;border-radius:16px;">
           <tr>
-            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.08);">
-              <h1 style="margin:0;font-size:28px;font-weight:700;color:#cca673;letter-spacing:2px;">
-                MEDIA PLATFORM
-              </h1>
+            <td style="padding:40px;text-align:center;">
+              <h1 style="color:#cca673;">MEDIA PLATFORM</h1>
             </td>
           </tr>
-          <!-- Body -->
           <tr>
             <td style="padding:40px;">
-              <h2 style="margin:0 0 16px;font-size:22px;font-weight:600;color:#ffffff;">
-                Redefinição de Senha
-              </h2>
-              <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#b8c6d3;">
-                Recebemos uma solicitação para redefinir a senha da sua conta.
-                Se você não fez essa solicitação, por favor ignore este e-mail.
-              </p>
-              <p style="margin:0 0 32px;font-size:15px;line-height:1.7;color:#b8c6d3;">
-                Clique no botão abaixo para criar uma nova senha. Este link é válido por
-                <strong style="color:#ffffff;">15 minutos</strong>.
-              </p>
-              <!-- CTA Button -->
-              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;">
-                <tr>
-                  <td align="center"
-                      style="background-color:#cca673;border-radius:8px;">
-                    <a href="{reset_url}"
-                       target="_blank"
-                       style="display:inline-block;padding:14px 40px;font-size:15px;font-weight:700;color:#0a1929;text-decoration:none;letter-spacing:1px;">
-                      REDEFINIR SENHA
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:32px 0 0;font-size:13px;line-height:1.6;color:#6b829e;">
-                Se o botão acima não funcionar, copie e cole o seguinte link no seu navegador:
-              </p>
-              <p style="margin:8px 0 0;font-size:13px;word-break:break-all;color:#cca673;">
-                {reset_url}
-              </p>
-            </td>
-          </tr>
-          <!-- Footer -->
-          <tr>
-            <td style="padding:24px 40px;text-align:center;border-top:1px solid rgba(255,255,255,0.08);">
-              <p style="margin:0;font-size:12px;color:#4a6178;">
-                © 2026 AppCreators. Todos os direitos reservados.
-              </p>
+              <h2 style="color:#ffffff;">Password Reset</h2>
+              <p style="color:#b8c6d3;">Click the button below to create a new password. Valid for 15 minutes.</p>
+              <a href="{reset_url}" style="display:inline-block;padding:14px 40px;background-color:#cca673;font-weight:700;color:#0a1929;text-decoration:none;">RESET PASSWORD</a>
             </td>
           </tr>
         </table>
@@ -93,55 +49,125 @@ def _build_reset_email_html(reset_url: str) -> str:
 </body>
 </html>"""
 
+def _build_admin_creation_email_html(name: str, password: str, email: str) -> str:
+    """Build a professional HTML email body for new Admin creation."""
+    return f"""\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body style="margin:0;padding:0;background-color:#0a1929;font-family:'Segoe UI',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0a1929;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color:#0d2137;border-radius:16px;">
+          <tr>
+            <td style="padding:40px;text-align:center;">
+              <h1 style="color:#cca673;">MEDIA PLATFORM</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="color:#ffffff;">Welcome, {name}!</h2>
+              <p style="color:#b8c6d3;">Your new administrator account has been successfully created.</p>
+              <p style="color:#ffffff;"><strong>Email/Username:</strong> {email}</p>
+              <p style="color:#ffffff;"><strong>Temporary Password:</strong> <span style="color:#cca673;font-size:16px;">{password}</span></p>
+              <br>
+              <a href="{settings.FRONTEND_URL}" style="display:inline-block;padding:14px 40px;background-color:#cca673;font-weight:700;color:#0a1929;text-decoration:none;">LOGIN TO PORTAL</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
 
 def send_password_reset_email(to_email: str, reset_url: str) -> bool:
-    """
-    Send a password-reset email via Amazon SES.
+    """Send a password-reset email via generic SMTP."""
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Password Reset – Media Platform"
+    msg["From"] = settings.MAIL_FROM
+    msg["To"] = to_email
 
-    Returns True on success, False on failure (logged but never raised
-    to the caller so the API always returns a safe generic message).
-    """
     html_body = _build_reset_email_html(reset_url)
-    text_body = (
-        "Redefinição de Senha\n\n"
-        "Recebemos uma solicitação para redefinir a senha da sua conta.\n"
-        f"Acesse o link abaixo para criar uma nova senha (válido por 15 minutos):\n\n"
-        f"{reset_url}\n\n"
-        "Se você não solicitou essa alteração, ignore este e-mail.\n"
-        "© 2026 AppCreators."
-    )
+    msg.attach(MIMEText(html_body, "html"))
 
     try:
-        ses = _get_ses_client()
-        ses.send_email(
-            Source=settings.SES_SENDER_EMAIL,
-            Destination={"ToAddresses": [to_email]},
-            Message={
-                "Subject": {
-                    "Data": "Redefinição de Senha – Media Platform",
-                    "Charset": "UTF-8",
-                },
-                "Body": {
-                    "Html": {"Data": html_body, "Charset": "UTF-8"},
-                    "Text": {"Data": text_body, "Charset": "UTF-8"},
-                },
-            },
-        )
-        logger.info("Password-reset email sent to %s", to_email)
-        return True
-    except NoCredentialsError:
-        logger.warning(
-            "AWS credentials not configured – password-reset email to %s was NOT sent.",
-            to_email,
-        )
+        server = _get_smtp_server()
+        if server:
+            server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
+            server.quit()
+            logger.info("Password-reset email sent to %s", to_email)
+            return True
         return False
-    except ClientError as exc:
-        logger.error(
-            "SES ClientError sending reset email to %s: %s",
-            to_email,
-            exc.response["Error"]["Message"],
-        )
+    except Exception as e:
+        logger.error("Failed to send reset email to %s: %s", to_email, str(e))
         return False
-    except Exception:
-        logger.exception("Unexpected error sending reset email to %s", to_email)
+
+
+def send_admin_creation_email(to_email: str, name: str, password: str) -> bool:
+    """Send a welcome email with credentials to a new Admin via generic SMTP."""
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Your Admin Account Created – Media Platform"
+    msg["From"] = settings.MAIL_FROM
+    msg["To"] = to_email
+
+    html_body = _build_admin_creation_email_html(name, password, to_email)
+    msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        server = _get_smtp_server()
+        if server:
+            server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
+            server.quit()
+            logger.info("Admin creation email sent to %s", to_email)
+            return True
+        return False
+    except Exception as e:
+        logger.error("Failed to send admin creation email to %s: %s", to_email, str(e))
+        return False
+
+def send_leader_creation_email(to_email: str, name: str, password: str) -> bool:
+    """Send a welcome email with credentials to a new Leader via generic SMTP."""
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Your Leader Account Created – Media Platform"
+    msg["From"] = settings.MAIL_FROM
+    msg["To"] = to_email
+
+    html_body = _build_admin_creation_email_html(name, password, to_email) # Reusing the clean HTML template
+    msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        server = _get_smtp_server()
+        if server:
+            server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
+            server.quit()
+            logger.info("Leader creation email sent to %s", to_email)
+            return True
+        return False
+    except Exception as e:
+        logger.error("Failed to send leader creation email to %s: %s", to_email, str(e))
+        return False
+
+def send_student_activation_email(to_email: str, name: str, enrollment: str, password: str) -> bool:
+    """Send student activation email via generic SMTP."""
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Conta Ativada - Bem-vindo à Plataforma"
+    msg["From"] = settings.MAIL_FROM
+    msg["To"] = to_email
+
+    text_body = f"Olá {name},\nSua conta foi ativada!\nMatrícula: {enrollment}\nSenha: {password}\nAcesse: {settings.FRONTEND_URL}"
+    msg.attach(MIMEText(text_body, "plain"))
+
+    try:
+        server = _get_smtp_server()
+        if server:
+            server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
+            server.quit()
+            return True
+        return False
+    except Exception as e:
+        logger.error("Failed to send student email config: %s", str(e))
         return False

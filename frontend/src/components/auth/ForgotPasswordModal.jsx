@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
+import axios from 'axios';
 
 const ForgotPasswordModal = ({ visible, onHide }) => {
     const [email, setEmail] = useState('');
@@ -17,9 +18,7 @@ const ForgotPasswordModal = ({ visible, onHide }) => {
 
         setLoading(true);
         try {
-            // Mocking the backend call since AWS SES API logic goes to Claude Opus
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            // Next step for Claude: backend handles -> await axios.post('/api/auth/forgot-password', { email });
+            await axios.post('http://localhost:8000/api/forgot-password', { email });
             
             toast.current.show({ 
                 severity: 'success', 
@@ -32,7 +31,12 @@ const ForgotPasswordModal = ({ visible, onHide }) => {
                 setEmail('');
             }, 5000); // Wait for toast to fade out before completely closing if desired, or act immediately
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'An error occurred. Please try again later.', life: 3000 });
+            toast.current.show({ 
+                severity: 'error', 
+                summary: 'Error', 
+                detail: error.response?.data?.detail || 'An error occurred. Please try again later.', 
+                life: 3000 
+            });
         } finally {
             setLoading(false);
         }

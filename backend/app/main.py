@@ -35,6 +35,7 @@ from app.api.charts import router as charts_router
 from app.api.vcards import router as vcards_router
 from app.api.contents import router as contents_router
 from app.api.oils import router as oils_router
+from app.api.assignments import router as assignments_router
 
 
 app.include_router(auth_router, prefix="/api", tags=["auth"])
@@ -51,6 +52,7 @@ app.include_router(charts_router, prefix="/api/charts", tags=["charts"])
 app.include_router(vcards_router, prefix="/api/vcards", tags=["vcards"])
 app.include_router(contents_router, prefix="/api/contents", tags=["contents"])
 app.include_router(oils_router, prefix="/api/oils", tags=["oils"])
+app.include_router(assignments_router, prefix="/api/assignments", tags=["assignments"])
 
 
 import os
