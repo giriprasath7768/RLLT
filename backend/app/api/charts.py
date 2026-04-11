@@ -93,12 +93,34 @@ async def list_charts(db: AsyncSession = Depends(get_db)):
         # Use banner text if available, fallback to Unnamed
         name_str = m.banner_text if m.banner_text else "Unnamed Chart"
         label = f"{name_str} (Mod {m.module} | Fct {m.facet} | Ph {m.phase})"
+        
+        payload = m.state_payload or ""
+        
+        is_24x7 = '"m4b"' in payload or '"m4b_morning"' in payload
+        is_morning_evening = '"m3b_morning"' in payload or '"m4b_morning"' in payload
+        
+        if is_24x7 and is_morning_evening:
+            chart_type = "24x7 Morning/Evening Chart"
+        elif is_morning_evening:
+            chart_type = "Main Morning/Evening Chart"
+        elif is_24x7:
+            chart_type = "24x7 Chart"
+        else:
+            chart_type = "Main Chart"
+            
+        count_chunks = payload.count('"chunk_')
+        tracking_days = 40 if count_chunks == 8 else 30
+
         charts.append({
             "id": str(m.id),
             "label": label,
             "module": m.module,
             "facet": m.facet,
-            "phase": m.phase
+            "phase": m.phase,
+            "chart_type": chart_type,
+            "tracking_days": tracking_days,
+            "banner_text": name_str,
+            "state_payload": payload
         })
     return charts
 

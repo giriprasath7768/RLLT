@@ -165,10 +165,14 @@ const ManageAssessment = () => {
 
     const toast = useRef(null);
 
-    useEffect(() => {
+    const fetchOptions = () => {
         AssessmentService.getAssessmentOptions().then(data => {
             setAvailableNames(data.names || []);
         }).catch(err => console.error("Could not load autocomplete options", err));
+    };
+
+    useEffect(() => {
+        fetchOptions();
 
         LocationService.getLocations().then(data => {
             const uniqueCities = [...new Set(data.map(l => l.city))].filter(Boolean);
@@ -293,6 +297,7 @@ const ManageAssessment = () => {
                     .then(res => {
                         toast.current.show({ severity: 'success', summary: 'Success', detail: res.message });
                         hideImportDialog();
+                        fetchOptions();
                         loadData();
                     })
                     .catch(err => toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to import assessments' }))
@@ -330,6 +335,7 @@ const ManageAssessment = () => {
                 .then(() => {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Assessment Updated' });
                     setAssessmentDialog(false);
+                    fetchOptions();
                     loadData();
                 })
                 .catch(err => toast.current.show({ severity: 'error', summary: 'Error', detail: 'Update failed' }))
@@ -339,6 +345,7 @@ const ManageAssessment = () => {
                 .then(() => {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Assessment Created' });
                     setAssessmentDialog(false);
+                    fetchOptions();
                     loadData();
                 })
                 .catch(err => toast.current.show({ severity: 'error', summary: 'Error', detail: 'Creation failed' }))
@@ -356,6 +363,7 @@ const ManageAssessment = () => {
             AssessmentService.deleteAssessment(a.id)
                 .then(() => {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Assessment Deleted', life: 3000 });
+                    fetchOptions();
                     loadData();
                 })
                 .catch(err => toast.current.show({ severity: 'error', summary: 'Error', detail: 'Deletion failed' }));
@@ -369,6 +377,7 @@ const ManageAssessment = () => {
                 .then(() => {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Assessments Deleted', life: 3000 });
                     setSelectedAssessments(null);
+                    fetchOptions();
                     loadData();
                 })
                 .catch(err => toast.current.show({ severity: 'error', summary: 'Error', detail: 'Deletion failed' }));
@@ -384,6 +393,7 @@ const ManageAssessment = () => {
             AssessmentService.purgeAssessments(filterName, filterLocation)
                 .then((res) => {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: res.message, life: 3000 });
+                    fetchOptions();
                     loadData();
                 })
                 .catch(err => toast.current.show({ severity: 'error', summary: 'Error', detail: 'Purge failed' }));

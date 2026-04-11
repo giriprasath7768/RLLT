@@ -39,7 +39,7 @@ export default function ManageLeader() {
     const [selectedLeaders, setSelectedLeaders] = useState(null);
     const [submitted, setSubmitted] = useState(false);
     const [globalFilter, setGlobalFilter] = useState(null);
-    
+
     // Auto-populated fields (read-only in form)
     const [autoCity, setAutoCity] = useState('');
     const [autoCountry, setAutoCountry] = useState('');
@@ -115,14 +115,16 @@ export default function ManageLeader() {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Leader Updated', life: 3000 });
                     loadData();
                 }).catch(err => {
-                    toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.detail || 'Failed to update', life: 3000 });
+                    const errorMsg = Array.isArray(err.response?.data?.detail) ? err.response.data.detail.map(d => d.msg).join(', ') : (err.response?.data?.detail || 'Failed to update');
+                    toast.current.show({ severity: 'error', summary: 'Error', detail: errorMsg, life: 3000 });
                 });
             } else {
                 createLeader(_leader).then(() => {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Leader Created. Password sent securely.', life: 3000 });
                     loadData();
                 }).catch(err => {
-                    toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.detail || 'Failed to create', life: 3000 });
+                    const errorMsg = Array.isArray(err.response?.data?.detail) ? err.response.data.detail.map(d => `${d.loc?.join('.')} ${d.msg}`).join(', ') : (err.response?.data?.detail || 'Failed to create');
+                    toast.current.show({ severity: 'error', summary: 'Error', detail: errorMsg, life: 3000 });
                 });
             }
             setLeaderDialog(false);
@@ -187,7 +189,7 @@ export default function ManageLeader() {
         const adminId = e.value;
         let _leader = { ...leader, admin_id: adminId };
         setLeader(_leader);
-        
+
         // Auto-populate logic based on assigned admin
         const selectedAdmin = admins.find(a => a.id === adminId);
         if (selectedAdmin) {
@@ -220,10 +222,10 @@ export default function ManageLeader() {
     const handlePdfExport = (selectedFields) => {
         try {
             setExportModalVisible(false);
-            
+
             const doc = new jsPDF('portrait', 'pt', 'a4');
             const activeColumns = printColumns.filter(col => selectedFields.includes(col.field));
-            
+
             const exportColumns = activeColumns.map(col => ({
                 header: col.header,
                 dataKey: col.field
@@ -260,7 +262,7 @@ export default function ManageLeader() {
                     doc.setTextColor(40);
                     // Header
                     doc.text('Manage Leader Report', hookData.settings.margin.left, 30);
-                    
+
                     doc.setFontSize(10);
                     doc.setTextColor(100);
                     doc.text(`Export Date: ${dateStr}`, hookData.settings.margin.left, 45);
@@ -360,12 +362,12 @@ export default function ManageLeader() {
                 </div>
 
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
-                    <DataTable ref={dt} value={leaders} dataKey="id" 
-                            paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
-                            globalFilter={globalFilter} header={tableHeader}
-                            className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines scrollable scrollDirection="both"
-                            rowClassName={() => 'bg-white text-black'}>
-                        
+                    <DataTable ref={dt} value={leaders} dataKey="id"
+                        paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
+                        globalFilter={globalFilter} header={tableHeader}
+                        className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines scrollable scrollDirection="both"
+                        rowClassName={() => 'bg-white text-black'}>
+
                         <Column header="S.No" body={(data, options) => first + options.rowIndex + 1} exportable={false} style={{ minWidth: '4rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="name" header="Leader Name" sortable style={{ minWidth: '12rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="email" header="Email ID" sortable style={{ minWidth: '14rem' }} headerClassName="admin-table-header"></Column>
@@ -389,7 +391,7 @@ export default function ManageLeader() {
                 <div className="block md:hidden mt-4">
                     {filteredLeaders.length > 0 ? (
                         filteredLeaders.map(ldr => (
-                            <MobileDataCard 
+                            <MobileDataCard
                                 key={ldr.id}
                                 title={ldr.name}
                                 data={[
@@ -503,18 +505,18 @@ export default function ManageLeader() {
                 </div>
             </Dialog>
 
-            <ExportOptionsModal 
-                visible={exportModalVisible} 
-                onHide={() => setExportModalVisible(false)} 
-                columns={printColumns} 
-                onExport={handlePdfExport} 
+            <ExportOptionsModal
+                visible={exportModalVisible}
+                onHide={() => setExportModalVisible(false)}
+                columns={printColumns}
+                onExport={handlePdfExport}
             />
 
-            <PrintSelectionModal 
-                visible={printModalVisible} 
-                onHide={() => setPrintModalVisible(false)} 
-                columns={printColumns} 
-                onPrint={handlePrintSelection} 
+            <PrintSelectionModal
+                visible={printModalVisible}
+                onHide={() => setPrintModalVisible(false)}
+                columns={printColumns}
+                onPrint={handlePrintSelection}
             />
 
             {/* Hidden Print Table */}
@@ -539,8 +541,8 @@ export default function ManageLeader() {
                                             .filter(col => selectedPrintColumns.includes(col.field))
                                             .map(col => (
                                                 <td key={col.field}>
-                                                    {col.field === 'is_active' 
-                                                        ? (ldr.is_active ? 'ACTIVE' : 'INACTIVE') 
+                                                    {col.field === 'is_active'
+                                                        ? (ldr.is_active ? 'ACTIVE' : 'INACTIVE')
                                                         : col.field === 'mobile_number'
                                                             ? (ldr.mobile_number || '-')
                                                             : ldr[col.field]}

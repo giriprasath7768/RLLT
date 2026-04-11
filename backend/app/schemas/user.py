@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from datetime import date
+from typing import Optional
 
 class Token(BaseModel):
     access_token: str
@@ -15,6 +16,8 @@ class UserInfo(BaseModel):
     email: EmailStr
     role: str
     is_active: bool
+    assessment_status: Optional[str] = "pending"
+    assessment_marks: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -29,6 +32,9 @@ class UserRegister(BaseModel):
     mobile_number: str
     dob: date
     gender: str
+    location_id: Optional[UUID] = None
+    category: Optional[str] = None
+    stage: Optional[str] = None
 
 class ResetPasswordConfirmRequest(BaseModel):
     token: str

@@ -13,7 +13,7 @@ from app.db.models import User, PasswordReset, UserRole
 from app.core import security
 from app.core.config import settings
 from app.schemas.user import Token, UserInfo, ForgotPasswordRequest, UserRegister, ResetPasswordConfirmRequest
-from app.services.email_service import send_password_reset_email
+from app.services.email_service import send_password_reset_email, send_student_activation_email
 
 router = APIRouter()
 
@@ -26,10 +26,12 @@ async def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    result = await db.execute(select(User).where(User.email == form_data.username))
+    email_clean = form_data.username.strip()
+    pwd_clean = form_data.password.strip()
+    result = await db.execute(select(User).where(User.email == email_clean))
     user = result.scalars().first()
     
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
+    if not user or not security.verify_password(pwd_clean, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -54,7 +56,7 @@ async def login_access_token(
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
-        secure=True,     # True means HTTPS only. For localhost it still works in most browsers or use conditionally.
+        secure=False,    # Disabled for localhost HTTP traversal
         samesite="lax"   # Lax is good for CSRF protection while still allowing some cross-site nav
     )
     
@@ -65,7 +67,7 @@ async def logout(response: Response) -> Any:
     """
     Clear the access token cookie
     """
-    response.delete_cookie("access_token")
+    response.delete_cookie("access_token", httponly=True, secure=False, samesite="lax")
     return {"message": "Successfully logged out"}
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> User:
@@ -181,13 +183,7 @@ async def reset_password(
 
     return {"message": "Password has been successfully reset."}
 
-async def send_registration_email(email: str, name: str, enrollment_number: str, password: str):
-    await asyncio.sleep(1)
-    print(f"\n--- ASYNC EMAIL SENDER ---")
-    print(f"Para: {email}")
-    print(f"Assunto: Confirmação de Matrícula - Bem-vindo!")
-    print(f"Corpo: Olá {name},\nSua matrícula foi realizada com sucesso!\nNúmero de Matrícula: {enrollment_number}\nSenha Temporária: {password}\nPor favor, faça o login e altere sua senha.")
-    print(f"--------------------------\n")
+# Replaced mock with send_student_activation_email from email_service
 
 @router.post("/register", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def register_user(
@@ -202,7 +198,7 @@ async def register_user(
     
     # 2. Auto-Generation
     enroll_id = "ACR-" + uuid_mod.uuid4().hex[:8].upper()
-    temp_password = secrets.token_urlsafe(8)
+    temp_password = secrets.token_hex(4) # Alphanumeric Hex block prevents accidental '-' email drag truncation
     
     # 3. Persistence
     new_user = User(
@@ -215,12 +211,15 @@ async def register_user(
         mobile_number=body.mobile_number,
         dob=body.dob,
         gender=body.gender,
-        enrollment_number=enroll_id
+        enrollment_number=enroll_id,
+        location_id=body.location_id,
+        category=body.category,
+        stage=body.stage
     )
     db.add(new_user)
     await db.commit()
     
-    # 4. Email
-    background_tasks.add_task(send_registration_email, body.email, body.name, enroll_id, temp_password)
+    # 4. Email mapped natively to SMTP template
+    background_tasks.add_task(send_student_activation_email, body.email, body.name, enroll_id, temp_password)
     
     return {"message": "Registration successful"}

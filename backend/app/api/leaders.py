@@ -11,16 +11,9 @@ from app.db.models import Leader, Admin, User, Location, UserRole
 from app.schemas.leader import LeaderCreate, LeaderUpdate, LeaderResponse
 from app.api.auth import get_current_user
 from app.core.security import get_password_hash
+from app.services.email_service import send_leader_creation_email
 
 router = APIRouter()
-
-async def send_leader_credentials_email(email: str, password: str, name: str):
-    await asyncio.sleep(1)  # Simulating async I/O email sending
-    print(f"\n--- ASYNC EMAIL SENDER ---")
-    print(f"To: {email}")
-    print(f"Subject: Your Leader Account Created")
-    print(f"Body: Welcome {name}! Your leader account password is: {password}")
-    print(f"--------------------------\n")
 
 async def verify_admin_or_higher(current_user: User = Depends(get_current_user)):
     if current_user.role not in [UserRole.super_admin, UserRole.admin]:
@@ -110,7 +103,13 @@ async def create_leader(leader_in: LeaderCreate, background_tasks: BackgroundTas
     await db.commit()
     await db.refresh(new_leader)
 
-    background_tasks.add_task(send_leader_credentials_email, leader_in.email, raw_password, leader_in.name)
+    # Run the email hook immediately to explicitly capture failures if SMTP drops it
+    print(f"\n--- ATTEMPTING SMTP DISPATCH TO: {leader_in.email} ---")
+    mail_sent = send_leader_creation_email(leader_in.email, leader_in.name, raw_password)
+    if not mail_sent:
+        print(f"!!! CRITICAL: Failed to dispatch SMTP Email to {leader_in.email}. Check backend logger.error output or Mailtrap config! !!!\n")
+    else:
+        print(f"--- SUCCESS: Dispatched Leader Email successfully via SMTP! ---\n")
 
     return LeaderResponse(
         id=new_leader.id,

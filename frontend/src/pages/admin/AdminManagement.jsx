@@ -165,14 +165,16 @@ export default function AdminManagement() {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Admin Updated', life: 3000 });
                     loadData();
                 }).catch(err => {
-                    toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.detail || 'Failed to update', life: 3000 });
+                    const errorMsg = Array.isArray(err.response?.data?.detail) ? err.response.data.detail.map(d => d.msg).join(', ') : (err.response?.data?.detail || 'Failed to update');
+                    toast.current.show({ severity: 'error', summary: 'Error', detail: errorMsg, life: 3000 });
                 });
             } else {
                 AdminService.createAdmin(_admin).then(() => {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Admin Created. Password sent securely.', life: 3000 });
                     loadData();
                 }).catch(err => {
-                    toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.detail || 'Failed to create', life: 3000 });
+                    const errorMsg = Array.isArray(err.response?.data?.detail) ? err.response.data.detail.map(d => `${d.loc?.join('.')} ${d.msg}`).join(', ') : (err.response?.data?.detail || 'Failed to create');
+                    toast.current.show({ severity: 'error', summary: 'Error', detail: errorMsg, life: 3000 });
                 });
             }
             setAdminDialog(false);
@@ -274,10 +276,10 @@ export default function AdminManagement() {
     const handlePdfExport = (selectedFields) => {
         try {
             setExportModalVisible(false);
-            
+
             const doc = new jsPDF('portrait', 'pt', 'a4');
             const activeColumns = printColumns.filter(col => selectedFields.includes(col.field));
-            
+
             const exportColumns = activeColumns.map(col => ({
                 header: col.header,
                 dataKey: col.field
@@ -315,7 +317,7 @@ export default function AdminManagement() {
                     doc.setTextColor(40);
                     // Header
                     doc.text('Admin Management Report', hookData.settings.margin.left, 30);
-                    
+
                     doc.setFontSize(10);
                     doc.setTextColor(100);
                     doc.text(`Export Date: ${dateStr}`, hookData.settings.margin.left, 45);
@@ -515,97 +517,97 @@ export default function AdminManagement() {
                     <div className="bg-white rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-200 p-6 sm:p-8">
                         <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                             <h2 className="text-xl font-bold text-gray-800 m-0">Admin Details</h2>
-                        <Button icon="pi pi-times" rounded text severity="secondary" aria-label="Cancel" onClick={hideDialog} className="w-8 h-8 p-0" />
-                    </div>
-
-                    <div className="formgrid grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="field mb-4">
-                            <label htmlFor="name" className="font-semibold block mb-1 text-sm text-gray-700">Name *</label>
-                            <InputText id="name" value={admin.name} onChange={(e) => onInputChange(e, 'name')} required autoFocus className={classNames({ 'p-invalid': submitted && !admin.name })} />
-                            {submitted && !admin.name && <small className="p-error block mt-1 text-red-500">Name is required.</small>}
+                            <Button icon="pi pi-times" rounded text severity="secondary" aria-label="Cancel" onClick={hideDialog} className="w-8 h-8 p-0" />
                         </div>
-                        <div className="field mb-4">
-                            <label htmlFor="email" className="font-semibold block mb-1 text-sm text-gray-700">Email ID *</label>
-                            <InputText id="email" value={admin.email} onChange={(e) => onInputChange(e, 'email')} required keyfilter="email" className={classNames({ 'p-invalid': submitted && !admin.email })} />
-                            {submitted && !admin.email && <small className="p-error block mt-1 text-red-500">Email is required.</small>}
-                        </div>
-                    </div>
 
-                    <div className="field mb-4">
-                        <label htmlFor="mobile_number" className="font-semibold block mb-1 text-sm text-gray-700">Mobile Number *</label>
-                        <div className="flex gap-4 w-full">
-                            <div className="w-[35%] md:w-[30%]">
-                                <Dropdown
-                                    value={admin.country_code || 'IN'}
-                                    onChange={(e) => onInputChange(e, 'country_code')}
-                                    options={countriesList}
-                                    filter
-                                    filterBy="label,dialCode"
-                                    filterPlaceholder="Search code..."
-                                    valueTemplate={selectedCountryTemplate}
-                                    itemTemplate={countryOptionTemplate}
-                                    placeholder="Code"
-                                    className="w-full"
-                                />
+                        <div className="formgrid grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="field mb-4">
+                                <label htmlFor="name" className="font-semibold block mb-1 text-sm text-gray-700">Name *</label>
+                                <InputText id="name" value={admin.name} onChange={(e) => onInputChange(e, 'name')} required autoFocus className={classNames({ 'p-invalid': submitted && !admin.name })} />
+                                {submitted && !admin.name && <small className="p-error block mt-1 text-red-500">Name is required.</small>}
                             </div>
-                            <div className="flex-1">
-                                <InputText
-                                    id="mobile_number"
-                                    value={admin.mobile_number}
-                                    onChange={(e) => onInputChange(e, 'mobile_number')}
-                                    keyfilter="num"
-                                    maxLength={getMaxPhoneLength(admin.country_code || 'IN')}
-                                    placeholder="Enter mobile sequence"
-                                    className={`w-full ${submitted && (!admin.mobile_number || !isValidPhoneNumber(admin.mobile_number, admin.country_code || 'IN')) ? 'p-invalid' : ''}`}
-                                />
+                            <div className="field mb-4">
+                                <label htmlFor="email" className="font-semibold block mb-1 text-sm text-gray-700">Email ID *</label>
+                                <InputText id="email" value={admin.email} onChange={(e) => onInputChange(e, 'email')} required keyfilter="email" className={classNames({ 'p-invalid': submitted && !admin.email })} />
+                                {submitted && !admin.email && <small className="p-error block mt-1 text-red-500">Email is required.</small>}
                             </div>
                         </div>
-                        {submitted && !admin.mobile_number && <small className="p-error block mt-1 text-red-500">Mobile number is required.</small>}
-                        {submitted && admin.mobile_number && !isValidPhoneNumber(admin.mobile_number, admin.country_code || 'IN') && <small className="p-error block mt-1 text-red-500">Invalid mobile number length/format for selected country.</small>}
-                    </div>
 
-                    <div className="field mb-4 mt-min text-gray-700">
-                        <label htmlFor="address" className="font-semibold block mb-1 text-sm text-gray-700">Address *</label>
-                        <InputTextarea id="address" value={admin.address} onChange={(e) => onInputChange(e, 'address')} rows={2} cols={20} required className={classNames({ 'p-invalid': submitted && !admin.address })} />
-                        {submitted && !admin.address && <small className="p-error block mt-1 text-red-500">Address is required.</small>}
-                    </div>
+                        <div className="field mb-4">
+                            <label htmlFor="mobile_number" className="font-semibold block mb-1 text-sm text-gray-700">Mobile Number *</label>
+                            <div className="flex gap-4 w-full">
+                                <div className="w-[35%] md:w-[30%]">
+                                    <Dropdown
+                                        value={admin.country_code || 'IN'}
+                                        onChange={(e) => onInputChange(e, 'country_code')}
+                                        options={countriesList}
+                                        filter
+                                        filterBy="label,dialCode"
+                                        filterPlaceholder="Search code..."
+                                        valueTemplate={selectedCountryTemplate}
+                                        itemTemplate={countryOptionTemplate}
+                                        placeholder="Code"
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <InputText
+                                        id="mobile_number"
+                                        value={admin.mobile_number}
+                                        onChange={(e) => onInputChange(e, 'mobile_number')}
+                                        keyfilter="num"
+                                        maxLength={getMaxPhoneLength(admin.country_code || 'IN')}
+                                        placeholder="Enter mobile sequence"
+                                        className={`w-full ${submitted && (!admin.mobile_number || !isValidPhoneNumber(admin.mobile_number, admin.country_code || 'IN')) ? 'p-invalid' : ''}`}
+                                    />
+                                </div>
+                            </div>
+                            {submitted && !admin.mobile_number && <small className="p-error block mt-1 text-red-500">Mobile number is required.</small>}
+                            {submitted && admin.mobile_number && !isValidPhoneNumber(admin.mobile_number, admin.country_code || 'IN') && <small className="p-error block mt-1 text-red-500">Invalid mobile number length/format for selected country.</small>}
+                        </div>
 
-                    <div className="formgrid grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div className="field col-span-1">
-                            <label htmlFor="location_id" className="font-semibold block mb-1 text-sm text-gray-700">Location (City) *</label>
-                            <Dropdown id="location_id" value={admin.location_id} options={groupedLocationOptions}
-                                optionGroupLabel="label" optionGroupChildren="items" optionLabel="label" optionValue="value"
-                                onChange={onLocationChange} placeholder="Select City" filter
-                                filterPlaceholder="Search by city..." required
-                                className={`w-full ${submitted && !admin.location_id ? 'p-invalid' : ''}`}
-                                panelClassName="md:w-[22rem]" />
-                            {submitted && !admin.location_id && <small className="p-error block mt-1 text-red-500">Location is required.</small>}
+                        <div className="field mb-4 mt-min text-gray-700">
+                            <label htmlFor="address" className="font-semibold block mb-1 text-sm text-gray-700">Address *</label>
+                            <InputTextarea id="address" value={admin.address} onChange={(e) => onInputChange(e, 'address')} rows={2} cols={20} required className={classNames({ 'p-invalid': submitted && !admin.address })} />
+                            {submitted && !admin.address && <small className="p-error block mt-1 text-red-500">Address is required.</small>}
                         </div>
-                        <div className="field col-span-1">
-                            <label htmlFor="autoCountry" className="font-semibold block mb-1 text-sm text-gray-700">Country</label>
-                            <InputText id="autoCountry" value={autoCountry} disabled className="bg-gray-100/70 border-gray-200 text-gray-700 font-medium w-full" />
-                        </div>
-                        <div className="field col-span-1">
-                            <label htmlFor="autoContinent" className="font-semibold block mb-1 text-sm text-gray-700">Continent</label>
-                            <InputText id="autoContinent" value={autoContinent} disabled className="bg-gray-100/70 border-gray-200 text-gray-700 font-medium w-full" />
-                        </div>
-                    </div>
 
-                    <div className="field flex items-center justify-between mb-4">
-                        <div>
-                            <label htmlFor="is_active" className="font-semibold block text-sm text-gray-800 m-0">Active Status</label>
-                            <small className="text-gray-500 mt-1 block">Toggle to enable or disable this admin account globally.</small>
+                        <div className="formgrid grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div className="field col-span-1">
+                                <label htmlFor="location_id" className="font-semibold block mb-1 text-sm text-gray-700">Location (City) *</label>
+                                <Dropdown id="location_id" value={admin.location_id} options={groupedLocationOptions}
+                                    optionGroupLabel="label" optionGroupChildren="items" optionLabel="label" optionValue="value"
+                                    onChange={onLocationChange} placeholder="Select City" filter
+                                    filterPlaceholder="Search by city..." required
+                                    className={`w-full ${submitted && !admin.location_id ? 'p-invalid' : ''}`}
+                                    panelClassName="md:w-[22rem]" />
+                                {submitted && !admin.location_id && <small className="p-error block mt-1 text-red-500">Location is required.</small>}
+                            </div>
+                            <div className="field col-span-1">
+                                <label htmlFor="autoCountry" className="font-semibold block mb-1 text-sm text-gray-700">Country</label>
+                                <InputText id="autoCountry" value={autoCountry} disabled className="bg-gray-100/70 border-gray-200 text-gray-700 font-medium w-full" />
+                            </div>
+                            <div className="field col-span-1">
+                                <label htmlFor="autoContinent" className="font-semibold block mb-1 text-sm text-gray-700">Continent</label>
+                                <InputText id="autoContinent" value={autoContinent} disabled className="bg-gray-100/70 border-gray-200 text-gray-700 font-medium w-full" />
+                            </div>
                         </div>
-                        <InputSwitch id="is_active" checked={admin.is_active} onChange={(e) => onSwitchChange(e, 'is_active')} />
-                    </div>
 
-                    <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
-                        <Button label="Cancel" onClick={hideDialog} className="bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 w-auto px-6 h-10 shadow-sm transition-colors" />
-                        <Button label="Save" severity="success" onClick={saveAdmin} className="bg-blue-600 text-white hover:bg-blue-700 border border-blue-600 w-auto px-6 h-10 shadow-sm transition-colors" />
+                        <div className="field flex items-center justify-between mb-4">
+                            <div>
+                                <label htmlFor="is_active" className="font-semibold block text-sm text-gray-800 m-0">Active Status</label>
+                                <small className="text-gray-500 mt-1 block">Toggle to enable or disable this admin account globally.</small>
+                            </div>
+                            <InputSwitch id="is_active" checked={admin.is_active} onChange={(e) => onSwitchChange(e, 'is_active')} />
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+                            <Button label="Cancel" onClick={hideDialog} className="bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 w-auto px-6 h-10 shadow-sm transition-colors" />
+                            <Button label="Save" severity="success" onClick={saveAdmin} className="bg-blue-600 text-white hover:bg-blue-700 border border-blue-600 w-auto px-6 h-10 shadow-sm transition-colors" />
+                        </div>
                     </div>
                 </div>
-            </div>
-        </Dialog>
+            </Dialog>
 
             <Dialog visible={deleteAdminDialog} style={{ width: '32rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Confirm Deletion" modal className="custom-admin-dialog" footer={deleteAdminDialogFooter} onHide={hideDeleteAdminDialog}>
                 <div className="confirmation-content flex items-center gap-3">
@@ -618,18 +620,18 @@ export default function AdminManagement() {
                 </div>
             </Dialog>
 
-            <ExportOptionsModal 
-                visible={exportModalVisible} 
-                onHide={() => setExportModalVisible(false)} 
-                columns={printColumns} 
-                onExport={handlePdfExport} 
+            <ExportOptionsModal
+                visible={exportModalVisible}
+                onHide={() => setExportModalVisible(false)}
+                columns={printColumns}
+                onExport={handlePdfExport}
             />
 
-            <PrintSelectionModal 
-                visible={printModalVisible} 
-                onHide={() => setPrintModalVisible(false)} 
-                columns={printColumns} 
-                onPrint={handlePrintSelection} 
+            <PrintSelectionModal
+                visible={printModalVisible}
+                onHide={() => setPrintModalVisible(false)}
+                columns={printColumns}
+                onPrint={handlePrintSelection}
             />
 
             {/* Hidden Print Table */}
@@ -654,8 +656,8 @@ export default function AdminManagement() {
                                             .filter(col => selectedPrintColumns.includes(col.field))
                                             .map(col => (
                                                 <td key={col.field}>
-                                                    {col.field === 'is_active' 
-                                                        ? (adm.is_active ? 'ACTIVE' : 'INACTIVE') 
+                                                    {col.field === 'is_active'
+                                                        ? (adm.is_active ? 'ACTIVE' : 'INACTIVE')
                                                         : col.field === 'mobile_number'
                                                             ? (adm.mobile_number || '-')
                                                             : adm[col.field]}

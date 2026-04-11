@@ -9,6 +9,8 @@ class StudentBase(BaseModel):
     address: Optional[str] = None
     dob: Optional[date] = None
     gender: Optional[str] = None
+    category: Optional[str] = None
+    stage: Optional[str] = None
     enrollment_number: Optional[str] = None
 
 class StudentCreate(StudentBase):
@@ -30,7 +32,11 @@ class StudentResponse(StudentBase):
     email: str
     is_active: bool
     role: str
+    assessment_status: Optional[str] = "pending"
     activation_email_sent: Optional[bool] = False
+    location_name: Optional[str] = None
+    admin_name: Optional[str] = None
+    assessment_marks: Optional[float] = None
     created_at: Optional[datetime] = None
     
     class Config:
@@ -38,3 +44,10 @@ class StudentResponse(StudentBase):
 
 class StudentActivation(BaseModel):
     is_active: bool
+
+class AssessmentResponseItem(BaseModel):
+    assessment_id: UUID
+    choice: int
+
+class AssessmentSubmissionPayload(BaseModel):
+    responses: list[AssessmentResponseItem]

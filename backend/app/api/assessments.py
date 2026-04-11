@@ -3,10 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import delete
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 
 from app.db.database import get_db
-from app.db.models import Assessment, User, Admin, UserRole
+from app.db.models import Assessment, User, Admin, Leader, UserRole, Location, AssessmentResult
 from app.api.auth import get_current_user
 from app.schemas.assessment import (
     AssessmentResponse,
@@ -18,9 +19,53 @@ from app.schemas.assessment import (
 router = APIRouter()
 
 async def verify_admin_or_higher(current_user: User = Depends(get_current_user)):
-    if current_user.role not in [UserRole.super_admin, UserRole.admin]:
-        raise HTTPException(status_code=403, detail="Not enough permissions. Admin or Super Admin required.")
+    if current_user.role not in [UserRole.super_admin, UserRole.admin, UserRole.leader]:
+        raise HTTPException(status_code=403, detail="Not enough permissions. Admin, Super Admin, or Leader required.")
     return current_user
+
+@router.get("/results/{user_id}", response_model=List[dict])
+async def get_user_assessment_results(user_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    query = select(AssessmentResult).options(selectinload(AssessmentResult.assessment)).where(AssessmentResult.user_id == user_id)
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    
+    response = []
+    for r in rows:
+        choice_text = getattr(r.assessment, f"choice_{r.selected_choice}", "")
+        response.append({
+            "question_text": r.assessment.question_text,
+            "selected_choice_text": choice_text,
+            "awarded_grade": r.awarded_grade
+        })
+    return response
+
+@router.get("/student", response_model=List[AssessmentResponse])
+async def get_student_assessment(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.student:
+        raise HTTPException(status_code=403, detail="Only students can access their test.")
+    
+    query = select(Assessment)
+    if current_user.location_id:
+        loc_res = await db.execute(select(Location).where(Location.id == current_user.location_id))
+        user_loc = loc_res.scalar_one_or_none()
+        
+        if user_loc:
+            query = query.where(
+                (Assessment.location_id == current_user.location_id) |
+                (Assessment.location_module == user_loc.city) |
+                (Assessment.location_module == user_loc.country) |
+                (Assessment.location_module == user_loc.continent)
+            )
+        else:
+            query = query.where(Assessment.location_id == current_user.location_id)
+            
+    if current_user.category:
+        query = query.where(Assessment.category == current_user.category)
+    if current_user.stage:
+        query = query.where(Assessment.stage == current_user.stage)
+        
+    result = await db.execute(query)
+    return result.scalars().all()
 
 @router.get("/", response_model=List[AssessmentResponse])
 async def read_assessments(
@@ -40,6 +85,14 @@ async def read_assessments(
         admin = admin_res.scalar_one_or_none()
         if admin and admin.location_id:
             query = query.where(Assessment.location_id == admin.location_id)
+    elif current_user.role == UserRole.leader:
+        leader_res = await db.execute(select(Leader).where(Leader.user_id == current_user.id))
+        leader = leader_res.scalar_one_or_none()
+        if leader and leader.admin_id:
+            admin_res = await db.execute(select(Admin).where(Admin.id == leader.admin_id))
+            admin = admin_res.scalar_one_or_none()
+            if admin and admin.location_id:
+                query = query.where(Assessment.location_id == admin.location_id)
     
     result = await db.execute(query)
     assessments = result.scalars().all()
@@ -66,6 +119,14 @@ async def create_assessment(assessment: AssessmentCreate, db: AsyncSession = Dep
         admin = admin_res.scalar_one_or_none()
         if admin:
             assigned_location_id = admin.location_id
+    elif current_user.role == UserRole.leader:
+        leader_res = await db.execute(select(Leader).where(Leader.user_id == current_user.id))
+        leader = leader_res.scalar_one_or_none()
+        if leader and leader.admin_id:
+            admin_res = await db.execute(select(Admin).where(Admin.id == leader.admin_id))
+            admin = admin_res.scalar_one_or_none()
+            if admin:
+                assigned_location_id = admin.location_id
 
     db_assessment = Assessment(**assessment.model_dump())
     db_assessment.location_id = assigned_location_id
@@ -82,6 +143,14 @@ async def bulk_create_assessments(data: AssessmentBulkCreate, db: AsyncSession =
         admin = admin_res.scalar_one_or_none()
         if admin:
             assigned_location_id = admin.location_id
+    elif current_user.role == UserRole.leader:
+        leader_res = await db.execute(select(Leader).where(Leader.user_id == current_user.id))
+        leader = leader_res.scalar_one_or_none()
+        if leader and leader.admin_id:
+            admin_res = await db.execute(select(Admin).where(Admin.id == leader.admin_id))
+            admin = admin_res.scalar_one_or_none()
+            if admin:
+                assigned_location_id = admin.location_id
 
     db_assessments = [Assessment(**a.model_dump(), location_id=assigned_location_id) for a in data.assessments]
     db.add_all(db_assessments)

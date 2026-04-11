@@ -129,6 +129,41 @@ def send_admin_creation_email(to_email: str, name: str, password: str) -> bool:
         logger.error("Failed to send admin creation email to %s: %s", to_email, str(e))
         return False
 
+def _build_leader_creation_email_html(name: str, password: str, email: str) -> str:
+    """Build a professional HTML email body for new Leader creation."""
+    return f"""\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body style="margin:0;padding:0;background-color:#0a1929;font-family:'Segoe UI',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0a1929;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color:#0d2137;border-radius:16px;">
+          <tr>
+            <td style="padding:40px;text-align:center;">
+              <h1 style="color:#cca673;">MEDIA PLATFORM</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="color:#ffffff;">Welcome, {name}!</h2>
+              <p style="color:#b8c6d3;">Your new leader account has been successfully created.</p>
+              <p style="color:#ffffff;"><strong>Email/Username:</strong> {email}</p>
+              <p style="color:#ffffff;"><strong>Temporary Password:</strong> <span style="color:#cca673;font-size:16px;">{password}</span></p>
+              <br>
+              <a href="{settings.FRONTEND_URL}" style="display:inline-block;padding:14px 40px;background-color:#cca673;font-weight:700;color:#0a1929;text-decoration:none;">LOGIN TO PORTAL</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
 def send_leader_creation_email(to_email: str, name: str, password: str) -> bool:
     """Send a welcome email with credentials to a new Leader via generic SMTP."""
     msg = MIMEMultipart("alternative")
@@ -136,7 +171,7 @@ def send_leader_creation_email(to_email: str, name: str, password: str) -> bool:
     msg["From"] = settings.MAIL_FROM
     msg["To"] = to_email
 
-    html_body = _build_admin_creation_email_html(name, password, to_email) # Reusing the clean HTML template
+    html_body = _build_leader_creation_email_html(name, password, to_email)
     msg.attach(MIMEText(html_body, "html"))
 
     try:
@@ -151,21 +186,58 @@ def send_leader_creation_email(to_email: str, name: str, password: str) -> bool:
         logger.error("Failed to send leader creation email to %s: %s", to_email, str(e))
         return False
 
+def _build_student_creation_email_html(name: str, enrollment: str, password: str, email: str) -> str:
+    """Build a professional HTML email body for new Student creation."""
+    return f"""\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body style="margin:0;padding:0;background-color:#0a1929;font-family:'Segoe UI',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0a1929;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color:#0d2137;border-radius:16px;">
+          <tr>
+            <td style="padding:40px;text-align:center;">
+              <h1 style="color:#cca673;">MEDIA PLATFORM</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="color:#ffffff;">Welcome to the Platform, {name}!</h2>
+              <p style="color:#b8c6d3;">Your student account has been officially registered.</p>
+              <p style="color:#ffffff;"><strong>Email:</strong> {email}</p>
+              <p style="color:#ffffff;"><strong>Enrollment Number:</strong> {enrollment}</p>
+              <p style="color:#ffffff;"><strong>Temporary Password:</strong> <span style="color:#cca673;font-size:16px;">{password}</span></p>
+              <br>
+              <a href="{settings.FRONTEND_URL}" style="display:inline-block;padding:14px 40px;background-color:#cca673;font-weight:700;color:#0a1929;text-decoration:none;">LOGIN TO PORTAL</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
 def send_student_activation_email(to_email: str, name: str, enrollment: str, password: str) -> bool:
-    """Send student activation email via generic SMTP."""
+    """Send student activation email via generic SMTP using stylized HTML."""
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Conta Ativada - Bem-vindo à Plataforma"
+    msg["Subject"] = "Welcome - Your Student Account is Ready"
     msg["From"] = settings.MAIL_FROM
     msg["To"] = to_email
 
-    text_body = f"Olá {name},\nSua conta foi ativada!\nMatrícula: {enrollment}\nSenha: {password}\nAcesse: {settings.FRONTEND_URL}"
-    msg.attach(MIMEText(text_body, "plain"))
+    html_body = _build_student_creation_email_html(name, enrollment, password, to_email)
+    msg.attach(MIMEText(html_body, "html"))
 
     try:
         server = _get_smtp_server()
         if server:
             server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
             server.quit()
+            logger.info("Student creation email sent to %s", to_email)
             return True
         return False
     except Exception as e:

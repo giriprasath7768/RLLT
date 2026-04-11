@@ -3,18 +3,22 @@ import axios from 'axios';
 const API_URL = 'http://localhost:8000/api/assessments';
 
 export const AssessmentService = {
+    getStudentAssessments() {
+        return axios.get(`${API_URL}/student`, { withCredentials: true }).then(res => res.data);
+    },
+
     getAssessments(name = '', locationModule = '') {
         const params = new URLSearchParams();
         if (name) params.append('name', name);
         if (locationModule) params.append('location_module', locationModule);
-        
+
         return axios.get(`${API_URL}?${params.toString()}`, { withCredentials: true }).then(res => res.data);
     },
 
     getAssessmentOptions() {
         return axios.get(`${API_URL}/options`, { withCredentials: true }).then(res => res.data);
     },
-    
+
     createAssessment(assessment) {
         return axios.post(API_URL, assessment, { withCredentials: true }).then(res => res.data);
     },
@@ -36,6 +40,10 @@ export const AssessmentService = {
     },
 
     purgeAssessments(name, locationModule) {
-        return axios.delete(`${API_URL}/purge?name=${name}&location_module=${locationModule}`, { withCredentials: true }).then(res => res.data);
+        return axios.delete(`${API_URL}/purge`, { params: { name, location_module: locationModule }, withCredentials: true }).then(res => res.data);
+    },
+
+    getAssessmentResults(userId) {
+        return axios.get(`${API_URL}/results/${userId}`, { withCredentials: true }).then(res => res.data);
     }
 };

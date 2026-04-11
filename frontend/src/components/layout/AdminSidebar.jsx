@@ -9,7 +9,7 @@ const SidebarItem = ({ item, onClick }) => {
     if (item.items) {
         return (
             <div className="flex flex-col">
-                <div 
+                <div
                     onClick={() => setIsOpen(!isOpen)}
                     className="flex items-center justify-between px-6 py-4 cursor-pointer transition-all duration-200 border-l-4 border-transparent text-gray-300 hover:bg-gray-700 hover:text-white"
                 >
@@ -70,24 +70,25 @@ const AdminSidebar = ({ visible, onHide }) => {
     }, []);
 
     const menuItems = [
-        { label: 'Dashboard', icon: 'pi pi-home', to: userRole === 'admin' ? '/dashboard/admin' : '/dashboard/super-admin' },
+        { label: 'Dashboard', icon: 'pi pi-home', to: userRole === 'leader' ? '/dashboard/leader' : userRole === 'admin' ? '/dashboard/admin' : '/dashboard/super-admin' },
         ...(userRole === 'super_admin' ? [{ label: 'Manage Admin', icon: 'pi pi-shield', to: '/admin/manage-admin' }] : []),
-        { label: 'Manage Leaders', icon: 'pi pi-users', to: '/admin/manage-leaders' },
+        ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Manage Leaders', icon: 'pi pi-users', to: '/admin/manage-leaders' }] : []),
         { label: 'Manage Students', icon: 'pi pi-id-card', to: '/admin/manage-students' },
         { label: 'Manage Assessment', icon: 'pi pi-file-edit', to: '/admin/manage-assessment' },
+        { label: 'Assessment Results', icon: 'pi pi-chart-line', to: '/admin/assessment-results' },
         { label: 'Assign Chart', icon: 'pi pi-calendar-plus', to: '/admin/assign-chart' },
-        { 
-            label: 'Chart Creation', 
-            icon: 'pi pi-chart-bar', 
+        ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+            label: 'Chart Creation',
+            icon: 'pi pi-chart-bar',
             items: [
                 { label: 'Main Chart', icon: 'pi pi-chart-line', to: '/admin/charts' },
                 { label: 'V-Card Chart', icon: 'pi pi-id-card', to: '/admin/chart-listing/vcard-chart' },
                 { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/twenty-four-seven-chart' }
             ]
-        },
-        { 
-            label: 'Chart Listing', 
-            icon: 'pi pi-list', 
+        }] : []),
+        {
+            label: 'Chart Listing',
+            icon: 'pi pi-list',
             items: [
                 { label: 'Main Chart', icon: 'pi pi-eye', to: '/admin/chart-listing/main-chart' },
                 { label: 'Morning & Evening', icon: 'pi pi-calendar-plus', to: '/admin/chart-listing/morning-evening-chart' },
@@ -100,16 +101,17 @@ const AdminSidebar = ({ visible, onHide }) => {
                 { label: '24x7 DL Size Chart', icon: 'pi pi-table', to: '/admin/chart-listing/twenty-four-seven-dl-size-chart' }
             ]
         },
-        { 
-            label: 'Library', 
-            icon: 'pi pi-folder-open', 
+        ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+            label: 'Library',
+            icon: 'pi pi-folder-open',
             items: [
                 { label: 'Book Master', icon: 'pi pi-book', to: '/admin/books' },
                 { label: 'Chapter Master', icon: 'pi pi-bookmark', to: '/admin/chapters' },
                 { label: 'RLLT Table Data', icon: 'pi pi-table', to: '/admin/rllt-data' }
             ]
-        },
-        { label: 'Manage Training Contents', icon: 'pi pi-video', to: '/admin/manage-training' },
+        }] : []),
+        ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Manage Training Contents', icon: 'pi pi-video', to: '/admin/manage-training' }] : []),
+        ...(userRole === 'super_admin' ? [{ label: 'Players', icon: 'pi pi-play', to: '/admin/players' }] : []),
         ...(userRole === 'super_admin' ? [{ label: 'Locations', icon: 'pi pi-map-marker', to: '/admin/locations' }] : []),
     ];
 

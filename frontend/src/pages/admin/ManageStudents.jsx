@@ -12,6 +12,7 @@ import { Calendar } from 'primereact/calendar';
 import { Paginator } from 'primereact/paginator';
 import { StudentService } from '../../services/studentService';
 import MobileDataCard from '../../components/common/MobileDataCard';
+import { calculateStudentLevel } from '../../utils/studentUtils';
 import '../../assets/css/AdminManagement.css';
 
 export default function ManageStudents() {
@@ -24,6 +25,8 @@ export default function ManageStudents() {
         enrollment_number: '',
         dob: null,
         gender: '',
+        category: '',
+        stage: '',
         is_active: false
     };
 
@@ -34,7 +37,8 @@ export default function ManageStudents() {
     const [selectedStudents, setSelectedStudents] = useState(null);
     const [submitted, setSubmitted] = useState(false);
     const [globalFilter, setGlobalFilter] = useState(null);
-    
+    const [bulkToggle, setBulkToggle] = useState(false);
+
     const [first, setFirst] = useState(0);
     const [rows, setRows] = useState(10);
 
@@ -82,28 +86,36 @@ export default function ManageStudents() {
         setSubmitted(true);
         if (student.name && student.email) {
             let _student = { ...student };
-            
+
             // Format Date for API submission
             if (_student.dob && _student.dob instanceof Date) {
-               _student.dob = new Date(_student.dob.getTime() - (_student.dob.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                _student.dob = new Date(_student.dob.getTime() - (_student.dob.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
             } else {
-               _student.dob = null;
+                _student.dob = null;
             }
+
+            const handleError = (err, fallback) => {
+                let errorDetail = fallback;
+                if (err.response?.data?.detail) {
+                    if (Array.isArray(err.response.data.detail)) {
+                        errorDetail = err.response.data.detail.map(d => `${d.loc?.[1] || 'Field'}: ${d.msg}`).join(', ');
+                    } else if (typeof err.response.data.detail === 'string') {
+                        errorDetail = err.response.data.detail;
+                    }
+                }
+                toast.current.show({ severity: 'error', summary: 'Error', detail: errorDetail, life: 4000 });
+            };
 
             if (student.id) {
                 StudentService.updateStudent(_student.id, _student).then(() => {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Student Updated', life: 3000 });
                     loadData();
-                }).catch(err => {
-                    toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.detail || 'Failed to update', life: 3000 });
-                });
+                }).catch(err => handleError(err, 'Failed to update'));
             } else {
                 StudentService.createStudent(_student).then(() => {
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Student Created.', life: 3000 });
                     loadData();
-                }).catch(err => {
-                    toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.detail || 'Failed to create', life: 3000 });
-                });
+                }).catch(err => handleError(err, 'Failed to create'));
             }
             setStudentDialog(false);
             setStudent(emptyStudent);
@@ -151,9 +163,9 @@ export default function ManageStudents() {
 
         StudentService.activateStudent(rowData.id, newStatus).then(res => {
             if (newStatus && !rowData.activation_email_sent) {
-                 toast.current.show({ severity: 'success', summary: 'Activated', detail: 'Student activated and credentials sent to email.', life: 4000 });
+                toast.current.show({ severity: 'success', summary: 'Activated', detail: 'Student activated and credentials sent to email.', life: 4000 });
             } else {
-                 toast.current.show({ severity: 'info', summary: 'Status Updated', detail: `Student status set to ${newStatus ? 'ACTIVE' : 'INACTIVE'}.`, life: 3000 });
+                toast.current.show({ severity: 'info', summary: 'Status Updated', detail: `Student status set to ${newStatus ? 'ACTIVE' : 'INACTIVE'}.`, life: 3000 });
             }
             loadData(); // Sync exact server state
         }).catch(err => {
@@ -164,10 +176,43 @@ export default function ManageStudents() {
         });
     };
 
+    const handleBulkToggle = (e) => {
+        const activate = e.value;
+        setBulkToggle(activate);
+
+        if (activate) {
+            const selected = selectedStudents || [];
+            if (selected.length === 0) {
+                toast.current.show({ severity: 'warn', summary: 'No Selection', detail: 'Please select at least one student first.', life: 3000 });
+                setTimeout(() => setBulkToggle(false), 500);
+                return;
+            }
+
+            const inactiveIds = selected.filter(s => !s.is_active).map(s => s.id);
+            if (inactiveIds.length === 0) {
+                toast.current.show({ severity: 'info', summary: 'Info', detail: 'All students in the current view are already active.', life: 3000 });
+                setTimeout(() => setBulkToggle(false), 500); // Visual reset organically
+                return;
+            }
+
+            StudentService.bulkActivateStudents(inactiveIds).then(res => {
+                toast.current.show({ severity: 'success', summary: 'Bulk Processed', detail: res.message, life: 4000 });
+                loadData();
+            }).catch(err => {
+                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to bulk activate students.', life: 3000 });
+                setBulkToggle(false);
+            });
+        }
+    };
+
     const topCardContent = (
-        <div className="flex flex-wrap gap-2 w-full justify-start">
+        <div className="flex flex-wrap gap-4 w-full justify-start items-center">
             <Button label="New Student" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
-            <Button label="Export" icon="pi pi-upload" severity="help" onClick={() => dt.current.exportCSV()} />
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg">
+                <span className="font-bold text-[#2F5597] text-sm">BULK ACTIVATE:</span>
+                <InputSwitch checked={bulkToggle} onChange={handleBulkToggle} />
+            </div>
+            <Button label="Export" icon="pi pi-upload" severity="help" onClick={() => dt.current.exportCSV()} className="ml-auto hidden md:flex" />
         </div>
     );
 
@@ -190,19 +235,25 @@ export default function ManageStudents() {
         );
     };
 
+
+
+    const marksBodyTemplate = (rowData) => {
+        return <div className="text-center font-bold text-[#2F5597]">{rowData.assessment_marks ?? '-'}</div>;
+    };
+
     const statusBodyTemplate = (rowData) => {
         return (
             <div className="flex justify-center items-center">
-                <InputSwitch 
-                    checked={rowData.is_active} 
-                    onChange={(e) => onActivationToggle(e, rowData)} 
-                    tooltip={rowData.is_active ? 'Active' : 'Inactive'} 
-                    tooltipOptions={{position: 'top'}}
+                <InputSwitch
+                    checked={rowData.is_active}
+                    onChange={(e) => onActivationToggle(e, rowData)}
+                    tooltip={rowData.is_active ? 'Active' : 'Inactive'}
+                    tooltipOptions={{ position: 'top' }}
                 />
             </div>
         );
     };
-    
+
     const dateBodyTemplate = (rowData) => {
         if (!rowData.created_at) return '-';
         return new Date(rowData.created_at).toLocaleDateString();
@@ -214,7 +265,11 @@ export default function ManageStudents() {
         return (
             (stu.name && stu.name.toLowerCase().includes(search)) ||
             (stu.email && stu.email.toLowerCase().includes(search)) ||
-            (stu.enrollment_number && stu.enrollment_number.toLowerCase().includes(search))
+            (stu.enrollment_number && stu.enrollment_number.toLowerCase().includes(search)) ||
+            (stu.category && stu.category.toLowerCase().includes(search)) ||
+            (stu.stage && String(stu.stage).toLowerCase().includes(search)) ||
+            (stu.location_name && stu.location_name.toLowerCase().includes(search)) ||
+            (stu.admin_name && stu.admin_name.toLowerCase().includes(search))
         );
     });
 
@@ -241,20 +296,26 @@ export default function ManageStudents() {
                 </div>
 
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
-                    <DataTable ref={dt} value={students} dataKey="id" 
-                            paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
-                            globalFilter={globalFilter} header={tableHeader}
-                            className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines
-                            rowClassName={() => 'bg-white text-black'}>
-                        
+                    <DataTable ref={dt} value={students} dataKey="id"
+                        selectionMode="checkbox" selection={selectedStudents} onSelectionChange={(e) => setSelectedStudents(e.value)}
+                        paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
+                        globalFilter={globalFilter} header={tableHeader}
+                        className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines
+                        rowClassName={() => 'bg-white text-black'}>
+
+                        <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
                         <Column header="S.No" body={(data, options) => first + options.rowIndex + 1} exportable={false} style={{ width: '4rem' }} headerClassName="admin-table-header"></Column>
-                        <Column field="enrollment_number" header="Enrollment No" sortable style={{ minWidth: '10rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="category" header="Category" sortable style={{ minWidth: '8rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="stage" header="Stage" sortable style={{ minWidth: '6rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="dob" header="Age" body={(rowData) => calculateStudentLevel(rowData.dob).age} sortable style={{ minWidth: '6rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="name" header="Name" sortable style={{ minWidth: '12rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="email" header="Email ID" sortable style={{ minWidth: '14rem' }} headerClassName="admin-table-header"></Column>
-                        <Column field="mobile_number" header="Mobile" sortable style={{ minWidth: '10rem' }} headerClassName="admin-table-header"></Column>
-                        <Column field="created_at" header="Registration Date" body={dateBodyTemplate} sortable style={{ minWidth: '10rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="mobile_number" header="Mobile Number" sortable style={{ minWidth: '10rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="location_name" header="Location" sortable style={{ minWidth: '8rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="admin_name" header="Assigned Admin" sortable style={{ minWidth: '10rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="assessment_marks" header="Marks" body={marksBodyTemplate} sortable align="center" style={{ minWidth: '6rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="is_active" header="Status" body={statusBodyTemplate} sortable align="center" style={{ minWidth: '6rem' }} headerClassName="admin-table-header"></Column>
-                        <Column body={actionBodyTemplate} exportable={false} style={{ minWidth: '8rem' }} headerClassName="admin-table-header"></Column>
+                        <Column header="Activity" body={actionBodyTemplate} exportable={false} style={{ minWidth: '8rem' }} headerClassName="admin-table-header"></Column>
                     </DataTable>
                 </div>
 
@@ -269,19 +330,22 @@ export default function ManageStudents() {
                 <div className="block md:hidden mt-4">
                     {filteredStudents.length > 0 ? (
                         filteredStudents.map(stu => (
-                            <MobileDataCard 
+                            <MobileDataCard
                                 key={stu.id}
-                                title={`${stu.name} (${stu.enrollment_number})`}
+                                title={`${stu.name} (${stu.category ? `Cat: ${stu.category}` : 'Uncategorized'}, Stage: ${stu.stage || '-'})`}
                                 data={[
+                                    { label: 'Age', value: calculateStudentLevel(stu.dob).age },
                                     { label: 'Email', value: stu.email },
                                     { label: 'Mobile', value: stu.mobile_number || '-' },
-                                    { label: 'Registration Date', value: dateBodyTemplate(stu) },
-                                    { 
-                                        label: 'Status', 
+                                    { label: 'Location', value: stu.location_name || '-' },
+                                    { label: 'Admin', value: stu.admin_name || '-' },
+                                    { label: 'Marks', value: stu.assessment_marks ?? '-' },
+                                    {
+                                        label: 'Status',
                                         value: (
-                                            <InputSwitch 
-                                                checked={stu.is_active} 
-                                                onChange={(e) => onActivationToggle(e, stu)} 
+                                            <InputSwitch
+                                                checked={stu.is_active}
+                                                onChange={(e) => onActivationToggle(e, stu)}
                                             />
                                         )
                                     }
@@ -329,11 +393,19 @@ export default function ManageStudents() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="field mb-4">
                         <label htmlFor="dob" className="font-bold block mb-2">Date of Birth</label>
-                        <Calendar id="dob" value={student.dob} onChange={(e) => setStudent({...student, dob: e.value})} dateFormat="dd/mm/yy" showIcon maxDate={new Date()} />
+                        <Calendar id="dob" value={student.dob} onChange={(e) => {
+                            const cal = calculateStudentLevel(e.value);
+                            setStudent({ ...student, dob: e.value, category: cal.category, stage: cal.stage });
+                        }} dateFormat="dd/mm/yy" showIcon maxDate={new Date()} />
+                        {student.category && (
+                            <small className="block mt-1 text-green-600 font-bold">
+                                Category: {student.category} | Stage: {student.stage}
+                            </small>
+                        )}
                     </div>
                     <div className="field mb-4">
                         <label htmlFor="gender" className="font-bold block mb-2">Gender</label>
-                        <Dropdown id="gender" value={student.gender} options={genderOptions} onChange={(e) => setStudent({...student, gender: e.value})} placeholder="Select Gender" />
+                        <Dropdown id="gender" value={student.gender} options={genderOptions} onChange={(e) => setStudent({ ...student, gender: e.value })} placeholder="Select Gender" />
                     </div>
                 </div>
 

@@ -27,8 +27,12 @@ class User(Base):
     mobile_number = Column(String, nullable=True)
     dob = Column(DateTime(timezone=True), nullable=True)
     gender = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    stage = Column(String, nullable=True)
     enrollment_number = Column(String, unique=True, index=True, nullable=True)
     activation_email_sent = Column(Boolean, default=False)
+    assessment_status = Column(String, default="pending")
+    assessment_marks = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     media = relationship("Media", back_populates="owner")
@@ -106,6 +110,19 @@ class Leader(Base):
 
     user = relationship("User", backref="leader_profile")
     admin = relationship("Admin", backref="leaders")
+
+class AssessmentResult(Base):
+    __tablename__ = "assessment_results"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    assessment_id = Column(UUID(as_uuid=True), ForeignKey("assessments.id"), nullable=False)
+    selected_choice = Column(Integer, nullable=False)
+    awarded_grade = Column(Float, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", backref="assessment_results")
+    assessment = relationship("Assessment")
 
 class Assessment(Base):
     __tablename__ = "assessments"
