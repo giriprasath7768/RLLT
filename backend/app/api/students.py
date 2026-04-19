@@ -7,8 +7,11 @@ from typing import List
 from uuid import UUID
 
 from app.db.database import get_db
-from app.db.models import User, UserRole, Admin, Leader, Location, Assessment, AssessmentResult
-from app.schemas.student import StudentCreate, StudentUpdate, StudentResponse, StudentActivation, AssessmentSubmissionPayload
+from app.db.models import User, UserRole, Admin, Leader, Location, Assessment, AssessmentResult, StudentGroup
+from app.schemas.student import StudentCreate, StudentUpdate, StudentResponse, StudentActivation, AssessmentSubmissionPayload, StudentGroupResponse, AutoGroupPayload
+from sqlalchemy import delete, update, func
+from sqlalchemy.orm import selectinload
+import math
 from app.api.auth import get_current_user
 from app.core.security import get_password_hash
 from app.services.email_service import send_student_activation_email
@@ -30,9 +33,10 @@ async def verify_admin_or_higher(current_user: User = Depends(get_current_user))
 
 @router.get("/", response_model=List[StudentResponse])
 async def get_students(db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
-    query = select(User, Location.city.label("location_name"), Admin.name.label("admin_name")) \
+    query = select(User, Location.city.label("location_name"), Admin.name.label("admin_name"), StudentGroup.name.label("group_name")) \
         .outerjoin(Location, User.location_id == Location.id) \
         .outerjoin(Admin, Admin.location_id == Location.id) \
+        .outerjoin(StudentGroup, User.group_id == StudentGroup.id) \
         .where(User.role == UserRole.student)
     
     if current_user.role == UserRole.admin:
@@ -53,7 +57,7 @@ async def get_students(db: AsyncSession = Depends(get_db), current_user: User = 
     
     rows = result.all()
     response_list = []
-    for user_obj, loc_name, adm_name in rows:
+    for user_obj, loc_name, adm_name, grp_name in rows:
         user_dict = {
             "id": user_obj.id,
             "email": user_obj.email,
@@ -72,7 +76,8 @@ async def get_students(db: AsyncSession = Depends(get_db), current_user: User = 
             "activation_email_sent": user_obj.activation_email_sent,
             "created_at": user_obj.created_at,
             "location_name": loc_name,
-            "admin_name": adm_name
+            "admin_name": adm_name,
+            "group_name": grp_name
         }
         response_list.append(user_dict)
     
@@ -267,3 +272,138 @@ async def bulk_approve_assessments(payload: BulkApprovePayload, db: AsyncSession
         
     await db.commit()
     return {"message": f"Successfully updated {count} assessment statuses."}
+
+@router.post("/grouping/auto", response_model=dict)
+async def auto_group_students(payload: AutoGroupPayload, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    loc_id = None
+    if current_user.role == UserRole.admin:
+        admin_res = await db.execute(select(Admin).where(Admin.user_id == current_user.id))
+        admin = admin_res.scalar_one_or_none()
+        if admin:
+            loc_id = admin.location_id
+    elif current_user.role == UserRole.leader:
+        leader_res = await db.execute(select(Leader).where(Leader.user_id == current_user.id))
+        leader = leader_res.scalar_one_or_none()
+        if leader and leader.admin_id:
+            adm_res = await db.execute(select(Admin).where(Admin.id == leader.admin_id))
+            adm = adm_res.scalar_one_or_none()
+            if adm:
+                loc_id = adm.location_id
+                
+    if not loc_id and current_user.role != UserRole.super_admin:
+        return {"message": "Location scope required for auto-grouping."}
+        
+    locations_to_group = []
+    if current_user.role == UserRole.super_admin:
+        res = await db.execute(select(Location.id))
+        locations_to_group = res.scalars().all()
+    else:
+        locations_to_group = [loc_id]
+        
+    total_groups_created = 0
+    
+    for l_id in locations_to_group:
+        # Clear existing group associations to prevent integrity errors before dropping the group entities
+        await db.execute(update(User).where(User.location_id == l_id).values(group_id=None))
+        await db.execute(delete(StudentGroup).where(StudentGroup.location_id == l_id))
+        
+        query = select(User).where(User.id.in_(payload.student_ids), User.location_id == l_id)
+        result = await db.execute(query)
+        students = result.scalars().all()
+        
+        if not students:
+            continue
+            
+        total_st = len(students)
+        num_groups = math.ceil(total_st / 5)
+        
+        def mark(s): 
+            return s.assessment_marks if s.assessment_marks is not None else 0.0
+        sorted_students = sorted(students, key=mark, reverse=True)
+        
+        split_idx = math.ceil(total_st * 0.6)
+        high_scorers = sorted_students[:split_idx]
+        low_scorers = sorted_students[split_idx:]
+        
+        loc_res = await db.execute(select(Location.city).where(Location.id == l_id))
+        loc_city = loc_res.scalar_one_or_none() or f"Loc {l_id}"
+        
+        groups_created = []
+        for i in range(num_groups):
+            g = StudentGroup(name=f"Group {i+1} ({loc_city})", location_id=l_id)
+            db.add(g)
+            groups_created.append(g)
+            
+        await db.flush()
+        
+        high_idx, low_idx = 0, 0
+        for g in groups_created:
+            for _ in range(3):
+                if high_idx < len(high_scorers):
+                    high_scorers[high_idx].group_id = g.id
+                    high_idx += 1
+            for _ in range(2):
+                if low_idx < len(low_scorers):
+                    low_scorers[low_idx].group_id = g.id
+                    low_idx += 1
+                    
+        for stu in low_scorers[low_idx:]:
+            stu.group_id = None
+            
+        total_groups_created += num_groups
+            
+    await db.commit()
+    
+    if total_groups_created == 0:
+        return {"message": "Not enough active students in any location to form groups."}
+    return {"message": f"Successfully created {total_groups_created} groups."}
+
+@router.post("/grouping/ungroup", response_model=dict)
+async def ungroup_students(payload: AutoGroupPayload, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    if not payload.student_ids:
+        return {"message": "No students provided for ungrouping."}
+        
+    await db.execute(update(User).where(User.id.in_(payload.student_ids)).values(group_id=None))
+    await db.flush()
+    
+    query = select(StudentGroup.id).outerjoin(User, User.group_id == StudentGroup.id).group_by(StudentGroup.id).having(func.count(User.id) == 0)
+    res = await db.execute(query)
+    empty_group_ids = res.scalars().all()
+    if empty_group_ids:
+        await db.execute(delete(StudentGroup).where(StudentGroup.id.in_(empty_group_ids)))
+        
+    await db.commit()
+    return {"message": "Successfully ungrouped selected students."}
+
+@router.get("/grouping", response_model=List[StudentGroupResponse])
+async def get_student_groups(db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    loc_id = None
+    if current_user.role == UserRole.admin:
+        admin_res = await db.execute(select(Admin).where(Admin.user_id == current_user.id))
+        admin = admin_res.scalar_one_or_none()
+        if admin:
+            loc_id = admin.location_id
+    elif current_user.role == UserRole.leader:
+        leader_res = await db.execute(select(Leader).where(Leader.user_id == current_user.id))
+        leader = leader_res.scalar_one_or_none()
+        if leader and leader.admin_id:
+            adm_res = await db.execute(select(Admin).where(Admin.id == leader.admin_id))
+            adm = adm_res.scalar_one_or_none()
+            if adm:
+                loc_id = adm.location_id
+                
+    query = select(StudentGroup).options(selectinload(StudentGroup.members))
+    if loc_id:
+        query = query.where(StudentGroup.location_id == loc_id)
+        
+    result = await db.execute(query)
+    groups = result.scalars().all()
+    
+    for g in groups:
+        for m in g.members:
+            m.location_name = None
+            m.admin_name = None
+            if hasattr(m.role, 'value'):
+                m.role = m.role.value
+            
+    return groups

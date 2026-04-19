@@ -9,7 +9,7 @@ import shutil
 from typing import Optional
 
 from app.db.database import get_db
-from app.db.models import ChartMapping
+from app.db.models import ChartMapping, SevenTNTChartMapping, SevenTNTDayCycleChartMapping
 
 router = APIRouter()
 
@@ -88,6 +88,12 @@ async def list_charts(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ChartMapping).order_by(ChartMapping.module, ChartMapping.facet, ChartMapping.phase))
     mappings = result.scalars().all()
     
+    result_seven = await db.execute(select(SevenTNTChartMapping).order_by(SevenTNTChartMapping.module, SevenTNTChartMapping.facet, SevenTNTChartMapping.phase))
+    seven_mappings = result_seven.scalars().all()
+
+    result_daycycle = await db.execute(select(SevenTNTDayCycleChartMapping).order_by(SevenTNTDayCycleChartMapping.module, SevenTNTDayCycleChartMapping.facet, SevenTNTDayCycleChartMapping.phase))
+    daycycle_mappings = result_daycycle.scalars().all()
+    
     charts = []
     for m in mappings:
         # Use banner text if available, fallback to Unnamed
@@ -122,6 +128,37 @@ async def list_charts(db: AsyncSession = Depends(get_db)):
             "banner_text": name_str,
             "state_payload": payload
         })
+        
+    for m in seven_mappings:
+        name_str = m.banner_text if m.banner_text else "Unnamed 7TNT Chart"
+        label = f"{name_str} (Mod {m.module} | Fct {m.facet} | Ph {m.phase})"
+        charts.append({
+            "id": str(m.id),
+            "label": label,
+            "module": m.module,
+            "facet": m.facet,
+            "phase": m.phase,
+            "chart_type": "7TNT Main Chart",
+            "tracking_days": 30, # default or parse payload if needed
+            "banner_text": name_str,
+            "state_payload": m.state_payload or ""
+        })
+
+    for m in daycycle_mappings:
+        name_str = m.banner_text if m.banner_text else "Unnamed 7TNT Day Cycle Chart"
+        label = f"{name_str} (Mod {m.module} | Fct {m.facet} | Ph {m.phase})"
+        charts.append({
+            "id": str(m.id),
+            "label": label,
+            "module": m.module,
+            "facet": m.facet,
+            "phase": m.phase,
+            "chart_type": "7TNT Day Cycle Chart",
+            "tracking_days": 30, # default or parse payload if needed
+            "banner_text": name_str,
+            "state_payload": m.state_payload or ""
+        })
+
     return charts
 
 

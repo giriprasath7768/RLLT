@@ -34,7 +34,9 @@ class User(Base):
     assessment_status = Column(String, default="pending")
     assessment_marks = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    group_id = Column(UUID(as_uuid=True), ForeignKey("student_groups.id"), nullable=True)
 
+    group = relationship("StudentGroup", back_populates="members")
     media = relationship("Media", back_populates="owner")
 
 class Media(Base):
@@ -159,6 +161,7 @@ class Book(Base):
     total_verses = Column(Integer, default=0)
     total_art = Column(Float, default=0.0)
     ppl = Column(Float, default=0.0)
+    book_type = Column(String, nullable=True)
 
     chapters = relationship("Chapter", back_populates="book", cascade="all, delete-orphan")
 
@@ -240,7 +243,9 @@ class Content(Base):
     book_id = Column(UUID(as_uuid=True), ForeignKey("books.id"), nullable=False)
     chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
     audio_url = Column(String, nullable=True)
+    audio_language = Column(String, nullable=True)
     video_url = Column(String, nullable=True)
+    pdf_url = Column(String, nullable=True)
     ref_link = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -263,3 +268,94 @@ class Assignment(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user = relationship("User", backref="assignments")
+
+class StudentGroup(Base):
+    __tablename__ = "student_groups"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    location = relationship("Location")
+    members = relationship("User", back_populates="group")
+
+class WordDocument(Base):
+    __tablename__ = "word_documents"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=True, default="Untitled Document")
+    content = Column(String, nullable=True)
+    watermark_url = Column(String, nullable=True)
+    language = Column(String, nullable=True)
+    country_code = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User")
+
+class TTOMUser(Base):
+    __tablename__ = "ttom_users"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    address = Column(String, nullable=True)
+    mobile_number = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False) # 4-digit password hashed
+    plain_password = Column(String(4), nullable=True) # Expose pin to data table mappings
+    is_active = Column(Boolean, default=True)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    location = relationship("Location")
+
+class TTOMAssignment(Base):
+    __tablename__ = "ttom_assignments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("ttom_users.id"), nullable=False)
+    chart_id = Column(String, nullable=True) # e.g. mapping ID
+    chart_type = Column(String, nullable=False) # e.g. "30-Day", "40-Day"
+    start_date = Column(DateTime(timezone=True), nullable=False)
+    end_date = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("TTOMUser", backref="assignments")
+
+class SevenTNTChartMapping(Base):
+    __tablename__ = "seven_tnt_chart_mappings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    module = Column(Integer, nullable=False)
+    facet = Column(Integer, nullable=False)
+    phase = Column(Integer, nullable=False)
+    banner_text = Column(String, nullable=True)
+    t_label = Column(String, nullable=True)
+    logo_url = Column(String, nullable=True)
+    state_payload = Column(String, nullable=False) # JSON blob stringified
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (UniqueConstraint('module', 'facet', 'phase', name='uq_seven_tnt_chart_mapping_mfp'),)
+
+class SevenTNTDayCycleChartMapping(Base):
+    __tablename__ = "seven_tnt_day_cycle_chart_mappings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    module = Column(Integer, nullable=False)
+    facet = Column(Integer, nullable=False)
+    phase = Column(Integer, nullable=False)
+    banner_text = Column(String, nullable=True)
+    t_label = Column(String, nullable=True)
+    logo_url = Column(String, nullable=True)
+    state_payload = Column(String, nullable=False) # JSON blob stringified
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (UniqueConstraint('module', 'facet', 'phase', name='uq_seven_tnt_day_cycle_chart_mapping_mfp'),)
+
+

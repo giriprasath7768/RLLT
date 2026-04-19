@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DataTable } from 'primereact/datatable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import ExportOptionsModal from '../../components/ExportOptionsModal';
 import { Column } from 'primereact/column';
 import { Toast } from 'primereact/toast';
 import { Button } from 'primereact/button';
@@ -39,6 +42,29 @@ export default function ManageStudents() {
     const [globalFilter, setGlobalFilter] = useState(null);
     const [bulkToggle, setBulkToggle] = useState(false);
 
+    // Export Modal State
+    const [exportModalVisible, setExportModalVisible] = useState(false);
+
+    // Assign Chart Modal State
+    const [assignChartDialog, setAssignChartDialog] = useState(false);
+    const [availableCharts, setAvailableCharts] = useState([]);
+    const [selectedChart, setSelectedChart] = useState(null);
+    const [aStartDate, setAStartDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [aEndDate, setAEndDate] = useState('');
+
+    const printColumns = [
+        { field: 'category', header: 'Category' },
+        { field: 'stage', header: 'Stage' },
+        { field: 'dob', header: 'Age' },
+        { field: 'name', header: 'Name' },
+        { field: 'email', header: 'Email ID' },
+        { field: 'mobile_number', header: 'Mobile Number' },
+        { field: 'location_name', header: 'Location' },
+        { field: 'admin_name', header: 'Assigned Admin' },
+        { field: 'assessment_marks', header: 'Marks' },
+        { field: 'is_active', header: 'Status' }
+    ];
+
     const [first, setFirst] = useState(0);
     const [rows, setRows] = useState(10);
 
@@ -54,7 +80,28 @@ export default function ManageStudents() {
 
     useEffect(() => {
         loadData();
+        StudentService.getAvailableCharts().then(data => {
+            setAvailableCharts(data || []);
+        }).catch(err => console.error("Failed to load charts:", err));
     }, []);
+
+    useEffect(() => {
+        if (!aStartDate) {
+            setAEndDate('');
+            return;
+        }
+        try {
+            const start = new Date(aStartDate);
+            if (isNaN(start.getTime())) throw new Error("Invalid date");
+            const daysToAdd = (selectedChart && selectedChart.tracking_days) ? selectedChart.tracking_days - 1 : 29;
+            if (daysToAdd < 0) return;
+            const end = new Date(start);
+            end.setDate(end.getDate() + daysToAdd);
+            setAEndDate(end.toISOString().split('T')[0]);
+        } catch (e) {
+            setAEndDate('');
+        }
+    }, [aStartDate, selectedChart]);
 
     const loadData = () => {
         StudentService.getStudents().then(data => {
@@ -205,14 +252,97 @@ export default function ManageStudents() {
         }
     };
 
+    const handleAutoGroup = () => {
+        const selected = selectedStudents || [];
+        if (selected.length === 0) {
+            toast.current.show({ severity: 'warn', summary: 'No Selection', detail: 'Please select students to group.', life: 3000 });
+            return;
+        }
+
+        const selectedIds = selected.map(s => s.id);
+        const freshSelected = students.filter(s => selectedIds.includes(s.id));
+        const alreadyGrouped = freshSelected.filter(s => s.group_name);
+
+        if (alreadyGrouped.length > 0) {
+            toast.current.show({ severity: 'warn', summary: 'Already Grouped', detail: 'Some selected students are already in a group. Please ungroup them first.', life: 5000 });
+            return;
+        }
+
+        StudentService.autoGroupStudents(selectedIds).then(res => {
+            toast.current.show({ severity: 'success', summary: 'Grouped', detail: res.message, life: 3000 });
+            loadData();
+        }).catch(err => {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.message || 'Failed to auto group', life: 3000 });
+        });
+    };
+
+    const handleUngroup = () => {
+        const selected = selectedStudents || [];
+        if (selected.length === 0) {
+            toast.current.show({ severity: 'warn', summary: 'No Selection', detail: 'Please select students to ungroup.', life: 3000 });
+            return;
+        }
+
+        const studentIds = selected.map(s => s.id);
+        StudentService.ungroupStudents(studentIds).then(res => {
+            toast.current.show({ severity: 'success', summary: 'Ungrouped', detail: res.message, life: 3000 });
+            loadData();
+        }).catch(err => {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.message || 'Failed to ungroup', life: 3000 });
+        });
+    };
+
+    const handleOpenAssignChart = () => {
+        const selected = selectedStudents || [];
+        if (selected.length === 0) {
+            toast.current.show({ severity: 'warn', summary: 'No Selection', detail: 'Please select students to assign a chart.', life: 3000 });
+            return;
+        }
+        setAssignChartDialog(true);
+    };
+
+    const submitAssignChart = () => {
+        if (!selectedChart || !aStartDate || !aEndDate) {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Please complete all fields.', life: 3000 });
+            return;
+        }
+
+        const selectedIds = (selectedStudents || []).map(s => s.id);
+        const payload = {
+            user_ids: selectedIds,
+            chart_id: selectedChart.id,
+            chart_type: selectedChart.chart_type,
+            start_date: new Date(aStartDate).toISOString(),
+            end_date: new Date(aEndDate).toISOString()
+        };
+
+        StudentService.bulkAssignChart(payload).then(res => {
+            toast.current.show({ severity: 'success', summary: 'Assigned', detail: res.message, life: 3000 });
+            setAssignChartDialog(false);
+            setSelectedChart(null);
+            setSelectedStudents([]);
+        }).catch(err => {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.detail || 'Failed to assign chart', life: 3000 });
+        });
+    };
+
+    const assignChartDialogFooter = (
+        <React.Fragment>
+            <Button label="Cancel" icon="pi pi-times" outlined onClick={() => setAssignChartDialog(false)} />
+            <Button label="Assign" icon="pi pi-check" onClick={submitAssignChart} severity="success" />
+        </React.Fragment>
+    );
+
     const topCardContent = (
         <div className="flex flex-wrap gap-4 w-full justify-start items-center">
-            <Button label="New Student" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
             <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg">
                 <span className="font-bold text-[#2F5597] text-sm">BULK ACTIVATE:</span>
                 <InputSwitch checked={bulkToggle} onChange={handleBulkToggle} />
             </div>
-            <Button label="Export" icon="pi pi-upload" severity="help" onClick={() => dt.current.exportCSV()} className="ml-auto hidden md:flex" />
+            <Button label="Group Students" icon="pi pi-users" severity="info" onClick={handleAutoGroup} className="hidden md:flex ml-4" />
+            <Button label="Ungroup" icon="pi pi-user-minus" severity="warning" outlined onClick={handleUngroup} className="hidden md:flex ml-2" />
+            <Button label="Assign Chart" icon="pi pi-chart-line" severity="success" outlined onClick={handleOpenAssignChart} className="hidden md:flex ml-2" />
+            <Button label="Export" icon="pi pi-file-pdf" severity="help" onClick={() => setExportModalVisible(true)} className="ml-auto hidden md:flex" />
         </div>
     );
 
@@ -273,6 +403,79 @@ export default function ManageStudents() {
         );
     });
 
+    const handlePdfExport = (selectedFields) => {
+        try {
+            setExportModalVisible(false);
+
+            const doc = new jsPDF('portrait', 'pt', 'a4');
+            const activeColumns = printColumns.filter(col => selectedFields.includes(col.field));
+
+            const exportColumns = activeColumns.map(col => ({
+                header: col.header,
+                dataKey: col.field
+            }));
+
+            const data = filteredStudents.map(stu => {
+                let row = {};
+                activeColumns.forEach(col => {
+                    if (col.field === 'is_active') {
+                        row[col.field] = stu.is_active ? 'Active' : 'Inactive';
+                    } else if (col.field === 'mobile_number') {
+                        row[col.field] = stu.mobile_number || '-';
+                    } else if (col.field === 'dob') {
+                        row[col.field] = calculateStudentLevel(stu.dob).age || '-';
+                    } else if (col.field === 'assessment_marks') {
+                        row[col.field] = (stu.assessment_marks !== null && stu.assessment_marks !== undefined) ? stu.assessment_marks : '-';
+                    } else {
+                        row[col.field] = stu[col.field] || '';
+                    }
+                });
+                return row;
+            });
+
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            const searchSuffix = globalFilter ? `_${globalFilter.replace(/[^a-zA-Z0-9]/g, '')}` : '';
+            const filename = `Student_Report_${dateStr}${searchSuffix}.pdf`;
+            const totalPagesExp = '{total_pages_count_string}';
+
+            const tableOptions = {
+                columns: exportColumns,
+                body: data,
+                margin: { top: 60, bottom: 40 },
+                theme: 'grid',
+                headStyles: { fillColor: [79, 70, 229] },
+                didDrawPage: function (hookData) {
+                    doc.setFontSize(16);
+                    doc.setTextColor(40);
+                    doc.text('Manage Students Report', hookData.settings.margin.left, 30);
+
+                    doc.setFontSize(10);
+                    doc.setTextColor(100);
+                    doc.text(`Export Date: ${dateStr}`, hookData.settings.margin.left, 45);
+
+                    const pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
+                    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+                    doc.setFontSize(10);
+                    doc.text(`Page ${hookData.pageNumber} of ${totalPagesExp}`, pageWidth - hookData.settings.margin.right - 50, pageHeight - 20);
+                }
+            };
+
+            autoTable(doc, tableOptions);
+
+            if (typeof doc.putTotalPages === 'function') {
+                doc.putTotalPages(totalPagesExp);
+            }
+
+            doc.save(filename);
+        } catch (error) {
+            console.error("PDF Generation failed:", error);
+            if (toast.current) {
+                toast.current.show({ severity: 'error', summary: 'PDF Error', detail: 'Generation failed. Please try again.', life: 3000 });
+            }
+        }
+    };
+
     const studentDialogFooter = (
         <React.Fragment>
             <Button label="Cancel" icon="pi pi-times" outlined onClick={hideDialog} />
@@ -304,7 +507,7 @@ export default function ManageStudents() {
                         rowClassName={() => 'bg-white text-black'}>
 
                         <Column selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
-                        <Column header="S.No" body={(data, options) => first + options.rowIndex + 1} exportable={false} style={{ width: '4rem' }} headerClassName="admin-table-header"></Column>
+                        <Column header="S.No" body={(data, options) => options.rowIndex + 1} exportable={false} style={{ width: '4rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="category" header="Category" sortable style={{ minWidth: '8rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="stage" header="Stage" sortable style={{ minWidth: '6rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="dob" header="Age" body={(rowData) => calculateStudentLevel(rowData.dob).age} sortable style={{ minWidth: '6rem' }} headerClassName="admin-table-header"></Column>
@@ -313,6 +516,7 @@ export default function ManageStudents() {
                         <Column field="mobile_number" header="Mobile Number" sortable style={{ minWidth: '10rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="location_name" header="Location" sortable style={{ minWidth: '8rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="admin_name" header="Assigned Admin" sortable style={{ minWidth: '10rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="group_name" header="Group Name" sortable style={{ minWidth: '8rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="assessment_marks" header="Marks" body={marksBodyTemplate} sortable align="center" style={{ minWidth: '6rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="is_active" header="Status" body={statusBodyTemplate} sortable align="center" style={{ minWidth: '6rem' }} headerClassName="admin-table-header"></Column>
                         <Column header="Activity" body={actionBodyTemplate} exportable={false} style={{ minWidth: '8rem' }} headerClassName="admin-table-header"></Column>
@@ -339,6 +543,7 @@ export default function ManageStudents() {
                                     { label: 'Mobile', value: stu.mobile_number || '-' },
                                     { label: 'Location', value: stu.location_name || '-' },
                                     { label: 'Admin', value: stu.admin_name || '-' },
+                                    { label: 'Group', value: stu.group_name || '-' },
                                     { label: 'Marks', value: stu.assessment_marks ?? '-' },
                                     {
                                         label: 'Status',
@@ -362,10 +567,7 @@ export default function ManageStudents() {
                 </div>
             </div>
 
-            {/* Mobile FAB */}
-            <div className="block md:hidden fixed bottom-6 right-6 z-50">
-                <Button icon="pi pi-plus" className="p-button-rounded p-button-success shadow-lg" size="large" onClick={openNew} aria-label="Add New" />
-            </div>
+
 
             <Dialog visible={studentDialog} style={{ width: '40rem' }} breakpoints={{ '960px': '75vw', '641px': '95vw' }} header="Student Profile" modal className="p-fluid" footer={studentDialogFooter} onHide={hideDialog}>
                 <div className="formgrid grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -425,6 +627,52 @@ export default function ManageStudents() {
                     )}
                 </div>
             </Dialog>
+
+            <Dialog visible={assignChartDialog} style={{ width: '32rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Assign Training Chart" modal footer={assignChartDialogFooter} onHide={() => setAssignChartDialog(false)}>
+                <div className="flex flex-col gap-4 mt-2">
+                    <div className="field">
+                        <label htmlFor="assignChartSelect" className="font-bold block mb-2">Available Charts</label>
+                        <Dropdown
+                            id="assignChartSelect"
+                            value={selectedChart}
+                            options={availableCharts}
+                            onChange={(e) => setSelectedChart(e.value)}
+                            optionLabel="label"
+                            placeholder="Select a Chart..."
+                            className="w-full"
+                        />
+                    </div>
+                    <div className="field">
+                        <label htmlFor="aStartDate" className="font-bold block mb-2">Start Date</label>
+                        <input
+                            id="aStartDate"
+                            type="date"
+                            value={aStartDate}
+                            onChange={(e) => setAStartDate(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        />
+                    </div>
+                    <div className="field">
+                        <label htmlFor="aEndDate" className="font-bold block mb-2">End Date (Auto-Calculated)</label>
+                        <input
+                            id="aEndDate"
+                            type="date"
+                            value={aEndDate}
+                            readOnly
+                            className="w-full p-2 border border-gray-200 rounded-md bg-gray-50 text-gray-900"
+                        />
+                        <small className="block mt-1 text-gray-500 text-xs">Generated based on Chart tracking duration automatically.</small>
+                    </div>
+                </div>
+            </Dialog>
+
+            <ExportOptionsModal
+                visible={exportModalVisible}
+                onHide={() => setExportModalVisible(false)}
+                columns={printColumns}
+                onExport={handlePdfExport}
+            />
         </div>
     );
 }

@@ -1,0 +1,120 @@
+                        </button>
+                        {watermark && (
+                            <button
+                                onClick={() => setWatermark && setWatermark('')}
+                                className="flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors text-red-400 hover:bg-red-50 hover:text-red-500"
+                                title="Remove Watermark"
+                            >
+                                <i className="pi pi-times"></i>
+                            </button>
+                        )}
+                        <input
+                            type="file"
+                            ref={watermarkInputRef}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleWatermarkUpload}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-1 border-r pr-2">
+                    <span className="ql-formats m-0 flex items-center gap-0">
+                        <button className="ql-list" value="ordered"></button>
+                        <button className="ql-list" value="bullet"></button>
+                        <select className="ql-align" title="Text Alignment"></select>
+                        <button className="ql-link"></button>
+                        <button className="ql-image"></button>
+                    </span>
+                </div>
+
+            </div> {/* END QUILL CONTAINER */}
+
+            {/* Document Assets - Native React Components outside Quill's scope! */}
+            <div className="flex items-center gap-1 border-r pr-2">
+                <div className="relative" ref={imageDropdownRef}>
+                    <button
+                        onClick={() => setImageDropdownOpen(!imageDropdownOpen)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${imageDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'} hidden xl:flex`}
+                        title="Image Tools"
+                    >
+                        <i className="pi pi-image text-gray-500"></i>
+                        Image
+                    </button>
+                    <button
+                        onClick={() => setImageDropdownOpen(!imageDropdownOpen)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${imageDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'} xl:hidden`}
+                        title="Image Tools"
+                    >
+                        <i className="pi pi-image text-gray-500"></i>
+                    </button>
+
+                    {imageDropdownOpen && (
+                        <div className="absolute right-0 xl:right-auto xl:left-0 top-full mt-2 w-48 bg-white border border-gray-200 shadow-2xl rounded-lg z-50 p-1 flex flex-col gap-1">
+                            <button
+                                onClick={() => { setImageDropdownOpen(false); puzzleInputRef.current?.click(); }}
+                                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-gray-700 transition-colors w-full text-left"
+                            >
+                                <i className="pi pi-table text-blue-500"></i>
+                                Upload Puzzle
+                            </button>
+                            <button
+                                onClick={() => { setImageDropdownOpen(false); fileInputRef.current?.click(); }}
+                                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-gray-700 transition-colors w-full text-left"
+                            >
+                                <i className="pi pi-image text-emerald-500"></i>
+                                Add Watermark
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <input
+                    type="file"
+                    ref={puzzleInputRef}
+                    onChange={handlePuzzleUpload}
+                    accept="image/*"
+                    className="hidden"
+                />
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleWatermarkUpload}
+                    accept="image/*"
+                    className="hidden"
+                />
+
+                <div className="relative border-r border-gray-200 pr-1 mr-1" ref={agScriptDropdownRef}>
+                    <button
+                        onClick={() => setAgScriptDropdownOpen(!agScriptDropdownOpen)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${agScriptDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
+                        title="Anti-Gravity Scripts"
+                    >
+                        <i className="pi pi-moon text-indigo-500"></i>
+                        <span className="hidden xl:inline font-medium">Scripts</span>
+                    </button>
+                    {agScriptDropdownOpen && (
+                        <div className="absolute right-0 xl:right-auto xl:left-0 top-full mt-2 w-48 bg-gray-900 border border-gray-700 shadow-2xl rounded-lg z-50 p-1 flex flex-col gap-1 text-gray-200 pointer-events-auto">
+                            {Object.values(ANTI_GRAVITY_SCRIPTS).map(script => (
+                                <button
+                                    key={script.id}
+                                    onClick={() => { setAgScriptDropdownOpen(false); setViewerScript(script); }}
+                                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 rounded text-gray-300 transition-colors w-full text-left"
+                                >
+                                    <i className="pi pi-compass text-emerald-500"></i>
+                                    {script.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="relative border-r border-gray-200 pr-1 mr-1" ref={countryDropdownRef}>
+                    <button
+                        onClick={() => setCountryDropdownOpen(!countryDropdownOpen)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${countryDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
+                        title="Insert Country"
+                    >
+                        <i className="pi pi-globe text-emerald-600"></i>
+                        <span className="hidden xl:inline font-medium">Country</span>
+                    </button>

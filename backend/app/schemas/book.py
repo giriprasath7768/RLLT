@@ -36,6 +36,7 @@ class BookBase(BaseModel):
     total_verses: int = 0
     total_art: float = 0.0
     ppl: float = 0.0
+    book_type: Optional[str] = None
 
 class BookCreate(BookBase):
     pass
@@ -48,6 +49,7 @@ class BookUpdate(BaseModel):
     total_verses: Optional[int] = None
     total_art: Optional[float] = None
     ppl: Optional[float] = None
+    book_type: Optional[str] = None
 
 class BookResponse(BookBase):
     id: UUID

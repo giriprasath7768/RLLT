@@ -5,7 +5,7 @@ import { Toast } from 'primereact/toast';
 import { Button } from 'primereact/button';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Dialog } from 'primereact/dialog';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import { splitS3Data, parseTime } from '../../utils/chartDataSplitter';
 
@@ -58,6 +58,7 @@ const generateInitialData = (totalDays = 30) => {
 const MorningEveningChart = () => {
     const toast = useRef(null);
     const navigate = useNavigate();
+    const location = useLocation();
     const [chunks, setChunks] = useState(generateInitialData());
     
     // Header States
@@ -86,7 +87,7 @@ const MorningEveningChart = () => {
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
 
     const fetchChartList = () => {
-        axios.get('http://localhost:8000/api/charts/list', { withCredentials: true })
+                axios.get('http://localhost:8000/api/charts/list', { withCredentials: true })
             .then(res => setChartsList(res.data))
             .catch(err => console.error("Could not fetch charts list", err));
             
@@ -121,7 +122,8 @@ const MorningEveningChart = () => {
 
     // Load Data when selection changes
     useEffect(() => {
-        if (!selectedChart || booksDB.length === 0 || chaptersDB.length === 0) {
+        const preloadData = location.state?.chartData;
+        if ((!preloadData && !selectedChart) || booksDB.length === 0 || chaptersDB.length === 0) {
             setChunks(generateInitialData());
             setBannerText("");
             setTLabel("T");
@@ -131,10 +133,16 @@ const MorningEveningChart = () => {
             return;
         }
 
-        const { module, facet, phase } = selectedChart;
-        axios.get(`http://localhost:8000/api/charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
-            .then(res => {
+        const __fixedPreload = location.state?.chartData;
+        const fetchPromise = __fixedPreload 
+            ? Promise.resolve({ data: __fixedPreload })
+            : axios.get(`http://localhost:8000/api/charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
+
+        fetchPromise.then(res => {
                 const data = res.data;
+            const module = selectedChart?.module || location.state?.assignment?.module || '1';
+            const facet = selectedChart?.facet || location.state?.assignment?.facet || '1';
+            const phase = selectedChart?.phase || location.state?.assignment?.phase || '1';
                 setBannerText(data.banner_text || "");
                 setTLabel(data.t_label || "T");
                 setLogoUrl(data.logo_url ? `http://localhost:8000${data.logo_url}` : null);
@@ -167,7 +175,7 @@ const MorningEveningChart = () => {
                 toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Could not load chart details.', life: 3000 });
                 setChunks(generateInitialData());
             });
-    }, [selectedChart, booksDB, chaptersDB]);
+    }, [selectedChart, booksDB, chaptersDB, location.state]);
 
     const confirmDelete = () => {
         if (!selectedChart) return;
@@ -469,6 +477,7 @@ const MorningEveningChart = () => {
                     </div>
 
                     <div className="flex flex-col items-center xl:items-end flex-wrap justify-center xl:justify-end gap-2 w-full xl:w-auto">
+                        {!(location.state?.chartData) && (
                         <div className="flex items-center gap-3 bg-white p-1.5 px-3 rounded-lg shadow-inner w-full md:w-auto overflow-x-auto">
                             <span className="text-black font-semibold text-sm whitespace-nowrap px-1">Select Chart:</span>
                             <Dropdown 
@@ -481,13 +490,21 @@ const MorningEveningChart = () => {
                                 onChange={(e) => setSelectedChart(e.value)} 
                             />
                         </div>
-                        {selectedChart && (
+                        )}
+                        {(location.state?.chartData || selectedChart) && (
                             <div className="flex gap-2 justify-center xl:justify-end w-full">
                                 <Button icon="pi pi-file-pdf" tooltip="Export to PDF" loading={isProcessingPdf} className="bg-orange-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-orange-600 transition-colors" onClick={handleExportPdf} />
                                 <Button icon="pi pi-print" tooltip="Browser Print" loading={isProcessingPdf} className="bg-slate-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-slate-600 transition-colors" onClick={handlePrint} />
-                                <Button icon="pi pi-share-alt" tooltip="Share Chart PDF" loading={isProcessingPdf} className="bg-emerald-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-emerald-600 transition-colors" onClick={handleShare} />
-                                <Button icon="pi pi-pencil" tooltip="Edit Chart" className="bg-blue-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-blue-600 transition-colors" onClick={handleEdit} />
-                                <Button icon="pi pi-trash" tooltip="Delete Chart" className="bg-red-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-red-600 transition-colors" onClick={confirmDelete} />
+                                {!(location.state?.chartData) && (
+                                    <>
+                                        <Button icon="pi pi-share-alt" tooltip="Share Chart PDF" loading={isProcessingPdf} className="bg-emerald-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-emerald-600 transition-colors" onClick={handleShare} />
+                                        <Button icon="pi pi-pencil" tooltip="Edit Chart" className="bg-blue-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-blue-600 transition-colors" onClick={handleEdit} />
+                                        <Button icon="pi pi-trash" tooltip="Delete Chart" className="bg-red-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-red-600 transition-colors" onClick={confirmDelete} />
+                                    </>
+                                )}
+                                
+                                
+                                
                             </div>
                         )}
                     </div>

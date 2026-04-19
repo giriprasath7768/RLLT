@@ -5,14 +5,33 @@ from sqlalchemy.future import select
 from typing import List
 
 from app.db.database import get_db
-from app.db.models import Location
+from app.db.models import Location, User, Admin, Leader, UserRole
+from app.api.auth import get_current_user, get_current_user_optional
 from app.schemas.location import LocationCreate, LocationUpdate, LocationResponse
-
+from typing import List, Optional
 router = APIRouter()
 
 @router.get("/locations", response_model=List[LocationResponse])
-async def read_locations(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Location).offset(skip).limit(limit))
+async def read_locations(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db), current_user: Optional[User] = Depends(get_current_user_optional)):
+    query = select(Location)
+    
+    if current_user:
+        if current_user.role == UserRole.admin:
+            admin_res = await db.execute(select(Admin).where(Admin.user_id == current_user.id))
+            admin = admin_res.scalar_one_or_none()
+            if admin and admin.location_id:
+                query = query.where(Location.id == admin.location_id)
+        elif current_user.role == UserRole.leader:
+            leader_res = await db.execute(select(Leader).where(Leader.user_id == current_user.id))
+            leader = leader_res.scalar_one_or_none()
+            if leader and leader.admin_id:
+                admin_res = await db.execute(select(Admin).where(Admin.id == leader.admin_id))
+                admin = admin_res.scalar_one_or_none()
+                if admin and admin.location_id:
+                    query = query.where(Location.id == admin.location_id)
+
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
     locations = result.scalars().all()
     return locations
 

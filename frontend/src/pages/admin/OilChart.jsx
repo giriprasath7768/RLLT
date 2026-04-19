@@ -97,6 +97,9 @@ const OilChart = () => {
         try {
             const res = await axios.get(`http://localhost:8000/api/charts/sync/${ref.module}/${ref.facet}/${ref.phase}`, { withCredentials: true });
             const data = res.data;
+            const module = selectedChart?.module || location.state?.assignment?.module || '1';
+            const facet = selectedChart?.facet || location.state?.assignment?.facet || '1';
+            const phase = selectedChart?.phase || location.state?.assignment?.phase || '1';
             
             setMdl(data.module || 1);
             setFct(data.facet || 1);

@@ -39,6 +39,25 @@ async def get_user_assessment_results(user_id: uuid.UUID, db: AsyncSession = Dep
         })
     return response
 
+@router.get("/student/me/results", response_model=List[dict])
+async def get_my_assessment_results(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.student:
+        raise HTTPException(status_code=403, detail="Only students can access their results.")
+        
+    query = select(AssessmentResult).options(selectinload(AssessmentResult.assessment)).where(AssessmentResult.user_id == current_user.id)
+    result = await db.execute(query)
+    rows = result.scalars().all()
+    
+    response = []
+    for r in rows:
+        choice_text = getattr(r.assessment, f"choice_{r.selected_choice}", "")
+        response.append({
+            "question_text": r.assessment.question_text,
+            "selected_choice_text": choice_text,
+            "awarded_grade": r.awarded_grade
+        })
+    return response
+
 @router.get("/student", response_model=List[AssessmentResponse])
 async def get_student_assessment(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.student:
@@ -50,11 +69,12 @@ async def get_student_assessment(db: AsyncSession = Depends(get_db), current_use
         user_loc = loc_res.scalar_one_or_none()
         
         if user_loc:
+            from sqlalchemy import func
             query = query.where(
                 (Assessment.location_id == current_user.location_id) |
-                (Assessment.location_module == user_loc.city) |
-                (Assessment.location_module == user_loc.country) |
-                (Assessment.location_module == user_loc.continent)
+                (func.lower(Assessment.location_module) == func.lower(user_loc.city)) |
+                (func.lower(Assessment.location_module) == func.lower(user_loc.country)) |
+                (func.lower(Assessment.location_module) == func.lower(user_loc.continent))
             )
         else:
             query = query.where(Assessment.location_id == current_user.location_id)
@@ -78,13 +98,25 @@ async def read_assessments(
     if name:
         query = query.where(Assessment.name == name)
     if location_module:
-        query = query.where(Assessment.location_module == location_module)
+        from sqlalchemy import func
+        query = query.where(func.lower(Assessment.location_module) == location_module.lower())
         
     if current_user.role == UserRole.admin:
         admin_res = await db.execute(select(Admin).where(Admin.user_id == current_user.id))
         admin = admin_res.scalar_one_or_none()
         if admin and admin.location_id:
-            query = query.where(Assessment.location_id == admin.location_id)
+            loc_res = await db.execute(select(Location).where(Location.id == admin.location_id))
+            user_loc = loc_res.scalar_one_or_none()
+            from sqlalchemy import func
+            if user_loc:
+                query = query.where(
+                    (Assessment.location_id == admin.location_id) |
+                    (func.lower(Assessment.location_module) == func.lower(user_loc.city)) |
+                    (func.lower(Assessment.location_module) == func.lower(user_loc.country)) |
+                    (func.lower(Assessment.location_module) == func.lower(user_loc.continent))
+                )
+            else:
+                query = query.where(Assessment.location_id == admin.location_id)
     elif current_user.role == UserRole.leader:
         leader_res = await db.execute(select(Leader).where(Leader.user_id == current_user.id))
         leader = leader_res.scalar_one_or_none()
@@ -92,7 +124,18 @@ async def read_assessments(
             admin_res = await db.execute(select(Admin).where(Admin.id == leader.admin_id))
             admin = admin_res.scalar_one_or_none()
             if admin and admin.location_id:
-                query = query.where(Assessment.location_id == admin.location_id)
+                loc_res = await db.execute(select(Location).where(Location.id == admin.location_id))
+                user_loc = loc_res.scalar_one_or_none()
+                from sqlalchemy import func
+                if user_loc:
+                    query = query.where(
+                        (Assessment.location_id == admin.location_id) |
+                        (func.lower(Assessment.location_module) == func.lower(user_loc.city)) |
+                        (func.lower(Assessment.location_module) == func.lower(user_loc.country)) |
+                        (func.lower(Assessment.location_module) == func.lower(user_loc.continent))
+                    )
+                else:
+                    query = query.where(Assessment.location_id == admin.location_id)
     
     result = await db.execute(query)
     assessments = result.scalars().all()
@@ -180,10 +223,11 @@ async def bulk_delete_assessments(assessment_ids: List[uuid.UUID], db: AsyncSess
 
 @router.delete("/purge", response_model=dict)
 async def purge_assessments(name: str, location_module: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    from sqlalchemy import func
     await db.execute(
         delete(Assessment)
         .where(Assessment.name == name)
-        .where(Assessment.location_module == location_module)
+        .where(func.lower(Assessment.location_module) == location_module.lower())
     )
     await db.commit()
     return {"message": f"Successfully purged assessments for {name} - {location_module}"}

@@ -97,30 +97,30 @@ export default function LocationCRUD() {
 
     const editLocation = (loc) => {
         setLocation({ ...loc });
-        
+
         // Setup initial dropdown states for editing
         setIsCustomCountry(false);
         setIsCustomCity(false);
         setCustomCountryName('');
         setCustomCityName('');
-        
+
         // Check if country exists in standard list
         const isStandardCountry = COUNTRIES.includes(loc.country);
         if (!isStandardCountry) {
             setIsCustomCountry(true);
             setCustomCountryName(loc.country);
-            setLocation(prev => ({...prev, country: '+ Add New Country'}));
+            setLocation(prev => ({ ...prev, country: '+ Add New Country' }));
         }
-        
+
         // Populate available cities
         const mappedCities = CITIES_MAP[loc.country] || [];
         setAvailableCities(mappedCities);
-        
+
         const isStandardCity = mappedCities.includes(loc.city);
         if (!isStandardCity) {
             setIsCustomCity(true);
             setCustomCityName(loc.city);
-            setLocation(prev => ({...prev, city: '+ Add New City'}));
+            setLocation(prev => ({ ...prev, city: '+ Add New City' }));
         }
 
         setLocationDialog(true);
@@ -169,7 +169,7 @@ export default function LocationCRUD() {
     const onCountryChange = (e) => {
         const val = (e.target && e.target.value) || '';
         let _location = { ...location, country: val, city: '' };
-        
+
         if (val === '+ Add New Country') {
             setIsCustomCountry(true);
             setAvailableCities([]);
@@ -177,7 +177,7 @@ export default function LocationCRUD() {
             setIsCustomCountry(false);
             setAvailableCities(CITIES_MAP[val] || []);
         }
-        
+
         setIsCustomCity(false);
         setLocation(_location);
     };
@@ -185,13 +185,13 @@ export default function LocationCRUD() {
     const onCityChange = (e) => {
         const val = (e.target && e.target.value) || '';
         let _location = { ...location, city: val };
-        
+
         if (val === '+ Add New City') {
             setIsCustomCity(true);
         } else {
             setIsCustomCity(false);
         }
-        
+
         setLocation(_location);
     };
 
@@ -264,16 +264,16 @@ export default function LocationCRUD() {
                 </div>
 
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
-                    <DataTable ref={dt} value={locations} dataKey="id" 
-                            paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
-                            globalFilter={globalFilter} header={tableHeader}
-                            className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines scrollable scrollDirection="both"
-                            rowClassName={() => 'bg-white text-black'}>
-                        
-                    <Column header="S.No" body={(data, options) => first + options.rowIndex + 1} exportable={false} style={{ minWidth: '4rem' }} headerClassName="admin-table-header"></Column>
-                    <Column field="continent" header="Continent" sortable style={{ minWidth: '12rem' }} headerClassName="admin-table-header"></Column>
-                    <Column field="country" header="Country" sortable style={{ minWidth: '16rem' }} headerClassName="admin-table-header"></Column>
-                    <Column field="city" header="Location (City)" sortable style={{ minWidth: '16rem' }} headerClassName="admin-table-header"></Column>
+                    <DataTable ref={dt} value={locations} dataKey="id"
+                        paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
+                        globalFilter={globalFilter} header={tableHeader}
+                        className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines scrollable scrollDirection="both"
+                        rowClassName={() => 'bg-white text-black'}>
+
+                        <Column header="S.No" body={(data, options) => options.rowIndex + 1} exportable={false} style={{ minWidth: '4rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="continent" header="Continent" sortable style={{ minWidth: '12rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="country" header="Country" sortable style={{ minWidth: '16rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="city" header="Location (City)" sortable style={{ minWidth: '16rem' }} headerClassName="admin-table-header"></Column>
                         <Column body={actionBodyTemplate} exportable={false} style={{ minWidth: '8rem' }} headerClassName="admin-table-header"></Column>
                     </DataTable>
                 </div>
@@ -289,7 +289,7 @@ export default function LocationCRUD() {
                 <div className="block md:hidden mt-4">
                     {filteredLocations.length > 0 ? (
                         filteredLocations.map(loc => (
-                            <MobileDataCard 
+                            <MobileDataCard
                                 key={loc.id}
                                 title={loc.city}
                                 data={[
@@ -317,7 +317,7 @@ export default function LocationCRUD() {
                 {/* Continent selection */}
                 <div className="field mb-4">
                     <label htmlFor="continent" className="font-bold block mb-2">Continent</label>
-                    <Dropdown id="continent" value={location.continent} options={CONTINENTS} onChange={onContinentChange} placeholder="Select a Continent" 
+                    <Dropdown id="continent" value={location.continent} options={CONTINENTS} onChange={onContinentChange} placeholder="Select a Continent"
                         required className={classNames({ 'p-invalid': submitted && !location.continent })} />
                     {submitted && !location.continent && <small className="p-error">Continent is required.</small>}
                 </div>
@@ -327,12 +327,12 @@ export default function LocationCRUD() {
                     <label htmlFor="country" className="font-bold block mb-2">Country</label>
                     <Dropdown id="country" value={location.country} options={countryOptions} onChange={onCountryChange} placeholder="Select a Country" filter
                         disabled={!location.continent} required className={classNames({ 'p-invalid': submitted && !location.country && !isCustomCountry })} />
-                    
+
                     {/* Nested Input for custom country */}
                     {isCustomCountry && (
                         <div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
                             <label htmlFor="customCountry" className="text-sm text-gray-600 block mb-1">Enter New Country Name</label>
-                            <InputText id="customCountry" value={customCountryName} onChange={(e) => setCustomCountryName(e.target.value)} 
+                            <InputText id="customCountry" value={customCountryName} onChange={(e) => setCustomCountryName(e.target.value)}
                                 required autoFocus className={classNames({ 'p-invalid': submitted && isCustomCountry && !customCountryName })} />
                             {submitted && isCustomCountry && !customCountryName && <small className="p-error">Country name is required.</small>}
                         </div>
@@ -345,12 +345,12 @@ export default function LocationCRUD() {
                     <label htmlFor="city" className="font-bold block mb-2">Location (City)</label>
                     <Dropdown id="city" value={location.city} options={cityOptions} onChange={onCityChange} placeholder="Select a City" filter
                         disabled={!location.country} required className={classNames({ 'p-invalid': submitted && !location.city && !isCustomCity })} />
-                    
+
                     {/* Nested Input for custom city */}
                     {isCustomCity && (
                         <div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
                             <label htmlFor="customCity" className="text-sm text-gray-600 block mb-1">Enter New City Name</label>
-                            <InputText id="customCity" value={customCityName} onChange={(e) => setCustomCityName(e.target.value)} 
+                            <InputText id="customCity" value={customCityName} onChange={(e) => setCustomCityName(e.target.value)}
                                 required autoFocus className={classNames({ 'p-invalid': submitted && isCustomCity && !customCityName })} />
                             {submitted && isCustomCity && !customCityName && <small className="p-error">City name is required.</small>}
                         </div>

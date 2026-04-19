@@ -36,6 +36,11 @@ from app.api.vcards import router as vcards_router
 from app.api.contents import router as contents_router
 from app.api.oils import router as oils_router
 from app.api.assignments import router as assignments_router
+from app.api.documents import router as documents_router
+from app.api.ttom_users import router as ttom_users_router
+from app.api.seven_tnt_charts import router as seven_tnt_charts_router
+from app.api.seven_tnt_daycycle_charts import router as seven_tnt_daycycle_charts_router
+from app.api.screen_recorder import router as screen_recorder_router
 
 
 app.include_router(auth_router, prefix="/api", tags=["auth"])
@@ -53,6 +58,11 @@ app.include_router(vcards_router, prefix="/api/vcards", tags=["vcards"])
 app.include_router(contents_router, prefix="/api/contents", tags=["contents"])
 app.include_router(oils_router, prefix="/api/oils", tags=["oils"])
 app.include_router(assignments_router, prefix="/api/assignments", tags=["assignments"])
+app.include_router(documents_router, prefix="/api/documents", tags=["documents"])
+app.include_router(ttom_users_router, prefix="/api/ttom_users", tags=["ttom_users"])
+app.include_router(seven_tnt_charts_router, prefix="/api/seven_tnt_charts", tags=["seven_tnt_charts"])
+app.include_router(seven_tnt_daycycle_charts_router, prefix="/api/seven_tnt_daycycle_charts", tags=["seven_tnt_daycycle_charts"])
+app.include_router(screen_recorder_router, prefix="/api/screen-recorder", tags=["screen_recorder"])
 
 
 import os

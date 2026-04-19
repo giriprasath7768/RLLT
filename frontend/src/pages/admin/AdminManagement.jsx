@@ -465,7 +465,7 @@ export default function AdminManagement() {
                         globalFilter={globalFilter} header={tableHeader}
                         className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines
                         rowClassName={() => 'bg-white text-black'}>
-                        <Column header="S.No" body={(data, options) => first + options.rowIndex + 1} exportable={false} style={{ width: '4rem' }} headerClassName="admin-table-header"></Column>
+                        <Column header="S.No" body={(data, options) => options.rowIndex + 1} exportable={false} style={{ width: '4rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="name" header="Name" sortable style={{ width: '15%', wordBreak: 'break-word', whiteSpace: 'normal' }} headerClassName="admin-table-header"></Column>
                         <Column field="email" header="Email ID" sortable style={{ width: '25%', wordBreak: 'break-word', whiteSpace: 'normal' }} headerClassName="admin-table-header"></Column>
                         <Column field="mobile_number" header="Mobile" sortable style={{ width: '15%', wordBreak: 'break-word', whiteSpace: 'normal' }} headerClassName="admin-table-header"></Column>

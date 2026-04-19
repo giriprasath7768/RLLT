@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { splitS3Data, splitS4Data } from '../../utils/chartDataSplitter';
 
 const formatDateTime = (date) => {
     const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -71,27 +72,46 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
 };
 
 const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
+    const [texts, setTexts] = React.useState({
+        W: "ISDOM OF GOD",
+        I: "MAGINATION",
+        S: "CRIPTURES TO PRAYER",
+        D: "AILY GROWING IN GODLINESS",
+        O: "BEDIENCE TO GOD'S WILL",
+        M: "EDITATING ON GOD'S CHARACTER"
+    });
+    const [activeSquare, setActiveSquare] = React.useState(null);
+
+    const wisdomItems = [
+        { letter: 'W', color: '#8e2b8c', key: 'W' },
+        { letter: 'I', color: '#294291', key: 'I' },
+        { letter: 'S', color: '#86c5f7', key: 'S' },
+        { letter: 'D', color: '#38b948', key: 'D' },
+        { letter: 'O', color: '#e3242b', key: 'O' },
+        { letter: 'M', color: '#ed9b26', key: 'M' }
+    ];
+
     return (
         <div className="bg-white flex-grow flex flex-col pt-4 pb-2 px-1 rounded-b-lg overflow-hidden border-t-4 border-[#12182b] w-full h-full">
             {/* Pencils Row */}
             <div className="flex px-1 gap-px h-[190px] sm:h-[210px] pb-2 w-full justify-between items-stretch">
                 <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#86c5f7]" tipColorClass="text-[#86c5f7]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" onClick={onLetterClick} />
+                <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" onClick={(c) => { onLetterClick(c); setActiveSquare('W'); }} />
 
                 <Pencil label="FINANCE" baseNum="2" bodyColorClass="bg-[#38b948]" tipColorClass="text-[#38b948]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="I" letterColor="text-[#294291]" num="2" onClick={onLetterClick} />
+                <DividerBox letter="I" letterColor="text-[#294291]" num="2" onClick={(c) => { onLetterClick(c); setActiveSquare('I'); }} />
 
                 <Pencil label="GOVERNMENT" baseNum="3" bodyColorClass="bg-[#4579d4]" tipColorClass="text-[#4579d4]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="S" letterColor="text-[#86c5f7]" num="3" onClick={onLetterClick} />
+                <DividerBox letter="S" letterColor="text-[#86c5f7]" num="3" onClick={(c) => { onLetterClick(c); setActiveSquare('S'); }} />
 
                 <Pencil label="SPIRITUALITY" baseNum="4" bodyColorClass="bg-[#ebe244]" tipColorClass="text-[#ebe244]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="D" letterColor="text-[#38b948]" num="4" onClick={onLetterClick} />
+                <DividerBox letter="D" letterColor="text-[#38b948]" num="4" onClick={(c) => { onLetterClick(c); setActiveSquare('D'); }} />
 
                 <Pencil label="TALENT" baseNum="5" bodyColorClass="bg-[#8b2671]" tipColorClass="text-[#8b2671]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="O" letterColor="text-[#e3242b]" num="5" onClick={onLetterClick} />
+                <DividerBox letter="O" letterColor="text-[#e3242b]" num="5" onClick={(c) => { onLetterClick(c); setActiveSquare('O'); }} />
 
                 <Pencil label="TRAINING" baseNum="6" bodyColorClass="bg-[#f17a41]" tipColorClass="text-[#f17a41]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="M" letterColor="text-[#ed9b26]" num="6" onClick={onLetterClick} />
+                <DividerBox letter="M" letterColor="text-[#ed9b26]" num="6" onClick={(c) => { onLetterClick(c); setActiveSquare('M'); }} />
 
                 <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#e3242b]" tipColorClass="text-[#e3242b]" textColor="text-black" onClick={onPencilClick} />
             </div>
@@ -102,37 +122,29 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
             </div>
 
             {/* List */}
-            <div className="px-4 py-3 flex flex-col gap-1 font-bold font-serif whitespace-nowrap bg-white">
-                <div className="flex items-center gap-2">
-                    <span className="text-[#8e2b8c] text-sm">1.</span>
-                    <span className="text-[#8e2b8c] text-xl font-black leading-none drop-shadow-sm">W</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">ISDOM OF GOD</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#294291] text-sm">2.</span>
-                    <span className="text-[#294291] text-xl font-black leading-none drop-shadow-sm">I</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">MAGINATION</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#86c5f7] text-sm">3.</span>
-                    <span className="text-[#86c5f7] text-xl font-black leading-none drop-shadow-sm">S</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">CRIPTURES TO PRAYER</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#38b948] text-sm">4.</span>
-                    <span className="text-[#38b948] text-xl font-black leading-none drop-shadow-sm">D</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">AILY GROWING IN GODLINESS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#e3242b] text-sm">5.</span>
-                    <span className="text-[#e3242b] text-xl font-black leading-none drop-shadow-sm">O</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">BEDIENCE TO GOD'S WILL</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#ed9b26] text-sm">6.</span>
-                    <span className="text-[#ed9b26] text-xl font-black leading-none drop-shadow-sm">M</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">EDITATING ON GOD'S CHARACTER</span>
-                </div>
+            <div className="px-3 py-2 flex flex-col gap-1 font-bold font-serif whitespace-nowrap bg-white overflow-hidden w-full">
+                {wisdomItems.map((item, idx) => (
+                    <div
+                        key={item.key}
+                        className={`flex items-center gap-2 border-[2px] rounded p-1 transition-all`}
+                        style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
+                    >
+                        <span style={{ color: item.color }} className="text-sm flex-shrink-0">{idx + 1}.</span>
+                        <span
+                            onClick={() => { setActiveSquare(item.key); onLetterClick(item.color); }}
+                            style={{ color: item.color }}
+                            className="text-xl font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
+                        >
+                            {item.letter}
+                        </span>
+                        <input
+                            type="text"
+                            value={texts[item.key]}
+                            onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
+                            className="text-black text-xs font-black uppercase tracking-wider bg-transparent outline-none flex-grow min-w-0"
+                        />
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -144,13 +156,18 @@ const explodeBookString = (str, booksDB) => {
     const parts = str.split(',').map(s => s.trim());
     const exploded = [];
 
+    const toTitleCase = (str) => {
+        const spaced = str.replace(/^(\d+)([a-zA-Z]+)/, '$1 $2');
+        return spaced.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    };
+
     const getFullName = (abbr) => {
-        if (!booksDB || !booksDB.length) return abbr;
+        if (!booksDB || !booksDB.length) return toTitleCase(abbr);
         const book = booksDB.find(b =>
             (b.short_form || '').trim().toUpperCase() === abbr.trim().toUpperCase() ||
             (b.name || '').trim().toUpperCase() === abbr.trim().toUpperCase()
         );
-        return book ? book.name.trim().toUpperCase() : abbr;
+        return book ? toTitleCase(book.name.trim()) : toTitleCase(abbr);
     };
 
     parts.forEach(part => {
@@ -179,13 +196,28 @@ const TTomTPlayer = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const handleLogout = async () => {
+        try {
+            await axios.post('http://localhost:8000/api/logout', {}, { withCredentials: true });
+        } catch (error) {
+            console.error("Logout error", error);
+        }
+        navigate('/');
+    };
+
     // Parse the ?days= parameter, defaulting to 30 if not provided
     const searchParams = new URLSearchParams(location.search);
     const trackingDays = parseInt(searchParams.get('days')) || 30;
 
-    const moduleVal = location.state?.module || 1;
-    const facetVal = location.state?.facet || 1;
-    const phaseVal = location.state?.phase || 1;
+    const [fetchedPayload, setFetchedPayload] = useState([]);
+    const [fetchedFilter, setFetchedFilter] = useState('main');
+    const [fetchedModule, setFetchedModule] = useState(null);
+    const [fetchedFacet, setFetchedFacet] = useState(null);
+    const [fetchedPhase, setFetchedPhase] = useState(null);
+
+    const moduleVal = location.state?.module || fetchedModule || 1;
+    const facetVal = location.state?.facet || fetchedFacet || 1;
+    const phaseVal = location.state?.phase || fetchedPhase || 1;
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [showWisdom, setShowWisdom] = useState(false);
@@ -193,19 +225,68 @@ const TTomTPlayer = () => {
     const [currentTime, setCurrentTime] = useState(formatDateTime(new Date()));
     const [selectedDay, setSelectedDay] = useState(1);
     const [booksDB, setBooksDB] = useState([]);
+    const [chaptersDB, setChaptersDB] = useState([]);
     const [contentDB, setContentDB] = useState([]);
 
     const [playerBorderColor, setPlayerBorderColor] = useState('#000000'); // default black top border
-    const [playerBgColor, setPlayerBgColor] = useState('#5a7698');
+    const [playerBgColor, setPlayerBgColor] = useState('rgb(81, 106, 135)');
 
     const [activeTrackName, setActiveTrackName] = useState('');
     const [audioDuration, setAudioDuration] = useState(0);
     const [audioProgress, setAudioProgress] = useState(0);
     const audioRef = useRef(new Audio());
+    const playerStateRef = useRef(null);
+
+    // Local Completion Tracking to Unlock Days
+    const [completedBooks, setCompletedBooks] = useState(() => {
+        try {
+            return new Set(JSON.parse(localStorage.getItem('completed_books') || '[]'));
+        } catch {
+            return new Set();
+        }
+    });
+
+    useEffect(() => {
+        localStorage.setItem('completed_books', JSON.stringify([...completedBooks]));
+    }, [completedBooks]);
+
+    useEffect(() => {
+        if (activeTrackName && activeTrackName !== '') {
+            setCompletedBooks(prev => {
+                const newSet = new Set(prev);
+                newSet.add(activeTrackName);
+                return newSet;
+            });
+        }
+    }, [activeTrackName]);
 
     // Core Refs for Cube Math
     const playerRef = useRef(null);
     const [playerWidth, setPlayerWidth] = useState(420);
+
+    // Horizontal Scroll Drag Logic for Desktop Compatibility
+    const playlistScrollRef = useRef(null);
+    const isDragging = useRef(false);
+    const startX = useRef(0);
+    const scrollLeft = useRef(0);
+    const dragged = useRef(false);
+
+    const handleMouseDown = (e) => {
+        isDragging.current = true;
+        dragged.current = false;
+        startX.current = e.pageX - playlistScrollRef.current.offsetLeft;
+        scrollLeft.current = playlistScrollRef.current.scrollLeft;
+    };
+    const handleMouseLeave = () => { isDragging.current = false; };
+    const handleMouseUp = () => { isDragging.current = false; };
+    const handleMouseMove = (e) => {
+        if (!isDragging.current) return;
+        e.preventDefault();
+        const x = e.pageX - playlistScrollRef.current.offsetLeft;
+        const walk = (x - startX.current) * 2;
+        if (Math.abs(walk) > 5) dragged.current = true;
+        playlistScrollRef.current.scrollLeft = scrollLeft.current - walk;
+    };
 
     const activeVideoUrl = React.useMemo(() => {
         if (!activeTrackName) return null;
@@ -228,7 +309,11 @@ const TTomTPlayer = () => {
     useEffect(() => {
         axios.get('http://localhost:8000/api/books', { withCredentials: true })
             .then(res => setBooksDB(res.data))
-            .catch(err => console.error("Books DB fetch error", err));
+            .catch(console.error);
+
+        axios.get('http://localhost:8000/api/chapters', { withCredentials: true })
+            .then(res => setChaptersDB(res.data))
+            .catch(console.error);
 
         axios.get('http://localhost:8000/api/contents/list', { withCredentials: true })
             .then(res => setContentDB(res.data))
@@ -238,7 +323,33 @@ const TTomTPlayer = () => {
         const ad = audioRef.current;
         const updateTime = () => setAudioProgress(ad.currentTime);
         const updateDuration = () => setAudioDuration(ad.duration);
-        const onEnd = () => setIsPlaying(false);
+        const onEnd = () => {
+            setIsPlaying(false);
+            if (!playerStateRef.current) return;
+            const { activeTrackName: currTrack, playlistBooks: currPlaylist, contentDB: currDB } = playerStateRef.current;
+
+            if (!currTrack || !currPlaylist) return;
+
+            const currentIndex = currPlaylist.findIndex(b => b.name === currTrack);
+            if (currentIndex !== -1 && currentIndex < currPlaylist.length - 1) {
+                // Find next valid track with audio
+                for (let i = currentIndex + 1; i < currPlaylist.length; i++) {
+                    const nextTrackName = currPlaylist[i].name;
+                    const parts = nextTrackName.trim().split(' ');
+                    const chapNum = parseInt(parts.pop());
+                    const bookName = parts.join(' ').toUpperCase();
+
+                    const content = currDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
+                    if (content && content.audio_url) {
+                        ad.src = `http://localhost:8000${content.audio_url}`;
+                        ad.play();
+                        setActiveTrackName(nextTrackName);
+                        setIsPlaying(true);
+                        break;
+                    }
+                }
+            }
+        };
 
         ad.addEventListener('timeupdate', updateTime);
         ad.addEventListener('loadedmetadata', updateDuration);
@@ -279,7 +390,8 @@ const TTomTPlayer = () => {
     const togglePlay = () => {
         if (!activeTrackName) {
             // Pick first playable track from the playlist
-            for (const bookStr of playlistBooks) {
+            for (const bookObj of playlistBooks) {
+                const bookStr = bookObj.name;
                 const parts = bookStr.trim().split(' ');
                 const chapNum = parseInt(parts.pop());
                 const bookName = parts.join(' ').toUpperCase();
@@ -311,17 +423,46 @@ const TTomTPlayer = () => {
 
     const progressPercent = audioDuration ? (audioProgress / audioDuration) * 100 : 0;
 
+    useEffect(() => {
+        if (!location.state?.payload) {
+            axios.get('http://localhost:8000/api/ttom_users/me/chart', { withCredentials: true })
+                .then(res => {
+                    setFetchedPayload(typeof res.data.payload === 'string' ? JSON.parse(res.data.payload) : res.data.payload);
+                    setFetchedFilter(res.data.filter);
+                    setFetchedModule(res.data.module);
+                    setFetchedFacet(res.data.facet);
+                    setFetchedPhase(res.data.phase);
+                })
+                .catch(err => console.error("Assigned chart fetch error:", err));
+        }
+    }, [location.state]);
 
     const parsedPayload = React.useMemo(() => {
+        const filter = location.state?.filter || fetchedFilter || 'main';
         let p = [];
         const payloadString = location.state?.payload;
         if (payloadString) {
             try {
                 p = typeof payloadString === 'string' ? JSON.parse(payloadString) : payloadString;
             } catch (e) { }
+        } else if (fetchedPayload && fetchedPayload.length > 0) {
+            p = fetchedPayload;
         }
+
+        if (filter === 'morning_evening' && p && p.length > 0 && booksDB.length > 0 && chaptersDB.length > 0) {
+            // Apply standard S3 Split logic converting native chart to M/E schema safely!
+            const is24x7 = JSON.stringify(p).includes('"m4b"');
+            if (is24x7) {
+                const { morningEveningChunks } = splitS4Data(p, booksDB, chaptersDB);
+                p = morningEveningChunks;
+            } else {
+                const { morningEveningChunks } = splitS3Data(p, booksDB, chaptersDB);
+                p = morningEveningChunks;
+            }
+        }
+
         return p;
-    }, [location.state?.payload]);
+    }, [location.state?.payload, location.state?.filter, booksDB, chaptersDB]);
 
     const activeDayNode = React.useMemo(() => {
         let dayNode = null;
@@ -338,26 +479,101 @@ const TTomTPlayer = () => {
     }, [selectedDay, parsedPayload]);
 
     const playlistBooks = React.useMemo(() => {
-        if (!activeDayNode) return ["PROVERBS 1"];
+        if (!activeDayNode) return [{ name: "PROVERBS 1", type: "default" }];
         const dayNode = activeDayNode;
-
-        const rawStrings = [
-            dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b,
-            dayNode.m1b_morning, dayNode.m2b_morning, dayNode.m3b_morning, dayNode.m4b_morning,
-            dayNode.m1b_evening, dayNode.m2b_evening, dayNode.m3b_evening, dayNode.m4b_evening
-        ].filter(Boolean);
+        const filter = location.state?.filter || 'main'; // default standard
 
         let fullList = [];
-        rawStrings.forEach(str => {
-            fullList = fullList.concat(explodeBookString(str, booksDB));
-        });
 
-        return fullList.length ? fullList : ["PROVERBS 1"];
-    }, [activeDayNode, booksDB]);
+        let is24x7 = false;
+        try { is24x7 = JSON.stringify(parsedPayload).includes('"m4b"'); } catch (e) { }
+
+        if (filter === 'morning_evening') {
+            if (is24x7) {
+                // 24x7 Morning
+                const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b_morning].filter(Boolean);
+                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
+
+                // 24x7 Evening
+                const eveningRaw = [dayNode.m4b_evening].filter(Boolean);
+                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
+            } else {
+                // Standard Morning
+                const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b_morning].filter(Boolean);
+                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
+
+                // Standard Evening
+                const eveningRaw = [dayNode.m3b_evening].filter(Boolean);
+                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
+            }
+        } else {
+            // Default Main
+            const defaultRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b].filter(Boolean);
+            defaultRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'default' })));
+        }
+
+        return fullList.length ? fullList : [{ name: "PROVERBS 1", type: "default" }];
+    }, [activeDayNode, booksDB, location.state?.filter]);
+
+    useEffect(() => {
+        playerStateRef.current = { activeTrackName, playlistBooks, contentDB };
+    }, [activeTrackName, playlistBooks, contentDB]);
+
+    // Sequential Unlock Logic!
+    const unlockedDays = React.useMemo(() => {
+        const filter = location.state?.filter || 'main';
+        const daysNodes = parsedPayload.flatMap(chunk => chunk.days || []);
+        let unlocked = new Set([1]); // Day 1 is always accessible!
+
+        // Sort just in case the backend payload JSON isn't natively sequential
+        const sortedDays = [...daysNodes].sort((a, b) => a.day - b.day);
+
+        let is24x7 = false;
+        try { is24x7 = JSON.stringify(parsedPayload).includes('"m4b"'); } catch (e) { }
+
+        for (let i = 0; i < sortedDays.length; i++) {
+            const dayObj = sortedDays[i];
+
+            let raw = [];
+            if (filter === 'morning_evening') {
+                if (is24x7) {
+                    raw = [
+                        dayObj.m1b, dayObj.m2b, dayObj.m3b, dayObj.m4b_morning,
+                        dayObj.m4b_evening
+                    ].filter(Boolean);
+                } else {
+                    raw = [
+                        dayObj.m1b, dayObj.m2b, dayObj.m3b_morning,
+                        dayObj.m3b_evening
+                    ].filter(Boolean);
+                }
+            } else {
+                raw = [
+                    dayObj.m1b, dayObj.m2b, dayObj.m3b, dayObj.m4b
+                ].filter(Boolean);
+            }
+
+            let dayLinks = [];
+            raw.forEach(str => {
+                dayLinks = dayLinks.concat(explodeBookString(str, booksDB));
+            });
+
+            // Is everyday link tracked?
+            const isFinished = dayLinks.length > 0 && dayLinks.every(b => completedBooks.has(b));
+            if (isFinished) {
+                // If it is, we unlock the next numerical day dynamically!
+                unlocked.add(dayObj.day + 1);
+            } else {
+                // Strict chronological stop!
+                break;
+            }
+        }
+        return unlocked;
+    }, [parsedPayload, booksDB, completedBooks]);
 
     useEffect(() => {
         if (!activeTrackName && playlistBooks && playlistBooks.length > 0) {
-            setActiveTrackName(playlistBooks[0]);
+            setActiveTrackName(playlistBooks[0].name);
         }
     }, [playlistBooks, activeTrackName]);
 
@@ -397,44 +613,55 @@ const TTomTPlayer = () => {
                         {/* Header (Black) */}
                         <div className="bg-black text-white px-4 py-3 flex flex-col relative">
                             <div className="flex justify-between items-start">
-                                <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-white transition-colors p-1">
-                                    <i className="pi pi-times text-xl"></i>
+                                <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors p-1" title="Logout">
+                                    <i className="pi pi-power-off text-xl"></i>
                                 </button>
                                 <div className="text-center flex flex-col items-center">
-                                    <span className="text-[10px] text-gray-400 tracking-wider font-bold mb-0.5">{currentTime}</span>
-                                    <h1 className="text-blue-400 font-bold text-lg tracking-widest mt-0.5">R L L T - TtomT</h1>
+                                    <span className="text-[13px] text-gray-400 tracking-wider font-bold mb-0.5">{currentTime}</span>
+                                    <h1 className="text-blue-400 font-bold text-[21px] tracking-widest mt-0.5" style={{ lineHeight: '1.2' }}>R L L T - TtomT</h1>
                                 </div>
                                 <button onClick={() => setShowVideoPlayer(true)} className="text-gray-400 hover:text-white transition-colors p-1">
                                     <i className="pi pi-info-circle text-xl sm:text-2xl"></i>
                                 </button>
                             </div>
                             <div className="text-center mt-2">
-                                <span className="text-white text-[11px] font-bold tracking-widest">MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
+                                <span className="text-white text-[14px] font-bold tracking-widest">MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
                             </div>
                         </div>
 
                         {/* Day Header */}
-                        <div className="bg-[#2c3749] px-4 py-2 flex justify-between items-center border-b border-[#1a2234]">
+                        <div className="bg-[#37475a] px-4 py-2 flex justify-between items-center border-b border-[#1a2234]">
                             <span className="text-white font-black text-lg tracking-wider">DAY {selectedDay.toString().padStart(2, '0')} :</span>
                             <span className="text-red-500 font-bold text-sm tracking-wider">ART {activeDayNode?.art || "0"}</span>
                         </div>
 
                         {/* Content Box (Two Columns) */}
-                        <div className="bg-[#2c3749] flex h-48 sm:h-56 p-2 gap-2">
+                        <div className="bg-[#37475a] flex h-48 sm:h-56 p-2 gap-2">
                             {/* Left Column - List */}
-                            <div className="w-1/2 bg-[#5d6a7d] relative rounded-sm p-4 text-white overflow-y-auto custom-scrollbar">
-                                {playlistBooks.map((bookStr, idx) => {
+                            <div className="w-1/2 bg-[#232f3e] relative rounded-sm p-4 text-white overflow-y-auto custom-scrollbar">
+                                {playlistBooks.map((bookObj, idx) => {
+                                    const bookStr = bookObj.name;
+                                    const type = bookObj.type;
+
                                     const parts = bookStr.trim().split(' ');
                                     const chapNum = parseInt(parts.pop());
                                     const bookName = parts.join(' ').toUpperCase();
                                     const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
                                     const hasAudio = content && content.audio_url;
 
+                                    // Standard text coloring logic preventing "disabled" unreadable look when audio is missing!
+                                    let textColor = hasAudio ? 'text-white hover:text-blue-200' : 'text-white/80';
+                                    if (type === 'morning') textColor = hasAudio ? 'text-green-400 hover:text-green-200' : 'text-green-400';
+                                    if (type === 'evening') textColor = hasAudio ? 'text-blue-400 hover:text-blue-200' : 'text-blue-400';
+
+                                    const finalColor = activeTrackName === bookStr ? (type === 'morning' ? 'text-green-300' : type === 'evening' ? 'text-blue-300' : 'text-yellow-400') : textColor;
+
                                     return (
                                         <div
                                             key={idx}
                                             onClick={() => hasAudio ? playTrack(bookStr) : null}
-                                            className={`flex items-center gap-2 mb-3 ${hasAudio ? 'cursor-pointer hover:text-blue-200' : 'opacity-70'} ${activeTrackName === bookStr ? 'text-yellow-400' : ''}`}
+                                            className={`flex items-center gap-2 mb-1 px-2 py-1 rounded-md transition-colors ${hasAudio ? 'cursor-pointer hover:bg-white/5' : ''} ${finalColor}`}
+                                            style={{ backgroundColor: activeTrackName === bookStr ? 'gray' : 'transparent' }}
                                         >
                                             <i className={`pi ${hasAudio ? (activeTrackName === bookStr && isPlaying ? 'pi-pause-circle' : 'pi-play-circle') : 'pi-stop-circle'} text-[10px]`}></i>
                                             <span className="text-sm font-bold tracking-wider">{bookStr}</span>
@@ -459,53 +686,66 @@ const TTomTPlayer = () => {
 
                         {/* Audio Player Controls */}
                         <div
-                            className={`px-4 py-2 mt-1 mx-2 rounded-sm shadow-inner flex flex-col justify-center relative z-10 transition-colors duration-300 ${playerBorderColor === '#000000' ? 'border-t-4' : 'border-[3px]'}`}
+                            className={`px-4 py-1 pb-0.5 mt-0.5 mx-2 rounded-sm shadow-inner flex flex-col justify-center relative z-10 transition-colors duration-300 border-2`}
                             style={{
                                 backgroundColor: playerBgColor,
                                 borderColor: playerBorderColor
                             }}
                         >
-                            {/* Progress Bar Container - YouTube Style */}
-                            <div
-                                className="w-full cursor-pointer group pt-1 pb-1"
-                                onClick={(e) => {
-                                    const bounds = e.currentTarget.getBoundingClientRect();
-                                    const perc = (e.clientX - bounds.left) / bounds.width;
-                                    if (audioDuration) audioRef.current.currentTime = perc * audioDuration;
-                                }}
-                            >
-                                <div className="w-full py-1">
-                                    <div className="w-full h-1 bg-white/30 group-hover:h-1.5 transition-all duration-150 relative">
-                                        <div className="h-full bg-[#fca5a5] relative transition-all duration-100" style={{ width: `${progressPercent}%` }}>
-                                            <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-[#fca5a5] rounded-full scale-0 group-hover:scale-100 transition-transform duration-150 shadow-md"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between text-black font-bold text-xs gap-2">
+                            <div className="flex items-center justify-between gap-2 mt-0.5 mb-0.5">
                                 <button
                                     onClick={togglePlay}
-                                    className="hover:scale-110 transition-transform flex-shrink-0 cursor-pointer"
+                                    className="hover:scale-110 transition-transform flex-shrink-0 cursor-pointer text-black"
                                 >
-                                    <i className={`pi ${isPlaying ? 'pi-pause' : 'pi-play'} text-2xl`}></i>
+                                    {isPlaying ? (
+                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
+                                            <rect x="6" y="4" width="4" height="16" rx="0.5" />
+                                            <rect x="14" y="4" width="4" height="16" rx="0.5" />
+                                        </svg>
+                                    ) : (
+                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
+                                            <path d="M6 4l14 8-14 8z" />
+                                        </svg>
+                                    )}
                                 </button>
-                                <span className="flex-shrink-0 font-black">{formatTrackTime(audioProgress)}</span>
-                                <span className="flex-grow text-center font-black tracking-widest text-[#1a2234] text-sm overflow-hidden whitespace-nowrap overflow-ellipsis px-2">
-                                    {activeTrackName || playlistBooks[0] || 'PROVERBS 1'}
-                                </span>
-                                <span className="flex-shrink-0 font-black">{formatTrackTime(audioDuration)}</span>
+
+                                <div className="flex-grow flex flex-col justify-center overflow-hidden w-full">
+                                    <div
+                                        className="w-full cursor-pointer group pb-1 pt-0.5"
+                                        onClick={(e) => {
+                                            const bounds = e.currentTarget.getBoundingClientRect();
+                                            const perc = (e.clientX - bounds.left) / bounds.width;
+                                            if (audioDuration) audioRef.current.currentTime = perc * audioDuration;
+                                        }}
+                                    >
+                                        <div className="w-full py-0.5">
+                                            <div className="w-full h-1 bg-white/30 group-hover:h-1.5 transition-all duration-150 relative rounded-full">
+                                                <div className="h-full bg-[#fca5a5] relative transition-all duration-100 rounded-full" style={{ width: `${progressPercent}%` }}>
+                                                    <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-[#fca5a5] rounded-full scale-0 group-hover:scale-100 transition-transform duration-150 shadow-md"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center w-full text-black font-bold text-[11px]">
+                                        <span className="flex-shrink-0 font-black">{formatTrackTime(audioProgress)}</span>
+                                        <span className="text-center font-black tracking-widest text-[#1a2234] text-[11px] overflow-hidden whitespace-nowrap overflow-ellipsis leading-none px-2">
+                                            {activeTrackName || (playlistBooks[0] && playlistBooks[0].name) || 'PROVERBS 1'}
+                                        </span>
+                                        <span className="flex-shrink-0 font-black">{formatTrackTime(audioDuration)}</span>
+                                    </div>
+                                </div>
+
                                 <button
                                     onClick={() => setShowWisdom(!showWisdom)}
-                                    className={`transition-all duration-300 flex-shrink-0 ${showWisdom ? 'text-white rotate-90 scale-110 drop-shadow-lg' : 'hover:rotate-90 hover:scale-110'}`}
+                                    className={`transition-all duration-300 flex-shrink-0 text-black ${showWisdom ? 'text-white rotate-90 scale-110 drop-shadow-lg' : 'hover:rotate-90 hover:scale-110'}`}
                                 >
-                                    <i className="pi pi-cog text-xl"></i>
+                                    <i className="pi pi-cog text-lg"></i>
                                 </button>
                             </div>
                         </div>
 
                         {/* Lower Area Stack */}
-                        <div className={`relative w-full ${trackingDays > 30 ? 'h-[440px] sm:h-[460px]' : 'h-[380px] sm:h-[420px]'}`} style={{ perspective: '1000px' }}>
+                        <div className={`relative w-full ${trackingDays > 30 ? 'h-[460px] sm:h-[480px]' : 'h-[450px] sm:h-[480px]'}`} style={{ perspective: '1000px' }}>
                             {/* Front Face: Day Selection Grid */}
                             <div
                                 className="absolute inset-0 flex flex-col rounded-b-lg"
@@ -518,16 +758,22 @@ const TTomTPlayer = () => {
                                 }}
                             >
                                 <div className="p-6 bg-[#131b2e] w-full h-full overflow-y-auto custom-scrollbar rounded-b-lg">
-                                    <div className={`grid grid-cols-5 ${trackingDays > 30 ? 'gap-y-4 sm:gap-y-6' : 'gap-y-8'} gap-x-2`}>
-                                        {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => (
-                                            <div
-                                                key={num}
-                                                onClick={() => setSelectedDay(num)}
-                                                className={`text-white text-center font-bold ${trackingDays > 30 ? 'text-base sm:text-lg' : 'text-lg'} hover:text-blue-400 cursor-pointer transition-colors ${selectedDay === num ? 'text-blue-400 scale-125' : ''}`}
-                                            >
-                                                {num}
-                                            </div>
-                                        ))}
+                                    <div className={`grid grid-cols-5 ${trackingDays > 30 ? 'gap-y-2 sm:gap-y-4' : 'gap-y-4'} gap-x-2`}>
+                                        {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => {
+                                            const isUnlocked = unlockedDays.has(num);
+                                            return (
+                                                <div
+                                                    key={num}
+                                                    onClick={() => {
+                                                        if (isUnlocked) setSelectedDay(num);
+                                                    }}
+                                                    className={`text-center font-bold transition-all duration-300 select-none ${trackingDays > 30 ? 'text-base sm:text-lg' : 'text-lg'} ${isUnlocked ? 'cursor-pointer hover:text-blue-400 opacity-100 text-white' : 'cursor-not-allowed opacity-20 text-gray-500'} ${selectedDay === num ? 'text-blue-400 scale-125' : ''}`}
+                                                    title={!isUnlocked ? 'Complete previous day tracks first!' : `Day ${num}`}
+                                                >
+                                                    {num}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -605,6 +851,73 @@ const TTomTPlayer = () => {
                                 )}
                             </div>
 
+                            {/* Horizontal Floating Playlist for Videos */}
+                            <div className="w-full mt-4 mb-2 select-none relative">
+                                <h3 className="text-gray-500 text-[10px] tracking-widest font-black uppercase mb-3 flex justify-between px-1">
+                                    <span>Playlist Sequence:</span>
+                                    <span className="font-normal opacity-70 normal-case tracking-normal">({playlistBooks.length} tracks)</span>
+                                </h3>
+                                <div
+                                    className="flex overflow-x-auto gap-3 pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] cursor-grab active:cursor-grabbing"
+                                    ref={playlistScrollRef}
+                                    onMouseDown={handleMouseDown}
+                                    onMouseLeave={handleMouseLeave}
+                                    onMouseUp={handleMouseUp}
+                                    onMouseMove={handleMouseMove}
+                                >
+                                    {playlistBooks.map((bookObj, idx) => {
+                                        const bookStr = bookObj.name;
+                                        const type = bookObj.type;
+
+                                        const parts = bookStr.trim().split(' ');
+                                        const chapNum = parseInt(parts.pop());
+                                        const bookName = parts.join(' ').toUpperCase();
+                                        const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
+                                        const hasVideo = content && content.video_url;
+                                        const hasRef = content && content.ref_link;
+                                        const hasVisuals = hasVideo || hasRef;
+                                        const isActive = activeTrackName === bookStr;
+
+                                        let inactiveClass = 'bg-white border-gray-200 hover:bg-gray-50 text-gray-800 shadow-sm';
+                                        let activeClass = 'bg-black border-gray-600 text-white shadow-xl scale-105';
+                                        let symbolColor = hasVisuals ? 'text-gray-700' : 'text-gray-400';
+                                        let activeSymbol = 'text-white';
+
+                                        if (type === 'morning') {
+                                            inactiveClass = 'bg-green-50 border-green-300 text-green-800 hover:bg-green-100 shadow-sm';
+                                            activeClass = 'bg-green-600 border-green-800 text-white shadow-[0_0_12px_rgba(34,197,94,0.4)] scale-105';
+                                            symbolColor = hasVisuals ? 'text-green-700' : 'text-green-400/60';
+                                        } else if (type === 'evening') {
+                                            inactiveClass = 'bg-blue-50 border-blue-300 text-blue-800 hover:bg-blue-100 shadow-sm';
+                                            activeClass = 'bg-blue-600 border-blue-800 text-white shadow-[0_0_12px_rgba(59,130,246,0.4)] scale-105';
+                                            symbolColor = hasVisuals ? 'text-blue-700' : 'text-blue-400/60';
+                                        }
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (!dragged.current) {
+                                                        setActiveTrackName(bookStr);
+                                                    }
+                                                }}
+                                                className={`shrink-0 flex flex-col items-center justify-center p-2 w-[80px] sm:w-[86px] h-[80px] sm:h-[86px] rounded-2xl transition-all border ${isActive ? activeClass : inactiveClass}`}
+                                                style={{ pointerEvents: 'auto' }}
+                                            >
+                                                <div className="relative inline-flex items-center justify-center h-[28px] w-[28px] mb-1">
+                                                    <i className={`pi ${hasVideo ? 'pi-video' : (hasRef ? 'pi-link' : 'pi-video')} text-xl sm:text-2xl ${isActive ? activeSymbol : symbolColor}`}></i>
+                                                    {!hasVisuals && <i className="pi pi-times absolute inset-0 flex items-center justify-center text-red-500 font-black text-[14px]"></i>}
+                                                </div>
+                                                <span className={`text-[9px] font-black tracking-wider text-center w-full truncate px-1 mt-1 ${isActive ? activeSymbol : (type === 'morning' ? 'text-green-700' : type === 'evening' ? 'text-blue-700' : 'text-gray-600')}`}>
+                                                    {bookStr.toUpperCase()}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
                             {/* Spacer */}
                             <div className="my-2"></div>
 
@@ -612,22 +925,40 @@ const TTomTPlayer = () => {
                             {activeRefLink && (
                                 <div className="w-full flex-grow flex flex-col gap-2 pb-6">
                                     <h3 className="text-gray-400 text-[11px] tracking-widest font-black uppercase mb-1 px-1">Attached References:</h3>
-                                    {activeRefLink.split(',').map((link, i) => (
-                                        <a
-                                            key={i}
-                                            href={link.trim()}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="w-full text-left bg-[#131b2e] hover:bg-[#1a2234] border border-gray-800 hover:border-blue-500 text-blue-400 font-bold py-3 px-4 rounded shadow-md transition-all flex items-center justify-between"
-                                            style={{ pointerEvents: 'auto' }}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <i className="pi pi-link text-lg text-gray-500"></i>
-                                                <span className="text-xs truncate max-w-[250px]">{link.trim()}</span>
-                                            </div>
-                                            <i className="pi pi-external-link text-xs text-gray-400"></i>
-                                        </a>
-                                    ))}
+                                    {(() => {
+                                        let parsedLinks = [];
+                                        try {
+                                            const trimmed = activeRefLink.trim();
+                                            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                                                parsedLinks = JSON.parse(trimmed);
+                                            } else {
+                                                parsedLinks = activeRefLink.split(',');
+                                            }
+                                        } catch (e) {
+                                            parsedLinks = activeRefLink.split(',');
+                                        }
+
+                                        return parsedLinks.map((link, i) => {
+                                            const cleanLink = link.trim();
+                                            const safeHref = cleanLink.match(/^(https?:\/\/)/i) ? cleanLink : `https://${cleanLink}`;
+                                            return (
+                                                <a
+                                                    key={i}
+                                                    href={safeHref}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="w-full text-left bg-[#131b2e] hover:bg-[#1a2234] border border-gray-800 hover:border-blue-500 text-blue-400 font-bold py-3 px-4 rounded shadow-md transition-all flex items-center justify-between"
+                                                    style={{ pointerEvents: 'auto' }}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <i className="pi pi-link text-lg text-gray-500"></i>
+                                                        <span className="text-xs truncate max-w-[250px]">{cleanLink}</span>
+                                                    </div>
+                                                    <i className="pi pi-external-link text-xs text-gray-400"></i>
+                                                </a>
+                                            );
+                                        });
+                                    })()}
                                 </div>
                             )}
                         </div>

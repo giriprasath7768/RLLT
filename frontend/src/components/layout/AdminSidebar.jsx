@@ -71,17 +71,20 @@ const AdminSidebar = ({ visible, onHide }) => {
 
     const menuItems = [
         { label: 'Dashboard', icon: 'pi pi-home', to: userRole === 'leader' ? '/dashboard/leader' : userRole === 'admin' ? '/dashboard/admin' : '/dashboard/super-admin' },
+        ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'T-Tom-T Registered Users', icon: 'pi pi-user-plus', to: '/admin/ttom-users' }] : []),
         ...(userRole === 'super_admin' ? [{ label: 'Manage Admin', icon: 'pi pi-shield', to: '/admin/manage-admin' }] : []),
+
         ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Manage Leaders', icon: 'pi pi-users', to: '/admin/manage-leaders' }] : []),
         { label: 'Manage Students', icon: 'pi pi-id-card', to: '/admin/manage-students' },
         { label: 'Manage Assessment', icon: 'pi pi-file-edit', to: '/admin/manage-assessment' },
         { label: 'Assessment Results', icon: 'pi pi-chart-line', to: '/admin/assessment-results' },
-        { label: 'Assign Chart', icon: 'pi pi-calendar-plus', to: '/admin/assign-chart' },
-        ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+        ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
             label: 'Chart Creation',
             icon: 'pi pi-chart-bar',
             items: [
                 { label: 'Main Chart', icon: 'pi pi-chart-line', to: '/admin/charts' },
+                { label: '7TNT Main Chart', icon: 'pi pi-table', to: '/admin/chart-creation/7tnt-main-chart' },
+                { label: '7TNT Day Cycle Chart', icon: 'pi pi-calendar-plus', to: '/admin/chart-creation/7tnt-day-cycle' },
                 { label: 'V-Card Chart', icon: 'pi pi-id-card', to: '/admin/chart-listing/vcard-chart' },
                 { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/twenty-four-seven-chart' }
             ]
@@ -91,6 +94,9 @@ const AdminSidebar = ({ visible, onHide }) => {
             icon: 'pi pi-list',
             items: [
                 { label: 'Main Chart', icon: 'pi pi-eye', to: '/admin/chart-listing/main-chart' },
+                { label: '7TNT Main Chart', icon: 'pi pi-table', to: '/admin/chart-listing/7tnt-main-chart' },
+                { label: '7TNT Day Cycle Chart', icon: 'pi pi-table', to: '/admin/chart-listing/7tnt-day-cycle' },
+                { label: '7TNT Weekly Chart', icon: 'pi pi-calendar', to: '/admin/chart-listing/7tnt-weekly-chart' },
                 { label: 'Morning & Evening', icon: 'pi pi-calendar-plus', to: '/admin/chart-listing/morning-evening-chart' },
                 { label: 'DL Size Chart', icon: 'pi pi-table', to: '/admin/chart-listing/dl-size-chart' },
                 { label: 'C-Chart Index', icon: 'pi pi-chart-pie', to: '/admin/chart-listing/c-chart' },
@@ -101,7 +107,12 @@ const AdminSidebar = ({ visible, onHide }) => {
                 { label: '24x7 DL Size Chart', icon: 'pi pi-table', to: '/admin/chart-listing/twenty-four-seven-dl-size-chart' }
             ]
         },
-        ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+        {
+            label: '7TNT Word',
+            icon: 'pi pi-file-word',
+            to: '/admin/7tnt-word'
+        },
+        ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
             label: 'Library',
             icon: 'pi pi-folder-open',
             items: [
@@ -110,8 +121,12 @@ const AdminSidebar = ({ visible, onHide }) => {
                 { label: 'RLLT Table Data', icon: 'pi pi-table', to: '/admin/rllt-data' }
             ]
         }] : []),
+        ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'Book Index', icon: 'pi pi-book', to: '/admin/book-index' }] : []),
+        ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Recordings', icon: 'pi pi-microphone', to: '/admin/recordings' }] : []),
+        ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Screen Recorder', icon: 'pi pi-desktop', to: '/admin/screen-recorder' }] : []),
         ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Manage Training Contents', icon: 'pi pi-video', to: '/admin/manage-training' }] : []),
-        ...(userRole === 'super_admin' ? [{ label: 'Players', icon: 'pi pi-play', to: '/admin/players' }] : []),
+        ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'Players', icon: 'pi pi-play', to: '/admin/players' }] : []),
+        ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: '7 TNT Players', icon: 'pi pi-play', to: '/admin/7tnt-players' }] : []),
         ...(userRole === 'super_admin' ? [{ label: 'Locations', icon: 'pi pi-map-marker', to: '/admin/locations' }] : []),
     ];
 

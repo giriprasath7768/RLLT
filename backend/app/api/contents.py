@@ -11,6 +11,8 @@ from typing import Optional
 from app.db.database import get_db
 from app.db.models import Content, Book, Chapter
 from app.schemas.content import BulkContentRequest
+from typing import List
+import json
 
 router = APIRouter()
 
@@ -22,8 +24,10 @@ async def sync_content(
     book_id: uuid.UUID = Form(...),
     chapter_id: uuid.UUID = Form(...),
     ref_link: str = Form(""),
+    audio_language: str = Form(""),
     audio: Optional[UploadFile] = File(None),
-    video: Optional[UploadFile] = File(None),
+    videos: List[UploadFile] = File(default=[]),
+    pdfs: List[UploadFile] = File(default=[]),
     db: AsyncSession = Depends(get_db)
 ):
     try:
@@ -47,22 +51,62 @@ async def sync_content(
         elif existing:
             audio_url = existing.audio_url
             
-        if video and video.filename:
-            ext = os.path.splitext(video.filename)[1]
-            filename = f"video_{book_id.hex}_{chapter_id.hex}_{uuid.uuid4().hex}{ext}"
-            file_path = os.path.join(UPLOAD_DIR, filename)
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(video.file, buffer)
-            video_url = f"/api/uploads/{filename}"
-        elif existing:
-            video_url = existing.video_url
+        video_urls = []
+        if existing and existing.video_url:
+            try:
+                parsed = json.loads(existing.video_url)
+                if isinstance(parsed, list):
+                    video_urls = parsed
+                else:
+                    if existing.video_url:
+                        video_urls = [existing.video_url]
+            except Exception:
+                if existing.video_url:
+                     video_urls = [existing.video_url]
+
+        for video in videos:
+            if video and video.filename:
+                ext = os.path.splitext(video.filename)[1]
+                filename = f"video_{book_id.hex}_{chapter_id.hex}_{uuid.uuid4().hex}{ext}"
+                file_path = os.path.join(UPLOAD_DIR, filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(video.file, buffer)
+                video_urls.append(f"/api/uploads/{filename}")
+                
+        video_url_json = json.dumps(video_urls) if video_urls else None
+        
+        pdf_urls = []
+        if existing and existing.pdf_url:
+            try:
+                parsed = json.loads(existing.pdf_url)
+                if isinstance(parsed, list):
+                    pdf_urls = parsed
+                else:
+                    if existing.pdf_url:
+                        pdf_urls = [existing.pdf_url]
+            except Exception:
+                if existing.pdf_url:
+                     pdf_urls = [existing.pdf_url]
+
+        for pdf in pdfs:
+            if pdf and pdf.filename:
+                ext = os.path.splitext(pdf.filename)[1]
+                filename = f"pdf_{book_id.hex}_{chapter_id.hex}_{uuid.uuid4().hex}{ext}"
+                file_path = os.path.join(UPLOAD_DIR, filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(pdf.file, buffer)
+                pdf_urls.append(f"/api/uploads/{filename}")
+                
+        pdf_url_json = json.dumps(pdf_urls) if pdf_urls else None
 
         upsert_stmt = insert(Content).values(
             id=uuid.uuid4(),
             book_id=book_id,
             chapter_id=chapter_id,
             audio_url=audio_url,
-            video_url=video_url,
+            audio_language=audio_language,
+            video_url=video_url_json,
+            pdf_url=pdf_url_json,
             ref_link=ref_link
         )
         
@@ -70,7 +114,9 @@ async def sync_content(
             index_elements=['book_id', 'chapter_id'],
             set_={
                 'audio_url': upsert_stmt.excluded.audio_url,
+                'audio_language': upsert_stmt.excluded.audio_language,
                 'video_url': upsert_stmt.excluded.video_url,
+                'pdf_url': upsert_stmt.excluded.pdf_url,
                 'ref_link': upsert_stmt.excluded.ref_link
             }
         )
@@ -81,7 +127,9 @@ async def sync_content(
         return {
             "status": "success", 
             "audio_url": audio_url,
-            "video_url": video_url,
+            "audio_language": audio_language,
+            "video_url": video_url_json,
+            "pdf_url": pdf_url_json,
             "ref_link": ref_link
         }
         
@@ -110,7 +158,9 @@ async def list_contents(db: AsyncSession = Depends(get_db)):
             "book_name": book_name,
             "chapter_number": chapter_number,
             "audio_url": content.audio_url,
+            "audio_language": content.audio_language,
             "video_url": content.video_url,
+            "pdf_url": content.pdf_url,
             "ref_link": content.ref_link,
             "created_at": content.created_at
         })
@@ -141,7 +191,9 @@ async def bulk_sync_content(payload: BulkContentRequest, db: AsyncSession = Depe
                 book_id=book.id,
                 chapter_id=chapter.id,
                 audio_url=item.audio_url,
+                audio_language=getattr(item, 'audio_language', None),
                 video_url=item.video_url,
+                pdf_url=getattr(item, 'pdf_url', None),
                 ref_link=item.ref_link
             )
             
@@ -149,7 +201,9 @@ async def bulk_sync_content(payload: BulkContentRequest, db: AsyncSession = Depe
                 index_elements=['book_id', 'chapter_id'],
                 set_={
                     'audio_url': upsert_stmt.excluded.audio_url,
+                    'audio_language': upsert_stmt.excluded.audio_language,
                     'video_url': upsert_stmt.excluded.video_url,
+                    'pdf_url': upsert_stmt.excluded.pdf_url,
                     'ref_link': upsert_stmt.excluded.ref_link
                 }
             )

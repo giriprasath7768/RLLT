@@ -81,6 +81,14 @@ const Register = () => {
 
         } catch (err) {
             let errorDetail = 'Registration failed. Please try again.';
+            let errorSummary = 'Error';
+
+            if (err.response?.status === 422) {
+                errorSummary = 'Validation Error';
+            } else if (err.response?.status === 400) {
+                errorSummary = 'Registration Failed';
+            }
+
             if (err.response?.data?.detail) {
                 if (Array.isArray(err.response.data.detail)) {
                     errorDetail = err.response.data.detail.map(d => `${d.loc?.[1] || 'Field'}: ${d.msg}`).join(', ');
@@ -88,7 +96,7 @@ const Register = () => {
                     errorDetail = err.response.data.detail;
                 }
             }
-            toast.current.show({ severity: 'error', summary: 'Validation Error', detail: errorDetail, life: 5000 });
+            toast.current.show({ severity: 'error', summary: errorSummary, detail: errorDetail, life: 5000 });
         } finally {
             setLoading(false);
         }

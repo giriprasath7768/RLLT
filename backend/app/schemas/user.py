@@ -13,7 +13,7 @@ class TokenData(BaseModel):
 
 class UserInfo(BaseModel):
     id: UUID
-    email: EmailStr
+    email: Optional[str] = None
     role: str
     is_active: bool
     assessment_status: Optional[str] = "pending"

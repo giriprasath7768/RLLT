@@ -1,0 +1,9 @@
+I:\RLLT\Webapp\frontend\src\pages\admin\SevenTNTMainChartView.jsx: Adjacent JSX elements must be wrapped in an enclosing tag. Did you want a JSX fragment <>...</>? (786:8)
+
+[0m [90m 784 |[39m             
+ [90m 785 |[39m [33m<[39m[33m/[39m[33mdiv[39m [33m>[39m[33m<[39m[33m/[39m[33mdiv[39m [33m>[39m
+[31m[1m>[22m[39m[90m 786 |[39m         [33m<[39m[33m/[39m[33mdiv[39m [33m>[39m
+ [90m     |[39m         [31m[1m^[22m[39m
+ [90m 787 |[39m     )[33m;[39m
+ [90m 788 |[39m }[33m;[39m
+ [90m 789 |[39m[0m

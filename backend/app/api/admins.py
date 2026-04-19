@@ -20,13 +20,22 @@ async def verify_super_admin(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Not enough permissions. Super Admin required.")
     return current_user
 
+async def verify_admin_or_super(current_user: User = Depends(get_current_user)):
+    if current_user.role not in [UserRole.super_admin, UserRole.admin]:
+        raise HTTPException(status_code=403, detail="Not enough permissions. Super Admin or Admin required.")
+    return current_user
+
 @router.get("/", response_model=List[AdminResponse])
-async def get_admins(db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_super_admin)):
+async def get_admins(db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_super)):
     query = (
         select(Admin, User, Location)
         .join(User, Admin.user_id == User.id)
         .join(Location, Admin.location_id == Location.id)
     )
+    
+    if current_user.role == UserRole.admin:
+        query = query.where(User.id == current_user.id)
+        
     result = await db.execute(query)
     results = result.all()
     

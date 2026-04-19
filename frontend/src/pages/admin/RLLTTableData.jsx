@@ -10,7 +10,10 @@ import { InputNumber } from 'primereact/inputnumber';
 import { classNames } from 'primereact/utils';
 import { Toolbar } from 'primereact/toolbar';
 import { FileUpload } from 'primereact/fileupload';
+import { Paginator } from 'primereact/paginator';
 import * as XLSX from 'xlsx';
+import '../../assets/css/AdminManagement.css';
+import MobileDataCard from '../../components/common/MobileDataCard';
 
 const RLLTTableData = () => {
     let emptyRecord = {
@@ -26,13 +29,16 @@ const RLLTTableData = () => {
     const [dataList, setDataList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [globalFilter, setGlobalFilter] = useState('');
-    
+
     // CRUD state
     const [recordDialog, setRecordDialog] = useState(false);
     const [deleteRecordDialog, setDeleteRecordDialog] = useState(false);
     const [importDialog, setImportDialog] = useState(false);
     const [record, setRecord] = useState(emptyRecord);
     const [submitted, setSubmitted] = useState(false);
+    const [first, setFirst] = useState(0);
+    const [rows, setRows] = useState(15);
+    const dt = useRef(null);
     const toast = useRef(null);
 
     useEffect(() => {
@@ -204,35 +210,30 @@ const RLLTTableData = () => {
         reader.readAsBinaryString(file);
     };
 
-    const leftToolbarTemplate = () => {
-        return (
+    const topCardContent = (
+        <div className="flex flex-col md:flex-row gap-3 md:items-center justify-between w-full">
             <div className="flex flex-wrap gap-2">
-                <Button label="New Lookup" icon="pi pi-plus" severity="success" onClick={openNew} />
-                <Button label="Import Excel" icon="pi pi-upload" className="p-button-help" onClick={() => setImportDialog(true)} />
+                <Button label="New Lookup" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
+                <Button label="Import Excel" icon="pi pi-upload" severity="help" onClick={() => setImportDialog(true)} className="hidden md:flex" />
             </div>
-        );
-    };
+        </div>
+    );
 
     const actionBodyTemplate = (rowData) => {
         return (
-            <div className="flex gap-2 justify-end">
-                <Button icon="pi pi-pencil" rounded outlined className="mr-2" onClick={() => editRecord(rowData)} />
+            <React.Fragment>
+                <Button icon="pi pi-pencil" rounded outlined severity="info" className="mr-2" onClick={() => editRecord(rowData)} />
                 <Button icon="pi pi-trash" rounded outlined severity="danger" onClick={() => confirmDeleteRecord(rowData)} />
-            </div>
+            </React.Fragment>
         );
     };
 
-    const header = (
-        <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold">RLLT Map Explorer</h2>
-            <span className="p-input-icon-left">
-                <i className="pi pi-search" />
-                <InputText
-                    type="search"
-                    onInput={(e) => setGlobalFilter(e.target.value)}
-                    placeholder="Global Search"
-                    className="p-2 border rounded"
-                />
+    const tableHeader = (
+        <div className="flex justify-between items-center w-full">
+            <h4 className="m-0 text-lg sm:text-xl font-bold text-black border-none">RLLT Map Explorer</h4>
+            <span className="p-input-icon-left w-full md:w-auto relative flex items-center search-input-wrapper">
+                <i className="pi pi-search absolute left-3 text-gray-400 z-10" />
+                <InputText type="search" onInput={(e) => setGlobalFilter(e.target.value)} placeholder="Search..." className="w-full md:w-auto pl-10 text-black py-2 border border-gray-300 rounded-md" />
             </span>
         </div>
     );
@@ -240,7 +241,7 @@ const RLLTTableData = () => {
     const recordDialogFooter = (
         <React.Fragment>
             <Button label="Cancel" icon="pi pi-times" outlined onClick={hideDialog} />
-            <Button label="Save" icon="pi pi-check" onClick={saveRecord} />
+            <Button label="Save" icon="pi pi-check" severity="success" onClick={saveRecord} />
         </React.Fragment>
     );
 
@@ -251,35 +252,82 @@ const RLLTTableData = () => {
         </React.Fragment>
     );
 
+    const filteredData = dataList.filter(rec => {
+        if (!globalFilter) return true;
+        const search = globalFilter.toLowerCase();
+        return (
+            (rec.module && rec.module.toString().includes(search)) ||
+            (rec.facet && rec.facet.toString().includes(search)) ||
+            (rec.phase && rec.phase.toString().includes(search)) ||
+            (rec.day && rec.day.toString().includes(search)) ||
+            (rec.art && rec.art.toLowerCase().includes(search))
+        );
+    });
+
     return (
-        <div className="p-10">
+        <div className="p-4 sm:p-8 bg-white min-h-screen">
             <Toast ref={toast} />
-            <div className="card bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <Toolbar className="mb-4 bg-transparent border-none p-0" left={leftToolbarTemplate}></Toolbar>
-                <DataTable
-                    value={dataList}
-                    paginator
-                    rows={15}
-                    dataKey="id"
-                    loading={loading}
-                    globalFilter={globalFilter}
-                    header={header}
-                    emptyMessage="No settings configured."
-                    className="p-datatable-sm"
-                    stripedRows
-                >
-                    <Column field="module" header="Module" sortable />
-                    <Column field="facet" header="Facet" sortable />
-                    <Column field="phase" header="Phase" sortable />
-                    <Column field="day" header="Day" sortable />
-                    <Column field="art" header="ART Time" sortable />
-                    <Column field="scheduled_value_days" header="Scheduled Days" sortable />
-                    <Column body={actionBodyTemplate} exportable={false} style={{ minWidth: '8rem' }}></Column>
-                </DataTable>
+            <div className="card border border-gray-100 rounded-xl p-4 sm:p-6 shadow-sm">
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 mb-4">
+                    {topCardContent}
+                </div>
+
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
+                    <DataTable ref={dt} value={dataList} dataKey="id"
+                        paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
+                        loading={loading} globalFilter={globalFilter} header={tableHeader}
+                        className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines
+                        rowClassName={() => 'bg-white text-black'} emptyMessage="No settings configured.">
+                        <Column header="S.No" body={(data, options) => options.rowIndex + 1} exportable={false} style={{ width: '4rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="module" header="Module" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="facet" header="Facet" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="phase" header="Phase" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="day" header="Day" sortable style={{ width: '10%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="art" header="ART Time" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="scheduled_value_days" header="Scheduled Days" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
+                        <Column header="Activity" body={actionBodyTemplate} exportable={false} style={{ width: '12%' }} headerClassName="admin-table-header"></Column>
+                    </DataTable>
+                </div>
+
+                {/* External Paginator Card */}
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
+                    <Paginator first={first} rows={rows} totalRecords={filteredData.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                        template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} records" />
+                </div>
+
+                {/* Mobile View */}
+                <div className="block md:hidden mt-4">
+                    {filteredData.length > 0 ? (
+                        filteredData.map(rec => (
+                            <MobileDataCard
+                                key={rec.id}
+                                title={`Module ${rec.module} - Facet ${rec.facet}`}
+                                data={[
+                                    { label: 'Phase', value: rec.phase },
+                                    { label: 'Day', value: rec.day },
+                                    { label: 'ART Time', value: rec.art },
+                                    { label: 'Scheduled Days', value: rec.scheduled_value_days }
+                                ]}
+                                onEdit={() => editRecord(rec)}
+                                onDelete={() => confirmDeleteRecord(rec)}
+                            />
+                        ))
+                    ) : (
+                        <div className="text-center p-4 text-gray-500 bg-gray-50 rounded-xl border border-gray-100">
+                            No settings configured.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Mobile FAB */}
+            <div className="block md:hidden fixed bottom-6 right-6 z-50">
+                <Button icon="pi pi-plus" className="p-button-rounded p-button-success shadow-lg" size="large" onClick={openNew} aria-label="Add New" />
             </div>
 
             <Dialog visible={recordDialog} style={{ width: '30rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Schedule Mapping Lookup" modal className="p-fluid" footer={recordDialogFooter} onHide={hideDialog}>
-                
+
                 <div className="formgrid grid grid-cols-2 gap-4 mt-4 mb-4">
                     <div className="field col-6">
                         <label htmlFor="module" className="font-bold block mb-2">Module Number</label>
@@ -304,13 +352,13 @@ const RLLTTableData = () => {
 
                 <div className="field mb-4">
                     <label htmlFor="art" className="font-bold block mb-2">Total ART String <span className="text-red-500">*</span></label>
-                    <InputText 
-                        id="art" 
-                        value={record.art} 
-                        onChange={(e) => onInputChange(e, 'art')} 
+                    <InputText
+                        id="art"
+                        value={record.art}
+                        onChange={(e) => onInputChange(e, 'art')}
                         placeholder="e.g. 1h.15m"
-                        required autoFocus 
-                        className={classNames({ 'p-invalid': submitted && !record.art })} 
+                        required autoFocus
+                        className={classNames({ 'p-invalid': submitted && !record.art })}
                     />
                     {submitted && !record.art && <small className="p-error text-red-500 block mt-1">String value code is strictly required.</small>}
                 </div>

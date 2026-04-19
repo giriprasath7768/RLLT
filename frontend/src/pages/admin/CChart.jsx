@@ -26,7 +26,7 @@ const parseTime = (t) => {
     } else if (t.includes('.')) {
         const parts = t.split('.');
         let sStr = parts[1] || "0";
-        if (sStr.length === 1) sStr += '0'; 
+        if (sStr.length === 1) sStr += '0';
         return parseInt(parts[0] || 0) + (parseInt(sStr.substring(0, 2)) / 60);
     } else {
         return parseInt(t) || 0;
@@ -57,15 +57,15 @@ const ImageBox = ({ url, label }) => {
     );
 };
 
-const CChart = () => {
+const CChart = ({ isEmbedMode = false, onInsert = null }) => {
     const toast = useRef(null);
     const [chartsList, setChartsList] = useState([]);
     const [selectedChart, setSelectedChart] = useState(null);
-    
+
     const [chunks, setChunks] = useState([]);
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
-    
+
     // Dynamic text
     const [headerSubtitle, setHeaderSubtitle] = useState("NO CHART SELECTED");
     const [averageTime, setAverageTime] = useState(0);
@@ -85,13 +85,13 @@ const CChart = () => {
         axios.get('http://localhost:8000/api/charts/list', { withCredentials: true })
             .then(res => setChartsList(res.data))
             .catch(err => console.error("Could not fetch charts list", err));
-            
+
         axios.get('http://localhost:8000/api/books', { withCredentials: true })
             .then(res => setBooksDB(res.data));
-            
+
         axios.get('http://localhost:8000/api/chapters', { withCredentials: true })
             .then(res => setChaptersDB(res.data));
-            
+
         axios.get('http://localhost:8000/api/rllt_lookup', { withCredentials: true })
             .then(res => setRlltDB(res.data));
     };
@@ -101,7 +101,8 @@ const CChart = () => {
     }, []);
 
     useEffect(() => {
-        if (!selectedChart || booksDB.length === 0 || chaptersDB.length === 0) {
+        const preloadData = location.state?.chartData;
+        if ((!preloadData && !selectedChart) || booksDB.length === 0 || chaptersDB.length === 0) {
             setChunks([]);
             setHeaderSubtitle("NO CHART SELECTED");
             setTotalChapters(0);
@@ -110,60 +111,66 @@ const CChart = () => {
             return;
         }
 
-        const { module, facet, phase } = selectedChart;
-        axios.get(`http://localhost:8000/api/charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
-            .then(res => {
-                const data = res.data;
-                
-                const availableFacets = rlltDB.filter(d => d.module === module) || [];
-                const maxFacets = availableFacets.length > 0 ? Math.max(...availableFacets.map(d => d.facet)) : facet;
+        const __fixedPreload = location.state?.chartData;
+        const fetchPromise = __fixedPreload
+            ? Promise.resolve({ data: __fixedPreload })
+            : axios.get(`http://localhost:8000/api/charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
 
-                const availablePhases = availableFacets.filter(d => d.facet === facet);
-                const maxPhases = availablePhases.length > 0 ? Math.max(...availablePhases.map(d => d.phase)) : phase;
-                
-                setHeaderSubtitle(`MDL${module} FCT${facet}/${maxFacets} PHS${phase}/${maxPhases}`);
-                setLogoUrl(data.logo_url ? `http://localhost:8000${data.logo_url}` : null);
-                setBannerText(data.banner_text || "");
-                setTLabel(data.t_label || "T");
-                setPhaseLabel(`${phase}/${maxPhases}`);
-                
-                if (data.state_payload) {
-                    try {
-                        const parsedChunks = JSON.parse(data.state_payload);
-                        if (Array.isArray(parsedChunks)) {
-                            setChunks(parsedChunks);
-                            // Calculate global totals
-                            let gChaps = 0;
-                            let gVerses = 0;
-                            let gArt = 0;
-                            parsedChunks.forEach(chunk => {
-                                chunk.days.forEach(d => {
-                                    gChaps += parseInt(d.chap || 0);
-                                    gVerses += parseInt(d.verse || 0);
-                                    gArt += parseTime(d.art || 0);
-                                });
+        fetchPromise.then(res => {
+            const data = res.data;
+            const module = selectedChart?.module || location.state?.assignment?.module || '1';
+            const facet = selectedChart?.facet || location.state?.assignment?.facet || '1';
+            const phase = selectedChart?.phase || location.state?.assignment?.phase || '1';
+
+            const availableFacets = rlltDB.filter(d => d.module === module) || [];
+            const maxFacets = availableFacets.length > 0 ? Math.max(...availableFacets.map(d => d.facet)) : facet;
+
+            const availablePhases = availableFacets.filter(d => d.facet === facet);
+            const maxPhases = availablePhases.length > 0 ? Math.max(...availablePhases.map(d => d.phase)) : phase;
+
+            setHeaderSubtitle(`MDL${module} FCT${facet}/${maxFacets} PHS${phase}/${maxPhases}`);
+            setLogoUrl(data.logo_url ? `http://localhost:8000${data.logo_url}` : null);
+            setBannerText(data.banner_text || "");
+            setTLabel(data.t_label || "T");
+            setPhaseLabel(`${phase}/${maxPhases}`);
+
+            if (data.state_payload) {
+                try {
+                    const parsedChunks = JSON.parse(data.state_payload);
+                    if (Array.isArray(parsedChunks)) {
+                        setChunks(parsedChunks);
+                        // Calculate global totals
+                        let gChaps = 0;
+                        let gVerses = 0;
+                        let gArt = 0;
+                        parsedChunks.forEach(chunk => {
+                            chunk.days.forEach(d => {
+                                gChaps += parseInt(d.chap || 0);
+                                gVerses += parseInt(d.verse || 0);
+                                gArt += parseTime(d.art || 0);
                             });
-                            setTotalChapters(gChaps);
-                            setTotalVerses(gVerses);
-                            
-                            const daysCount = parsedChunks.length * 5;
-                            const avgMins = daysCount > 0 ? (gArt / daysCount) : 0;
-                            setAverageTime(avgMins);
-                        }
-                    } catch(e) { console.error("Parse chunks err", e); }
-                }
-                toast.current?.show({ severity: 'success', summary: 'Loaded', detail: 'Chart loaded properly.', life: 2000 });
-            })
+                        });
+                        setTotalChapters(gChaps);
+                        setTotalVerses(gVerses);
+
+                        const daysCount = parsedChunks.length * 5;
+                        const avgMins = daysCount > 0 ? (gArt / daysCount) : 0;
+                        setAverageTime(avgMins);
+                    }
+                } catch (e) { console.error("Parse chunks err", e); }
+            }
+            toast.current?.show({ severity: 'success', summary: 'Loaded', detail: 'Chart loaded properly.', life: 2000 });
+        })
             .catch(err => {
                 toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Could not load chart details.', life: 3000 });
                 setChunks([]);
             });
-    }, [selectedChart, booksDB, chaptersDB]);
+    }, [selectedChart, booksDB, chaptersDB, location.state]);
 
     // Data parsing map
     const processDayData = useMemo(() => {
-        const sortedBooks = [...booksDB].sort((a,b) => (b.short_form||'').length - (a.short_form||'').length);
-        
+        const sortedBooks = [...booksDB].sort((a, b) => (b.short_form || '').length - (a.short_form || '').length);
+
         return (dayObj) => {
             const rawLines = [];
             if (dayObj.m1b) rawLines.push(...dayObj.m1b.split(','));
@@ -186,7 +193,7 @@ const CChart = () => {
     const handlePrint = () => {
         const printContent = document.getElementById('printable-cchart');
         if (!printContent) return;
-        
+
         // Create a hidden iframe for printing to avoid layout issues in the main window
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';
@@ -196,7 +203,7 @@ const CChart = () => {
         iframe.style.height = '0';
         iframe.style.border = '0';
         document.body.appendChild(iframe);
-        
+
         const doc = iframe.contentWindow.document;
         doc.open();
         doc.write(`
@@ -312,31 +319,44 @@ const CChart = () => {
             });
         }
         const element = document.getElementById('printable-cchart');
-        
+
         // Use higher scale and explicit dimensions for better clarity and alignment
-        const canvas = await window.html2canvas(element, { 
-            scale: 3, 
-            backgroundColor: '#ffffff', 
+        const canvas = await window.html2canvas(element, {
+            scale: 3,
+            backgroundColor: '#ffffff',
             useCORS: true,
             logging: false,
             allowTaint: true,
             windowWidth: element.scrollWidth,
             windowHeight: element.scrollHeight
         });
-        
+
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        
+
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        
+
         // 10mm margins
         const margin = 10;
         const targetWidth = pdfWidth - (2 * margin);
         const targetHeight = (canvas.height * targetWidth) / canvas.width;
-        
+
         pdf.addImage(imgData, 'PNG', margin, margin, targetWidth, targetHeight, undefined, 'FAST');
         pdf.save(`CChart_MDL${selectedChart?.module}_FCT${selectedChart?.facet}_PHS${selectedChart?.phase}.pdf`);
+    };
+
+    const handleInsertToEditor = async () => {
+        const selectedText = window.getSelection().toString().trim();
+        if (!selectedText) {
+            toast.current?.show({ severity: 'warn', summary: 'No Selection', detail: 'Please highlight some text in the chart first.', life: 3000 });
+            return;
+        }
+
+        if (onInsert) {
+            onInsert(selectedText);
+            toast.current?.show({ severity: 'success', summary: 'Inserted', detail: 'Text successfully copied to Document!', life: 2000 });
+        }
     };
 
     const renderMainHeaderBlock = () => {
@@ -433,9 +453,9 @@ const CChart = () => {
             <div className="flex flex-col flex-1 gap-0 h-full">
                 {CHUNK_COLORS.map((color, idx) => {
                     return (
-                        <div 
-                            key={`colorbox_${idx}`} 
-                            className="flex-1 border-[2px] bg-white w-full" 
+                        <div
+                            key={`colorbox_${idx}`}
+                            className="flex-1 border-[2px] bg-white w-full"
                             style={{ borderColor: color, marginBottom: '-2px' }}
                         ></div>
                     );
@@ -448,7 +468,7 @@ const CChart = () => {
     const row2 = chunks.slice(chunks.length > 6 ? 4 : 3, chunks.length > 6 ? 8 : 6);
 
     return (
-        <div className="p-8 w-full max-w-full overflow-x-auto bg-gray-50 min-h-screen">
+        <div className={`p-8 w-full max-w-full overflow-x-auto bg-gray-50 ${isEmbedMode ? 'min-h-0' : 'min-h-screen'}`}>
             <style>{`
                 .pdf-font {
                     font-family: 'Arial', sans-serif !important;
@@ -463,30 +483,30 @@ const CChart = () => {
 
                 <div className="flex items-center gap-3 bg-white/10 p-1.5 px-4 rounded-lg border border-white/20 grow max-w-md">
                     <span className="text-[#f1c40f] font-black text-xs uppercase border-r border-white/20 pr-3 whitespace-nowrap">Chart:</span>
-                    <Dropdown 
-                        value={selectedChart} 
-                        options={chartsList} 
-                        optionLabel="label" 
-                        placeholder="Select a chart..." 
-                        className="border-none w-full h-[36px] flex items-center bg-transparent shadow-none focus:ring-0 custom-dropdown" 
+                    <Dropdown
+                        value={selectedChart}
+                        options={chartsList}
+                        optionLabel="label"
+                        placeholder="Select a chart..."
+                        className="border-none w-full h-[36px] flex items-center bg-transparent shadow-none focus:ring-0 custom-dropdown"
                         pt={{
                             input: { className: 'text-white font-bold text-sm bg-transparent' },
                             trigger: { className: 'text-white' },
                             panel: { className: 'bg-[#0a1f35] border border-white/20' },
                             item: { className: 'text-white hover:bg-white/10 font-bold' }
                         }}
-                        onChange={(e) => setSelectedChart(e.value)} 
+                        onChange={(e) => setSelectedChart(e.value)}
                     />
                 </div>
 
                 <div className="flex items-center gap-4 bg-black/40 p-2 px-4 rounded-lg border border-white/10 min-w-[220px] shadow-inner">
                     <span className="text-[11px] font-black text-[#f1c40f] uppercase tracking-widest whitespace-nowrap">Text Scale</span>
-                    <input 
-                        type="range" 
-                        min="8" 
-                        max="16" 
+                    <input
+                        type="range"
+                        min="8"
+                        max="16"
                         step="0.5"
-                        value={tableFontSize} 
+                        value={tableFontSize}
                         onChange={(e) => setTableFontSize(parseFloat(e.target.value))}
                         className="w-24 accent-[#f1c40f] cursor-pointer h-2 rounded-lg"
                     />
@@ -494,40 +514,51 @@ const CChart = () => {
                 </div>
 
                 <div className="flex gap-3">
-                    <Button 
-                        icon="pi pi-print" 
-                        className="p-button-rounded p-button-warning border-2 w-11 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg" 
-                        onClick={handlePrint}
-                        tooltip="Print"
-                    />
-                    <Button 
-                        icon="pi pi-share-alt" 
-                        className="p-button-rounded p-button-warning border-2 w-11 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg" 
-                        onClick={handleShare}
-                        tooltip="Share"
-                    />
-                    <Button 
-                        icon="pi pi-file-pdf" 
-                        className="p-button-rounded p-button-warning border-2 w-11 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg" 
-                        onClick={handleExportPdf}
-                        tooltip="PDF"
-                    />
+                    {isEmbedMode ? (
+                        <Button
+                            icon="pi pi-file-import"
+                            label="Move to Page"
+                            className="p-button-warning border-2 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg font-bold px-4 tracking-wider"
+                            onClick={handleInsertToEditor}
+                        />
+                    ) : (
+                        <>
+                            <Button
+                                icon="pi pi-print"
+                                className="p-button-rounded p-button-warning border-2 w-11 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg"
+                                onClick={handlePrint}
+                                tooltip="Print"
+                            />
+                            <Button
+                                icon="pi pi-share-alt"
+                                className="p-button-rounded p-button-warning border-2 w-11 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg"
+                                onClick={handleShare}
+                                tooltip="Share"
+                            />
+                            <Button
+                                icon="pi pi-file-pdf"
+                                className="p-button-rounded p-button-warning border-2 w-11 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg"
+                                onClick={handleExportPdf}
+                                tooltip="PDF"
+                            />
+                        </>
+                    )}
                 </div>
             </div>
 
             <div id="printable-cchart" className="w-full bg-white pb-4 rounded-b-2xl pt-4 px-4 overflow-hidden max-w-6xl mx-auto flex flex-col items-center" style={{ pageBreakInside: 'avoid' }}>
                 {renderMainHeaderBlock()}
-                
+
                 <div className="w-full border-[2px] border-black flex flex-col bg-white" style={{ pageBreakInside: 'avoid' }}>
                     {/* Table Header Row */}
                     <div className="border-b-[2px] border-black py-1">
                         <h1 className="text-red-700 font-extrabold text-[28px] tracking-[0.05em] mb-0 mt-0 text-center uppercase">CO-CREATE</h1>
                     </div>
-                    
+
                     {/* Master Table Grid Area */}
                     {chunks.length > 0 ? (
                         <div className="flex w-full">
-                            
+
                             {/* COLUMN 1: Colored Boxes */}
                             <div className="w-[20px] flex flex-col border-r-[2px] border-black p-0.5 z-10 bg-white relative">
                                 <div className="absolute inset-y-0 left-0 right-0 flex flex-col p-0.5 pointer-events-none">
@@ -540,7 +571,7 @@ const CChart = () => {
                                     {row2.length > 0 && <div className="flex-1"></div>}
                                 </div>
                             </div>
-                            
+
                             {/* COLUMN 2: Data Content */}
                             <div className="flex-1 flex flex-col z-10 bg-white">
                                 <div className="flex-1 flex flex-col py-2">
@@ -555,16 +586,16 @@ const CChart = () => {
                                     </div>
                                 )}
                             </div>
-                            
-                             {/* COLUMN 3: Right Sidebar */}
+
+                            {/* COLUMN 3: Right Sidebar */}
                             <div className="w-[40px] flex flex-col border-l-[2px] border-black bg-white z-10">
                                 <div className="flex-1 flex flex-col divide-y-[2px] divide-black overflow-hidden">
                                     <div className="flex-[2] relative flex flex-col items-center justify-center bg-white py-1">
                                         <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
-                                            <span 
-                                                className="font-extrabold uppercase tracking-wider whitespace-nowrap text-black block" 
-                                                style={{ 
-                                                    writingMode: 'vertical-rl', 
+                                            <span
+                                                className="font-extrabold uppercase tracking-wider whitespace-nowrap text-black block"
+                                                style={{
+                                                    writingMode: 'vertical-rl',
                                                     transform: 'rotate(180deg)',
                                                     fontSize: '8.5px',
                                                     lineHeight: '1',
@@ -577,10 +608,10 @@ const CChart = () => {
                                     </div>
                                     <div className="flex-1 relative flex flex-col items-center justify-center bg-white py-1">
                                         <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
-                                            <span 
-                                                className="font-extrabold uppercase tracking-widest whitespace-nowrap text-black block" 
-                                                style={{ 
-                                                    writingMode: 'vertical-rl', 
+                                            <span
+                                                className="font-extrabold uppercase tracking-widest whitespace-nowrap text-black block"
+                                                style={{
+                                                    writingMode: 'vertical-rl',
                                                     transform: 'rotate(180deg)',
                                                     fontSize: '8.5px',
                                                     lineHeight: '1',
@@ -592,19 +623,19 @@ const CChart = () => {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 {row2.length > 0 && (
                                     <div className="h-[35px] flex-none border-y-[2px] border-black bg-white z-0 -mx-[0px] -mt-[2px]"></div>
                                 )}
-                                
+
                                 {row2.length > 0 && (
                                     <div className="flex-1 flex flex-col divide-y-[2px] divide-black -mt-[2px] overflow-hidden">
                                         <div className="flex-[1] relative flex flex-col items-center justify-center bg-white py-1 border-t-[2px] border-black">
                                             <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
-                                                <span 
-                                                    className="font-extrabold uppercase tracking-widest whitespace-nowrap text-black block" 
-                                                    style={{ 
-                                                        writingMode: 'vertical-rl', 
+                                                <span
+                                                    className="font-extrabold uppercase tracking-widest whitespace-nowrap text-black block"
+                                                    style={{
+                                                        writingMode: 'vertical-rl',
                                                         transform: 'rotate(180deg)',
                                                         fontSize: '8.5px',
                                                         lineHeight: '1',
@@ -617,10 +648,10 @@ const CChart = () => {
                                         </div>
                                         <div className="flex-[2] relative flex flex-col items-center justify-center bg-white py-1">
                                             <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
-                                                <span 
-                                                    className="font-extrabold uppercase tracking-normal whitespace-nowrap text-black block" 
-                                                    style={{ 
-                                                        writingMode: 'vertical-rl', 
+                                                <span
+                                                    className="font-extrabold uppercase tracking-normal whitespace-nowrap text-black block"
+                                                    style={{
+                                                        writingMode: 'vertical-rl',
                                                         transform: 'rotate(180deg)',
                                                         fontSize: '8px',
                                                         lineHeight: '1',

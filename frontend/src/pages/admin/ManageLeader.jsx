@@ -368,7 +368,7 @@ export default function ManageLeader() {
                         className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines scrollable scrollDirection="both"
                         rowClassName={() => 'bg-white text-black'}>
 
-                        <Column header="S.No" body={(data, options) => first + options.rowIndex + 1} exportable={false} style={{ minWidth: '4rem' }} headerClassName="admin-table-header"></Column>
+                        <Column header="S.No" body={(data, options) => options.rowIndex + 1} exportable={false} style={{ minWidth: '4rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="name" header="Leader Name" sortable style={{ minWidth: '12rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="email" header="Email ID" sortable style={{ minWidth: '14rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="mobile_number" header="Mobile" sortable style={{ minWidth: '10rem' }} headerClassName="admin-table-header"></Column>

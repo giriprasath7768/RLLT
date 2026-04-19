@@ -12,13 +12,18 @@
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",
     "axios": "^1.13.6",
+    "fix-webm-duration": "^1.0.6",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "libphonenumber-js": "^1.12.40",
+    "pptxgenjs": "^4.0.1",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.7",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-pageflip": "^2.0.3",
+    "react-pdf": "^10.4.1",
+    "react-quill-new": "^3.8.3",
     "react-router-dom": "^7.13.1",
     "xlsx": "^0.18.5"
   },

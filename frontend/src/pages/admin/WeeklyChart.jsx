@@ -4,7 +4,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Button } from 'primereact/button';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import { splitS4Data, parseTime, parseDayForOilChart } from '../../utils/chartDataSplitter';
 
@@ -54,6 +54,7 @@ const generateInitialData = (totalDays = 30) => {
 const WeeklyChart = () => {
     const toast = useRef(null);
     const navigate = useNavigate();
+    const location = useLocation();
     const [chunks, setChunks] = useState(generateInitialData());
     
     const [headerSubtitle, setHeaderSubtitle] = useState("NO CHART SELECTED");
@@ -83,7 +84,7 @@ const WeeklyChart = () => {
     const dayNames = ['SATURDAY', 'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY'];
 
     const fetchChartList = () => {
-        axios.get('http://localhost:8000/api/charts/list', { withCredentials: true })
+                axios.get('http://localhost:8000/api/charts/list', { withCredentials: true })
             .then(res => setChartsList(res.data))
             .catch(err => console.error("Could not fetch charts list", err));
             
@@ -117,15 +118,22 @@ const WeeklyChart = () => {
     }, [selectedChart, rlltDB]);
 
     useEffect(() => {
-        if (!selectedChart || booksDB.length === 0 || chaptersDB.length === 0) {
+        const preloadData = location.state?.chartData;
+        if ((!preloadData && !selectedChart) || booksDB.length === 0 || chaptersDB.length === 0) {
             setChunks(generateInitialData());
             return;
         }
 
-        const { module, facet, phase } = selectedChart;
-        axios.get(`http://localhost:8000/api/charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
-            .then(res => {
+        const __fixedPreload = location.state?.chartData;
+        const fetchPromise = __fixedPreload 
+            ? Promise.resolve({ data: __fixedPreload })
+            : axios.get(`http://localhost:8000/api/charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
+
+        fetchPromise.then(res => {
                 const data = res.data;
+            const module = selectedChart?.module || location.state?.assignment?.module || '1';
+            const facet = selectedChart?.facet || location.state?.assignment?.facet || '1';
+            const phase = selectedChart?.phase || location.state?.assignment?.phase || '1';
                 setBannerText(data.banner_text || "");
                 setTLabel(data.t_label || "T");
                 setLogoUrl(data.logo_url ? `http://localhost:8000${data.logo_url}` : null);
@@ -156,7 +164,7 @@ const WeeklyChart = () => {
                 toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Could not load chart details.', life: 3000 });
                 setChunks(generateInitialData());
             });
-    }, [selectedChart, booksDB, chaptersDB]);
+    }, [selectedChart, booksDB, chaptersDB, location.state]);
 
     // Handle Period Input Changes locally
     const handlePeriodChange = (chunkIndex, dayIndex, val) => {

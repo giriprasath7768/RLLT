@@ -31,17 +31,20 @@ async def login_access_token(
     result = await db.execute(select(User).where(User.email == email_clean))
     user = result.scalars().first()
     
-    if not user or not security.verify_password(pwd_clean, user.hashed_password):
+    if user:
+        if not security.verify_password(pwd_clean, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Incorrect email or password")
+        elif not user.is_active:
+            raise HTTPException(status_code=400, detail="Inactive user")
+        
+        role_name = user.role.value if hasattr(user.role, 'value') else str(user.role)
+        target_subject = user.id
+    else:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
-    elif not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
 
     try:
-        # UserRole enum value handling
-        role_name = user.role.value if hasattr(user.role, 'value') else str(user.role)
-        
         access_token = security.create_access_token(
-            subject=user.id, role=role_name
+            subject=target_subject, role=role_name
         )
     except Exception as e:
         import traceback
@@ -70,6 +73,53 @@ async def logout(response: Response) -> Any:
     response.delete_cookie("access_token", httponly=True, secure=False, samesite="lax")
     return {"message": "Successfully logged out"}
 
+from pydantic import BaseModel
+class TTomLoginRequest(BaseModel):
+    mobile_number: str
+    pin: str
+
+@router.post("/ttom-login", response_model=dict)
+async def ttom_login_endpoint(
+    body: TTomLoginRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db)
+):
+    from app.db.models import TTOMUser
+    ttom_result = await db.execute(select(TTOMUser).where(TTOMUser.mobile_number == body.mobile_number.strip()))
+    ttom_user = ttom_result.scalars().first()
+
+    if not ttom_user:
+        raise HTTPException(status_code=400, detail="Incorrect mobile number or PIN")
+    
+    if not security.verify_password(body.pin.strip(), ttom_user.password_hash):
+        raise HTTPException(status_code=400, detail="Incorrect mobile number or PIN")
+        
+    if not ttom_user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    role_name = "ttom_user"
+    target_subject = ttom_user.id
+
+    try:
+        access_token = security.create_access_token(
+            subject=target_subject, role=role_name
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Token generation failed: {str(e)}"
+        )
+    
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,
+        secure=False,
+        samesite="lax"
+    )
+    
+    return {"message": "Successfully logged in as T-Tom-T user"}
+
 async def get_current_user(request: Request, db: AsyncSession = Depends(get_db)) -> User:
     token = request.cookies.get("access_token")
     if not token:
@@ -97,8 +147,49 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     user = result.scalars().first()
     
     if not user:
+        # Fallback to check TTOMUser table natively
+        from app.db.models import TTOMUser
+        ttom_result = await db.execute(select(TTOMUser).where(TTOMUser.id == user_id))
+        ttom_user = ttom_result.scalars().first()
+        
+        if ttom_user:
+            class MockUser:
+                id = ttom_user.id
+                email = None
+                role = "ttom_user"
+                is_active = ttom_user.is_active
+                assessment_status = "pending"
+                assessment_marks = None
+            return MockUser()
+            
         raise HTTPException(status_code=404, detail="User not found")
         
+    return user
+
+from typing import Optional
+
+async def get_current_user_optional(request: Request, db: AsyncSession = Depends(get_db)) -> Optional[User]:
+    token = request.cookies.get("access_token")
+    if not token:
+        return None
+    
+    if token.startswith("Bearer "):
+        token = token.split(" ")[1]
+        
+    try:
+        from jose import jwt
+        from app.core.config import settings
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+    except Exception:
+        return None
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
     return user
 
 @router.get("/me", response_model=UserInfo)
@@ -194,7 +285,7 @@ async def register_user(
     # 1. Validation
     result = await db.execute(select(User).where(User.email == body.email))
     if result.scalars().first():
-        raise HTTPException(status_code=400, detail="Este e-mail já está em uso.")
+        raise HTTPException(status_code=400, detail="This email is already in use.")
     
     # 2. Auto-Generation
     enroll_id = "ACR-" + uuid_mod.uuid4().hex[:8].upper()

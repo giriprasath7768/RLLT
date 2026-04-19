@@ -72,6 +72,23 @@ const VCard = ({ data, onChange, onRemove }) => {
         updateField('bullets', newBullets);
     };
 
+    const handleImageUpload = (field) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    updateField(field, event.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    };
+
     // Generic Icon Options (PrimeIcons)
     const iconOptions = [
         { label: 'Circle', value: 'pi-circle-fill' },
@@ -88,8 +105,8 @@ const VCard = ({ data, onChange, onRemove }) => {
     return (
         <div className="relative group w-[500px] flex-shrink-0 flex border-2 border-black overlow-hidden bg-white shadow-md mx-auto" style={{ height: '320px' }}>
             {/* Delete button (only visible on hover) */}
-            <button 
-                onClick={onRemove} 
+            <button
+                onClick={onRemove}
                 className="absolute -top-3 -right-3 z-50 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             >
                 <i className="pi pi-times text-xs"></i>
@@ -109,9 +126,9 @@ const VCard = ({ data, onChange, onRemove }) => {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col relative w-full overflow-hidden">
                 {/* Background Image / Color Area */}
-                <div 
+                <div
                     className="flex-1 relative flex flex-col"
-                    style={{ 
+                    style={{
                         backgroundColor: bodyColor,
                         backgroundImage: data.bgImage ? `url(${data.bgImage})` : 'none',
                         backgroundSize: 'cover',
@@ -124,7 +141,7 @@ const VCard = ({ data, onChange, onRemove }) => {
 
                     {/* Top Layer */}
                     <div className="relative z-10 w-full h-full p-6 flex flex-col">
-                        
+
                         {/* Bullets & Right Panel wrapper */}
                         <div className="flex w-full h-full">
                             {/* Bullets Area */}
@@ -135,7 +152,7 @@ const VCard = ({ data, onChange, onRemove }) => {
                                             {/* Icon bullet */}
                                             <i className={`pi ${data.iconClass || 'pi-circle-fill'}`} style={{ color: data.iconColor || '#22c55e', fontSize: '0.75rem' }}></i>
                                             {/* Remove bullet btn */}
-                                            <button 
+                                            <button
                                                 onClick={() => removeBullet(idx)}
                                                 className="opacity-0 group-hover/bullet:opacity-100 text-white/50 hover:text-red-400 absolute -ml-6"
                                             >
@@ -163,15 +180,9 @@ const VCard = ({ data, onChange, onRemove }) => {
                             <div className="flex-[1] flex flex-col items-center pt-2 gap-3 relative">
                                 {/* Editable image URL or placeholder */}
                                 {data.topRightLogo ? (
-                                    <img src={data.topRightLogo} alt="Logo" className="w-[50px] h-[50px] object-contain cursor-pointer border border-transparent hover:border-dashed hover:border-white/50 rounded-full bg-white/20" onClick={() => {
-                                        const url = prompt("Enter Image URL:", data.topRightLogo);
-                                        if (url !== null) updateField('topRightLogo', url);
-                                    }}/>
+                                    <img src={data.topRightLogo} alt="Logo" className="w-[50px] h-[50px] object-contain cursor-pointer border border-transparent hover:border-dashed hover:border-white/50 rounded-full bg-white/20" onClick={() => handleImageUpload('topRightLogo')} />
                                 ) : (
-                                    <div onClick={() => {
-                                        const url = prompt("Enter Image URL:");
-                                        if (url !== null) updateField('topRightLogo', url);
-                                    }} className="w-[50px] h-[50px] rounded-full border border-dashed border-white/50 flex items-center justify-center text-white/50 cursor-pointer">
+                                    <div onClick={() => handleImageUpload('topRightLogo')} className="w-[50px] h-[50px] rounded-full border border-dashed border-white/50 flex items-center justify-center text-white/50 cursor-pointer hover:bg-white/10 transition-colors">
                                         <i className="pi pi-image text-xl"></i>
                                     </div>
                                 )}
@@ -187,28 +198,22 @@ const VCard = ({ data, onChange, onRemove }) => {
 
                         {/* Bottom inside image elements */}
                         <div className="w-full flex justify-between items-end mt-auto pb-2">
-                             <div>
-                                 {data.bottomLeftImg ? (
-                                     <img src={data.bottomLeftImg} alt="Bottom Left" className="h-[30px] object-contain cursor-pointer" onClick={() => {
-                                         const url = prompt("Enter Image URL:", data.bottomLeftImg);
-                                         if (url !== null) updateField('bottomLeftImg', url);
-                                     }}/>
-                                 ) : (
-                                    <div onClick={() => {
-                                         const url = prompt("Enter Bottom Left Image URL:");
-                                         if (url !== null) updateField('bottomLeftImg', url);
-                                     }} className="h-[30px] w-[50px] border border-dashed border-white/30 flex items-center justify-center text-white/30 cursor-pointer text-[10px]">
-                                         Img
-                                     </div>
-                                 )}
-                             </div>
-                             <div>
+                            <div>
+                                {data.bottomLeftImg ? (
+                                    <img src={data.bottomLeftImg} alt="Bottom Left" className="h-[30px] object-contain cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleImageUpload('bottomLeftImg')} />
+                                ) : (
+                                    <div onClick={() => handleImageUpload('bottomLeftImg')} className="h-[30px] w-[50px] border border-dashed border-white/30 flex items-center justify-center text-white/30 cursor-pointer text-[10px] hover:bg-white/10 transition-colors">
+                                        Img
+                                    </div>
+                                )}
+                            </div>
+                            <div>
                                 <EditableText
-                                     value={data.bottomRightBoxText}
-                                     onChange={(v) => updateField('bottomRightBoxText', v)}
-                                     className="bg-black/40 text-white font-bold text-xs uppercase px-2 py-1 tracking-widest min-w-[80px] text-center"
-                                 />
-                             </div>
+                                    value={data.bottomRightBoxText}
+                                    onChange={(v) => updateField('bottomRightBoxText', v)}
+                                    className="bg-black/40 text-white font-bold text-xs uppercase px-2 py-1 tracking-widest min-w-[80px] text-center"
+                                />
+                            </div>
                         </div>
 
                     </div>
@@ -234,14 +239,14 @@ const VCardChart = () => {
     const toast = useRef(null);
     const [chartsList, setChartsList] = useState([]);
     const [selectedChart, setSelectedChart] = useState(null);
-    
+
     // Header properties (similar to MainChart)
     const [headerSubtitle, setHeaderSubtitle] = useState("NO CHART SELECTED");
     const [logoUrl, setLogoUrl] = useState(null);
     const [bannerText, setBannerText] = useState("");
     const [tLabel, setTLabel] = useState("T");
     const [phaseLabel, setPhaseLabel] = useState("1/1");
-    
+
     // Scale
     const [tableFontSize, setTableFontSize] = useState(12);
 
@@ -282,7 +287,7 @@ const VCardChart = () => {
         }
 
         const { module, facet, phase, label } = selectedChart;
-        
+
         axios.get(`http://localhost:8000/api/vcards/sync/${module}/${facet}/${phase}`, { withCredentials: true })
             .then(res => {
                 const data = res.data;
@@ -291,7 +296,7 @@ const VCardChart = () => {
                 setBannerText(data.banner_text || "");
                 setTLabel(data.t_label || "T");
                 setPhaseLabel(`${phase}`);
-                
+
                 if (data.state_payload) {
                     try {
                         const parsed = JSON.parse(data.state_payload);
@@ -300,7 +305,7 @@ const VCardChart = () => {
                         } else {
                             setVCards([getDefaultCard(Date.now())]);
                         }
-                    } catch(e) { 
+                    } catch (e) {
                         console.error("Parse err", e);
                         setVCards([getDefaultCard(Date.now())]);
                     }
@@ -343,7 +348,7 @@ const VCardChart = () => {
         formData.append('banner_text', bannerText);
         formData.append('t_label', tLabel);
         formData.append('state_payload', JSON.stringify(vCards));
-        
+
         try {
             await axios.post('http://localhost:8000/api/vcards/sync', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
@@ -360,7 +365,7 @@ const VCardChart = () => {
     const handlePrint = () => {
         const printContent = document.getElementById('printable-vcard');
         if (!printContent) return;
-        
+
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed'; iframe.style.right = '0'; iframe.style.bottom = '0'; iframe.style.width = '0'; iframe.style.height = '0'; iframe.style.border = '0';
         document.body.appendChild(iframe);
@@ -406,7 +411,7 @@ const VCardChart = () => {
                         <tr className="h-[45px]">
                             <td className="w-[45px] bg-[#00b050] border-r-2 border-black p-0 align-middle" style={{ backgroundColor: '#00b050 !important', WebkitPrintColorAdjust: 'exact' }}>
                                 <div className="w-full h-full flex items-center justify-center">
-                                    <input value={tLabel} onChange={e=>setTLabel(e.target.value)} className="w-full text-center bg-transparent text-white font-serif text-[28px] leading-none outline-none" />
+                                    <input value={tLabel} onChange={e => setTLabel(e.target.value)} className="w-full text-center bg-transparent text-white font-serif text-[28px] leading-none outline-none" />
                                 </div>
                             </td>
                             <td className="p-0 align-middle text-center bg-white" style={{ WebkitPrintColorAdjust: 'exact' }}>
@@ -437,12 +442,12 @@ const VCardChart = () => {
                             <td className="border-r-2 border-black p-1 align-middle bg-white relative" style={{ WebkitPrintColorAdjust: 'exact' }}>
                                 <div className="absolute inset-[2px] border-[3px] border-[#e47636] pointer-events-none"></div>
                                 <div className="w-full h-full flex items-center px-4 relative z-10">
-                                    <input 
-                                        type="text" 
-                                        value={bannerText} 
-                                        onChange={e=>setBannerText(e.target.value)} 
-                                        placeholder="Banner Text" 
-                                        className="w-full bg-transparent text-black font-bold text-[18px] uppercase outline-none" 
+                                    <input
+                                        type="text"
+                                        value={bannerText}
+                                        onChange={e => setBannerText(e.target.value)}
+                                        placeholder="Banner Text"
+                                        className="w-full bg-transparent text-black font-bold text-[18px] uppercase outline-none"
                                     />
                                 </div>
                             </td>
@@ -489,32 +494,32 @@ const VCardChart = () => {
 
                 <div className="flex items-center gap-3 bg-white/10 p-1.5 px-4 rounded-lg border border-white/20 grow max-w-md">
                     <span className="text-[#f1c40f] font-black text-xs uppercase border-r border-white/20 pr-3 whitespace-nowrap">Chart:</span>
-                    <Dropdown 
-                        value={selectedChart} 
-                        options={chartsList} 
-                        optionLabel="label" 
-                        placeholder="Select a chart..." 
-                        className="border-none w-full h-[36px] flex items-center bg-transparent shadow-none focus:ring-0" 
-                        onChange={(e) => setSelectedChart(e.value)} 
+                    <Dropdown
+                        value={selectedChart}
+                        options={chartsList}
+                        optionLabel="label"
+                        placeholder="Select a chart..."
+                        className="border-none w-full h-[36px] flex items-center bg-transparent shadow-none focus:ring-0"
+                        onChange={(e) => setSelectedChart(e.value)}
                     />
                 </div>
 
                 <div className="flex gap-3">
-                    <Button 
-                        icon="pi pi-plus" 
+                    <Button
+                        icon="pi pi-plus"
                         label="Add Card"
-                        className="p-button-outlined p-button-warning text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all font-bold" 
+                        className="p-button-outlined p-button-warning text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all font-bold"
                         onClick={addCard}
                     />
-                    <Button 
-                        icon="pi pi-save" 
+                    <Button
+                        icon="pi pi-save"
                         label="Save Layout"
-                        className="p-button p-button-warning border-2 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg font-bold" 
+                        className="p-button p-button-warning border-2 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg font-bold"
                         onClick={handleSave}
                     />
-                    <Button 
-                        icon="pi pi-print" 
-                        className="p-button-rounded p-button-warning border-2 w-11 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg" 
+                    <Button
+                        icon="pi pi-print"
+                        className="p-button-rounded p-button-warning border-2 w-11 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg"
                         onClick={handlePrint}
                         tooltip="Print Preview"
                     />
@@ -523,10 +528,10 @@ const VCardChart = () => {
 
             {/* Printable Content wrapper with Border Box */}
             <div className="max-w-[1200px] mx-auto bg-gray-100 p-6 rounded-2xl shadow-xl relative overflow-hidden print-wrapper">
-                
+
                 {/* Bordered Box covering everything per user instruction */}
                 <div id="printable-vcard" className="w-full bg-white p-6 border-4 border-black relative" style={{ minHeight: '800px', pageBreakInside: 'avoid' }}>
-                    
+
                     {/* Header Part Same as Main Chart */}
                     {renderMainHeaderBlock()}
 
@@ -535,10 +540,10 @@ const VCardChart = () => {
                         <div className="w-full flex justify-center mt-10">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-12 gap-y-16">
                                 {vCards.map((card, idx) => (
-                                    <VCard 
-                                        key={card.id} 
-                                        data={card} 
-                                        onChange={(newData) => updateCard(idx, newData)} 
+                                    <VCard
+                                        key={card.id}
+                                        data={card}
+                                        onChange={(newData) => updateCard(idx, newData)}
                                         onRemove={() => removeCard(idx)}
                                     />
                                 ))}

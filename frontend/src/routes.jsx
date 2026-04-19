@@ -25,16 +25,34 @@ import CChart from './pages/admin/CChart';
 import VCardChart from './pages/admin/VCardChart';
 import OilChart from './pages/admin/OilChart';
 import WeeklyChart from './pages/admin/WeeklyChart';
+import SevenTNTMainChartView from './pages/admin/SevenTNTMainChartView';
+import SevenTNTWeeklyChart from './pages/admin/SevenTNTWeeklyChart';
+import SevenTNTDayCycleChart from './pages/admin/SevenTNTDayCycleChart';
+import SevenTNTDayCycleChartView from './pages/admin/SevenTNTDayCycleChartView';
 import RLLTTableData from './pages/admin/RLLTTableData';
-import AssignChart from './pages/admin/AssignChart';
+import TTOMRegisteredUsers from './pages/admin/TTOMRegisteredUsers';
+
 import Register from './pages/Register';
 import CreateContent from './pages/admin/CreateContent';
+import SevenTNTMainChart from './pages/admin/SevenTNTMainChart';
+import SevenTNTPlayers from './pages/admin/SevenTNTPlayers';
+import SevenTNTPlayer from './pages/admin/SevenTNTPlayer';
 import TTomTPlayer from './pages/admin/TTomTPlayer';
+import SMTPlayer from './pages/admin/SMTPlayer';
 import Players from './pages/admin/Players';
 import DashboardAdmin from './pages/admin/DashboardAdmin';
 import DashboardLeader from './pages/admin/DashboardLeader';
 import StudentAssessmentTest from './pages/student/StudentAssessmentTest';
 import AssessmentUnderReview from './pages/student/AssessmentUnderReview';
+import StudentLayout from './components/layout/StudentLayout';
+import DashboardStudent from './pages/student/DashboardStudent';
+import StudentAssessmentResult from './pages/student/StudentAssessmentResult';
+import StudentChartListing from './pages/student/StudentChartListing';
+import StudentPlayers from './pages/student/StudentPlayers';
+import Recordings from './pages/Recordings';
+import WordEditor from './pages/admin/WordEditor';
+import BookIndex from './pages/admin/BookIndex';
+import ScreenRecorder from './pages/admin/ScreenRecorder';
 
 // Dashboard Components
 const DashboardSuperAdmin = () => (
@@ -61,8 +79,6 @@ const DashboardSuperAdmin = () => (
     </div>
 );
 
-const DashboardStudent = () => <div className="p-8 text-gray-800"><h1>Student Dashboard</h1></div>;
-const DashboardTtomUser = () => <div className="p-8 text-gray-800"><h1>TTOM User Dashboard</h1></div>;
 const DefaultDashboard = () => <div className="p-8 text-gray-800"><h1>Dashboard</h1></div>;
 
 // Protected Route Wrapper
@@ -99,7 +115,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return children ? <>{children}</> : <Outlet />;
 };
 
-const EnhancedStudentDashboardWrapper = () => {
+const EnhancedStudentDashboardWrapper = ({ children }) => {
     const [status, setStatus] = useState(null);
 
     useEffect(() => {
@@ -116,7 +132,7 @@ const EnhancedStudentDashboardWrapper = () => {
         return <Navigate to="/dashboard/under-review" replace />;
     }
 
-    return <DashboardStudent />;
+    return children ? <>{children}</> : <Outlet />;
 };
 
 const AppRoutes = () => {
@@ -134,8 +150,6 @@ const AppRoutes = () => {
                     <Route path="/dashboard/super-admin" element={<DashboardSuperAdmin />} />
                     <Route path="/admin/manage-admin" element={<AdminManagement />} />
                     <Route path="/admin/locations" element={<LocationCRUD />} />
-                    <Route path="/admin/ttomt-player" element={<TTomTPlayer />} />
-                    <Route path="/admin/players" element={<Players />} />
                 </Route>
 
                 {/* Admin Restricted Routes */}
@@ -153,7 +167,6 @@ const AppRoutes = () => {
                 <Route path="/admin/manage-students" element={<ManageStudents />} />
                 <Route path="/admin/manage-assessment" element={<ManageAssessment />} />
                 <Route path="/admin/assessment-results" element={<ManageAssessmentResults />} />
-                <Route path="/admin/assign-chart" element={<AssignChart />} />
 
                 <Route path="/admin/chart-listing/twenty-four-seven-chart" element={<TwentyFourSevenChartView />} />
                 <Route path="/admin/chart-listing/twenty-four-seven-morning-evening-chart" element={<TwentyFourSevenMorningEveningChart />} />
@@ -169,22 +182,73 @@ const AppRoutes = () => {
                 {/* Admin/SuperAdmin Restricted Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} />}>
                     <Route path="/admin/manage-leaders" element={<ManageLeader />} />
-                    <Route path="/admin/create-training" element={<CreateContent />} />
-                    <Route path="/admin/manage-training" element={<CreateContent />} />
+                    <Route path="/admin/settings" element={<div className="p-10"><h1 className="text-2xl font-bold">Settings</h1></div>} />
+                    <Route path="/admin/ttom-users" element={<TTOMRegisteredUsers />} />
+                </Route>
+
+                {/* Shared Restricted Routes (SuperAdmin, Admin, Leader) */}
+                <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'leader']} />}>
+                    <Route path="/admin/7tnt-word" element={<WordEditor />} />
                     <Route path="/admin/charts" element={<MainChart />} />
+                    <Route path="/admin/chart-creation/7tnt-main-chart" element={<SevenTNTMainChart />} />
+                    <Route path="/admin/chart-creation/7tnt-day-cycle" element={<SevenTNTDayCycleChart />} />
+                    <Route path="/admin/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />
+                    <Route path="/admin/chart-listing/7tnt-weekly-chart" element={<SevenTNTWeeklyChart />} />
+                    <Route path="/admin/chart-listing/7tnt-day-cycle" element={<SevenTNTDayCycleChartView />} />
                     <Route path="/admin/twenty-four-seven-chart" element={<TwentyFourSevenChart />} />
                     <Route path="/admin/books" element={<BookMaster />} />
                     <Route path="/admin/chapters" element={<ChapterMaster />} />
                     <Route path="/admin/rllt-data" element={<RLLTTableData />} />
-                    <Route path="/admin/settings" element={<div className="p-10"><h1 className="text-2xl font-bold">Settings</h1></div>} />
+                    <Route path="/admin/ttomt-player" element={<TTomTPlayer />} />
+                    <Route path="/admin/smt-player" element={<SMTPlayer />} />
+                    <Route path="/admin/book-index" element={<BookIndex />} />
+                    <Route path="/admin/players" element={<Players />} />
+                    <Route path="/admin/7tnt-players" element={<SevenTNTPlayers />} />
+                    <Route path="/admin/7tnt-player" element={<SevenTNTPlayer />} />
+                </Route>
+
+                {/* Restricted Routes (SuperAdmin, Admin only) for specific items removed from Leader */}
+                <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} />}>
+                    <Route path="/admin/create-training" element={<CreateContent />} />
+                    <Route path="/admin/manage-training" element={<CreateContent />} />
+                    <Route path="/admin/recordings" element={<Recordings />} />
+                    <Route path="/admin/screen-recorder" element={<ScreenRecorder />} />
                 </Route>
             </Route>
 
+            {/* Student Dashboard Layout mapped for 'student' role */}
+            <Route element={<ProtectedRoute allowedRoles={['student']} children={<EnhancedStudentDashboardWrapper><StudentLayout /></EnhancedStudentDashboardWrapper>} />}>
+                <Route path="/dashboard/student" element={<DashboardStudent />} />
+                <Route path="/dashboard/student/assessment-result" element={<StudentAssessmentResult />} />
+                <Route path="/dashboard/student/charts" element={<StudentChartListing />} />
+                <Route path="/dashboard/student/players" element={<StudentPlayers />} />
+                <Route path="/dashboard/student/ttomt-player" element={<TTomTPlayer />} />
+                <Route path="/dashboard/student/smt-player" element={<SMTPlayer />} />
+                <Route path="/dashboard/student/book-index" element={<BookIndex />} />
+                <Route path="/dashboard/student/recordings" element={<Recordings />} />
+
+                {/* Dynamically Reused Chart Interfaces (Preloaded with User Data) */}
+                <Route path="/dashboard/student/chart-listing/twenty-four-seven-chart" element={<TwentyFourSevenChartView />} />
+                <Route path="/dashboard/student/chart-listing/twenty-four-seven-morning-evening" element={<TwentyFourSevenMorningEveningChart />} />
+                <Route path="/dashboard/student/chart-listing/twenty-four-seven-dl-size-chart" element={<TwentyFourSevenDLSizeChart />} />
+                <Route path="/dashboard/student/chart-listing/main-chart" element={<MainChartView />} />
+                <Route path="/dashboard/student/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />
+                <Route path="/dashboard/student/chart-listing/7tnt-weekly-chart" element={<SevenTNTWeeklyChart />} />
+                <Route path="/dashboard/student/chart-listing/7tnt-day-cycle" element={<SevenTNTDayCycleChartView />} />
+                <Route path="/dashboard/student/chart-listing/morning-evening-chart" element={<MorningEveningChart />} />
+                <Route path="/dashboard/student/chart-listing/dl-size-chart" element={<DLSizeChart />} />
+                <Route path="/dashboard/student/chart-listing/c-chart" element={<CChart />} />
+                <Route path="/dashboard/student/chart-listing/oil-chart" element={<OilChart />} />
+                <Route path="/dashboard/student/weekly-chart" element={<WeeklyChart />} />
+                <Route path="/dashboard/student/7tnt-word" element={<WordEditor />} />
+                <Route path="/dashboard/student/7tnt-players" element={<SevenTNTPlayers />} />
+                <Route path="/dashboard/student/7tnt-player" element={<SevenTNTPlayer />} />
+            </Route>
+
             {/* Other Dashboards */}
-            <Route path="/dashboard/student" element={<ProtectedRoute allowedRoles={['student']}><EnhancedStudentDashboardWrapper /></ProtectedRoute>} />
             <Route path="/dashboard/assessment" element={<ProtectedRoute allowedRoles={['student']}><StudentAssessmentTest /></ProtectedRoute>} />
             <Route path="/dashboard/under-review" element={<ProtectedRoute allowedRoles={['student']}><AssessmentUnderReview /></ProtectedRoute>} />
-            <Route path="/dashboard/ttom" element={<ProtectedRoute allowedRoles={['ttom_user']}><DashboardTtomUser /></ProtectedRoute>} />
+            <Route path="/dashboard/ttom/player" element={<ProtectedRoute allowedRoles={['ttom_user']}><TTomTPlayer /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DefaultDashboard /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/login" replace />} />

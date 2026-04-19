@@ -11,7 +11,10 @@ import { classNames } from 'primereact/utils';
 import { Toolbar } from 'primereact/toolbar';
 import { Dropdown } from 'primereact/dropdown';
 import { FileUpload } from 'primereact/fileupload';
+import { Paginator } from 'primereact/paginator';
 import * as XLSX from 'xlsx';
+import '../../assets/css/AdminManagement.css';
+import MobileDataCard from '../../components/common/MobileDataCard';
 
 const ChapterMaster = () => {
     let emptyChapter = {
@@ -26,13 +29,16 @@ const ChapterMaster = () => {
     const [books, setBooks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [globalFilter, setGlobalFilter] = useState('');
-    
+
     // CRUD state
     const [chapterDialog, setChapterDialog] = useState(false);
     const [deleteChapterDialog, setDeleteChapterDialog] = useState(false);
     const [importDialog, setImportDialog] = useState(false);
     const [chapter, setChapter] = useState(emptyChapter);
     const [submitted, setSubmitted] = useState(false);
+    const [first, setFirst] = useState(0);
+    const [rows, setRows] = useState(15);
+    const dt = useRef(null);
     const toast = useRef(null);
 
     useEffect(() => {
@@ -188,16 +194,16 @@ const ChapterMaster = () => {
 
                     const rawNameStr = String(normalized['bookname'] || normalized['book'] || normalized['name'] || '').trim();
                     const bookStr = rawNameStr.toLowerCase();
-                    const matchBook = books.find(b => 
-                        b.name.toLowerCase() === bookStr || 
+                    const matchBook = books.find(b =>
+                        b.name.toLowerCase() === bookStr ||
                         (b.short_form && b.short_form.toLowerCase() === bookStr)
                     );
-                    
+
                     if (!matchBook) {
                         missingBooks++;
                         return null;
                     }
-                    
+
                     return {
                         book_id: matchBook.id,
                         chapter_number: parseInt(normalized['chapterno.'] || normalized['chapterno'] || normalized['chapternumber'] || normalized['chapter'] || normalized['chapters']) || 0,
@@ -235,35 +241,30 @@ const ChapterMaster = () => {
         reader.readAsBinaryString(file);
     };
 
-    const leftToolbarTemplate = () => {
-        return (
+    const topCardContent = (
+        <div className="flex flex-col md:flex-row gap-3 md:items-center justify-between w-full">
             <div className="flex flex-wrap gap-2">
-                <Button label="New Chapter" icon="pi pi-plus" severity="success" onClick={openNew} />
-                <Button label="Import Excel" icon="pi pi-upload" className="p-button-help" onClick={() => setImportDialog(true)} />
+                <Button label="New Chapter" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
+                <Button label="Import Excel" icon="pi pi-upload" severity="help" onClick={() => setImportDialog(true)} className="hidden md:flex" />
             </div>
-        );
-    };
+        </div>
+    );
 
     const actionBodyTemplate = (rowData) => {
         return (
-            <div className="flex gap-2">
-                <Button icon="pi pi-pencil" rounded outlined className="mr-2" onClick={() => editChapter(rowData)} />
+            <React.Fragment>
+                <Button icon="pi pi-pencil" rounded outlined severity="info" className="mr-2" onClick={() => editChapter(rowData)} />
                 <Button icon="pi pi-trash" rounded outlined severity="danger" onClick={() => confirmDeleteChapter(rowData)} />
-            </div>
+            </React.Fragment>
         );
     };
 
-    const header = (
-        <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold">Chapter Master Search</h2>
-            <span className="p-input-icon-left">
-                <i className="pi pi-search" />
-                <InputText
-                    type="search"
-                    onInput={(e) => setGlobalFilter(e.target.value)}
-                    placeholder="Global Search"
-                    className="p-2 border rounded"
-                />
+    const tableHeader = (
+        <div className="flex justify-between items-center w-full">
+            <h4 className="m-0 text-lg sm:text-xl font-bold text-black border-none">Chapter Master Search</h4>
+            <span className="p-input-icon-left w-full md:w-auto relative flex items-center search-input-wrapper">
+                <i className="pi pi-search absolute left-3 text-gray-400 z-10" />
+                <InputText type="search" onInput={(e) => setGlobalFilter(e.target.value)} placeholder="Search..." className="w-full md:w-auto pl-10 text-black py-2 border border-gray-300 rounded-md" />
             </span>
         </div>
     );
@@ -271,7 +272,7 @@ const ChapterMaster = () => {
     const chapterDialogFooter = (
         <React.Fragment>
             <Button label="Cancel" icon="pi pi-times" outlined onClick={hideDialog} />
-            <Button label="Save" icon="pi pi-check" onClick={saveChapter} />
+            <Button label="Save" icon="pi pi-check" severity="success" onClick={saveChapter} />
         </React.Fragment>
     );
 
@@ -282,55 +283,98 @@ const ChapterMaster = () => {
         </React.Fragment>
     );
 
+    const filteredChapters = chapters.filter(chap => {
+        if (!globalFilter) return true;
+        const search = globalFilter.toLowerCase();
+        return (
+            (chap.book_name && chap.book_name.toLowerCase().includes(search)) ||
+            (chap.chapter_number && chap.chapter_number.toString().includes(search))
+        );
+    });
+
     return (
-        <div className="p-10">
+        <div className="p-4 sm:p-8 bg-white min-h-screen">
             <Toast ref={toast} />
-            <div className="card bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <Toolbar className="mb-4 bg-transparent border-none p-0" left={leftToolbarTemplate}></Toolbar>
-                <DataTable
-                    value={chapters}
-                    paginator
-                    rows={15}
-                    dataKey="id"
-                    loading={loading}
-                    globalFilter={globalFilter}
-                    header={header}
-                    emptyMessage="No chapters found."
-                    className="p-datatable-sm"
-                    stripedRows
-                >
-                    <Column field="book_name" header="Book Name" sortable filterField="book_name" />
-                    <Column field="chapter_number" header="Chapter No." sortable />
-                    <Column field="verse_count" header="Verses" sortable />
-                    <Column field="art" header="ART" sortable />
-                    <Column body={actionBodyTemplate} exportable={false} style={{ minWidth: '12rem' }}></Column>
-                </DataTable>
+            <div className="card border border-gray-100 rounded-xl p-4 sm:p-6 shadow-sm">
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-4 mb-4">
+                    {topCardContent}
+                </div>
+
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
+                    <DataTable ref={dt} value={chapters} dataKey="id"
+                        paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
+                        loading={loading} globalFilter={globalFilter} header={tableHeader}
+                        className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines
+                        rowClassName={() => 'bg-white text-black'} emptyMessage="No chapters found.">
+                        <Column header="S.No" body={(data, options) => options.rowIndex + 1} exportable={false} style={{ width: '4rem' }} headerClassName="admin-table-header"></Column>
+                        <Column field="book_name" header="Book Name" sortable filterField="book_name" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }} headerClassName="admin-table-header"></Column>
+                        <Column field="chapter_number" header="Chapter No." sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="verse_count" header="Verses" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="art" header="ART" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
+                        <Column header="Activity" body={actionBodyTemplate} exportable={false} style={{ width: '12%' }} headerClassName="admin-table-header"></Column>
+                    </DataTable>
+                </div>
+
+                {/* External Paginator Card */}
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
+                    <Paginator first={first} rows={rows} totalRecords={filteredChapters.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                        template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} chapters" />
+                </div>
+
+                {/* Mobile View */}
+                <div className="block md:hidden mt-4">
+                    {filteredChapters.length > 0 ? (
+                        filteredChapters.map(chap => (
+                            <MobileDataCard
+                                key={chap.id}
+                                title={chap.book_name}
+                                data={[
+                                    { label: 'Chapter No.', value: chap.chapter_number },
+                                    { label: 'Verses', value: chap.verse_count },
+                                    { label: 'ART', value: chap.art }
+                                ]}
+                                onEdit={() => editChapter(chap)}
+                                onDelete={() => confirmDeleteChapter(chap)}
+                            />
+                        ))
+                    ) : (
+                        <div className="text-center p-4 text-gray-500 bg-gray-50 rounded-xl border border-gray-100">
+                            No chapters found.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Mobile FAB */}
+            <div className="block md:hidden fixed bottom-6 right-6 z-50">
+                <Button icon="pi pi-plus" className="p-button-rounded p-button-success shadow-lg" size="large" onClick={openNew} aria-label="Add New" />
             </div>
 
             <Dialog visible={chapterDialog} style={{ width: '32rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Chapter Details" modal className="p-fluid" footer={chapterDialogFooter} onHide={hideDialog}>
-                
+
                 <div className="field mb-4">
                     <label htmlFor="book_id" className="font-bold block mb-2">Book <span className="text-red-500">*</span></label>
-                    <Dropdown 
-                        id="book_id" 
-                        value={chapter.book_id} 
-                        onChange={(e) => onDropdownChange(e, 'book_id')} 
-                        options={books} 
-                        optionLabel="name" 
+                    <Dropdown
+                        id="book_id"
+                        value={chapter.book_id}
+                        onChange={(e) => onDropdownChange(e, 'book_id')}
+                        options={books}
+                        optionLabel="name"
                         optionValue="id"
                         placeholder="Select a Book"
-                        filter 
-                        className={classNames('w-full', { 'p-invalid': submitted && !chapter.book_id })} 
+                        filter
+                        className={classNames('w-full', { 'p-invalid': submitted && !chapter.book_id })}
                     />
                     {submitted && !chapter.book_id && <small className="p-error text-red-500 block mt-1">Book selection is required.</small>}
                 </div>
 
                 <div className="field mb-4">
                     <label htmlFor="chapter_number" className="font-bold block mb-2">Chapter Number <span className="text-red-500">*</span></label>
-                    <InputNumber 
-                        id="chapter_number" 
-                        value={chapter.chapter_number} 
-                        onValueChange={(e) => onInputNumberChange(e, 'chapter_number')} 
+                    <InputNumber
+                        id="chapter_number"
+                        value={chapter.chapter_number}
+                        onValueChange={(e) => onInputNumberChange(e, 'chapter_number')}
                         useGrouping={false}
                         className={classNames({ 'p-invalid': submitted && chapter.chapter_number <= 0 })}
                     />
