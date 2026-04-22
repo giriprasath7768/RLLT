@@ -6,8 +6,8 @@ const ScriptViewerModal = ({ isOpen, onClose, scriptData, onInsert }) => {
     if (!isOpen || !scriptData) return null;
 
     return (
-        <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center pt-24 p-4 backdrop-blur-md print:hidden">
-            <div className="bg-gray-900 border border-gray-700 shadow-[0_0_40px_rgba(0,0,0,0.8)] rounded-xl overflow-hidden w-full max-w-6xl h-[75vh] flex flex-col text-gray-100 transform transition-all scale-100 opacity-100 relative mt-12">
+        <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4 py-8 backdrop-blur-md print:hidden">
+            <div className="bg-gray-900 border border-gray-700 shadow-[0_0_40px_rgba(0,0,0,0.8)] rounded-xl overflow-hidden w-full max-w-6xl h-[95vh] max-h-full flex flex-col text-gray-100 transform transition-all scale-100 opacity-100 relative">
 
                 {/* Floating Cosmic Accent lines logic */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50"></div>
@@ -31,9 +31,9 @@ const ScriptViewerModal = ({ isOpen, onClose, scriptData, onInsert }) => {
                 {/* Content Body */}
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gradient-to-b from-gray-900 to-gray-950 space-y-6">
                     {/* Generative Matrix Array */}
-                    <div className="rounded-xl overflow-hidden border border-gray-700/80 shadow-lg bg-gray-900/40 backdrop-blur-sm relative">
+                    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg bg-white relative">
                         <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead className="bg-gray-950 border-b border-gray-700 text-gray-400 text-xs tracking-widest font-mono select-none">
+                            <thead className="bg-gray-100 border-b border-gray-200 text-black text-xs tracking-widest font-mono font-bold select-none">
                                 <tr>
                                     <th className="px-4 py-4 w-16 text-center">SEQ</th>
                                     <th className="px-4 py-4 text-center">GLYPH</th>
@@ -43,31 +43,31 @@ const ScriptViewerModal = ({ isOpen, onClose, scriptData, onInsert }) => {
                                     <th className="px-4 py-4 text-right">VAL</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-800/50">
+                            <tbody className="divide-y divide-gray-100">
                                 {scriptData.letters.map((letter, i) => {
                                     const isSelected = selectedGlyph === letter.original;
                                     return (
                                         <tr
                                             key={i}
                                             onClick={() => setSelectedGlyph(letter.original)}
-                                            className={`cursor-pointer transition-all duration-300 group ${isSelected ? 'bg-gray-800/90 shadow-[inset_4px_0_0_0_#10b981]' : 'hover:bg-gray-800/50'}`}
+                                            className={`cursor-pointer transition-all duration-300 group font-bold text-black ${isSelected ? 'bg-emerald-50 shadow-[inset_4px_0_0_0_#10b981]' : 'bg-white hover:bg-gray-50'}`}
                                         >
-                                            <td className="px-4 py-4 text-center text-gray-600 font-mono text-xs group-hover:text-emerald-500 transition-colors">
+                                            <td className="px-4 py-4 text-center font-mono text-xs transition-colors">
                                                 {String(letter.serial).padStart(2, '0')}
                                             </td>
-                                            <td className="px-4 py-4 text-center text-3xl font-light text-gray-300 group-hover:text-white group-hover:drop-shadow-[0_0_12px_rgba(52,211,153,0.8)] transition-all transform group-hover:scale-125 select-all">
+                                            <td className="px-4 py-4 text-center text-3xl font-bold transition-all transform group-hover:scale-125 select-all lg:font-black">
                                                 {letter.original}
                                             </td>
-                                            <td className="px-4 py-4 font-mono text-gray-400 group-hover:text-emerald-300 transition-colors">
+                                            <td className="px-4 py-4 font-mono transition-colors">
                                                 {letter.phonetic}
                                             </td>
-                                            <td className="px-4 py-4 text-gray-400 whitespace-normal leading-relaxed text-xs italic group-hover:text-gray-200 transition-colors pr-8">
+                                            <td className="px-4 py-4 whitespace-normal leading-relaxed text-xs italic transition-colors pr-8">
                                                 {letter.desc}
                                             </td>
-                                            <td className="px-4 py-4 text-indigo-400/80 font-medium tracking-wide text-xs group-hover:text-indigo-300 transition-colors">
+                                            <td className="px-4 py-4 font-medium tracking-wide text-xs transition-colors">
                                                 {letter.meaning}
                                             </td>
-                                            <td className="px-4 py-4 text-right text-gray-600 font-mono group-hover:text-emerald-500 transition-colors">
+                                            <td className="px-4 py-4 text-right font-mono transition-colors">
                                                 {letter.value !== null ? letter.value : 'Ø'}
                                             </td>
                                         </tr>

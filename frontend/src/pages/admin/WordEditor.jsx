@@ -79,10 +79,19 @@ Quill.register(WisdomFormat, true);
 // Custom format for watermark (CSS background)
 const CustomToolbarId = 'tnt7-word-toolbar';
 
+const PAGE_SIZES = {
+    'A4': { name: 'A4', width: '210mm', height: '297mm', padding: '20mm', linePx: 1122 },
+    'A5': { name: 'A5', width: '148mm', height: '210mm', padding: '15mm', linePx: 793 },
+    'A6': { name: 'A6', width: '105mm', height: '148mm', padding: '10mm', linePx: 559 },
+    'Letter': { name: 'Letter', width: '8.5in', height: '11in', padding: '1in', linePx: 1056 },
+    'Legal': { name: 'Legal', width: '8.5in', height: '14in', padding: '1in', linePx: 1344 }
+};
+
 const WordEditor = () => {
     const quillRef = useRef(null);
     const [title, setTitle] = useState('Untitled Document');
     const [content, setContent] = useState('');
+    const [pageSize, setPageSize] = useState('Letter'); // Added state for Dynamic Settings
     const [watermark, setWatermark] = useState('');
     const [language, setLanguage] = useState('en');
     const [selectedCountry, setSelectedCountry] = useState(null);
@@ -92,7 +101,58 @@ const WordEditor = () => {
     const [documentId, setDocumentId] = useState(null);
     const [mapModalOpen, setMapModalOpen] = useState(false);
     const [mapUrl, setMapUrl] = useState('');
+    const [zoomLevel, setZoomLevel] = useState(1);
     const debounceTimeout = useRef(null);
+
+    // Book Index States
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [booksDB, setBooksDB] = useState([]);
+    const [chaptersDB, setChaptersDB] = useState([]);
+    const [expandedBookId, setExpandedBookId] = useState(null);
+    const [expandedChapterId, setExpandedChapterId] = useState(null);
+
+    useEffect(() => {
+        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+            .then(res => {
+                const sorted = res.data.sort((a, b) => a.name.localeCompare(b.name));
+                setBooksDB(sorted);
+            })
+            .catch(console.error);
+
+        axios.get('http://localhost:8000/api/chapters', { withCredentials: true })
+            .then(res => setChaptersDB(res.data))
+            .catch(console.error);
+    }, []);
+
+    const groupedBooks = React.useMemo(() => {
+        const groups = {};
+        booksDB.forEach(book => {
+            const type = book.book_type || 'Uncategorized';
+            if (!groups[type]) groups[type] = [];
+            groups[type].push(book);
+        });
+        return groups;
+    }, [booksDB]);
+
+    const expandedBookChapters = React.useMemo(() => {
+        if (!expandedBookId) return [];
+        return chaptersDB
+            .filter(c => c.book_id === expandedBookId)
+            .sort((a, b) => a.chapter_number - b.chapter_number);
+    }, [expandedBookId, chaptersDB]);
+
+    const handleVerseInsert = (book, chapter, verseNum) => {
+        if (!quillRef.current) return;
+        const editor = quillRef.current.getEditor();
+        editor.focus();
+        let cursorPosition = editor.getSelection()?.index;
+        if (cursorPosition === undefined) cursorPosition = editor.getLength();
+
+        const citation = `${book.name} ${chapter.chapter_number}:${verseNum} `;
+        editor.insertText(cursorPosition, citation);
+        editor.setSelection(cursorPosition + citation.length);
+        setIsSidebarOpen(false);
+    };
 
     const [savedDocsModalOpen, setSavedDocsModalOpen] = useState(false);
     const [savedDocuments, setSavedDocuments] = useState([]);
@@ -240,6 +300,26 @@ const WordEditor = () => {
         setMapModalOpen(false);
     };
 
+    const handleOpenMap = async (code, name) => {
+        setSelectedCountry({ code, name });
+        setMapModalOpen(true);
+        try {
+            const res = await fetch(`https://raw.githubusercontent.com/djaiss/mapsicon/master/all/${code.toLowerCase()}/vector.svg`);
+            if (res.ok) {
+                let svgText = await res.text();
+                svgText = svgText.replace(/fill="#000000"/gi, '');
+                svgText = svgText.replace(/<path\b/gi, '<path fill="#3B82F6" stroke="#1E3A8A" stroke-width="1"');
+                const safeSvg = encodeURIComponent(svgText).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1));
+                setMapUrl(`data:image/svg+xml;base64,${btoa(safeSvg)}`);
+            } else {
+                setMapUrl(`https://upload.wikimedia.org/wikipedia/commons/e/ec/Map_of_the_World_1998.jpg`);
+            }
+        } catch (e) {
+            console.error("Map fetch error:", e);
+            setMapUrl(`https://upload.wikimedia.org/wikipedia/commons/e/ec/Map_of_the_World_1998.jpg`);
+        }
+    };
+
     // Prevent body bounce/double-scroll behind the fixed overlay
     useEffect(() => {
         const originalOverflow = document.body.style.overflow;
@@ -276,61 +356,26 @@ const WordEditor = () => {
     return (
         <div className="fixed inset-0 z-[100] flex flex-col bg-gray-50 overflow-hidden text-black transition-all">
             {/* Header / Title area */}
-            <div className="bg-white border-b px-6 py-3 flex items-center shadow-sm z-20 print:hidden relative">
-                <button
-                    onClick={() => window.history.back()}
-                    className="mr-4 p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors focus:outline-none shrink-0"
-                    title="Exit Editor"
-                >
-                    <i className="pi pi-arrow-left"></i>
-                </button>
-                <div className="flex items-center gap-3 w-64 shrink-0">
-                    <i className="pi pi-file-word text-blue-600 text-2xl"></i>
+            <div className="bg-white border-b px-6 py-3 flex items-center justify-between shadow-sm z-20 print:hidden relative">
+                <div className="flex items-center gap-3 shrink-0">
+                    <button
+                        onClick={() => window.history.back()}
+                        className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
+                        title="Exit Editor"
+                    >
+                        <i className="pi pi-arrow-left"></i>
+                    </button>
+                    <i className="pi pi-file-word text-blue-600 text-2xl translate-y-[1px]"></i>
+                </div>
+
+                <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2 w-full max-w-sm justify-center pointer-events-none">
                     <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="text-xl font-bold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-100 px-2 py-1 rounded w-full text-gray-800"
+                        className="text-lg font-bold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-100 px-2 py-1 rounded w-full text-gray-800 text-center pointer-events-auto"
                         placeholder="Document Title"
                     />
-                </div>
-
-                {/* 195 Flags Horizontal Scroller using FlagCDN for Windows Compatibility */}
-                <div className="flex-1 mx-6 overflow-x-auto flex items-center gap-3 px-3 py-2 shadow-inner bg-gray-50 rounded-lg border border-gray-200" style={{ scrollbarWidth: 'thin' }}>
-                    {UN_COUNTRIES.map(code => (
-                        <button
-                            key={code}
-                            title={regionNames.of(code)}
-                            onClick={async () => {
-                                setSelectedCountry({ code: code, name: regionNames.of(code) });
-                                setMapModalOpen(true);
-                                try {
-                                    const res = await fetch(`https://raw.githubusercontent.com/djaiss/mapsicon/master/all/${code.toLowerCase()}/vector.svg`);
-                                    if (res.ok) {
-                                        let svgText = await res.text();
-                                        svgText = svgText.replace(/fill="#000000"/gi, ''); // Clean existing black attributes
-                                        svgText = svgText.replace(/<path\b/gi, '<path fill="#3B82F6" stroke="#1E3A8A" stroke-width="1"'); // Inject rich blue map colors
-                                        const safeSvg = encodeURIComponent(svgText).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1));
-                                        setMapUrl(`data:image/svg+xml;base64,${btoa(safeSvg)}`);
-                                    } else {
-                                        setMapUrl(`https://upload.wikimedia.org/wikipedia/commons/e/ec/Map_of_the_World_1998.jpg`);
-                                    }
-                                } catch (e) {
-                                    console.error("Map fetch error:", e);
-                                    setMapUrl(`https://upload.wikimedia.org/wikipedia/commons/e/ec/Map_of_the_World_1998.jpg`);
-                                }
-                            }}
-                            className={`transition-transform shrink-0 outline-none rounded-sm overflow-hidden ${selectedCountry?.code === code ? 'scale-125 drop-shadow-md z-10 ring-2 ring-blue-500' : 'grayscale-[40%] hover:grayscale-0 opacity-80 hover:opacity-100 hover:scale-110'}`}
-                        >
-                            <img
-                                src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
-                                srcSet={`https://flagcdn.com/w80/${code.toLowerCase()}.png 2x`}
-                                width="24"
-                                alt={code}
-                                className="block"
-                            />
-                        </button>
-                    ))}
                 </div>
 
                 <div
@@ -339,7 +384,7 @@ const WordEditor = () => {
                     title="View Saved Documents"
                 >
                     {isSaving ? (
-                        <><i className="pi pi-spin pi-spinner text-gray-500"></i> <span className="text-gray-500">Saving...</span></>
+                        <><i className="pi pi-spin pi-spinner text-gray-400"></i> <span className="text-gray-500">Saving...</span></>
                     ) : (
                         <><i className="pi pi-check text-green-500"></i> <span>Saved</span> <i className="pi pi-history text-xs opacity-60"></i></>
                     )}
@@ -347,8 +392,15 @@ const WordEditor = () => {
             </div>
 
             {/* Custom Toolbar */}
-            <div className="print:hidden shrink-0">
+            <div className="print:hidden shrink-0 relative z-[99]">
                 <WordToolbar
+                    PAGE_SIZES={PAGE_SIZES}
+                    pageSize={pageSize}
+                    setPageSize={setPageSize}
+                    setIsSidebarOpen={setIsSidebarOpen}
+                    handleOpenMap={handleOpenMap}
+                    UN_COUNTRIES={UN_COUNTRIES}
+                    regionNames={regionNames}
                     toolbarId={CustomToolbarId}
                     quillRef={quillRef}
                     content={content}
@@ -359,20 +411,27 @@ const WordEditor = () => {
                     setLanguage={setLanguage}
                     notes={notes}
                     setNotes={setNotes}
+                    zoomLevel={zoomLevel}
+                    setZoomLevel={setZoomLevel}
+                    isSaving={isSaving}
+                    fetchSavedDocuments={fetchSavedDocuments}
                 />
             </div>
 
             {/* Primary Editing Area */}
             <div className={`flex-grow overflow-y-auto p-4 sm:p-8 flex justify-center bg-gray-100 print:bg-white print:p-0 ${['ar', 'he', 'fa', 'ur'].includes(language) ? 'rtl' : 'ltr'}`} lang={language}>
                 <div
-                    className="shadow-lg border border-gray-300 relative overflow-hidden print:border-none"
+                    className="shadow-lg border border-gray-300 relative overflow-hidden print:border-none duration-300 transition-all mx-auto"
                     style={{
-                        width: '816px', // 8.5 inches
-                        minHeight: '1056px', // 11 inches
-                        padding: '1in',
+                        width: PAGE_SIZES[pageSize].width,
+                        minHeight: PAGE_SIZES[pageSize].height,
+                        padding: PAGE_SIZES[pageSize].padding,
                         backgroundColor: 'white',
-                        backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0px, transparent 1055px, #cbd5e1 1055px, #cbd5e1 1056px)',
-                        backgroundSize: '100% 1056px'
+                        transform: `scale(${zoomLevel})`,
+                        transformOrigin: 'top center',
+                        marginBottom: `calc(${PAGE_SIZES[pageSize].height} * ${Math.max(0, zoomLevel - 1)})`,
+                        backgroundImage: `repeating-linear-gradient(to bottom, transparent 0px, transparent ${PAGE_SIZES[pageSize].linePx - 1}px, #cbd5e1 ${PAGE_SIZES[pageSize].linePx - 1}px, #cbd5e1 ${PAGE_SIZES[pageSize].linePx}px)`,
+                        backgroundSize: `100% ${PAGE_SIZES[pageSize].linePx}px`
                     }}
                 >
                     {watermark && (
@@ -457,7 +516,7 @@ const WordEditor = () => {
                 }
                 
                 @media print {
-                    @page { margin: 0; size: auto; }
+                    @page { margin: 0; size: ${PAGE_SIZES[pageSize].width} ${PAGE_SIZES[pageSize].height}; }
                     body { margin: 0; padding: 0; background: white; }
                     .fixed.inset-0, .fixed.inset-0 * { visibility: visible !important; }
                     .print\\:hidden, .print\\:hidden * { display: none !important; visibility: hidden !important; }
@@ -479,6 +538,112 @@ const WordEditor = () => {
                     }
                 }
             `}</style>
+
+            {/* Sidebar Overlay */}
+            <div
+                className={`fixed inset-0 bg-black/60 z-[250] transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => setIsSidebarOpen(false)}
+            ></div>
+
+            {/* TIER 1: Book List (Sidebar) Drawer */}
+            <div className={`fixed top-0 left-0 h-full w-64 sm:w-72 md:w-80 bg-[#1e2433] text-gray-300 shadow-2xl z-[260] flex flex-col overflow-hidden transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="px-6 py-5 border-b border-[#2a3045] bg-[#151a26] flex justify-between items-start">
+                    <div>
+                        <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
+                            <i className="pi pi-book text-[#c8a165]"></i>
+                            Book Index
+                        </h2>
+                        <p className="text-xs text-gray-400 mt-2 tracking-wider">Navigate & Insert Scriptures</p>
+                    </div>
+                    <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-white p-1">
+                        <i className="pi pi-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-3 py-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4b5563 #1f2937' }}>
+                    {Object.keys(groupedBooks).map(type => (
+                        <div key={type} className="mb-6">
+                            <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">{type}</h3>
+                            <ul className="space-y-1">
+                                {groupedBooks[type].map(book => (
+                                    <li key={book.id}>
+                                        <button
+                                            onClick={() => {
+                                                setExpandedBookId(prev => prev === book.id ? null : book.id);
+                                                setExpandedChapterId(null);
+                                            }}
+                                            className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-semibold tracking-wide flex justify-between items-center ${expandedBookId === book.id
+                                                ? 'bg-[#547395] text-white shadow-md border-l-4 border-[#c8a165]'
+                                                : 'hover:bg-[#2a3045] text-gray-400 hover:text-white border-l-4 border-transparent'
+                                                }`}
+                                        >
+                                            <span className="truncate pr-2">{book.name}</span>
+                                            <span className="text-[10px] opacity-60 bg-black/20 px-2 py-0.5 rounded-full">
+                                                {book.total_chapters || 0} Ch
+                                            </span>
+                                        </button>
+
+                                        {/* Expandable Chapter Grid */}
+                                        {expandedBookId === book.id && (
+                                            <div className="flex flex-col gap-1.5 mt-2 p-1.5 bg-[#0f131c] rounded-md shadow-inner mb-2 mx-2">
+                                                <div className="grid grid-cols-5 gap-1.5">
+                                                    {expandedBookChapters.length > 0 ? (
+                                                        expandedBookChapters.map(chapter => (
+                                                            <div key={chapter.id} className="relative">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setExpandedChapterId(prev => prev === chapter.id ? null : chapter.id);
+                                                                    }}
+                                                                    className={`flex items-center justify-center w-full aspect-square rounded font-bold text-sm transition-all duration-200 ${expandedChapterId === chapter.id
+                                                                        ? 'bg-[#3b82f6] text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]'
+                                                                        : 'bg-[#1e2433] text-gray-400 hover:bg-[#2d3748] hover:text-white'
+                                                                        }`}
+                                                                    title={`Chapter ${chapter.chapter_number} (${chapter.verse_count || 0} Verses)`}
+                                                                >
+                                                                    {chapter.chapter_number}
+                                                                </button>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <span className="col-span-5 text-[#8b9bb4] text-xs text-center italic py-2">No chapters</span>
+                                                    )}
+                                                </div>
+
+                                                {/* Verse Grid beneath Chapter list */}
+                                                {expandedChapterId && (
+                                                    <div className="mt-2 p-2 border-t border-gray-800 animate-fadein">
+                                                        <div className="text-[10px] font-bold text-[#8b9bb4] uppercase tracking-widest text-center mb-2">
+                                                            Verses (Chapter {expandedBookChapters.find(c => c.id === expandedChapterId)?.chapter_number})
+                                                        </div>
+                                                        <div className="grid grid-cols-6 gap-1 max-h-[200px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                                                            {(() => {
+                                                                const chap = expandedBookChapters.find(c => c.id === expandedChapterId);
+                                                                const count = chap?.verse_count || 0;
+                                                                if (count === 0) return <span className="col-span-6 text-center text-xs italic text-gray-600">No verses</span>;
+
+                                                                return Array.from({ length: count }, (_, i) => i + 1).map(v => (
+                                                                    <button
+                                                                        key={v}
+                                                                        onClick={() => handleVerseInsert(book, chap, v)}
+                                                                        className="bg-[#2a3045] hover:bg-green-600 text-gray-300 hover:text-white text-[11px] font-medium py-1.5 rounded transition-colors text-center shadow-sm"
+                                                                    >
+                                                                        {v}
+                                                                    </button>
+                                                                ));
+                                                            })()}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
             <SavedDocumentsModal
                 isOpen={savedDocsModalOpen}

@@ -22,20 +22,25 @@ const formatDateTime = (date) => {
     return `${day} ${dateNum} ${month} ${year} ${hours}:${minutes} ${ampm}`;
 };
 
-const DividerBox = ({ letter, letterColor, onClick }) => (
-    <div
-        onClick={() => {
-            const hexMatch = letterColor.match(/\[(.*?)\]/);
-            if (hexMatch && onClick) onClick(hexMatch[1]);
-        }}
-        className="flex flex-col items-center justify-between min-w-0 border-[1.5px] border-gray-400 bg-white shadow-sm pt-2 pb-2 cursor-pointer hover:bg-gray-100 transition-colors"
-        style={{ flex: 1.0 }}
-    >
-        <span className={`font-serif font-black text-xl leading-none drop-shadow-sm ${letterColor}`}>
-            {letter}
-        </span>
-    </div>
-);
+const DividerBox = ({ letter, letterColor, num, onClick }) => {
+    const hexColor = letterColor.match(/\[(.*?)\]/)[1];
+    return (
+        <div
+            onClick={() => {
+                if (onClick) onClick(hexColor);
+            }}
+            className="flex flex-col items-center justify-start min-w-0 border-[2px] bg-white shadow-sm pt-2 pb-2 cursor-pointer hover:bg-gray-100 transition-colors"
+            style={{ flex: 1.0, borderColor: hexColor }}
+        >
+            <span className={`font-serif font-black text-xl leading-none drop-shadow-sm pb-2 ${letterColor}`}>
+                {letter}
+            </span>
+            <span className={`font-black text-sm pt-2 pb-2 leading-none text-black`}>
+                {num}
+            </span>
+        </div>
+    );
+};
 
 const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onClick }) => {
     return (
@@ -44,28 +49,57 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
                 const hexMatch = bodyColorClass.match(/\[(.*?)\]/);
                 if (hexMatch && onClick) onClick(hexMatch[1]);
             }}
-            className="flex flex-col items-center min-w-0 bg-white shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
-            style={{
-                flex: 1.0,
-                clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 8px))',
-                WebkitClipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 8px))'
-            }}
+            className="flex flex-col items-center min-w-0 bg-gray-500 border-[2px] border-black cursor-pointer hover:-translate-y-1 transition-transform relative h-full drop-shadow-md pb-0"
+            style={{ flex: 1.0 }}
         >
-            <div className={`w-full h-12 sm:h-14 flex justify-center ${tipColorClass}`}>
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full drop-shadow-sm">
+            {/* Wooden Tip (Top 20%) */}
+            <div className={`w-full h-[20%] relative flex justify-center items-end ${tipColorClass}`}>
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-[97%] h-full">
+                    {/* Wood core */}
                     <polygon points="50,0 0,100 100,100" fill="#f4d1a6" />
+                    {/* Painted pointer matching body color */}
                     <polygon points="50,0 25,50 75,50" fill="currentColor" />
                 </svg>
             </div>
 
-            <div className={`w-full flex-grow ${bodyColorClass} bg-gradient-to-r from-black/10 via-transparent to-black/20 border-t border-black/20 flex flex-col justify-center items-center py-2 relative overflow-hidden min-h-[50px] h-14 sm:h-18`}>
-                <span className="transform -rotate-90 text-[0.55rem] sm:text-[0.65rem] font-black text-black tracking-tight uppercase origin-center whitespace-nowrap z-10">
-                    {label}
-                </span>
+            {/* Hexagonal Color Body (Middle 60%) */}
+            <div className={`w-[97%] h-[60%] flex relative ${bodyColorClass} overflow-hidden border-t-2 border-black/10`}>
+                {/* Left face shadow */}
+                <div className="w-[25%] h-full bg-black/20 border-r border-black/10"></div>
+
+                {/* Center face Label */}
+                <div className="w-[50%] h-full relative z-10">
+                    <span
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[13px] sm:text-[14px] font-black text-white uppercase whitespace-nowrap"
+                        style={{
+                            textShadow: '-0.5px 0.5px 0px #a39b8c, -1px 1px 0px #8b8374, -2px 2px 0px #635b4c, -3px 3px 0px #4a4336, -4px 4px 4px rgba(0,0,0,0.8)',
+                            letterSpacing: label.length > 8 ? '0px' : '2px'
+                        }}
+                    >
+                        {label}
+                    </span>
+                </div>
+
+                {/* Right face deep shadow */}
+                <div className="w-[25%] h-full bg-black/40 border-l border-white/10"></div>
             </div>
 
-            <div className={`w-full h-10 sm:h-12 ${bodyColorClass} bg-gradient-to-r from-black/20 via-transparent to-black/30 border-t border-black/30 flex items-center justify-center`}>
-                <span className={`font-black text-sm sm:text-base ${textColor}`}>{baseNum}</span>
+            {/* Metal Ferrule Base (Bottom 8%) */}
+            <div className="w-[100%] h-[8%] bg-gradient-to-r from-gray-500 via-gray-200 to-gray-600 flex flex-col justify-between py-[1px] sm:py-[2px] relative shadow-lg z-10 border-t-2 border-black/20 overflow-hidden">
+                <div className="w-full h-[1px] bg-black/20 shadow-sm"></div>
+                <div className="w-full h-[1px] bg-white/50"></div>
+                <div className="w-full h-[1px] bg-black/20 shadow-sm"></div>
+                <div className="w-full h-[1px] bg-white/50"></div>
+            </div>
+
+            {/* Colored Base Cap & Number (Bottom 12%) */}
+            <div className={`w-[97%] h-[12%] flex items-center justify-center relative rounded-b-md shadow-md z-10 overflow-hidden ${bodyColorClass} border-t border-black/50`}>
+                {/* Cylindrical shading to match 3D volume but not sharp hexagonal */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/30"></div>
+                {/* The tracking digit */}
+                <span className="font-extrabold text-[15px] sm:text-[18px] text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] z-10 relative">
+                    {baseNum}
+                </span>
             </div>
         </div>
     );
@@ -92,48 +126,50 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
     ];
 
     return (
-        <div className="bg-white flex-grow flex flex-col pt-4 pb-2 px-1 rounded-b-lg overflow-hidden border-t-4 border-[#12182b] w-full h-full">
+        <div className="bg-white flex-grow flex flex-col pt-0 pb-4 px-1 rounded-b-lg overflow-y-auto custom-scrollbar border-t-4 border-[#12182b] w-full h-full">
             {/* Pencils Row */}
-            <div className="flex px-1 gap-px h-[190px] sm:h-[210px] pb-2 w-full justify-between items-stretch">
-                <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#86c5f7]" tipColorClass="text-[#86c5f7]" textColor="text-black" onClick={onPencilClick} />
+            <div className="flex px-1 gap-1 h-[450px] sm:h-[450px] pt-[2px] pb-[3px] w-full justify-between items-stretch">
+                <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00c0ff]" tipColorClass="text-[#00c0ff]" textColor="text-black" onClick={onPencilClick} />
                 <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" onClick={(c) => { onLetterClick(c); setActiveSquare('W'); }} />
 
-                <Pencil label="FINANCE" baseNum="2" bodyColorClass="bg-[#38b948]" tipColorClass="text-[#38b948]" textColor="text-black" onClick={onPencilClick} />
+                <Pencil label="FINANCE" baseNum="2" bodyColorClass="bg-[#00a638]" tipColorClass="text-[#00a638]" textColor="text-white" onClick={onPencilClick} />
                 <DividerBox letter="I" letterColor="text-[#294291]" num="2" onClick={(c) => { onLetterClick(c); setActiveSquare('I'); }} />
 
-                <Pencil label="GOVERNMENT" baseNum="3" bodyColorClass="bg-[#4579d4]" tipColorClass="text-[#4579d4]" textColor="text-black" onClick={onPencilClick} />
+                <Pencil label="GOVERNMENT" baseNum="3" bodyColorClass="bg-[#3340cd]" tipColorClass="text-[#3340cd]" textColor="text-white" onClick={onPencilClick} />
                 <DividerBox letter="S" letterColor="text-[#86c5f7]" num="3" onClick={(c) => { onLetterClick(c); setActiveSquare('S'); }} />
 
-                <Pencil label="SPIRITUALITY" baseNum="4" bodyColorClass="bg-[#ebe244]" tipColorClass="text-[#ebe244]" textColor="text-black" onClick={onPencilClick} />
+                <Pencil label="SPIRITUALITY" baseNum="4" bodyColorClass="bg-[#fafa33]" tipColorClass="text-[#fafa33]" textColor="text-black" onClick={onPencilClick} />
                 <DividerBox letter="D" letterColor="text-[#38b948]" num="4" onClick={(c) => { onLetterClick(c); setActiveSquare('D'); }} />
 
-                <Pencil label="TALENT" baseNum="5" bodyColorClass="bg-[#8b2671]" tipColorClass="text-[#8b2671]" textColor="text-black" onClick={onPencilClick} />
+                <Pencil label="TALENT" baseNum="5" bodyColorClass="bg-[#bb43b1]" tipColorClass="text-[#bb43b1]" textColor="text-white" onClick={onPencilClick} />
                 <DividerBox letter="O" letterColor="text-[#e3242b]" num="5" onClick={(c) => { onLetterClick(c); setActiveSquare('O'); }} />
 
-                <Pencil label="TRAINING" baseNum="6" bodyColorClass="bg-[#f17a41]" tipColorClass="text-[#f17a41]" textColor="text-black" onClick={onPencilClick} />
+                <Pencil label="TRAINING" baseNum="6" bodyColorClass="bg-[#fe6d01]" tipColorClass="text-[#fe6d01]" textColor="text-black" onClick={onPencilClick} />
                 <DividerBox letter="M" letterColor="text-[#ed9b26]" num="6" onClick={(c) => { onLetterClick(c); setActiveSquare('M'); }} />
 
-                <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#e3242b]" tipColorClass="text-[#e3242b]" textColor="text-black" onClick={onPencilClick} />
+                <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#fe0005]" tipColorClass="text-[#fe0005]" textColor="text-white" onClick={onPencilClick} />
             </div>
 
-            {/* TRANSFORMATION bar */}
-            <div className="bg-[#181a1f] text-white font-black text-center tracking-[0.4em] py-1.5 text-[0.75rem] border-[3px] border-gray-400 mt-1 uppercase w-full">
-                T R A N S F O R M A T I O N
+            {/* TRANSFORMATION Text Bar */}
+            <div className="w-full bg-black py-0 text-white flex justify-between items-center px-[12px] font-black text-[10px] sm:text-[12px] mx-0 drop-shadow-md z-10 shrink-0 mb-0">
+                {"TRANSFORMATION".split('').map((char, i) => (
+                    <span key={i}>{char}</span>
+                ))}
             </div>
 
             {/* List */}
-            <div className="px-3 py-2 flex flex-col gap-1 font-bold font-serif whitespace-nowrap bg-white overflow-hidden w-full">
+            <div className="px-3 pt-2 pb-2 flex flex-col justify-between font-bold font-serif whitespace-nowrap bg-white overflow-hidden w-full h-full shrink gap-0 relative">
                 {wisdomItems.map((item, idx) => (
                     <div
                         key={item.key}
-                        className={`flex items-center gap-2 border-[2px] rounded p-1 transition-all`}
+                        className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all`}
                         style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
                     >
-                        <span style={{ color: item.color }} className="text-sm flex-shrink-0">{idx + 1}.</span>
+                        <span style={{ color: item.color }} className="text-[10px] sm:text-[12px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
                         <span
                             onClick={() => { setActiveSquare(item.key); onLetterClick(item.color); }}
                             style={{ color: item.color }}
-                            className="text-xl font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
+                            className="text-[13px] sm:text-[14px] font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
                         >
                             {item.letter}
                         </span>
@@ -141,7 +177,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                             type="text"
                             value={texts[item.key]}
                             onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
-                            className="text-black text-xs font-black uppercase tracking-wider bg-transparent outline-none flex-grow min-w-0"
+                            className="text-black text-[10px] sm:text-[12px] font-black uppercase tracking-wider bg-transparent outline-none flex-grow min-w-0 leading-none"
                         />
                     </div>
                 ))}
@@ -162,12 +198,17 @@ const explodeBookString = (str, booksDB) => {
     };
 
     const getFullName = (abbr) => {
-        if (!booksDB || !booksDB.length) return toTitleCase(abbr);
+        let lookup = abbr.trim().toUpperCase();
+        if (lookup === 'PRO') lookup = 'PROVERBS';
+
+        if (!booksDB || !booksDB.length) return toTitleCase(lookup);
         const book = booksDB.find(b =>
+            (b.short_form || '').trim().toUpperCase() === lookup ||
+            (b.name || '').trim().toUpperCase() === lookup ||
             (b.short_form || '').trim().toUpperCase() === abbr.trim().toUpperCase() ||
             (b.name || '').trim().toUpperCase() === abbr.trim().toUpperCase()
         );
-        return book ? toTitleCase(book.name.trim()) : toTitleCase(abbr);
+        return book ? toTitleCase(book.name.trim()) : toTitleCase(lookup);
     };
 
     parts.forEach(part => {
@@ -227,11 +268,13 @@ const TTomTPlayer = () => {
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
     const [contentDB, setContentDB] = useState([]);
+    const [userRole, setUserRole] = useState(null);
 
     const [playerBorderColor, setPlayerBorderColor] = useState('#000000'); // default black top border
     const [playerBgColor, setPlayerBgColor] = useState('rgb(81, 106, 135)');
 
     const [activeTrackName, setActiveTrackName] = useState('');
+    const [activeVideoIndex, setActiveVideoIndex] = useState(0);
     const [audioDuration, setAudioDuration] = useState(0);
     const [audioProgress, setAudioProgress] = useState(0);
     const audioRef = useRef(new Audio());
@@ -294,8 +337,21 @@ const TTomTPlayer = () => {
         const chapNum = parseInt(parts.pop());
         const bookName = parts.join(' ').toUpperCase();
         const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
-        return content?.video_url ? `http://localhost:8000${content.video_url}` : null;
-    }, [activeTrackName, contentDB]);
+
+        let vUrl = content?.video_url || null;
+        if (vUrl) {
+            try {
+                const trimmed = vUrl.trim();
+                if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                    const parsed = JSON.parse(trimmed);
+                    vUrl = parsed[activeVideoIndex] || parsed[0] || null;
+                }
+            } catch (e) {
+                // If not JSON or fails to parse, leave it as is
+            }
+        }
+        return vUrl ? `http://localhost:8000${vUrl}` : null;
+    }, [activeTrackName, activeVideoIndex, contentDB]);
 
     const activeRefLink = React.useMemo(() => {
         if (!activeTrackName) return null;
@@ -307,6 +363,10 @@ const TTomTPlayer = () => {
     }, [activeTrackName, contentDB]);
 
     useEffect(() => {
+        axios.get('http://localhost:8000/api/me', { withCredentials: true })
+            .then(res => setUserRole(res.data.role))
+            .catch(err => console.error("Could not fetch user role", err));
+
         axios.get('http://localhost:8000/api/books', { withCredentials: true })
             .then(res => setBooksDB(res.data))
             .catch(console.error);
@@ -344,6 +404,7 @@ const TTomTPlayer = () => {
                         ad.src = `http://localhost:8000${content.audio_url}`;
                         ad.play();
                         setActiveTrackName(nextTrackName);
+                        setActiveVideoIndex(0);
                         setIsPlaying(true);
                         break;
                     }
@@ -381,7 +442,9 @@ const TTomTPlayer = () => {
             audioRef.current.src = `http://localhost:8000${content.audio_url}`;
             audioRef.current.play();
             setActiveTrackName(bookStr);
+            setActiveVideoIndex(0);
             setIsPlaying(true);
+            return;
         } else {
             console.log("No audio found for:", bookStr);
         }
@@ -519,20 +582,17 @@ const TTomTPlayer = () => {
         playerStateRef.current = { activeTrackName, playlistBooks, contentDB };
     }, [activeTrackName, playlistBooks, contentDB]);
 
-    // Sequential Unlock Logic!
-    const unlockedDays = React.useMemo(() => {
+    // Completed Days Logic
+    const completedDays = React.useMemo(() => {
         const filter = location.state?.filter || 'main';
         const daysNodes = parsedPayload.flatMap(chunk => chunk.days || []);
-        let unlocked = new Set([1]); // Day 1 is always accessible!
-
-        // Sort just in case the backend payload JSON isn't natively sequential
-        const sortedDays = [...daysNodes].sort((a, b) => a.day - b.day);
+        let completed = new Set();
 
         let is24x7 = false;
         try { is24x7 = JSON.stringify(parsedPayload).includes('"m4b"'); } catch (e) { }
 
-        for (let i = 0; i < sortedDays.length; i++) {
-            const dayObj = sortedDays[i];
+        for (let i = 0; i < daysNodes.length; i++) {
+            const dayObj = daysNodes[i];
 
             let raw = [];
             if (filter === 'morning_evening') {
@@ -561,14 +621,10 @@ const TTomTPlayer = () => {
             // Is everyday link tracked?
             const isFinished = dayLinks.length > 0 && dayLinks.every(b => completedBooks.has(b));
             if (isFinished) {
-                // If it is, we unlock the next numerical day dynamically!
-                unlocked.add(dayObj.day + 1);
-            } else {
-                // Strict chronological stop!
-                break;
+                completed.add(dayObj.day);
             }
         }
-        return unlocked;
+        return completed;
     }, [parsedPayload, booksDB, completedBooks]);
 
     useEffect(() => {
@@ -591,164 +647,174 @@ const TTomTPlayer = () => {
     const tz = playerWidth / 2;
 
     return (
-        <div className="min-h-[calc(100vh-80px)] bg-gray-100 flex items-center justify-center p-2 sm:p-6 font-sans transition-colors duration-500 overflow-hidden">
+        <div className="h-[100dvh] bg-gray-100 flex items-center justify-center sm:px-4 sm:py-0 font-sans transition-colors duration-500 overflow-hidden">
             {/* The Player Container - Mobile Sized */}
-            <div className="w-full max-w-[420px] relative" style={{ perspective: '1500px' }} ref={playerRef}>
+            <div className="w-full max-w-[420px] h-full relative" style={{ perspective: '1500px' }} ref={playerRef}>
                 <div
-                    className="w-full relative"
+                    className="w-full h-full relative"
                 >
                     {/* Front Face: Audio Player */}
                     <div
-                        className="w-full bg-[#1a2234] border border-gray-800 shadow-2xl rounded-lg flex flex-col overflow-hidden relative"
+                        className="w-full h-full bg-[#37475a] border-[5px] border-[#1a2234] shadow-2xl rounded-none sm:rounded-lg flex flex-col overflow-hidden relative"
                         style={{
                             backfaceVisibility: 'hidden',
                             transformOrigin: `50% 50% -${tz}px`,
                             transform: showVideoPlayer ? 'rotateY(-90deg)' : 'rotateY(0deg)',
-                            transition: 'transform 0.7s ease-in-out',
+                            transition: 'transform 0.7s ease-in-out, background-color 0.3s, border-color 0.3s',
                             pointerEvents: showVideoPlayer ? 'none' : 'auto',
                             zIndex: showVideoPlayer ? 0 : 10
                         }}
                     >
 
                         {/* Header (Black) */}
-                        <div className="bg-black text-white px-4 py-3 flex flex-col relative">
+                        <div className="bg-black text-white px-3 py-1.5 flex flex-col relative">
                             <div className="flex justify-between items-start">
-                                <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors p-1" title="Logout">
-                                    <i className="pi pi-power-off text-xl"></i>
-                                </button>
+                                {userRole === 'ttom_user' ? (
+                                    <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors p-0.5" title="Logout">
+                                        <i className="pi pi-power-off text-xl"></i>
+                                    </button>
+                                ) : (
+                                    <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-white transition-colors p-0.5" title="Back to Dashboard">
+                                        <i className="pi pi-bars text-xl"></i>
+                                    </button>
+                                )}
                                 <div className="text-center flex flex-col items-center">
-                                    <span className="text-[13px] text-gray-400 tracking-wider font-bold mb-0.5">{currentTime}</span>
-                                    <h1 className="text-blue-400 font-bold text-[21px] tracking-widest mt-0.5" style={{ lineHeight: '1.2' }}>R L L T - TtomT</h1>
+                                    <span className="text-[12px] text-gray-400 tracking-wider font-bold mb-0">{currentTime}</span>
+                                    <h1 className="text-blue-400 font-bold text-[15px] tracking-widest mt-0 mb-0.5" style={{ lineHeight: '1.2' }}>R L L T - TtomT</h1>
                                 </div>
-                                <button onClick={() => setShowVideoPlayer(true)} className="text-gray-400 hover:text-white transition-colors p-1">
-                                    <i className="pi pi-info-circle text-xl sm:text-2xl"></i>
+                                <button onClick={() => setShowVideoPlayer(true)} className="text-gray-400 hover:text-white transition-colors p-0.5">
+                                    <i className="pi pi-info-circle text-xl lg:text-2xl"></i>
                                 </button>
                             </div>
-                            <div className="text-center mt-2">
-                                <span className="text-white text-[14px] font-bold tracking-widest">MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
+                            <div className="text-center mt-0.5">
+                                <span className="text-white text-[12px] font-bold tracking-widest">MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
                             </div>
                         </div>
 
                         {/* Day Header */}
-                        <div className="bg-[#37475a] px-4 py-2 flex justify-between items-center border-b border-[#1a2234]">
-                            <span className="text-white font-black text-lg tracking-wider">DAY {selectedDay.toString().padStart(2, '0')} :</span>
-                            <span className="text-red-500 font-bold text-sm tracking-wider">ART {activeDayNode?.art || "0"}</span>
+                        <div className="bg-[#37475a] px-3 py-1 flex justify-between items-center border-b border-[#1a2234]">
+                            <span className="text-white font-black text-base tracking-wider">DAY {selectedDay.toString().padStart(2, '0')} :</span>
+                            <span className="text-red-700 font-black text-xs tracking-wider">ART {activeDayNode?.art || "0"}</span>
                         </div>
 
-                        {/* Content Box (Two Columns) */}
-                        <div className="bg-[#37475a] flex h-48 sm:h-56 p-2 gap-2">
-                            {/* Left Column - List */}
-                            <div className="w-1/2 bg-[#232f3e] relative rounded-sm p-4 text-white overflow-y-auto custom-scrollbar">
-                                {playlistBooks.map((bookObj, idx) => {
-                                    const bookStr = bookObj.name;
-                                    const type = bookObj.type;
+                        {/* Playlist & Player Shared Wrapper */}
+                        <div className="bg-[#37475a] w-full pt-0 pb-1 flex flex-col">
+                            {/* Content Box (Two Columns) */}
+                            <div className="flex h-[146px] sm:h-[152px] px-1 pb-1 gap-1">
+                                {/* Left Column - List */}
+                                <div className="w-1/2 bg-[#232f3e] relative rounded-sm p-2 sm:p-3 pt-2 text-white overflow-y-auto custom-scrollbar">
+                                    {playlistBooks.map((bookObj, idx) => {
+                                        const bookStr = bookObj.name;
+                                        const type = bookObj.type;
 
-                                    const parts = bookStr.trim().split(' ');
-                                    const chapNum = parseInt(parts.pop());
-                                    const bookName = parts.join(' ').toUpperCase();
-                                    const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
-                                    const hasAudio = content && content.audio_url;
+                                        const parts = bookStr.trim().split(' ');
+                                        const chapNum = parseInt(parts.pop());
+                                        const bookName = parts.join(' ').toUpperCase();
+                                        const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
+                                        const hasAudio = content && content.audio_url;
 
-                                    // Standard text coloring logic preventing "disabled" unreadable look when audio is missing!
-                                    let textColor = hasAudio ? 'text-white hover:text-blue-200' : 'text-white/80';
-                                    if (type === 'morning') textColor = hasAudio ? 'text-green-400 hover:text-green-200' : 'text-green-400';
-                                    if (type === 'evening') textColor = hasAudio ? 'text-blue-400 hover:text-blue-200' : 'text-blue-400';
+                                        // Standard text coloring logic preventing "disabled" unreadable look when audio is missing!
+                                        let textColor = hasAudio ? 'text-white hover:text-blue-200' : 'text-white/80';
+                                        if (type === 'morning') textColor = hasAudio ? 'text-green-400 hover:text-green-200' : 'text-green-400';
+                                        if (type === 'evening') textColor = hasAudio ? 'text-blue-400 hover:text-blue-200' : 'text-blue-400';
 
-                                    const finalColor = activeTrackName === bookStr ? (type === 'morning' ? 'text-green-300' : type === 'evening' ? 'text-blue-300' : 'text-yellow-400') : textColor;
+                                        const finalColor = activeTrackName === bookStr ? (type === 'morning' ? 'text-green-300' : type === 'evening' ? 'text-blue-300' : 'text-yellow-400') : textColor;
 
-                                    return (
-                                        <div
-                                            key={idx}
-                                            onClick={() => hasAudio ? playTrack(bookStr) : null}
-                                            className={`flex items-center gap-2 mb-1 px-2 py-1 rounded-md transition-colors ${hasAudio ? 'cursor-pointer hover:bg-white/5' : ''} ${finalColor}`}
-                                            style={{ backgroundColor: activeTrackName === bookStr ? 'gray' : 'transparent' }}
-                                        >
-                                            <i className={`pi ${hasAudio ? (activeTrackName === bookStr && isPlaying ? 'pi-pause-circle' : 'pi-play-circle') : 'pi-stop-circle'} text-[10px]`}></i>
-                                            <span className="text-sm font-bold tracking-wider">{bookStr}</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                        return (
+                                            <div
+                                                key={idx}
+                                                onClick={() => hasAudio ? playTrack(bookStr) : null}
+                                                className={`flex items-center gap-2 mb-1.5 px-2 py-1 rounded-sm transition-colors ${hasAudio ? 'cursor-pointer hover:bg-white/5' : ''} ${finalColor}`}
+                                                style={{ backgroundColor: activeTrackName === bookStr ? 'gray' : 'transparent' }}
+                                            >
+                                                <i className={`pi ${hasAudio ? (activeTrackName === bookStr && isPlaying ? 'pi-pause-circle' : 'pi-play-circle') : 'pi-stop-circle'} text-[10px]`}></i>
+                                                <span className="text-[11px] font-bold uppercase tracking-wider leading-tight">{bookStr}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
 
-                            {/* Right Column - Image */}
-                            <div className="w-1/2 relative">
-                                <img
-                                    src={placeholderImg}
-                                    alt="Proverbs Artwork"
-                                    className="w-full h-full object-cover rounded-sm border-2 border-black"
-                                />
-                                {/* Headphones icon overlay */}
-                                <div className="absolute top-2 right-2 text-yellow-500 drop-shadow-md">
-                                    <i className="pi pi-headphones text-4xl"></i>
+                                {/* Right Column - Image */}
+                                <div className="w-1/2 relative">
+                                    <img
+                                        src={placeholderImg}
+                                        alt="Proverbs Artwork"
+                                        className="w-full h-full object-cover rounded-sm border-2 border-black"
+                                    />
+                                    {/* Headphones icon overlay */}
+                                    <div className="absolute top-2 right-2 text-yellow-500 drop-shadow-md">
+                                        <i className="pi pi-headphones text-4xl"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Audio Player Controls */}
-                        <div
-                            className={`px-4 py-1 pb-0.5 mt-0.5 mx-2 rounded-sm shadow-inner flex flex-col justify-center relative z-10 transition-colors duration-300 border-2`}
-                            style={{
-                                backgroundColor: playerBgColor,
-                                borderColor: playerBorderColor
-                            }}
-                        >
-                            <div className="flex items-center justify-between gap-2 mt-0.5 mb-0.5">
-                                <button
-                                    onClick={togglePlay}
-                                    className="hover:scale-110 transition-transform flex-shrink-0 cursor-pointer text-black"
-                                >
-                                    {isPlaying ? (
-                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
-                                            <rect x="6" y="4" width="4" height="16" rx="0.5" />
-                                            <rect x="14" y="4" width="4" height="16" rx="0.5" />
-                                        </svg>
-                                    ) : (
-                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
-                                            <path d="M6 4l14 8-14 8z" />
-                                        </svg>
-                                    )}
-                                </button>
+                            {/* Audio Player Controls */}
+                            <div
+                                className={`px-3 mx-1 mb-1 mt-0 h-[39px] rounded-[4px] border-[3px] flex flex-col justify-center relative z-10 transition-colors duration-300 shadow-inner`}
+                                style={{
+                                    backgroundColor: playerBgColor,
+                                    borderColor: playerBorderColor
 
-                                <div className="flex-grow flex flex-col justify-center overflow-hidden w-full">
-                                    <div
-                                        className="w-full cursor-pointer group pb-1 pt-0.5"
-                                        onClick={(e) => {
-                                            const bounds = e.currentTarget.getBoundingClientRect();
-                                            const perc = (e.clientX - bounds.left) / bounds.width;
-                                            if (audioDuration) audioRef.current.currentTime = perc * audioDuration;
-                                        }}
+                                }}
+                            >
+                                <div className="flex items-center justify-between gap-2">
+                                    <button
+                                        onClick={togglePlay}
+                                        className="hover:scale-110 transition-transform flex-shrink-0 cursor-pointer text-black"
                                     >
-                                        <div className="w-full py-0.5">
-                                            <div className="w-full h-1 bg-white/30 group-hover:h-1.5 transition-all duration-150 relative rounded-full">
-                                                <div className="h-full bg-[#fca5a5] relative transition-all duration-100 rounded-full" style={{ width: `${progressPercent}%` }}>
-                                                    <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-[#fca5a5] rounded-full scale-0 group-hover:scale-100 transition-transform duration-150 shadow-md"></div>
+                                        {isPlaying ? (
+                                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
+                                                <rect x="6" y="4" width="4" height="16" rx="0.5" />
+                                                <rect x="14" y="4" width="4" height="16" rx="0.5" />
+                                            </svg>
+                                        ) : (
+                                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
+                                                <path d="M6 4l14 8-14 8z" />
+                                            </svg>
+                                        )}
+                                    </button>
+
+                                    <div className="flex-grow flex flex-col justify-center overflow-hidden w-full">
+                                        <div
+                                            className="w-full cursor-pointer group py-0.5"
+                                            onClick={(e) => {
+                                                const bounds = e.currentTarget.getBoundingClientRect();
+                                                const perc = (e.clientX - bounds.left) / bounds.width;
+                                                if (audioDuration) audioRef.current.currentTime = perc * audioDuration;
+                                            }}
+                                        >
+                                            <div className="w-full py-0">
+                                                <div className="w-full h-1 bg-white/30 group-hover:h-1.5 transition-all duration-150 relative rounded-full">
+                                                    <div className="h-full bg-[#fca5a5] relative transition-all duration-100 rounded-full" style={{ width: `${progressPercent}%` }}>
+                                                        <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-[#fca5a5] rounded-full scale-0 group-hover:scale-100 transition-transform duration-150 shadow-md"></div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                        <div className="flex justify-between items-center w-full text-black font-bold text-[11px]">
+                                            <span className="flex-shrink-0 font-black">{formatTrackTime(audioProgress)}</span>
+                                            <span className="text-center font-bold uppercase tracking-widest text-[#1a2234] text-[12px] overflow-hidden whitespace-nowrap overflow-ellipsis leading-none px-2">
+                                                {activeTrackName || (playlistBooks[0] && playlistBooks[0].name) || 'PROVERBS 1'}
+                                            </span>
+                                            <span className="flex-shrink-0 font-black">{formatTrackTime(audioDuration)}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between items-center w-full text-black font-bold text-[11px]">
-                                        <span className="flex-shrink-0 font-black">{formatTrackTime(audioProgress)}</span>
-                                        <span className="text-center font-black tracking-widest text-[#1a2234] text-[11px] overflow-hidden whitespace-nowrap overflow-ellipsis leading-none px-2">
-                                            {activeTrackName || (playlistBooks[0] && playlistBooks[0].name) || 'PROVERBS 1'}
-                                        </span>
-                                        <span className="flex-shrink-0 font-black">{formatTrackTime(audioDuration)}</span>
-                                    </div>
-                                </div>
 
-                                <button
-                                    onClick={() => setShowWisdom(!showWisdom)}
-                                    className={`transition-all duration-300 flex-shrink-0 text-black ${showWisdom ? 'text-white rotate-90 scale-110 drop-shadow-lg' : 'hover:rotate-90 hover:scale-110'}`}
-                                >
-                                    <i className="pi pi-cog text-lg"></i>
-                                </button>
+                                    <button
+                                        onClick={() => setShowWisdom(!showWisdom)}
+                                        className={`transition-all duration-300 flex-shrink-0 text-black ${showWisdom ? 'text-white rotate-90 scale-110 drop-shadow-lg' : 'hover:rotate-90 hover:scale-110'}`}
+                                    >
+                                        <i className="pi pi-cog text-lg"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         {/* Lower Area Stack */}
-                        <div className={`relative w-full ${trackingDays > 30 ? 'h-[460px] sm:h-[480px]' : 'h-[450px] sm:h-[480px]'}`} style={{ perspective: '1000px' }}>
+                        <div className={`relative w-full flex-1 min-h-0`} style={{ perspective: '1000px' }}>
                             {/* Front Face: Day Selection Grid */}
                             <div
-                                className="absolute inset-0 flex flex-col rounded-b-lg"
+                                className="absolute inset-0 flex flex-col rounded-none sm:rounded-b-lg"
                                 style={{
                                     backfaceVisibility: 'hidden',
                                     transform: showWisdom ? 'rotateY(180deg)' : 'rotateY(0deg)',
@@ -757,20 +823,21 @@ const TTomTPlayer = () => {
                                     zIndex: showWisdom ? 0 : 10
                                 }}
                             >
-                                <div className="p-6 bg-[#131b2e] w-full h-full overflow-y-auto custom-scrollbar rounded-b-lg">
-                                    <div className={`grid grid-cols-5 ${trackingDays > 30 ? 'gap-y-2 sm:gap-y-4' : 'gap-y-4'} gap-x-2`}>
+                                <div className="p-3 pb-4 bg-black w-full h-full overflow-y-auto custom-scrollbar rounded-none sm:rounded-b-lg">
+                                    <div className={`grid grid-cols-5 ${trackingDays > 30 ? 'gap-y-[15px]' : 'gap-y-[30px]'} gap-x-2`}>
                                         {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => {
-                                            const isUnlocked = unlockedDays.has(num);
+                                            const isCompleted = completedDays.has(num);
                                             return (
-                                                <div
-                                                    key={num}
-                                                    onClick={() => {
-                                                        if (isUnlocked) setSelectedDay(num);
-                                                    }}
-                                                    className={`text-center font-bold transition-all duration-300 select-none ${trackingDays > 30 ? 'text-base sm:text-lg' : 'text-lg'} ${isUnlocked ? 'cursor-pointer hover:text-blue-400 opacity-100 text-white' : 'cursor-not-allowed opacity-20 text-gray-500'} ${selectedDay === num ? 'text-blue-400 scale-125' : ''}`}
-                                                    title={!isUnlocked ? 'Complete previous day tracks first!' : `Day ${num}`}
-                                                >
-                                                    {num}
+                                                <div key={num} className="flex justify-center">
+                                                    <div
+                                                        onClick={() => {
+                                                            setSelectedDay(num);
+                                                        }}
+                                                        className={`flex items-center justify-center font-black transition-all duration-300 select-none text-[13px] sm:text-[14px] rounded-lg ${trackingDays > 30 ? 'w-6 h-6 sm:w-7 sm:h-7' : 'w-7 h-7 sm:w-8 sm:h-8'} cursor-pointer opacity-100 ${selectedDay === num ? 'bg-blue-500 text-white scale-125 ring-2 ring-blue-300' : (isCompleted ? 'bg-blue-500 text-white opacity-90' : 'text-white hover:text-blue-200')}`}
+                                                        title={`Day ${num}`}
+                                                    >
+                                                        {num}
+                                                    </div>
                                                 </div>
                                             );
                                         })}
@@ -780,7 +847,7 @@ const TTomTPlayer = () => {
 
                             {/* Back Face: Wisdom Overlay */}
                             <div
-                                className="absolute inset-0 flex flex-col rounded-b-lg"
+                                className="absolute inset-0 flex flex-col rounded-none sm:rounded-b-lg"
                                 style={{
                                     backfaceVisibility: 'hidden',
                                     transform: showWisdom ? 'rotateY(0deg)' : 'rotateY(-180deg)',
@@ -799,7 +866,7 @@ const TTomTPlayer = () => {
 
                     {/* Back Face: Video Player */}
                     <div
-                        className="absolute inset-0 w-full h-full bg-[#1a2234] border border-gray-800 shadow-2xl rounded-lg flex flex-col overflow-hidden"
+                        className="absolute inset-0 w-full h-full bg-[#1a2234] border border-gray-800 shadow-2xl rounded-none sm:rounded-lg flex flex-col overflow-hidden"
                         style={{
                             backfaceVisibility: 'hidden',
                             transformOrigin: `50% 50% -${tz}px`,
@@ -820,7 +887,12 @@ const TTomTPlayer = () => {
                                     <h1 className="text-blue-400 font-bold text-lg tracking-widest mt-0.5">R L L T - TtomT</h1>
                                 </div>
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setShowVideoPlayer(false); }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowVideoPlayer(false);
+                                        const vp = document.getElementById('ttomt-video-player');
+                                        if (vp) vp.pause();
+                                    }}
                                     className="text-blue-400 hover:text-white transition-colors p-1 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] relative z-[99]"
                                     style={{ pointerEvents: 'auto' }}
                                 >
@@ -838,8 +910,11 @@ const TTomTPlayer = () => {
                             <div className="w-full">
                                 {activeVideoUrl ? (
                                     <video
+                                        id="ttomt-video-player"
+                                        key={activeVideoUrl}
                                         src={activeVideoUrl}
                                         controls
+                                        autoPlay
                                         className="w-full border border-gray-600 rounded bg-gray-900 shadow-md"
                                     />
                                 ) : (
@@ -853,68 +928,119 @@ const TTomTPlayer = () => {
 
                             {/* Horizontal Floating Playlist for Videos */}
                             <div className="w-full mt-4 mb-2 select-none relative">
-                                <h3 className="text-gray-500 text-[10px] tracking-widest font-black uppercase mb-3 flex justify-between px-1">
+                                <h3 className="text-gray-500 text-[10px] tracking-widest font-black uppercase mb-1 flex justify-between px-1">
                                     <span>Playlist Sequence:</span>
                                     <span className="font-normal opacity-70 normal-case tracking-normal">({playlistBooks.length} tracks)</span>
                                 </h3>
                                 <div
-                                    className="flex overflow-x-auto gap-3 pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] cursor-grab active:cursor-grabbing"
+                                    className="flex overflow-x-auto gap-2 py-4 px-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] cursor-grab active:cursor-grabbing items-center"
                                     ref={playlistScrollRef}
                                     onMouseDown={handleMouseDown}
                                     onMouseLeave={handleMouseLeave}
                                     onMouseUp={handleMouseUp}
                                     onMouseMove={handleMouseMove}
                                 >
-                                    {playlistBooks.map((bookObj, idx) => {
-                                        const bookStr = bookObj.name;
-                                        const type = bookObj.type;
+                                    {React.useMemo(() => {
+                                        let items = [];
+                                        playlistBooks.forEach((bookObj) => {
+                                            const bookStr = bookObj.name;
+                                            const type = bookObj.type;
 
-                                        const parts = bookStr.trim().split(' ');
-                                        const chapNum = parseInt(parts.pop());
-                                        const bookName = parts.join(' ').toUpperCase();
-                                        const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
-                                        const hasVideo = content && content.video_url;
-                                        const hasRef = content && content.ref_link;
-                                        const hasVisuals = hasVideo || hasRef;
-                                        const isActive = activeTrackName === bookStr;
+                                            const parts = bookStr.trim().split(' ');
+                                            const chapNum = parseInt(parts.pop());
+                                            const bookName = parts.join(' ').toUpperCase();
+                                            const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
 
-                                        let inactiveClass = 'bg-white border-gray-200 hover:bg-gray-50 text-gray-800 shadow-sm';
-                                        let activeClass = 'bg-black border-gray-600 text-white shadow-xl scale-105';
-                                        let symbolColor = hasVisuals ? 'text-gray-700' : 'text-gray-400';
-                                        let activeSymbol = 'text-white';
-
-                                        if (type === 'morning') {
-                                            inactiveClass = 'bg-green-50 border-green-300 text-green-800 hover:bg-green-100 shadow-sm';
-                                            activeClass = 'bg-green-600 border-green-800 text-white shadow-[0_0_12px_rgba(34,197,94,0.4)] scale-105';
-                                            symbolColor = hasVisuals ? 'text-green-700' : 'text-green-400/60';
-                                        } else if (type === 'evening') {
-                                            inactiveClass = 'bg-blue-50 border-blue-300 text-blue-800 hover:bg-blue-100 shadow-sm';
-                                            activeClass = 'bg-blue-600 border-blue-800 text-white shadow-[0_0_12px_rgba(59,130,246,0.4)] scale-105';
-                                            symbolColor = hasVisuals ? 'text-blue-700' : 'text-blue-400/60';
-                                        }
-
-                                        return (
-                                            <div
-                                                key={idx}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (!dragged.current) {
-                                                        setActiveTrackName(bookStr);
+                                            let videos = [];
+                                            if (content && content.video_url) {
+                                                try {
+                                                    const trimmed = content.video_url.trim();
+                                                    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                                                        const p = JSON.parse(trimmed);
+                                                        if (Array.isArray(p)) videos = p.filter(v => !!v);
+                                                    } else if (trimmed !== "") {
+                                                        videos = [trimmed];
                                                     }
-                                                }}
-                                                className={`shrink-0 flex flex-col items-center justify-center p-2 w-[80px] sm:w-[86px] h-[80px] sm:h-[86px] rounded-2xl transition-all border ${isActive ? activeClass : inactiveClass}`}
-                                                style={{ pointerEvents: 'auto' }}
-                                            >
-                                                <div className="relative inline-flex items-center justify-center h-[28px] w-[28px] mb-1">
-                                                    <i className={`pi ${hasVideo ? 'pi-video' : (hasRef ? 'pi-link' : 'pi-video')} text-xl sm:text-2xl ${isActive ? activeSymbol : symbolColor}`}></i>
-                                                    {!hasVisuals && <i className="pi pi-times absolute inset-0 flex items-center justify-center text-red-500 font-black text-[14px]"></i>}
+                                                } catch (e) {
+                                                    // skip
+                                                }
+                                            }
+
+                                            const hasRef = !!(content && content.ref_link);
+
+                                            if (videos.length > 0) {
+                                                videos.forEach((v, vIdx) => {
+                                                    items.push({ bookStr, type, hasVideo: true, hasRef, vIdx, videoCount: videos.length });
+                                                });
+                                            } else {
+                                                items.push({ bookStr, type, hasVideo: false, hasRef, vIdx: 0, videoCount: 0 });
+                                            }
+                                        });
+
+                                        return items.map((item, idx) => {
+                                            const { bookStr, type, hasVideo, hasRef, vIdx, videoCount } = item;
+                                            const hasVisuals = hasVideo || hasRef;
+                                            const isActive = activeTrackName === bookStr && activeVideoIndex === vIdx;
+
+                                            let inactiveClass = 'opacity-60 scale-[0.9] hover:opacity-100 hover:scale-100';
+                                            let activeClass = 'opacity-100 scale-110 z-10 shadow-2xl rounded-md ring-2 ring-white';
+                                            let baseClass = `shrink-0 flex flex-col relative w-[160px] sm:w-[180px] h-[90px] sm:h-[100px] rounded transition-all duration-300 ease-out overflow-hidden cursor-pointer ${isActive ? activeClass : inactiveClass}`;
+
+                                            const titleDisplay = videoCount > 1 ? `${bookStr} (Part ${vIdx + 1})` : bookStr;
+
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (!dragged.current) {
+                                                            setActiveTrackName(bookStr);
+                                                            setActiveVideoIndex(vIdx);
+                                                        }
+                                                    }}
+                                                    className={baseClass}
+                                                    style={{ pointerEvents: 'auto' }}
+                                                >
+                                                    {/* Background Image Placeholder */}
+                                                    <div className="absolute inset-0 bg-gray-900 flex items-center justify-center pointer-events-none">
+                                                        <img
+                                                            src={placeholderImg}
+                                                            alt={titleDisplay}
+                                                            className="w-full h-full object-cover opacity-50 pointer-events-none select-none"
+                                                            draggable={false}
+                                                        />
+                                                    </div>
+
+                                                    {/* Overlay Gradient */}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none"></div>
+
+                                                    {/* Icons Overlay */}
+                                                    {(isActive && hasVideo) && (
+                                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                            <div className="w-10 h-10 rounded-full border-[2px] border-white flex items-center justify-center bg-black/40 backdrop-blur-sm shadow-lg">
+                                                                <i className="pi pi-play text-white ml-1 text-sm"></i>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {(!hasVisuals) && (
+                                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                            <i className="pi pi-video text-white/50 text-2xl"></i>
+                                                            <div className="absolute w-[2px] h-[40px] bg-red-600/80 -rotate-45 shadow-sm"></div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Specific Type Indicator */}
+                                                    {type === 'morning' && <div className="absolute top-0 right-0 w-[4px] h-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] pointer-events-none"></div>}
+                                                    {type === 'evening' && <div className="absolute top-0 right-0 w-[4px] h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)] pointer-events-none"></div>}
+
+                                                    {/* Track Title */}
+                                                    <span className="absolute bottom-2 left-3 text-[12px] sm:text-[13px] font-bold tracking-wider text-white truncate max-w-[90%] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] pointer-events-none">
+                                                        {titleDisplay}
+                                                    </span>
                                                 </div>
-                                                <span className={`text-[9px] font-black tracking-wider text-center w-full truncate px-1 mt-1 ${isActive ? activeSymbol : (type === 'morning' ? 'text-green-700' : type === 'evening' ? 'text-blue-700' : 'text-gray-600')}`}>
-                                                    {bookStr.toUpperCase()}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        });
+                                    }, [playlistBooks, contentDB, activeTrackName, activeVideoIndex])}
                                 </div>
                             </div>
 

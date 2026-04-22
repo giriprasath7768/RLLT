@@ -38,7 +38,7 @@ const DropdownPortal = ({ isOpen, anchorRef, children }) => {
     );
 };
 
-const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes }) => {
+const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes, PAGE_SIZES, pageSize, setPageSize, setIsSidebarOpen, handleOpenMap, UN_COUNTRIES, regionNames, zoomLevel, setZoomLevel, isSaving, fetchSavedDocuments }) => {
     const fileInputRef = useRef(null);
     const puzzleInputRef = useRef(null);
     const watermarkInputRef = useRef(null);
@@ -116,6 +116,11 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     const [graphModal, setGraphModal] = useState({ isOpen: false, type: null });
     const [xData, setXData] = useState("");
     const [yData, setYData] = useState("");
+
+    const [puzzleModalOpen, setPuzzleModalOpen] = useState(false);
+    const [pendingPuzzleFile, setPendingPuzzleFile] = useState(null);
+    const [puzzleRows, setPuzzleRows] = useState(4);
+    const [puzzleCols, setPuzzleCols] = useState(5);
 
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -433,25 +438,62 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
         const file = e.target.files[0];
         if (!file || !quillRef.current) return;
 
+        setPendingPuzzleFile(file);
+        setPuzzleRows(4); // default
+        setPuzzleCols(5); // default
+        setPuzzleModalOpen(true);
+        e.target.value = null; // reset file input
+    };
+
+    const processPuzzleImage = () => {
+        if (!pendingPuzzleFile || !quillRef.current) return;
+
+        const rows = parseInt(puzzleRows, 10) || 4;
+        const cols = parseInt(puzzleCols, 10) || 5;
+
         const reader = new FileReader();
         reader.onload = (event) => {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                canvas.width = img.width;
-                canvas.height = img.height;
 
-                // Draw original image
-                ctx.drawImage(img, 0, 0);
+                // Calculate precise usable document area to mirror "covering the page"
+                const widthStr = PAGE_SIZES[pageSize].width;
+                let widthPx = 800;
+                if (widthStr.endsWith('mm')) widthPx = parseFloat(widthStr) / 25.4 * 96;
+                else if (widthStr.endsWith('in')) widthPx = parseFloat(widthStr) * 96;
+
+                const padStr = PAGE_SIZES[pageSize].padding;
+                let padPx = 0;
+                if (padStr.endsWith('mm')) padPx = parseFloat(padStr) / 25.4 * 96;
+                else if (padStr.endsWith('in')) padPx = parseFloat(padStr) * 96;
+
+                canvas.width = Math.round(widthPx - 2 * padPx);
+                canvas.height = Math.round(PAGE_SIZES[pageSize].linePx - 2 * padPx);
+
+                // Draw original image with object-fit: cover matching the aspect ratio
+                const pageRatio = canvas.width / canvas.height;
+                const imgRatio = img.width / img.height;
+                let sWidth = img.width;
+                let sHeight = img.height;
+                let sx = 0;
+                let sy = 0;
+
+                if (imgRatio > pageRatio) {
+                    sWidth = img.height * pageRatio;
+                    sx = (img.width - sWidth) / 2;
+                } else {
+                    sHeight = img.width / pageRatio;
+                    sy = (img.height - sHeight) / 2;
+                }
+                ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
 
                 // Draw Puzzle Overlay
-                const cols = 5;
-                const rows = 4;
                 const tileW = canvas.width / cols;
                 const tileH = canvas.height / rows;
 
-                ctx.lineWidth = Math.max(3, canvas.width * 0.005);
+                ctx.lineWidth = Math.max(3, canvas.width * 0.003);
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
                 ctx.shadowColor = "rgba(0,0,0,0.6)";
                 ctx.shadowBlur = Math.max(4, canvas.width * 0.01);
@@ -504,10 +546,13 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 const base64Data = canvas.toDataURL('image/png');
                 editor.insertEmbed(range ? range.index : 0, 'image', base64Data);
                 editor.setSelection((range ? range.index : 0) + 1);
+
+                setPuzzleModalOpen(false);
+                setPendingPuzzleFile(null);
             };
             img.src = event.target.result;
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(pendingPuzzleFile);
     };
 
     const handleLionChartLiveUpdate = (base64Img) => {
@@ -660,14 +705,15 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
 
     return (
         <div
-            className="bg-white border-b px-2 py-1 flex flex-nowrap overflow-x-auto overflow-y-hidden items-center gap-2 z-10 sticky top-0 shadow-sm text-sm"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="bg-white border-b px-2 py-1 flex flex-wrap items-center gap-2 z-10 sticky top-0 shadow-sm text-sm"
+            style={{ width: '100%' }}
         >
             <style>{`
                 .word-toolbar-wrapper::-webkit-scrollbar { display: none; }
+                .word-toolbar-wrapper { overflow: visible !important; }
             `}</style>
             {/* Quill's Internal Toolbar Container - restricted to only native Quill formats! */}
-            <div id={toolbarId} className="flex flex-nowrap items-center gap-1 border-none border-0 m-0 p-0 shadow-none bg-transparent shrink-0 word-toolbar-wrapper">
+            <div id={toolbarId} className="flex flex-wrap items-center gap-1 border-none border-0 m-0 p-0 shadow-none bg-transparent word-toolbar-wrapper w-full">
                 {/* Typography Group */}
                 <div className="flex items-center gap-0 border-r pr-2">
                     <span className="ql-formats m-0 mr-1 flex items-center gap-0">
@@ -684,23 +730,23 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                             <option value="rubik">Rubik Black (Block)</option>
                             <option value="anton">Anton (Tall Block)</option>
                         </select>
-                        <select className="ql-size" defaultValue="16px">
-                            <option value="8px">8</option>
-                            <option value="9px">9</option>
-                            <option value="10px">10</option>
-                            <option value="11px">11</option>
-                            <option value="12px">12</option>
-                            <option value="14px">14</option>
-                            <option value="16px">16</option>
-                            <option value="18px">18</option>
-                            <option value="20px">20</option>
-                            <option value="22px">22</option>
-                            <option value="24px">24</option>
-                            <option value="26px">26</option>
-                            <option value="28px">28</option>
-                            <option value="36px">36</option>
-                            <option value="48px">48</option>
-                            <option value="72px">72</option>
+                        <select className="ql-size" defaultValue="16px" title="Font Size">
+                            <option value="8px">8px</option>
+                            <option value="9px">9px</option>
+                            <option value="10px">10px</option>
+                            <option value="11px">11px</option>
+                            <option value="12px">12px</option>
+                            <option value="14px">14px</option>
+                            <option value="16px">16px</option>
+                            <option value="18px">18px</option>
+                            <option value="20px">20px</option>
+                            <option value="22px">22px</option>
+                            <option value="24px">24px</option>
+                            <option value="26px">26px</option>
+                            <option value="28px">28px</option>
+                            <option value="36px">36px</option>
+                            <option value="48px">48px</option>
+                            <option value="72px">72px</option>
                         </select>
                     </span>
                 </div>
@@ -863,27 +909,47 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                     className="hidden"
                 />
 
+                <button
+                    onClick={() => setViewerScript(ANTI_GRAVITY_SCRIPTS.hebrew)}
+                    className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700 shrink-0"
+                    title={ANTI_GRAVITY_SCRIPTS.hebrew.name}
+                >
+                    <i className="pi pi-compass text-emerald-500"></i>
+                    <span className="hidden xl:inline font-medium">Hebrew</span>
+                </button>
+
+                <button
+                    onClick={() => setViewerScript(ANTI_GRAVITY_SCRIPTS.greek)}
+                    className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700 shrink-0"
+                    title={ANTI_GRAVITY_SCRIPTS.greek.name}
+                >
+                    <i className="pi pi-compass text-emerald-500"></i>
+                    <span className="hidden xl:inline font-medium">Greek</span>
+                </button>
+
                 <div className="relative border-r border-gray-200 pr-1 mr-1 shrink-0" ref={agScriptDropdownRef}>
                     <button
                         onClick={() => setAgScriptDropdownOpen(!agScriptDropdownOpen)}
                         className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${agScriptDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
-                        title="Anti-Gravity Scripts"
+                        title="Other Scripts"
                     >
                         <i className="pi pi-moon text-indigo-500"></i>
                         <span className="hidden xl:inline font-medium">Scripts</span>
                     </button>
                     <DropdownPortal isOpen={agScriptDropdownOpen} anchorRef={agScriptDropdownRef}>
                         <div className="w-48 bg-gray-900 border border-gray-700 shadow-2xl rounded-lg p-1 flex flex-col gap-1 text-gray-200 pointer-events-auto">
-                            {Object.values(ANTI_GRAVITY_SCRIPTS).map(script => (
-                                <button
-                                    key={script.id}
-                                    onMouseDown={(e) => { e.preventDefault(); setAgScriptDropdownOpen(false); setViewerScript(script); }}
-                                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 rounded text-gray-300 transition-colors w-full text-left"
-                                >
-                                    <i className="pi pi-compass text-emerald-500"></i>
-                                    {script.name}
-                                </button>
-                            ))}
+                            {Object.values(ANTI_GRAVITY_SCRIPTS)
+                                .filter(script => script.id !== 'hebrew' && script.id !== 'greek')
+                                .map(script => (
+                                    <button
+                                        key={script.id}
+                                        onMouseDown={(e) => { e.preventDefault(); setAgScriptDropdownOpen(false); setViewerScript(script); }}
+                                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 rounded text-gray-300 transition-colors w-full text-left"
+                                    >
+                                        <i className="pi pi-compass text-emerald-500"></i>
+                                        {script.name}
+                                    </button>
+                                ))}
                         </div>
                     </DropdownPortal>
                 </div>
@@ -899,15 +965,37 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                     </button>
                     <DropdownPortal isOpen={countryDropdownOpen} anchorRef={countryDropdownRef}>
                         <div className="w-64 max-h-64 overflow-y-auto bg-white border border-gray-200 shadow-2xl rounded-lg py-1 flex flex-col custom-scrollbar">
-                            {COUNTRIES.map((country, idx) => (
-                                <button
-                                    key={idx}
-                                    onMouseDown={(e) => { e.preventDefault(); insertCountry(country); }}
-                                    className="px-4 py-2 text-left hover:bg-gray-100 text-gray-700 transition-colors text-sm w-full border-b border-gray-50 last:border-0"
-                                >
-                                    {country}
-                                </button>
-                            ))}
+                            {(UN_COUNTRIES || []).map(code => {
+                                const countryName = regionNames ? regionNames.of(code) : code;
+                                return (
+                                    <div key={code} className="flex items-center hover:bg-gray-100 transition-colors border-b border-gray-50 last:border-0 w-full group">
+                                        <button
+                                            onMouseDown={(e) => { e.preventDefault(); insertCountry(countryName); }}
+                                            className="px-4 py-2 text-left text-gray-700 text-sm flex-1 truncate focus:outline-none"
+                                            title={`Insert ${countryName}`}
+                                        >
+                                            {countryName}
+                                        </button>
+                                        <button
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                setCountryDropdownOpen(false);
+                                                if (handleOpenMap) handleOpenMap(code, countryName);
+                                            }}
+                                            className="px-3 py-2 flex items-center justify-center border-l border-transparent group-hover:border-gray-200 focus:outline-none"
+                                            title={`Open Map for ${countryName}`}
+                                        >
+                                            <img
+                                                src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
+                                                srcSet={`https://flagcdn.com/w80/${code.toLowerCase()}.png 2x`}
+                                                width="20"
+                                                alt={code}
+                                                className="block rounded-sm drop-shadow-sm hover:scale-125 transition-transform"
+                                            />
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </DropdownPortal>
                 </div>
@@ -1029,10 +1117,35 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 </button>
             </div>
 
+            {/* Layout and Addons */}
+            <div className="flex items-center gap-2 border-l border-gray-200 pl-3 ml-1 h-5 hidden lg:flex">
+                <button
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="flex items-center gap-1 px-2 py-1 rounded transition-colors text-gray-600 hover:bg-blue-50 hover:text-blue-600 font-medium text-sm"
+                    title="Open Bible Index"
+                >
+                    <i className="pi pi-book text-blue-500"></i>
+                    Books
+                </button>
+                <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
+                    <i className="pi pi-file text-gray-400 text-sm"></i>
+                    <select
+                        value={pageSize}
+                        onChange={(e) => setPageSize(e.target.value)}
+                        className="bg-transparent border-none rounded outline-none focus:ring-0 cursor-pointer text-sm font-medium text-gray-700 hover:text-blue-600 appearance-none"
+                    >
+                        {PAGE_SIZES && Object.keys(PAGE_SIZES).map(key => (
+                            <option key={key} value={key}>{PAGE_SIZES[key].name}</option>
+                        ))}
+                    </select>
+                    <i className="pi pi-angle-down text-gray-400 text-[10px] pointer-events-none -ml-1"></i>
+                </div>
+            </div>
+
             {/* Advanced Actions */}
             <div className="flex items-center gap-1 ml-auto">
                 <div className="flex items-center gap-1 px-3 py-1 mr-1 border-r border-gray-200 text-gray-600 hidden md:flex" title="Word Count">
-                    <i className="pi pi-book text-gray-400"></i>
+                    <i className="pi pi-comment text-gray-400"></i>
                     <span className="font-bold">{wordCount}</span>
                     <span className="text-xs font-medium uppercase tracking-wider text-gray-400">words</span>
                 </div>
@@ -1070,6 +1183,32 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                     <span className="hidden md:inline">PPT</span>
                 </button>
 
+                <div className="flex items-center bg-gray-100 rounded-md p-0.5 mx-1">
+                    <button
+                        onClick={() => setZoomLevel(prev => Math.max(0.3, prev - 0.1))}
+                        className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
+                        title="Zoom Out"
+                    >
+                        <i className="pi pi-minus text-[10px]"></i>
+                    </button>
+                    <button
+                        onClick={() => setZoomLevel(1)}
+                        className="flex items-center justify-center min-w-[36px] px-1 text-[11px] font-bold text-gray-700 hover:text-blue-600 cursor-pointer focus:outline-none"
+                        title="Reset Zoom"
+                    >
+                        {Math.round(zoomLevel * 100)}%
+                    </button>
+                    <button
+                        onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.1))}
+                        className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
+                        title="Zoom In"
+                    >
+                        <i className="pi pi-plus text-[10px]"></i>
+                    </button>
+                </div>
+
+                <div className="border-l border-gray-200 h-5 mx-1 hidden md:block"></div>
+
                 <button
                     onClick={handlePrint}
                     className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-gray-700 transition-colors"
@@ -1094,6 +1233,37 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                     <span className="hidden sm:inline">Notes</span>
                 </button>
             </div>
+
+            {/* Puzzle Configuration Modal */}
+            {puzzleModalOpen && (
+                <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm print:hidden">
+                    <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-sm flex flex-col transform transition-all scale-100 opacity-100">
+                        <div className="px-5 py-4 bg-gray-100 border-b flex justify-between items-center bg-gradient-to-r from-gray-100 to-gray-50">
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                <i className="pi pi-table text-blue-500 text-lg"></i>
+                                Enter the dimension of splits
+                            </h3>
+                            <button onClick={() => { setPuzzleModalOpen(false); setPendingPuzzleFile(null); }} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-colors focus:outline-none">
+                                <i className="pi pi-times"></i>
+                            </button>
+                        </div>
+                        <div className="p-6 flex flex-col gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Number of rows</label>
+                                <input type="number" min="1" value={puzzleRows} onChange={e => setPuzzleRows(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Number of columns</label>
+                                <input type="number" min="1" value={puzzleCols} onChange={e => setPuzzleCols(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                        </div>
+                        <div className="p-4 bg-gray-50 border-t flex justify-end gap-3">
+                            <button onClick={() => { setPuzzleModalOpen(false); setPendingPuzzleFile(null); }} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition-colors focus:outline-none">Cancel</button>
+                            <button onClick={processPuzzleImage} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg shadow cursor-pointer transition-transform hover:scale-105 focus:outline-none">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Graph Data Prompt Modal */}
             {graphModal.isOpen && (
@@ -1208,6 +1378,18 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 }
                 .ql-picker.ql-size .ql-picker-label[data-value]::before {
                     content: attr(data-value) !important;
+                }
+
+                /* Alignment dropdown horizontal format */
+                #${toolbarId} .ql-picker.ql-align .ql-picker-item {
+                    margin-bottom: 0 !important;
+                }
+                #${toolbarId} .ql-picker.ql-align.ql-expanded .ql-picker-options {
+                    display: flex;
+                    flex-direction: row;
+                    gap: 4px;
+                    width: max-content !important;
+                    padding: 6px;
                 }
             `}</style>
         </div>

@@ -199,7 +199,6 @@ const AppRoutes = () => {
                     <Route path="/admin/books" element={<BookMaster />} />
                     <Route path="/admin/chapters" element={<ChapterMaster />} />
                     <Route path="/admin/rllt-data" element={<RLLTTableData />} />
-                    <Route path="/admin/ttomt-player" element={<TTomTPlayer />} />
                     <Route path="/admin/smt-player" element={<SMTPlayer />} />
                     <Route path="/admin/book-index" element={<BookIndex />} />
                     <Route path="/admin/players" element={<Players />} />
@@ -222,7 +221,6 @@ const AppRoutes = () => {
                 <Route path="/dashboard/student/assessment-result" element={<StudentAssessmentResult />} />
                 <Route path="/dashboard/student/charts" element={<StudentChartListing />} />
                 <Route path="/dashboard/student/players" element={<StudentPlayers />} />
-                <Route path="/dashboard/student/ttomt-player" element={<TTomTPlayer />} />
                 <Route path="/dashboard/student/smt-player" element={<SMTPlayer />} />
                 <Route path="/dashboard/student/book-index" element={<BookIndex />} />
                 <Route path="/dashboard/student/recordings" element={<Recordings />} />
@@ -249,6 +247,8 @@ const AppRoutes = () => {
             <Route path="/dashboard/assessment" element={<ProtectedRoute allowedRoles={['student']}><StudentAssessmentTest /></ProtectedRoute>} />
             <Route path="/dashboard/under-review" element={<ProtectedRoute allowedRoles={['student']}><AssessmentUnderReview /></ProtectedRoute>} />
             <Route path="/dashboard/ttom/player" element={<ProtectedRoute allowedRoles={['ttom_user']}><TTomTPlayer /></ProtectedRoute>} />
+            <Route path="/admin/ttomt-player" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'leader']}><TTomTPlayer /></ProtectedRoute>} />
+            <Route path="/dashboard/student/ttomt-player" element={<ProtectedRoute allowedRoles={['student']}><EnhancedStudentDashboardWrapper><TTomTPlayer /></EnhancedStudentDashboardWrapper></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DefaultDashboard /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/login" replace />} />
