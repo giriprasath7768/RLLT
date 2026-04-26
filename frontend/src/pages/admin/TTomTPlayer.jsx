@@ -49,7 +49,7 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
                 const hexMatch = bodyColorClass.match(/\[(.*?)\]/);
                 if (hexMatch && onClick) onClick(hexMatch[1]);
             }}
-            className="flex flex-col items-center min-w-0 bg-gray-500 border-[2px] border-black cursor-pointer hover:-translate-y-1 transition-transform relative h-full drop-shadow-md pb-0"
+            className="flex flex-col items-center min-w-0 bg-gray-500 border-[1px] border-black cursor-pointer hover:-translate-y-1 transition-transform relative h-full drop-shadow-md pb-0"
             style={{ flex: 1.0 }}
         >
             {/* Wooden Tip (Top 20%) */}
@@ -70,8 +70,9 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
                 {/* Center face Label */}
                 <div className="w-[50%] h-full relative z-10">
                     <span
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[13px] sm:text-[14px] font-black text-white uppercase whitespace-nowrap"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[13px] sm:text-[14px] font-black uppercase whitespace-nowrap"
                         style={{
+                            color: textColor || '#ffffff',
                             textShadow: '-0.5px 0.5px 0px #a39b8c, -1px 1px 0px #8b8374, -2px 2px 0px #635b4c, -3px 3px 0px #4a4336, -4px 4px 4px rgba(0,0,0,0.8)',
                             letterSpacing: label.length > 8 ? '0px' : '2px'
                         }}
@@ -115,6 +116,29 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
         M: "EDITATING ON GOD'S CHARACTER"
     });
     const [activeSquare, setActiveSquare] = React.useState(null);
+    const [pencilTextColor, setPencilTextColor] = React.useState('#ffffff');
+    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+    const [isSliderMode, setIsSliderMode] = React.useState(false);
+    const [currentSlideIndex, setCurrentSlideIndex] = React.useState(0);
+
+    React.useEffect(() => {
+        if (isSliderMode && activeSquare) {
+            const idx = wisdomItems.findIndex(i => i.key === activeSquare);
+            if (idx !== -1 && idx !== currentSlideIndex) {
+                setCurrentSlideIndex(idx);
+            }
+        }
+    }, [activeSquare, isSliderMode]);
+
+    React.useEffect(() => {
+        let interval;
+        if (isSliderMode && !activeSquare) {
+            interval = setInterval(() => {
+                setCurrentSlideIndex((prev) => (prev < wisdomItems.length - 1 ? prev + 1 : 0));
+            }, 3000);
+        }
+        return () => clearInterval(interval);
+    }, [isSliderMode, activeSquare, currentSlideIndex]);
 
     const wisdomItems = [
         { letter: 'W', color: '#8e2b8c', key: 'W' },
@@ -126,61 +150,150 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
     ];
 
     return (
-        <div className="bg-white flex-grow flex flex-col pt-0 pb-4 px-1 rounded-b-lg overflow-y-auto custom-scrollbar border-t-4 border-[#12182b] w-full h-full">
+        <div className="bg-white flex-grow flex flex-col pt-0 pb-4 px-1 rounded-b-lg overflow-y-auto custom-scrollbar border-t-4 border-[#12182b] w-full h-full relative">
             {/* Pencils Row */}
-            <div className="flex px-1 gap-1 h-[450px] sm:h-[450px] pt-[2px] pb-[3px] w-full justify-between items-stretch">
-                <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00c0ff]" tipColorClass="text-[#00c0ff]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" onClick={(c) => { onLetterClick(c); setActiveSquare('W'); }} />
+            <div className="flex p-1 gap-1 h-[450px] sm:h-[450px] w-full justify-between items-stretch">
+                <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00c0ff]" tipColorClass="text-[#00c0ff]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'W' ? null : 'W'); }} />
 
-                <Pencil label="FINANCE" baseNum="2" bodyColorClass="bg-[#00a638]" tipColorClass="text-[#00a638]" textColor="text-white" onClick={onPencilClick} />
-                <DividerBox letter="I" letterColor="text-[#294291]" num="2" onClick={(c) => { onLetterClick(c); setActiveSquare('I'); }} />
+                <Pencil label="FINANCE" baseNum="2" bodyColorClass="bg-[#00a638]" tipColorClass="text-[#00a638]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="I" letterColor="text-[#294291]" num="2" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'I' ? null : 'I'); }} />
 
-                <Pencil label="GOVERNMENT" baseNum="3" bodyColorClass="bg-[#3340cd]" tipColorClass="text-[#3340cd]" textColor="text-white" onClick={onPencilClick} />
-                <DividerBox letter="S" letterColor="text-[#86c5f7]" num="3" onClick={(c) => { onLetterClick(c); setActiveSquare('S'); }} />
+                <Pencil label="GOVERNMENT" baseNum="3" bodyColorClass="bg-[#3340cd]" tipColorClass="text-[#3340cd]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="S" letterColor="text-[#86c5f7]" num="3" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'S' ? null : 'S'); }} />
 
-                <Pencil label="SPIRITUALITY" baseNum="4" bodyColorClass="bg-[#fafa33]" tipColorClass="text-[#fafa33]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="D" letterColor="text-[#38b948]" num="4" onClick={(c) => { onLetterClick(c); setActiveSquare('D'); }} />
+                <Pencil label="SPIRITUALITY" baseNum="4" bodyColorClass="bg-[#fafa33]" tipColorClass="text-[#fafa33]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="D" letterColor="text-[#38b948]" num="4" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'D' ? null : 'D'); }} />
 
-                <Pencil label="TALENT" baseNum="5" bodyColorClass="bg-[#bb43b1]" tipColorClass="text-[#bb43b1]" textColor="text-white" onClick={onPencilClick} />
-                <DividerBox letter="O" letterColor="text-[#e3242b]" num="5" onClick={(c) => { onLetterClick(c); setActiveSquare('O'); }} />
+                <Pencil label="TALENT" baseNum="5" bodyColorClass="bg-[#bb43b1]" tipColorClass="text-[#bb43b1]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="O" letterColor="text-[#e3242b]" num="5" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'O' ? null : 'O'); }} />
 
-                <Pencil label="TRAINING" baseNum="6" bodyColorClass="bg-[#fe6d01]" tipColorClass="text-[#fe6d01]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="M" letterColor="text-[#ed9b26]" num="6" onClick={(c) => { onLetterClick(c); setActiveSquare('M'); }} />
+                <Pencil label="TRAINING" baseNum="6" bodyColorClass="bg-[#fe6d01]" tipColorClass="text-[#fe6d01]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="M" letterColor="text-[#ed9b26]" num="6" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'M' ? null : 'M'); }} />
 
-                <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#fe0005]" tipColorClass="text-[#fe0005]" textColor="text-white" onClick={onPencilClick} />
+                <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#fe0005]" tipColorClass="text-[#fe0005]" textColor={pencilTextColor} onClick={onPencilClick} />
             </div>
 
             {/* TRANSFORMATION Text Bar */}
-            <div className="w-full bg-black py-0 text-white flex justify-between items-center px-[12px] font-black text-[10px] sm:text-[12px] mx-0 drop-shadow-md z-10 shrink-0 mb-0">
+            <div className="w-full bg-black py-0 text-white flex justify-between items-center px-[12px] font-black text-[14px] sm:text-[16px] mx-0 drop-shadow-md z-10 shrink-0 mb-0">
                 {"TRANSFORMATION".split('').map((char, i) => (
                     <span key={i}>{char}</span>
                 ))}
             </div>
 
-            {/* List */}
+            {/* Content Area */}
             <div className="px-3 pt-2 pb-2 flex flex-col justify-between font-bold font-serif whitespace-nowrap bg-white overflow-hidden w-full h-full shrink gap-0 relative">
-                {wisdomItems.map((item, idx) => (
-                    <div
-                        key={item.key}
-                        className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all`}
-                        style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
-                    >
-                        <span style={{ color: item.color }} className="text-[10px] sm:text-[12px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
-                        <span
-                            onClick={() => { setActiveSquare(item.key); onLetterClick(item.color); }}
-                            style={{ color: item.color }}
-                            className="text-[13px] sm:text-[14px] font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
+
+                {/* List Header Options / Menu */}
+                <div className="absolute top-1 right-2 z-30">
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="flex items-center justify-center w-5 h-5 cursor-pointer focus:outline-none"
+                            title="Menu"
                         >
-                            {item.letter}
-                        </span>
-                        <input
-                            type="text"
-                            value={texts[item.key]}
-                            onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
-                            className="text-black text-[10px] sm:text-[12px] font-black uppercase tracking-wider bg-transparent outline-none flex-grow min-w-0 leading-none"
-                        />
+                            <i className={`pi ${isMenuOpen ? 'pi-times' : 'pi-bars'} text-black hover:text-gray-700 transition-colors`} style={{ fontSize: '15px' }}></i>
+                        </button>
+                        {isMenuOpen && (
+                            <div className="absolute right-0 top-6 bg-white border border-gray-200 shadow-xl rounded-md w-48 py-1 z-40 overflow-hidden transform origin-top-right transition-all">
+                                <label className="w-full text-left px-3 py-2 text-[11px] font-bold text-gray-700 hover:bg-gray-100 flex items-center gap-2 cursor-pointer transition-colors relative mb-0">
+                                    <i className="pi pi-palette" style={{ fontSize: '12px' }}></i>
+                                    <span>Change Color</span>
+                                    <input
+                                        type="color"
+                                        value={pencilTextColor}
+                                        onChange={(e) => setPencilTextColor(e.target.value)}
+                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                    />
+                                </label>
+                                <button
+                                    onClick={() => {
+                                        setIsSliderMode(!isSliderMode);
+                                        setIsMenuOpen(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-[11px] font-bold text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors border-t border-gray-100"
+                                >
+                                    <i className={isSliderMode ? "pi pi-list" : "pi pi-images"} style={{ fontSize: '12px' }}></i>
+                                    <span>{isSliderMode ? "Change to List Mode" : "Change to Slider Mode"}</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
-                ))}
+                </div>
+                {!isSliderMode ? (
+                    wisdomItems.map((item, idx) => (
+                        <div
+                            key={item.key}
+                            className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all`}
+                            style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
+                        >
+                            <span style={{ color: item.color }} className="text-[12px] sm:text-[14px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
+                            <span
+                                onClick={() => { setActiveSquare(item.key); onLetterClick(item.color); }}
+                                style={{ color: item.color }}
+                                className="text-[13px] sm:text-[14px] font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
+                            >
+                                {item.letter}
+                            </span>
+                            <input
+                                type="text"
+                                value={texts[item.key]}
+                                onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
+                                className="text-black text-[10px] sm:text-[12px] font-black uppercase tracking-wider bg-transparent outline-none flex-grow min-w-0 leading-none"
+                            />
+                        </div>
+                    ))
+                ) : (
+                    <div className="flex-grow flex items-center justify-center relative w-full h-full border-2 border-gray-100 rounded-lg overflow-hidden bg-white shadow-inner">
+                        {/* Slide Container */}
+                        <div className="w-full h-full relative" style={{ perspective: '1000px' }}>
+                            {wisdomItems.map((item, idx) => (
+                                <div
+                                    key={item.key}
+                                    className={`absolute inset-0 flex flex-col justify-center items-center transition-all duration-500 ease-in-out px-6`}
+                                    style={{
+                                        transform: `translateX(${(idx - currentSlideIndex) * 100}%)`,
+                                        opacity: idx === currentSlideIndex ? 1 : 0,
+                                        pointerEvents: idx === currentSlideIndex ? 'auto' : 'none'
+                                    }}
+                                >
+                                    <div className="flex items-center justify-center w-full max-w-full">
+                                        <div
+                                            className="flex items-center justify-center w-max max-w-full border-2 rounded py-1 px-3 transition-colors duration-300"
+                                            style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
+                                        >
+                                            <div
+                                                className="text-[40px] sm:text-[50px] font-black drop-shadow-md cursor-pointer transition-transform hover:scale-105 leading-none pr-[2px]"
+                                                style={{ color: item.color }}
+                                                onClick={() => { onLetterClick(item.color); setActiveSquare(prev => prev === item.key ? null : item.key); }}
+                                            >
+                                                {item.letter}
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={texts[item.key]}
+                                                onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
+                                                className={`text-black font-black uppercase bg-transparent outline-none leading-tight text-left transition-all ${['M', 'D'].includes(item.key) ? 'text-[8.5px] sm:text-[10px] tracking-normal' : 'text-[12px] sm:text-[14px] tracking-widest'}`}
+                                                style={{ width: `calc(${texts[item.key].length * 1.4}ch + 3rem)`, minWidth: '50px', maxWidth: '90%' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Dots Indicator */}
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+                            {wisdomItems.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setCurrentSlideIndex(idx)}
+                                    className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none ${idx === currentSlideIndex ? 'bg-gray-800 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`}
+                                ></button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -263,7 +376,6 @@ const TTomTPlayer = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [showWisdom, setShowWisdom] = useState(false);
     const [showVideoPlayer, setShowVideoPlayer] = useState(false);
-    const [currentTime, setCurrentTime] = useState(formatDateTime(new Date()));
     const [selectedDay, setSelectedDay] = useState(1);
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
@@ -275,6 +387,10 @@ const TTomTPlayer = () => {
 
     const [activeTrackName, setActiveTrackName] = useState('');
     const [activeVideoIndex, setActiveVideoIndex] = useState(0);
+    const [isVideoAutoPlay, setIsVideoAutoPlay] = useState(false);
+    const [activeAudioIndex, setActiveAudioIndex] = useState(0);
+    const [activeLanguage, setActiveLanguage] = useState('');
+    const [showAudioSelector, setShowAudioSelector] = useState(false);
     const [audioDuration, setAudioDuration] = useState(0);
     const [audioProgress, setAudioProgress] = useState(0);
     const audioRef = useRef(new Audio());
@@ -362,6 +478,25 @@ const TTomTPlayer = () => {
         return content?.ref_link || null;
     }, [activeTrackName, contentDB]);
 
+    const activeTrackAudios = React.useMemo(() => {
+        if (!activeTrackName) return [];
+        const parts = activeTrackName.trim().split(' ');
+        const chapNum = parseInt(parts.pop());
+        const bookName = parts.join(' ').toUpperCase();
+
+        const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
+        if (content && content.audio_url) {
+            try {
+                const parsed = JSON.parse(content.audio_url);
+                if (Array.isArray(parsed)) return parsed;
+                return [{ url: content.audio_url, language: content.audio_language || '' }];
+            } catch (e) {
+                return [{ url: content.audio_url, language: content.audio_language || '' }];
+            }
+        }
+        return [];
+    }, [activeTrackName, contentDB]);
+
     useEffect(() => {
         axios.get('http://localhost:8000/api/me', { withCredentials: true })
             .then(res => setUserRole(res.data.role))
@@ -386,7 +521,7 @@ const TTomTPlayer = () => {
         const onEnd = () => {
             setIsPlaying(false);
             if (!playerStateRef.current) return;
-            const { activeTrackName: currTrack, playlistBooks: currPlaylist, contentDB: currDB } = playerStateRef.current;
+            const { activeTrackName: currTrack, playlistBooks: currPlaylist, contentDB: currDB, activeLanguage: currLang } = playerStateRef.current;
 
             if (!currTrack || !currPlaylist) return;
 
@@ -401,12 +536,32 @@ const TTomTPlayer = () => {
 
                     const content = currDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
                     if (content && content.audio_url) {
-                        ad.src = `http://localhost:8000${content.audio_url}`;
-                        ad.play();
-                        setActiveTrackName(nextTrackName);
-                        setActiveVideoIndex(0);
-                        setIsPlaying(true);
-                        break;
+                        let parsedAudios = [];
+                        try {
+                            parsedAudios = JSON.parse(content.audio_url);
+                            if (!Array.isArray(parsedAudios)) {
+                                parsedAudios = [{ url: content.audio_url, language: content.audio_language || '' }];
+                            }
+                        } catch (e) {
+                            parsedAudios = [{ url: content.audio_url, language: content.audio_language || '' }];
+                        }
+
+                        if (parsedAudios.length > 0) {
+                            let targetIdx = 0;
+                            if (currLang) {
+                                const matchIdx = parsedAudios.findIndex(a => a.language === currLang);
+                                if (matchIdx !== -1) targetIdx = matchIdx;
+                            }
+
+                            ad.src = `http://localhost:8000${parsedAudios[targetIdx].url}`;
+                            ad.play();
+                            setActiveTrackName(nextTrackName);
+                            setActiveAudioIndex(targetIdx);
+                            setActiveLanguage(parsedAudios[targetIdx].language || '');
+                            setActiveVideoIndex(0);
+                            setIsPlaying(true);
+                            break;
+                        }
                     }
                 }
             }
@@ -432,18 +587,39 @@ const TTomTPlayer = () => {
         };
     }, []);
 
-    const playTrack = (bookStr) => {
+    const playTrack = (bookStr, trackIndex = 0) => {
         const parts = bookStr.trim().split(' ');
         const chapNum = parseInt(parts.pop());
         const bookName = parts.join(' ').toUpperCase();
 
         const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
         if (content && content.audio_url) {
-            audioRef.current.src = `http://localhost:8000${content.audio_url}`;
-            audioRef.current.play();
-            setActiveTrackName(bookStr);
-            setActiveVideoIndex(0);
-            setIsPlaying(true);
+            let parsedAudios = [];
+            try {
+                parsedAudios = JSON.parse(content.audio_url);
+                if (!Array.isArray(parsedAudios)) {
+                    parsedAudios = [{ url: content.audio_url, language: content.audio_language || '' }];
+                }
+            } catch (e) {
+                parsedAudios = [{ url: content.audio_url, language: content.audio_language || '' }];
+            }
+
+            if (parsedAudios.length > 0) {
+                // If a track index isn't directly passed, try to match current language
+                let targetIdx = trackIndex;
+                if (targetIdx === 0 && playerStateRef.current?.activeLanguage && !showAudioSelector) {
+                    const matchIdx = parsedAudios.findIndex(a => a.language === playerStateRef.current.activeLanguage);
+                    if (matchIdx !== -1) targetIdx = matchIdx;
+                }
+                const track = parsedAudios[targetIdx] || parsedAudios[0];
+                audioRef.current.src = `http://localhost:8000${track.url}`;
+                audioRef.current.play();
+                setActiveTrackName(bookStr);
+                setActiveAudioIndex(targetIdx);
+                setActiveLanguage(track.language || '');
+                setActiveVideoIndex(0);
+                setIsPlaying(true);
+            }
             return;
         } else {
             console.log("No audio found for:", bookStr);
@@ -465,6 +641,11 @@ const TTomTPlayer = () => {
                     return;
                 }
             }
+            return;
+        }
+
+        if (!audioRef.current.getAttribute('src')) {
+            playTrack(activeTrackName);
             return;
         }
 
@@ -579,8 +760,8 @@ const TTomTPlayer = () => {
     }, [activeDayNode, booksDB, location.state?.filter]);
 
     useEffect(() => {
-        playerStateRef.current = { activeTrackName, playlistBooks, contentDB };
-    }, [activeTrackName, playlistBooks, contentDB]);
+        playerStateRef.current = { activeTrackName, playlistBooks, contentDB, activeLanguage };
+    }, [activeTrackName, playlistBooks, contentDB, activeLanguage]);
 
     // Completed Days Logic
     const completedDays = React.useMemo(() => {
@@ -633,13 +814,6 @@ const TTomTPlayer = () => {
         }
     }, [playlistBooks, activeTrackName]);
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(formatDateTime(new Date()));
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
-
     // Placeholder image since we don't have the exact image
     const placeholderImg = "https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?w=500&auto=format&fit=crop&q=60"; // A generic open book with light
 
@@ -667,8 +841,8 @@ const TTomTPlayer = () => {
                     >
 
                         {/* Header (Black) */}
-                        <div className="bg-black text-white px-3 py-1.5 flex flex-col relative">
-                            <div className="flex justify-between items-start">
+                        <div className="bg-black text-white px-3 py-2 flex flex-col relative w-full">
+                            <div className="flex justify-between items-center mb-1">
                                 {userRole === 'ttom_user' ? (
                                     <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors p-0.5" title="Logout">
                                         <i className="pi pi-power-off text-xl"></i>
@@ -678,16 +852,28 @@ const TTomTPlayer = () => {
                                         <i className="pi pi-bars text-xl"></i>
                                     </button>
                                 )}
-                                <div className="text-center flex flex-col items-center">
-                                    <span className="text-[12px] text-gray-400 tracking-wider font-bold mb-0">{currentTime}</span>
-                                    <h1 className="text-blue-400 font-bold text-[15px] tracking-widest mt-0 mb-0.5" style={{ lineHeight: '1.2' }}>R L L T - TtomT</h1>
+                                <div className="flex-1 text-center font-black text-[18px] tracking-[0.2em] flex justify-center items-baseline px-2 leading-none">
+                                    <span className="text-[#6195df]">T</span>
+                                    <span className="text-[#e3242b] lowercase mx-1">t</span>
+                                    <span className="text-[#6195df]">O M T</span>
                                 </div>
-                                <button onClick={() => setShowVideoPlayer(true)} className="text-gray-400 hover:text-white transition-colors p-0.5">
+                                <button
+                                    onClick={() => {
+                                        setShowVideoPlayer(true);
+                                        setIsVideoAutoPlay(false);
+                                        if (audioRef.current) {
+                                            audioRef.current.pause();
+                                            setIsPlaying(false);
+                                        }
+                                    }}
+                                    className="text-gray-400 hover:text-white transition-colors p-0.5 flex-shrink-0"
+                                >
                                     <i className="pi pi-info-circle text-xl lg:text-2xl"></i>
                                 </button>
                             </div>
-                            <div className="text-center mt-0.5">
-                                <span className="text-white text-[12px] font-bold tracking-widest">MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
+                            <div className="text-center mt-1 flex justify-center items-center">
+                                <span className="text-[#7292d3] tracking-[0.2em] font-black text-[18px] mr-2">R L L T</span>
+                                <span className="text-white text-[12px] font-bold tracking-widest leading-none mt-1">- MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
                             </div>
                         </div>
 
@@ -713,6 +899,17 @@ const TTomTPlayer = () => {
                                         const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
                                         const hasAudio = content && content.audio_url;
 
+                                        let parsedAudios = [];
+                                        if (hasAudio) {
+                                            try {
+                                                const parsed = JSON.parse(content.audio_url);
+                                                if (Array.isArray(parsed)) parsedAudios = parsed;
+                                                else parsedAudios = [{ url: content.audio_url, language: content.audio_language || '' }];
+                                            } catch (e) {
+                                                parsedAudios = [{ url: content.audio_url, language: content.audio_language || '' }];
+                                            }
+                                        }
+
                                         // Standard text coloring logic preventing "disabled" unreadable look when audio is missing!
                                         let textColor = hasAudio ? 'text-white hover:text-blue-200' : 'text-white/80';
                                         if (type === 'morning') textColor = hasAudio ? 'text-green-400 hover:text-green-200' : 'text-green-400';
@@ -721,36 +918,63 @@ const TTomTPlayer = () => {
                                         const finalColor = activeTrackName === bookStr ? (type === 'morning' ? 'text-green-300' : type === 'evening' ? 'text-blue-300' : 'text-yellow-400') : textColor;
 
                                         return (
-                                            <div
-                                                key={idx}
-                                                onClick={() => hasAudio ? playTrack(bookStr) : null}
-                                                className={`flex items-center gap-2 mb-1.5 px-2 py-1 rounded-sm transition-colors ${hasAudio ? 'cursor-pointer hover:bg-white/5' : ''} ${finalColor}`}
-                                                style={{ backgroundColor: activeTrackName === bookStr ? 'gray' : 'transparent' }}
-                                            >
-                                                <i className={`pi ${hasAudio ? (activeTrackName === bookStr && isPlaying ? 'pi-pause-circle' : 'pi-play-circle') : 'pi-stop-circle'} text-[10px]`}></i>
-                                                <span className="text-[11px] font-bold uppercase tracking-wider leading-tight">{bookStr}</span>
+                                            <div key={idx} className="mb-1.5 flex flex-col">
+                                                <div
+                                                    onClick={() => hasAudio ? playTrack(bookStr) : null}
+                                                    className={`flex items-center gap-2 px-2 py-1 rounded-sm transition-colors ${hasAudio ? 'cursor-pointer hover:bg-white/5' : ''} ${finalColor}`}
+                                                    style={{ backgroundColor: activeTrackName === bookStr ? 'gray' : 'transparent' }}
+                                                >
+                                                    <i className={`pi ${hasAudio ? (activeTrackName === bookStr && isPlaying ? 'pi-pause-circle' : 'pi-play-circle') : 'pi-stop-circle'} text-[10px]`}></i>
+                                                    <span className="text-[11px] font-bold uppercase tracking-wider leading-tight">{bookStr}</span>
+                                                </div>
                                             </div>
                                         );
                                     })}
                                 </div>
 
                                 {/* Right Column - Image */}
-                                <div className="w-1/2 relative">
+                                <div className="w-1/2 relative cursor-pointer group" onClick={() => setShowAudioSelector(!showAudioSelector)}>
                                     <img
                                         src={placeholderImg}
                                         alt="Proverbs Artwork"
-                                        className="w-full h-full object-cover rounded-sm border-2 border-black"
+                                        className={`w-full h-full object-cover rounded-sm border-2 border-black transition-opacity ${showAudioSelector ? 'opacity-20' : 'opacity-100 group-hover:opacity-80'}`}
                                     />
                                     {/* Headphones icon overlay */}
-                                    <div className="absolute top-2 right-2 text-yellow-500 drop-shadow-md">
+                                    <div className="absolute top-2 right-2 text-yellow-500 drop-shadow-md z-10 transition-transform group-hover:scale-110">
                                         <i className="pi pi-headphones text-4xl"></i>
                                     </div>
+
+                                    {/* Audio Selector Overlay */}
+                                    {showAudioSelector && (
+                                        <div className="absolute inset-0 flex flex-col p-2 bg-black/70 rounded-sm overflow-y-auto custom-scrollbar z-20" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex justify-between items-center mb-2 border-b border-white/20 pb-1">
+                                                <h4 className="text-white text-[10px] font-bold">SELECT AUDIO TRACK</h4>
+                                                <i className="pi pi-times text-white text-[10px] cursor-pointer hover:text-red-400" onClick={() => setShowAudioSelector(false)}></i>
+                                            </div>
+                                            {activeTrackAudios.length > 0 ? activeTrackAudios.map((aud, i) => (
+                                                <button
+                                                    key={i}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        playTrack(activeTrackName, i);
+                                                        setShowAudioSelector(false);
+                                                    }}
+                                                    className={`text-left text-xs mb-1.5 p-1.5 rounded transition-colors border ${activeAudioIndex === i ? 'bg-blue-600/80 text-white font-bold border-blue-400' : 'bg-gray-800/80 text-gray-300 border-gray-600 hover:bg-gray-700'}`}
+                                                >
+                                                    {aud.language ? aud.language.toUpperCase() : `AUDIO TRACK ${i + 1}`}
+                                                    {activeAudioIndex === i && <i className="pi pi-check ml-2 float-right text-[10px] mt-1"></i>}
+                                                </button>
+                                            )) : (
+                                                <span className="text-gray-400 text-[10px] text-center mt-4">No Audios Available</span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Audio Player Controls */}
                             <div
-                                className={`px-3 mx-1 mb-1 mt-0 h-[39px] rounded-[4px] border-[3px] flex flex-col justify-center relative z-10 transition-colors duration-300 shadow-inner`}
+                                className={`px-3 mx-1 mb-1 mt-0 h-[39px] rounded-[4px] border-[5px] flex flex-col justify-center relative z-10 transition-colors duration-300 shadow-inner`}
                                 style={{
                                     backgroundColor: playerBgColor,
                                     borderColor: playerBorderColor
@@ -877,14 +1101,15 @@ const TTomTPlayer = () => {
                         }}
                     >
                         {/* Header (Black) */}
-                        <div className="bg-black text-white px-4 py-3 flex flex-col relative w-full">
-                            <div className="flex justify-between items-start">
+                        <div className="bg-black text-white px-4 py-2 flex flex-col relative w-full">
+                            <div className="flex justify-between items-center mb-1">
                                 <div className="p-1 invisible">
                                     <i className="pi pi-times text-xl"></i>
                                 </div>
-                                <div className="text-center flex flex-col items-center">
-                                    <span className="text-[10px] text-gray-400 tracking-wider font-bold mb-0.5">{currentTime}</span>
-                                    <h1 className="text-blue-400 font-bold text-lg tracking-widest mt-0.5">R L L T - TtomT</h1>
+                                <div className="flex-1 text-center font-black text-[18px] tracking-[0.2em] flex justify-center items-baseline px-2 leading-none">
+                                    <span className="text-[#6195df]">T</span>
+                                    <span className="text-[#e3242b] lowercase mx-1">t</span>
+                                    <span className="text-[#6195df]">O M T</span>
                                 </div>
                                 <button
                                     onClick={(e) => {
@@ -893,14 +1118,15 @@ const TTomTPlayer = () => {
                                         const vp = document.getElementById('ttomt-video-player');
                                         if (vp) vp.pause();
                                     }}
-                                    className="text-blue-400 hover:text-white transition-colors p-1 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] relative z-[99]"
+                                    className="text-blue-400 hover:text-white transition-colors p-1 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] relative z-[99] flex-shrink-0"
                                     style={{ pointerEvents: 'auto' }}
                                 >
                                     <i className="pi pi-info-circle text-xl sm:text-2xl"></i>
                                 </button>
                             </div>
-                            <div className="text-center mt-2">
-                                <span className="text-white text-[11px] font-bold tracking-widest">MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
+                            <div className="text-center mt-1 flex justify-center items-center">
+                                <span className="text-[#7292d3] tracking-[0.2em] font-black text-[18px] mr-2">R L L T</span>
+                                <span className="text-white text-[11px] font-bold tracking-widest leading-none mt-1">- MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
                             </div>
                         </div>
 
@@ -914,7 +1140,7 @@ const TTomTPlayer = () => {
                                         key={activeVideoUrl}
                                         src={activeVideoUrl}
                                         controls
-                                        autoPlay
+                                        autoPlay={isVideoAutoPlay}
                                         className="w-full border border-gray-600 rounded bg-gray-900 shadow-md"
                                     />
                                 ) : (
@@ -996,6 +1222,7 @@ const TTomTPlayer = () => {
                                                         if (!dragged.current) {
                                                             setActiveTrackName(bookStr);
                                                             setActiveVideoIndex(vIdx);
+                                                            setIsVideoAutoPlay(true);
                                                         }
                                                     }}
                                                     className={baseClass}

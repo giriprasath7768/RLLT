@@ -26,6 +26,11 @@ async def sync_content(
     ref_link: str = Form(""),
     audio_language: str = Form(""),
     audio: Optional[UploadFile] = File(None),
+    audios: List[UploadFile] = File(default=[]),
+    audio_languages: str = Form("[]"),
+    existing_audios: str = Form(None),
+    existing_videos: str = Form(None),
+    existing_pdfs: str = Form(None),
     videos: List[UploadFile] = File(default=[]),
     pdfs: List[UploadFile] = File(default=[]),
     db: AsyncSession = Depends(get_db)
@@ -41,28 +46,70 @@ async def sync_content(
         ))
         existing = result.scalars().first()
 
+        existing_audios_list = []
+        if existing_audios is not None:
+            try:
+                existing_audios_list = json.loads(existing_audios)
+            except Exception:
+                existing_audios_list = []
+        else:
+            if existing and existing.audio_url:
+                try:
+                    parsed = json.loads(existing.audio_url)
+                    if isinstance(parsed, list):
+                        existing_audios_list = parsed
+                    else:
+                        existing_audios_list = [{"url": existing.audio_url, "language": existing.audio_language or ""}]
+                except Exception:
+                    existing_audios_list = [{"url": existing.audio_url, "language": existing.audio_language or ""}]
+
+        try:
+            new_languages = json.loads(audio_languages) if audio_languages else []
+        except Exception:
+            new_languages = []
+
         if audio and audio.filename:
             ext = os.path.splitext(audio.filename)[1]
             filename = f"audio_{book_id.hex}_{chapter_id.hex}_{uuid.uuid4().hex}{ext}"
             file_path = os.path.join(UPLOAD_DIR, filename)
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(audio.file, buffer)
-            audio_url = f"/api/uploads/{filename}"
-        elif existing:
-            audio_url = existing.audio_url
+            existing_audios_list.append({"url": f"/api/uploads/{filename}", "language": audio_language or ""})
+            
+        for i, a_file in enumerate(audios):
+            if a_file and a_file.filename:
+                ext = os.path.splitext(a_file.filename)[1]
+                filename = f"audio_{book_id.hex}_{chapter_id.hex}_{uuid.uuid4().hex}{ext}"
+                file_path = os.path.join(UPLOAD_DIR, filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(a_file.file, buffer)
+                lang = new_languages[i] if i < len(new_languages) else ""
+                existing_audios_list.append({"url": f"/api/uploads/{filename}", "language": lang})
+
+        audio_url_json = json.dumps(existing_audios_list) if existing_audios_list else None
+        
+        # for backwards compatibility
+        first_lang = existing_audios_list[0]["language"] if existing_audios_list and "language" in existing_audios_list[0] else audio_language
+        first_url = existing_audios_list[0]["url"] if existing_audios_list and "url" in existing_audios_list[0] else None
             
         video_urls = []
-        if existing and existing.video_url:
+        if existing_videos is not None:
             try:
-                parsed = json.loads(existing.video_url)
-                if isinstance(parsed, list):
-                    video_urls = parsed
-                else:
-                    if existing.video_url:
-                        video_urls = [existing.video_url]
+                video_urls = json.loads(existing_videos)
             except Exception:
-                if existing.video_url:
-                     video_urls = [existing.video_url]
+                video_urls = []
+        else:
+            if existing and existing.video_url:
+                try:
+                    parsed = json.loads(existing.video_url)
+                    if isinstance(parsed, list):
+                        video_urls = parsed
+                    else:
+                        if existing.video_url:
+                            video_urls = [existing.video_url]
+                except Exception:
+                    if existing.video_url:
+                         video_urls = [existing.video_url]
 
         for video in videos:
             if video and video.filename:
@@ -76,17 +123,23 @@ async def sync_content(
         video_url_json = json.dumps(video_urls) if video_urls else None
         
         pdf_urls = []
-        if existing and existing.pdf_url:
+        if existing_pdfs is not None:
             try:
-                parsed = json.loads(existing.pdf_url)
-                if isinstance(parsed, list):
-                    pdf_urls = parsed
-                else:
-                    if existing.pdf_url:
-                        pdf_urls = [existing.pdf_url]
+                pdf_urls = json.loads(existing_pdfs)
             except Exception:
-                if existing.pdf_url:
-                     pdf_urls = [existing.pdf_url]
+                pdf_urls = []
+        else:
+            if existing and existing.pdf_url:
+                try:
+                    parsed = json.loads(existing.pdf_url)
+                    if isinstance(parsed, list):
+                        pdf_urls = parsed
+                    else:
+                        if existing.pdf_url:
+                            pdf_urls = [existing.pdf_url]
+                except Exception:
+                    if existing.pdf_url:
+                         pdf_urls = [existing.pdf_url]
 
         for pdf in pdfs:
             if pdf and pdf.filename:
@@ -103,8 +156,8 @@ async def sync_content(
             id=uuid.uuid4(),
             book_id=book_id,
             chapter_id=chapter_id,
-            audio_url=audio_url,
-            audio_language=audio_language,
+            audio_url=audio_url_json,
+            audio_language=first_lang,
             video_url=video_url_json,
             pdf_url=pdf_url_json,
             ref_link=ref_link
@@ -126,8 +179,8 @@ async def sync_content(
         
         return {
             "status": "success", 
-            "audio_url": audio_url,
-            "audio_language": audio_language,
+            "audio_url": audio_url_json,
+            "audio_language": first_lang,
             "video_url": video_url_json,
             "pdf_url": pdf_url_json,
             "ref_link": ref_link
@@ -216,6 +269,22 @@ async def bulk_sync_content(payload: BulkContentRequest, db: AsyncSession = Depe
         
     except Exception as e:
         await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/upload")
+async def upload_files(file: List[UploadFile] = File(...)):
+    try:
+        urls = []
+        for f in file:
+            if f and f.filename:
+                ext = os.path.splitext(f.filename)[1]
+                filename = f"media_{uuid.uuid4().hex}{ext}"
+                file_path = os.path.join(UPLOAD_DIR, filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(f.file, buffer)
+                urls.append(f"/api/uploads/{filename}")
+        return {"status": "success", "urls": urls}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/{id}")

@@ -275,44 +275,45 @@ const GlobalPDFPageOverrides = () => (
             line-height: 1 !important;
         }
 
-        @keyframes unrollScroll {
-            0% { max-height: 0; opacity: 0; transform: scaleY(0); }
-            100% { max-height: 600px; opacity: 1; transform: scaleY(1); }
+        @keyframes unrollDown {
+            0% { clip-path: polygon(0 0, 100% 0, 100% 0%, 0 0%); opacity: 0; }
+            30% { opacity: 1; }
+            100% { clip-path: polygon(0 -20%, 100% -20%, 100% 120%, 0 120%); opacity: 1; }
+        }
+        @keyframes unrollUp {
+            0% { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); opacity: 0; }
+            30% { opacity: 1; }
+            100% { clip-path: polygon(0 -20%, 100% -20%, 100% 120%, 0 120%); opacity: 1; }
         }
         .ancient-scroll-bg {
-            background-color: #e8d5a2;
-            background-image: 
-                linear-gradient(rgba(139, 69, 19, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(139, 69, 19, 0.03) 1px, transparent 1px),
-                url('data:image/svg+xml;utf8,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.12"/></svg>');
-            background-size: 20px 20px, 20px 20px, 100% 100%;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            box-shadow: inset 0 0 45px rgba(101, 42, 14, 0.4), 0 25px 50px rgba(0,0,0,0.7);
-            border-radius: 4px;
-            animation: unrollScroll 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+            background-color: transparent;
+            background-image: url('/scrolltext.png');
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: drop-shadow(0 25px 30px rgba(0,0,0,0.75));
         }
     `}</style>
 );
 
 // Constants for PDF Highlighting Tool
 const HIGHLIGHT_CATEGORIES = [
-    { label: "Imagination", color: "#FCD34D" }, // Yellow
-    { label: "Scriptures to prayer", color: "#93C5FD" }, // Blue
-    { label: "Daily growing in Godliness", color: "#86EFAC" }, // Green
-    { label: "Obedience to God in action", color: "#FDBA74" }, // Orange
-    { label: "Meditating on God's Character", color: "#D8B4FE" }, // Purple
-    { label: "TRANSFORMATION", color: "#F9A8D4" } // Pink
+    { label: "Wisdom of God", color: "#8e2b8c" },
+    { label: "Imagination", color: "#294291" },
+    { label: "Scriptures to prayer", color: "#86c5f7" },
+    { label: "Daily growing in Godliness", color: "#38b948" },
+    { label: "Obedience to God's will", color: "#e3242b" },
+    { label: "Meditating on God's character", color: "#ed9b26" }
 ];
 
 const SEVEN_MOUNTAIN_SPHERES = [
-    { label: "Family", color: "#86c5f7" },
-    { label: "Finance", color: "#38b948" },
-    { label: "Government", color: "#4579d4" },
-    { label: "Talent", color: "#8b2671" },
-    { label: "Training", color: "#f17a41" },
-    { label: "Spirituality", color: "#ebe244" },
-    { label: "Service", color: "#e3242b" }
+    { label: "Family", color: "#00c0ff" },
+    { label: "Finance", color: "#00a638" },
+    { label: "Government", color: "#3340cd" },
+    { label: "Spirituality", color: "#fafa33" },
+    { label: "Talent", color: "#bb43b1" },
+    { label: "Training", color: "#fe6d01" },
+    { label: "Service", color: "#fe0005" }
 ];
 
 const AUDIO_TIMESTAMPS = {
@@ -335,64 +336,221 @@ const AUDIO_TIMESTAMPS = {
     ]
 };
 
-const ScrollMenuPopup = ({ position, onSelect }) => {
-    // Dynamic collision detection to ensure the entire popup is always perfectly visible
-    const assumedMenuHeight = 420;
-    const spaceBelow = window.innerHeight - position.y;
-    const isUpward = spaceBelow < assumedMenuHeight;
+const ScrollMenuPopup = ({ position, onSelect, onClose, contentDB = [], activeTrackName = '' }) => {
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [isFlipped, setIsFlipped] = useState(false);
+    const [flipMode, setFlipMode] = useState('format'); // 'format' or 'info'
 
-    const topPos = isUpward ? Math.max(10, position.y - assumedMenuHeight) : position.y + 10;
-    const leftPos = Math.min(position.x + 10, window.innerWidth - 350);
+    // Forces exact center of the screen globally
+    const topPos = Math.max(0, (window.innerHeight - 500) / 2);
+    const leftPos = Math.max(0, (window.innerWidth - 350) / 2);
+
+    const activeContent = React.useMemo(() => {
+        if (!activeTrackName) return null;
+        const parts = activeTrackName.trim().split(' ');
+        const chapNum = parseInt(parts.pop());
+        const bookName = parts.join(' ').toUpperCase();
+        return contentDB.find(c => c.book_name?.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
+    }, [activeTrackName, contentDB]);
+
+    const refLinks = React.useMemo(() => {
+        if (!activeContent?.ref_link) return [];
+        try { const arr = JSON.parse(activeContent.ref_link); return Array.isArray(arr) ? arr : [activeContent.ref_link]; }
+        catch (e) { return [activeContent.ref_link]; }
+    }, [activeContent]);
+
+    const refVideos = React.useMemo(() => {
+        if (!activeContent?.video_url) return [];
+        try { const arr = JSON.parse(activeContent.video_url); return Array.isArray(arr) ? arr : [activeContent.video_url]; }
+        catch (e) { return [activeContent.video_url]; }
+    }, [activeContent]);
+
+    const handleCategoryClick = (e, cat) => {
+        if (e) e.stopPropagation();
+        setSelectedCategory(cat);
+        setFlipMode('format');
+        setIsFlipped(true);
+    };
+
+    const handleFormatClick = (format, styleOption = null) => {
+        if (onSelect) onSelect(selectedCategory, format, styleOption);
+        if (onClose) onClose();
+    };
 
     return (
         <div
-            className="fixed z-[9999] flex flex-col items-center justify-start ancient-scroll-bg pointer-events-auto"
+            className="fixed z-[9999] pointer-events-auto smt-scroll-popup"
             style={{
                 top: topPos,
                 left: leftPos,
-                width: '340px',
-                minHeight: '380px',
-                transformOrigin: isUpward ? 'bottom center' : 'top center'
+                width: '350px',
+                height: '500px',
+                perspective: '1500px'
             }}
             onMouseDown={(e) => e.stopPropagation()}
         >
-            <div className="w-[108%] h-6 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mb-1 relative z-10 border border-[#1f1209]" />
+            <div
+                className="relative w-full h-full flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]"
+                style={{ transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+            >
+                {/* FRONT FACE */}
+                <div
+                    className={`absolute inset-0 flex flex-col items-center justify-start drop-shadow-2xl transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
+                    style={{
+                        backgroundImage: "url('/scrollimage.png')",
+                        backgroundSize: '100% 100%',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat'
+                    }}
+                >
+                    {/* Info toggle instead of Close button */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setFlipMode('info'); setIsFlipped(true); }}
+                        className="absolute top-[80px] right-[50px] text-[#8b5a2b]/80 hover:text-red-700 hover:scale-110 transition-all z-[101]"
+                        title="Reference Info"
+                    >
+                        <i className="pi pi-info-circle text-[22px] font-bold"></i>
+                    </button>
+                    <div className="px-6 pt-[95px] pb-[60px] flex flex-col gap-[7px] items-center text-[#2d1a11] font-serif w-full h-full justify-center">
+                        <h2 className="text-[17px] font-black uppercase tracking-widest text-[#2d1a11] drop-shadow-sm mb-1 text-center leading-tight w-full flex flex-col gap-[2px]">
+                            <button onClick={(e) => handleCategoryClick(e, { label: "The Power of God", color: "#FCD34D" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
+                                The Power of God &
+                            </button>
+                            <button onClick={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#FCD34D" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
+                                The Wisdom of God
+                            </button>
+                        </h2>
 
-            <div className="px-6 py-5 flex flex-col gap-[8px] items-center text-[#2d1a11] font-serif w-full">
-                <h2 className="text-[15px] font-black text-center mb-1 uppercase tracking-widest border-b-[1.5px] border-[#8b5a2b]/40 pb-2 w-full text-[#1f1209] drop-shadow-sm">
-                    The Power of God &<br />The Wisdom of God
-                </h2>
+                        <div className="flex flex-col w-full items-center gap-[5px] mt-2">
+                            {HIGHLIGHT_CATEGORIES.map(cat => (
+                                <button
+                                    key={cat.label}
+                                    onClick={(e) => handleCategoryClick(e, cat)}
+                                    className="text-[16px] font-extrabold w-[85%] text-center transform drop-shadow-sm transition-all hover:text-[#8b5a2b] hover:scale-105 cursor-pointer leading-tight"
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
 
-                <div className="flex flex-col w-full items-center gap-[6px] mt-2">
-                    {HIGHLIGHT_CATEGORIES.map(cat => (
-                        <button
-                            key={cat.label}
-                            onClick={() => onSelect(cat)}
-                            className="text-[16px] font-extrabold hover:text-[#8b5a2b] transition-all w-full text-center hover:scale-105 transform drop-shadow-sm"
-                        >
-                            {cat.label}
-                        </button>
-                    ))}
+                        <div className="w-[90%] flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 text-[16px] font-black font-serif leading-tight">
+                            {SEVEN_MOUNTAIN_SPHERES.map(cat => (
+                                <button
+                                    key={cat.label}
+                                    onClick={(e) => handleCategoryClick(e, cat)}
+                                    className="hover:text-[#8b5a2b] transition-colors relative group hover:scale-110 transform drop-shadow-sm"
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="mt-3 flex flex-col items-center text-center text-[10px] leading-tight font-bold tracking-wider opacity-75 uppercase pointer-events-none">
+                            <span>I am here to do God's will and do what</span>
+                            <span>written about me in this scroll</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="w-[85%] flex flex-wrap justify-center gap-x-4 gap-y-2 mt-5 text-[15px] font-black font-serif leading-tight">
-                    {SEVEN_MOUNTAIN_SPHERES.map(cat => (
-                        <button
-                            key={cat.label}
-                            onClick={() => onSelect(cat)}
-                            className="hover:text-[#8b5a2b] transition-colors relative group hover:scale-110 transform drop-shadow-sm"
-                        >
-                            {cat.label}
-                        </button>
-                    ))}
-                </div>
+                {/* BACK FACE */}
+                <div
+                    className={`absolute inset-x-2 inset-y-6 flex flex-col items-center justify-start bg-[#faf4ec] border-[3px] border-[#8b5a2b]/80 shadow-[0_20px_40px_rgba(0,0,0,0.6)] rounded-2xl transition-opacity duration-300 ${isFlipped ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                    style={{
+                        transform: 'rotateY(180deg)'
+                    }}
+                >
+                    {/* Top action row */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }}
+                        className="absolute top-4 right-4 text-[#8b5a2b] hover:text-red-700 hover:scale-110 transition-all z-[101]"
+                        title="Flip Back"
+                    >
+                        {flipMode === 'info' ? (
+                            <i className="pi pi-info-circle text-[22px] font-bold"></i>
+                        ) : (
+                            <i className="pi pi-arrow-left text-[18px] font-bold"></i>
+                        )}
+                    </button>
 
-                <div className="text-[9px] text-center mt-6 font-bold uppercase tracking-widest opacity-80 px-2 leading-relaxed text-[#1f1209]">
-                    I am here to do God's will and do what is<br />written about me in this scroll
+                    <div className="px-6 py-12 flex flex-col items-center w-full h-full overflow-y-auto no-scrollbar">
+
+                        {flipMode === 'format' && (
+                            <>
+                                <span className="font-serif font-black text-[13px] text-[#2d1a11] tracking-wider uppercase drop-shadow-sm text-center leading-tight w-full break-words mb-4 border-b pb-2 border-[#8b5a2b]/30">{selectedCategory?.label || ''}</span>
+
+                                <div className="flex flex-col gap-2 w-[95%] flex-shrink-0">
+                                    {['Underline', 'Circle', 'Square', 'Highlight'].map(fmt => (
+                                        <div key={fmt} className="relative group w-full flex flex-col items-center z-10 bg-[#faf4ec] border border-[#8b5a2b]/20 shadow-sm rounded-lg overflow-hidden">
+                                            <div className="w-full px-3 py-1 bg-[#8b5a2b]/10 font-bold font-serif text-[12px] text-[#2d1a11] text-center border-b border-[#8b5a2b]/10">
+                                                {fmt}
+                                            </div>
+                                            <div className="grid grid-cols-5 gap-1 p-1.5 w-full bg-[#faf4ec]">
+                                                {[
+                                                    { id: 'solid-1px', bWidth: '2px', bStyle: 'solid' },
+                                                    { id: 'double-3px', bWidth: '4px', bStyle: 'double' },
+                                                    { id: 'solid-3px', bWidth: '4px', bStyle: 'solid' },
+                                                    { id: 'dotted-2px', bWidth: '3px', bStyle: 'dotted' },
+                                                    { id: 'dashed-2px', bWidth: '3px', bStyle: 'dashed' }
+                                                ].map(opt => {
+                                                    let renderPreview;
+                                                    const activeColor = selectedCategory?.color || '#8b5a2b';
+                                                    const bProps = { borderStyle: opt.bStyle, borderWidth: opt.bWidth, borderColor: activeColor };
+
+                                                    if (fmt === 'Underline') {
+                                                        renderPreview = <div className="w-[90%]" style={{ borderBottomStyle: opt.bStyle, borderBottomWidth: opt.bWidth, borderBottomColor: activeColor }} />;
+                                                    } else if (fmt === 'Circle') {
+                                                        renderPreview = <div className="w-[14px] h-[14px] rounded-full flex-shrink-0" style={bProps} />;
+                                                    } else if (fmt === 'Square') {
+                                                        renderPreview = <div className="w-[14px] h-[14px] rounded-[2px] flex-shrink-0" style={bProps} />;
+                                                    } else {
+                                                        renderPreview = <div className="w-[90%] h-[10px] rounded-[2px]" style={{ ...bProps, backgroundColor: activeColor, opacity: 0.35 }} />;
+                                                    }
+
+                                                    return (
+                                                        <button
+                                                            key={opt.id}
+                                                            onClick={(e) => { e.stopPropagation(); handleFormatClick(fmt.toLowerCase(), opt.id); }}
+                                                            className="w-full h-6 flex items-center justify-center hover:bg-[#8b5a2b]/20 rounded transition-colors"
+                                                        >
+                                                            {renderPreview}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        {flipMode === 'info' && (
+                            <div className="w-full flex-shrink-0 flex flex-col">
+                                <h4 className="font-serif font-black text-[15px] text-[#2d1a11] mb-4 text-center uppercase tracking-widest border-b border-[#8b5a2b]/20 pb-2 w-[90%] mx-auto drop-shadow-sm">Reference Media</h4>
+
+                                {refLinks.length === 0 && refVideos.length === 0 ? (
+                                    <div className="text-center text-gray-500 italic mt-10 text-sm">No references configured for this chapter.</div>
+                                ) : (
+                                    <div className="flex flex-col gap-3 w-full px-2">
+                                        {refVideos.map((v, i) => (
+                                            <a key={`v-${i}`} href={`http://localhost:8000${v}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-all text-red-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
+                                                <i className="pi pi-video text-red-600 text-[14px]"></i>
+                                                <span className="truncate">Chapter Video {i + 1}</span>
+                                            </a>
+                                        ))}
+                                        {refLinks.map((l, i) => (
+                                            <a key={`l-${i}`} href={l} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-all text-blue-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
+                                                <i className="pi pi-external-link text-blue-600 text-[14px]"></i>
+                                                <span className="truncate max-w-[180px]">{l.replace(/^https?:\/\//, '')}</span>
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                    </div>
                 </div>
             </div>
-
-            <div className="w-[108%] h-6 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mt-auto relative z-10 border border-[#1f1209]" />
         </div>
     );
 };
@@ -428,25 +586,67 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                     {/* Render Highlight Overlays bound permanently to identical grid geometry */}
                     {props.pageHighlights && props.pageHighlights.map(h => (
                         <React.Fragment key={h.id}>
-                            {h.rects.map((rect, i) => (
-                                <div
-                                    key={`${h.id}_${i}`}
-                                    style={{
-                                        position: 'absolute',
-                                        top: `${rect.top}%`,
-                                        left: `${rect.left}%`,
-                                        width: `${rect.width}%`,
-                                        height: `${rect.height}%`,
-                                        backgroundColor: h.isSquare ? 'transparent' : h.color,
-                                        border: h.isSquare ? `3px solid ${h.color}` : 'none',
-                                        borderRadius: h.isSquare ? '4px' : '0px',
-                                        opacity: h.isSquare ? 1 : 0.35,
-                                        mixBlendMode: h.isSquare ? 'normal' : 'multiply',
-                                        pointerEvents: 'none',
-                                        zIndex: 45
-                                    }}
-                                />
-                            ))}
+                            {h.rects.map((rect, i) => {
+                                let styles = {
+                                    position: 'absolute',
+                                    top: `${rect.top}%`,
+                                    left: `${rect.left}%`,
+                                    width: `${rect.width}%`,
+                                    height: `${rect.height}%`,
+                                    pointerEvents: 'none',
+                                    zIndex: (h.format === 'highlight' || (!h.format && !h.isSquare)) ? 45 : 55
+                                };
+
+                                let bStyle = 'solid';
+                                let bWidth = '2px';
+                                if (h.styleOption === 'double-3px') { bStyle = 'double'; bWidth = '4px'; }
+                                else if (h.styleOption === 'solid-3px') { bStyle = 'solid'; bWidth = '3px'; }
+                                else if (h.styleOption === 'dotted-2px') { bStyle = 'dotted'; bWidth = '3px'; }
+                                else if (h.styleOption === 'dashed-2px') { bStyle = 'dashed'; bWidth = '3px'; }
+
+                                if (h.format === 'underline') {
+                                    return (
+                                        <div key={`${h.id}_${i}`} style={styles}>
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: '-2px',
+                                                left: 0,
+                                                width: '100%',
+                                                height: '2px', // Explicit layout height
+                                                boxSizing: 'content-box', // Forces border strictly OUTSIDE height bounding calculations
+                                                borderBottomStyle: bStyle,
+                                                borderBottomWidth: bWidth,
+                                                borderBottomColor: h.color || '#dc2626'
+                                            }} />
+                                        </div>
+                                    );
+                                }
+
+                                // Set uniform shape bounds based on format options
+                                if (h.format === 'circle') {
+                                    styles.borderStyle = bStyle;
+                                    styles.borderWidth = bWidth;
+                                    styles.borderColor = h.color || '#dc2626';
+                                    styles.borderRadius = '9999px';
+                                    styles.opacity = 1;
+                                } else if (h.format === 'square' || (!h.format && h.isSquare)) {
+                                    styles.borderStyle = bStyle;
+                                    styles.borderWidth = bWidth;
+                                    styles.borderColor = h.color || '#dc2626';
+                                    styles.borderRadius = '4px';
+                                    styles.opacity = 1;
+                                } else {
+                                    styles.backgroundColor = h.color || '#dc2626';
+                                    styles.opacity = 0.35;
+                                    styles.mixBlendMode = 'multiply';
+                                    styles.borderStyle = bStyle;
+                                    styles.borderWidth = bWidth;
+                                    styles.borderColor = h.color;
+                                    styles.boxSizing = 'content-box';
+                                }
+
+                                return <div key={`${h.id}_${i}`} style={styles} />;
+                            })}
                         </React.Fragment>
                     ))}
                 </Page>
@@ -603,7 +803,7 @@ const SMTPlayer = () => {
         };
 
         const handleTextSelectionComplete = (e) => {
-            if (e.target.closest('.ancient-scroll-bg')) return; // Ignore clicks inside the scroll menu itself
+            if (e.target.closest('.smt-scroll-popup') || e.target.closest('.ancient-scroll-bg')) return; // Ignore clicks inside the scroll menu itself
 
             const textContentNode = e.target.closest('.react-pdf__Page__textContent');
             if (!textContentNode) {
@@ -659,7 +859,7 @@ const SMTPlayer = () => {
         };
     }, []);
 
-    const captureHighlight = (categoryObj) => {
+    const captureHighlight = (categoryObj, format, styleOption) => {
         if (!selectionMenu) return;
 
         const isMountain = SEVEN_MOUNTAIN_SPHERES.some(m => m.label === categoryObj.label);
@@ -670,25 +870,13 @@ const SMTPlayer = () => {
             label: categoryObj.label,
             rects: selectionMenu.rects,
             pageNumber: selectionMenu.pageNumber,
-            isSquare: isMountain
+            isSquare: isMountain,
+            format: format,
+            styleOption: styleOption
         }]);
 
-        setSelectionMenu(prev => {
-            if (!prev) return null;
-            const nextState = { ...prev };
-
-            if (isMountain) {
-                nextState.hasMountain = true;
-            } else {
-                nextState.hasCategory = true;
-            }
-
-            if (nextState.hasMountain && nextState.hasCategory) {
-                setTimeout(() => window.getSelection().removeAllRanges(), 0);
-                return null;
-            }
-            return nextState;
-        });
+        setSelectionMenu(null);
+        setTimeout(() => window.getSelection().removeAllRanges(), 0);
     };
 
     useEffect(() => {
@@ -1146,7 +1334,13 @@ const SMTPlayer = () => {
                 {selectionMenu && (
                     <ScrollMenuPopup
                         position={selectionMenu}
-                        onSelect={captureHighlight}
+                        onSelect={(cat, format, styleOption) => captureHighlight(cat, format, styleOption)}
+                        onClose={() => {
+                            setSelectionMenu(null);
+                            window.getSelection().removeAllRanges();
+                        }}
+                        contentDB={contentDB}
+                        activeTrackName={activeTrackName}
                     />
                 )}
 

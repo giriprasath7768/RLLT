@@ -35,6 +35,8 @@ import TTOMRegisteredUsers from './pages/admin/TTOMRegisteredUsers';
 import Register from './pages/Register';
 import CreateContent from './pages/admin/CreateContent';
 import SevenTNTMainChart from './pages/admin/SevenTNTMainChart';
+import LightChart from './pages/admin/LightChart';
+import StudentReport from './pages/admin/StudentReport';
 import SevenTNTPlayers from './pages/admin/SevenTNTPlayers';
 import SevenTNTPlayer from './pages/admin/SevenTNTPlayer';
 import TTomTPlayer from './pages/admin/TTomTPlayer';
@@ -192,6 +194,8 @@ const AppRoutes = () => {
                     <Route path="/admin/charts" element={<MainChart />} />
                     <Route path="/admin/chart-creation/7tnt-main-chart" element={<SevenTNTMainChart />} />
                     <Route path="/admin/chart-creation/7tnt-day-cycle" element={<SevenTNTDayCycleChart />} />
+                    <Route path="/admin/chart-creation/light-chart" element={<LightChart />} />
+                    <Route path="/admin/reports/student-report" element={<StudentReport />} />
                     <Route path="/admin/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />
                     <Route path="/admin/chart-listing/7tnt-weekly-chart" element={<SevenTNTWeeklyChart />} />
                     <Route path="/admin/chart-listing/7tnt-day-cycle" element={<SevenTNTDayCycleChartView />} />

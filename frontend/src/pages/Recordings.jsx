@@ -252,55 +252,99 @@ const Recordings = () => {
                 <p className="text-gray-500">Record your voice directly in the browser and dynamically split the audio into downloadable segments.</p>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-10 max-w-2xl mx-auto mt-10">
+            {/* STYLED CARD MATCHING PRODUCT SCREENSHOT AESTHETICS */}
+            <div className="bg-[rgb(81,106,135)] rounded-[20px] p-5 w-[330px] mx-auto mt-10 shadow-2xl font-sans border border-[#3C3C40]">
+                {/* Image Placeholder area */}
+                <div className="w-full relative flex items-center justify-center mb-8 mt-4 min-h-[150px]">
+                    {(!isRecording && !isPaused) ? (
+                        <svg viewBox="0 0 120 120" className="w-[160px] h-[160px] drop-shadow-[0_15px_30px_rgba(226,33,52,0.3)] transition-transform hover:scale-105 duration-300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <clipPath id="circle-clip">
+                                    <circle cx="60" cy="60" r="60" />
+                                </clipPath>
+                            </defs>
+                            <circle cx="60" cy="60" r="60" fill="#e22134" />
+                            <polygon points="50,40 120,80 120,120 50,120 40,80" fill="#cc1c2c" clipPath="url(#circle-clip)" />
 
-                <div className="flex flex-col items-center justify-center">
+                            <g transform="translate(15, 15) scale(0.75)">
+                                <rect x="44" y="24" width="32" height="48" rx="16" fill="white" />
+                                <line x1="44" y1="36" x2="76" y2="36" stroke="#e22134" strokeWidth="4" />
+                                <line x1="44" y1="44" x2="76" y2="44" stroke="#e22134" strokeWidth="4" />
+                                <line x1="44" y1="52" x2="76" y2="52" stroke="#e22134" strokeWidth="4" />
 
-                    <div className="text-6xl font-black text-[#c8a165] mb-8 font-mono tracking-wider">
+                                <path d="M 30 48 C 30 68, 90 68, 90 48" stroke="white" strokeWidth="6" strokeLinecap="butt" fill="none" />
+                                <path d="M 28 48 L 36 42 M 92 48 L 84 42" stroke="white" strokeWidth="5" strokeLinecap="round" />
+
+                                <rect x="56" y="68" width="8" height="15" fill="white" />
+
+                                <rect x="47" y="83" width="26" height="4" fill="white" />
+                                <rect x="38" y="89" width="44" height="4" fill="white" />
+                                <rect x="29" y="95" width="62" height="5" fill="white" />
+
+                                <path d="M 22 30 A 12 12 0 0 0 22 46" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                                <path d="M 16 23 A 20 20 0 0 0 16 53" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                                <path d="M 10 16 A 28 28 0 0 0 10 60" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+
+                                <path d="M 98 30 A 12 12 0 0 1 98 46" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                                <path d="M 104 23 A 20 20 0 0 1 104 53" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                                <path d="M 110 16 A 28 28 0 0 1 110 60" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                            </g>
+                        </svg>
+                    ) : (
+                        <div className="flex items-end justify-center w-full h-[120px] gap-[6px] p-4 opacity-90 border-b border-[#3C3C40] rounded-b-lg mb-6">
+                            {waveformData.map((h, i) => (
+                                <div
+                                    key={i}
+                                    className={`w-[6px] rounded-full transition-all duration-75 ${isRecording && !isPaused ? 'bg-gradient-to-t from-red-500 to-red-400' : 'bg-[#4a4a50]'}`}
+                                    style={{ height: `${isRecording && !isPaused ? h * 2 + 10 : 10}px` }}
+                                ></div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Title */}
+                <h2 className="text-white text-[22px] font-bold tracking-wide">Audio Recorder</h2>
+
+                {/* The requested Text */}
+                <p className="text-[#a0a0a5] text-[14px] mt-2 mb-6 h-10 font-medium">
+                    {!isRecording ? "Click microphone to start recording" : isPaused ? "Recording paused. Click play to resume." : "Recording in progress..."}
+                </p>
+
+
+                {/* Bottom Section */}
+                <div className="flex justify-between items-center mb-2">
+                    <div className="text-white text-[2.8rem] font-bold tracking-tighter">
                         {formatTime(duration)}
                     </div>
 
-                    {/* Fake Waveform Visualizer */}
-                    <div className="flex items-end justify-center h-24 w-full max-w-sm mb-10 gap-1 overflow-hidden px-4">
-                        {waveformData.map((h, i) => (
-                            <div
-                                key={i}
-                                className={`w-2 rounded-t-sm transition-all duration-75 ${isRecording && !isPaused ? 'bg-[#051220]' : 'bg-gray-200'}`}
-                                style={{ height: `${isRecording && !isPaused ? h : 10}px` }}
-                            ></div>
-                        ))}
-                    </div>
-
-                    <div className="flex gap-4">
-                        {!isRecording ? (
+                    {!isRecording ? (
+                        <button
+                            onClick={startRecording}
+                            className="bg-gradient-to-r from-green-500 to-green-400 px-5 py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-transform hover:scale-[1.03] active:scale-95 shadow-[0_5px_15px_rgba(34,197,94,0.35)] outline-none"
+                            style={{ boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 5px 15px rgba(34,197,94,0.35)' }}
+                        >
+                            <i className="pi pi-microphone text-lg"></i>
+                            <span className="text-[15px]">Start</span>
+                        </button>
+                    ) : (
+                        <div className="flex gap-2">
                             <button
-                                onClick={startRecording}
-                                className="h-16 w-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
+                                onClick={pauseRecording}
+                                className="w-[50px] h-[50px] flex items-center justify-center bg-[#1c1c1e] rounded-xl text-white hover:bg-[#2c2c2f] transition-all shadow-[inset_0_1px_2px_rgba(255,255,255,0.05)] border border-transparent hover:border-[#3c3c40]"
                             >
-                                <i className="pi pi-microphone text-2xl"></i>
+                                <i className={`pi ${isPaused ? 'pi-play' : 'pi-pause'} text-xl`}></i>
                             </button>
-                        ) : (
-                            <>
-                                <button
-                                    onClick={pauseRecording}
-                                    className="h-16 w-16 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-full flex items-center justify-center text-[#051220] transition-colors"
-                                >
-                                    <i className={`pi ${isPaused ? 'pi-play' : 'pi-pause'} text-xl`}></i>
-                                </button>
-                                <button
-                                    onClick={stopRecording}
-                                    className="h-16 w-16 bg-[#051220] hover:bg-[#1a2d42] rounded-full flex items-center justify-center text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
-                                >
-                                    <i className="pi pi-stop text-xl"></i>
-                                </button>
-                            </>
-                        )}
-                    </div>
-
-                    <div className="mt-8 text-sm text-gray-400 font-medium">
-                        {!isRecording ? "Click the microphone to start recording" : isPaused ? "Recording paused. Click play to resume." : "Recording in progress..."}
-                    </div>
-
+                            <button
+                                onClick={stopRecording}
+                                className="bg-gradient-to-r from-red-500 to-red-400 px-5 py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-transform hover:scale-[1.03] active:scale-95 border border-red-400"
+                                style={{ boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 5px 15px rgba(239,68,68,0.35)' }}
+                            >
+                                <i className="pi pi-stop"></i>
+                                <span className="text-[15px]">Stop</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -349,7 +393,7 @@ const Recordings = () => {
                     )}
                 </div>
             </Dialog>
-        </div>
+        </div >
     );
 };
 

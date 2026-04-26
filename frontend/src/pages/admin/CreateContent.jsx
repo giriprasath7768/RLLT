@@ -33,10 +33,32 @@ const CreateContent = () => {
     const [refLinks, setRefLinks] = useState(['']);
 
     // Media and metadata
-    const [audioFile, setAudioFile] = useState(null);
-    const [audioLanguage, setAudioLanguage] = useState('');
+    const [audioUploads, setAudioUploads] = useState([{ id: Date.now(), file: null, language: '' }]);
+
+    const addAudioUpload = () => {
+        setAudioUploads([...audioUploads, { id: Date.now(), file: null, language: '' }]);
+    };
+
+    const removeAudioUpload = (index) => {
+        const updated = audioUploads.filter((_, i) => i !== index);
+        setAudioUploads(updated.length ? updated : [{ id: Date.now(), file: null, language: '' }]);
+    };
+
+    const updateAudioUpload = (index, field, value) => {
+        setAudioUploads(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: value };
+            return updated;
+        });
+    };
+
     const [videoFiles, setVideoFiles] = useState([]);
     const [pdfFiles, setPdfFiles] = useState([]);
+    const [existingVideos, setExistingVideos] = useState([]);
+    const [existingPdfs, setExistingPdfs] = useState([]);
+    const [uploadingCount, setUploadingCount] = useState(0);
+    const [pendingVideosCount, setPendingVideosCount] = useState(0);
+    const [pendingPdfsCount, setPendingPdfsCount] = useState(0);
 
     const [contents, setContents] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -101,13 +123,14 @@ const CreateContent = () => {
         setSelectedChapter(null);
         setChapters([]);
         setRefLinks(['']);
-        setAudioFile(null);
-        setAudioLanguage('');
+        setAudioUploads([{ id: Date.now(), file: null, language: '', isExisting: false }]);
         setVideoFiles([]);
         setPdfFiles([]);
-        if (audioUploadRef.current) audioUploadRef.current.clear();
-        if (videoUploadRef.current) videoUploadRef.current.clear();
-        if (pdfUploadRef.current) pdfUploadRef.current.clear();
+        setExistingVideos([]);
+        setExistingPdfs([]);
+        setUploadingCount(0);
+        setPendingVideosCount(0);
+        setPendingPdfsCount(0);
         setContentDialog(true);
     };
 
@@ -124,13 +147,44 @@ const CreateContent = () => {
             setSelectedChapter(null);
         }
 
-        setAudioLanguage(chapterNode.audio_language || '');
-        setAudioFile(null);
+        let existingAudios = [];
+        if (chapterNode.audio_url) {
+            try {
+                const parsed = JSON.parse(chapterNode.audio_url);
+                if (Array.isArray(parsed)) {
+                    existingAudios = parsed.map(a => ({ id: Date.now() + Math.random(), isExisting: true, url: a.url, language: a.language || '' }));
+                } else {
+                    existingAudios = [{ id: Date.now(), isExisting: true, url: chapterNode.audio_url, language: chapterNode.audio_language || '' }];
+                }
+            } catch (e) {
+                existingAudios = [{ id: Date.now(), isExisting: true, url: chapterNode.audio_url, language: chapterNode.audio_language || '' }];
+            }
+        }
+
+        if (existingAudios.length > 0) {
+            setAudioUploads(existingAudios);
+        } else {
+            setAudioUploads([{ id: Date.now(), file: null, language: '', isExisting: false }]);
+        }
+
         setVideoFiles([]);
         setPdfFiles([]);
-        if (audioUploadRef.current) audioUploadRef.current.clear();
-        if (videoUploadRef.current) videoUploadRef.current.clear();
-        if (pdfUploadRef.current) pdfUploadRef.current.clear();
+
+        let vUrls = [];
+        if (chapterNode.video_url) {
+            try { vUrls = JSON.parse(chapterNode.video_url); if (!Array.isArray(vUrls)) vUrls = [chapterNode.video_url]; }
+            catch (err) { vUrls = [chapterNode.video_url]; }
+        }
+        setExistingVideos(vUrls.filter(Boolean));
+
+        let pUrls = [];
+        if (chapterNode.pdf_url) {
+            try { pUrls = JSON.parse(chapterNode.pdf_url); if (!Array.isArray(pUrls)) pUrls = [chapterNode.pdf_url]; }
+            catch (err) { pUrls = [chapterNode.pdf_url]; }
+        }
+        setExistingPdfs(pUrls.filter(Boolean));
+        setPendingVideosCount(0);
+        setPendingPdfsCount(0);
 
         let parsedLinks = [''];
         if (chapterNode.ref_link) {
@@ -165,24 +219,35 @@ const CreateContent = () => {
         formData.append('chapter_id', selectedChapter.id);
         formData.append('ref_link', JSON.stringify(validLinks));
 
-        if (audioLanguage) {
-            formData.append('audio_language', audioLanguage);
+        const retainedExisting = [];
+        const newAudioLanguages = [];
+        audioUploads.forEach(au => {
+            if (au.isExisting && au.url) {
+                retainedExisting.push({ url: au.url, language: au.language });
+            }
+            if (au.file && !au.isExisting) {
+                formData.append('audios', au.file);
+                newAudioLanguages.push(au.language || '');
+            }
+        });
+
+        formData.append('existing_audios', JSON.stringify(retainedExisting));
+        formData.append('audio_languages', JSON.stringify(newAudioLanguages));
+
+        if (videoUploadRef?.current?.getFiles()) {
+            videoUploadRef.current.getFiles().forEach(v => formData.append('videos', v));
+        }
+        if (existingVideos.length > 0) {
+            formData.append('existing_videos', JSON.stringify(existingVideos));
         }
 
-        if (audioFile) {
-            formData.append('audio', audioFile);
+        if (pdfUploadRef?.current?.getFiles()) {
+            pdfUploadRef.current.getFiles().forEach(p => formData.append('pdfs', p));
+        }
+        if (existingPdfs.length > 0) {
+            formData.append('existing_pdfs', JSON.stringify(existingPdfs));
         }
 
-        if (videoFiles && videoFiles.length > 0) {
-            videoFiles.forEach(file => {
-                formData.append('videos', file);
-            });
-        }
-        if (pdfFiles && pdfFiles.length > 0) {
-            pdfFiles.forEach(file => {
-                formData.append('pdfs', file);
-            });
-        }
 
         try {
             setLoading(true);
@@ -223,15 +288,21 @@ const CreateContent = () => {
                     let parsedVideoUrl = null;
                     const rawVideo = row['Video_URL/Path'];
                     if (rawVideo) {
-                        // Keep legacy single video backwards compat, try wrapping in array
                         parsedVideoUrl = JSON.stringify([rawVideo]);
+                    }
+
+                    let parsedAudioUrl = null;
+                    const rawAudio = row['Audio_URL/Path'];
+                    const rawAudioLang = row['Audio Language'] || row['Audio_Language'] || '';
+                    if (rawAudio) {
+                        parsedAudioUrl = JSON.stringify([{ url: rawAudio, language: rawAudioLang }]);
                     }
 
                     return {
                         book_name: row['Book Name'] || row['Book_Name'] || '',
                         chapter_number: parseInt(row['Chapter Number'] || row['Chapter_Number']) || 0,
-                        audio_url: row['Audio_URL/Path'] || null,
-                        audio_language: row['Audio Language'] || row['Audio_Language'] || null,
+                        audio_url: parsedAudioUrl,
+                        audio_language: rawAudioLang,
                         video_url: parsedVideoUrl,
                         ref_link: parsedLink
                     };
@@ -265,7 +336,17 @@ const CreateContent = () => {
         }
     };
 
-    // Group contents by book name for Library View
+    const downloadExcelFormat = () => {
+        const wsData = [
+            ["Book Name", "Chapter Number", "Audio_URL/Path", "Audio Language", "Video_URL/Path", "Ref_Link"],
+            ["GENESIS", 1, "https://example.com/audio.mp3", "English", "https://example.com/video.mp4", "https://example.com/ref.pdf"]
+        ];
+        const ws = xlsx.utils.aoa_to_sheet(wsData);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, "Template");
+        xlsx.writeFile(wb, "Library_Import_Template.xlsx");
+    };
+
     const groupedContents = contents.reduce((acc, curr) => {
         if (!acc[curr.book_name]) {
             acc[curr.book_name] = [];
@@ -274,18 +355,18 @@ const CreateContent = () => {
         return acc;
     }, {});
 
-    // Filter books by search query
     const filteredBooks = Object.keys(groupedContents).filter(bookName =>
         bookName.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Paginate books
     const paginatedBooks = filteredBooks.slice(first, first + rows);
 
     const onPageChange = (event) => {
         setFirst(event.first);
         setRows(event.rows);
     };
+
+    const isSaveDisabled = loading;
 
     return (
         <div className="p-4 sm:p-8 bg-[#f8f9fa] min-h-screen">
@@ -296,7 +377,16 @@ const CreateContent = () => {
                     <p className="text-gray-500 mt-1 mb-0 text-sm">Manage Audio, Video, and Reference Links for Books and Chapters.</p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex flex-wrap justify-end gap-3">
+                    <Button
+                        label="Download Format"
+                        icon="pi pi-download"
+                        severity="secondary"
+                        outlined
+                        onClick={downloadExcelFormat}
+                        className="h-[40px] text-xs px-3"
+                        title="Download Excel Import Template"
+                    />
                     <div className="flex bg-white shadow-sm rounded-md border border-gray-200 p-0.5 relative" style={{ width: '130px', height: '40px' }}>
                         <FileUpload mode="basic" accept=".xlsx" maxFileSize={10000000} chooseLabel="Import Excel"
                             onSelect={importExcel} auto className="p-button-outlined p-button-secondary border-none w-full h-full text-xs" />
@@ -305,7 +395,6 @@ const CreateContent = () => {
                 </div>
             </div>
 
-            {/* Library Grid View */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {paginatedBooks.map(bookName => (
                     <div key={bookName} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-[500px]">
@@ -337,26 +426,42 @@ const CreateContent = () => {
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-4">
-                                        {/* Audio Section */}
                                         <div className="flex flex-col bg-gray-50 rounded-lg p-3">
                                             <span className="text-gray-500 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
                                                 <i className="pi pi-headphones"></i> Audio
                                             </span>
-                                            {chapter.audio_url ? (
-                                                <div className="flex items-center gap-2">
-                                                    <a href={`http://localhost:8000${chapter.audio_url}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1">
-                                                        <i className="pi pi-play-circle"></i> Play Audio
-                                                    </a>
-                                                    {chapter.audio_language && (
-                                                        <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                                                            {chapter.audio_language}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : <span className="text-gray-400 text-sm">Not uploaded</span>}
+                                            {(() => {
+                                                if (!chapter.audio_url) return <span className="text-gray-400 text-sm">Not uploaded</span>;
+                                                let audios = [];
+                                                try {
+                                                    audios = JSON.parse(chapter.audio_url);
+                                                    if (!Array.isArray(audios)) {
+                                                        audios = [{ url: chapter.audio_url, language: chapter.audio_language }];
+                                                    }
+                                                } catch (e) {
+                                                    audios = [{ url: chapter.audio_url, language: chapter.audio_language }];
+                                                }
+                                                if (audios.length === 0) return <span className="text-gray-400 text-sm">Not uploaded</span>;
+
+                                                return (
+                                                    <div className="flex flex-col gap-1.5 mt-1">
+                                                        {audios.map((a, i) => (
+                                                            <div key={i} className="flex items-center gap-2">
+                                                                <a href={`http://localhost:8000${a.url}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1">
+                                                                    <i className="pi pi-play-circle"></i> Play Audio {i + 1}
+                                                                </a>
+                                                                {a.language && (
+                                                                    <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                                                                        {a.language}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
 
-                                        {/* Reference Videos */}
                                         <div className="flex flex-col bg-gray-50 rounded-lg p-3">
                                             <span className="text-gray-500 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
                                                 <i className="pi pi-video"></i> Videos
@@ -386,7 +491,6 @@ const CreateContent = () => {
                                             })()}
                                         </div>
 
-                                        {/* PDFs */}
                                         <div className="flex flex-col bg-gray-50 rounded-lg p-3">
                                             <span className="text-gray-500 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
                                                 <i className="pi pi-file-pdf text-red-600"></i> PDF Documents
@@ -417,7 +521,6 @@ const CreateContent = () => {
                                             })()}
                                         </div>
 
-                                        {/* Reference Links */}
                                         <div className="flex flex-col bg-gray-50 rounded-lg p-3">
                                             <span className="text-gray-500 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
                                                 <i className="pi pi-link"></i> Reference Links
@@ -463,7 +566,6 @@ const CreateContent = () => {
                 )}
             </div>
 
-            {/* Pagination Controls */}
             {filteredBooks.length > 0 && (
                 <div className="mt-6 flex justify-center bg-white rounded-xl shadow-sm border border-gray-200 p-2">
                     <Paginator
@@ -499,20 +601,66 @@ const CreateContent = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            {/* Audio Segment */}
                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex flex-col gap-4">
-                                <h3 className="font-bold text-gray-800 m-0 text-sm uppercase tracking-wide flex items-center gap-2"><i className="pi pi-headphones text-blue-600"></i> Audio Details</h3>
-                                <div className="flex flex-col gap-2">
-                                    <label className="font-semibold text-gray-600 text-sm">Audio Upload (.mp3, .wav)</label>
-                                    <FileUpload ref={audioUploadRef} mode="basic" accept="audio/*" maxFileSize={50000000}
-                                        onSelect={(e) => setAudioFile(e.files[0])} onClear={() => setAudioFile(null)}
-                                        chooseLabel="Select Audio" className="p-button-outlined" />
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-bold text-gray-800 m-0 text-sm uppercase tracking-wide flex items-center gap-2">
+                                        <i className="pi pi-headphones text-blue-600"></i> Audio Details
+                                    </h3>
+                                    <Button icon="pi pi-plus" label="Add Audio" className="p-button-outlined p-button-sm p-button-secondary bg-white" onClick={addAudioUpload} />
                                 </div>
-                                <div className="flex flex-col gap-2">
-                                    <label className="font-semibold text-gray-600 text-sm">Audio Language</label>
-                                    <Dropdown value={audioLanguage} options={languageOptions} onChange={(e) => setAudioLanguage(e.value)}
-                                        placeholder="Select Language Type" className="w-full" editable />
-                                </div>
+
+                                {audioUploads.map((au, index) => (
+                                    <div key={au.id} className="flex flex-col gap-3 p-3 border border-gray-200 rounded-lg bg-white relative">
+                                        {audioUploads.length > 1 && (
+                                            <Button icon="pi pi-times" rounded text severity="danger"
+                                                className="absolute top-1 right-1 w-6 h-6 p-0"
+                                                onClick={() => removeAudioUpload(index)} />
+                                        )}
+                                        <div className="flex flex-col gap-2">
+                                            {au.isExisting ? (
+                                                <div className="flex flex-col gap-1">
+                                                    <label className="font-semibold text-gray-600 text-sm">Existing Audio</label>
+                                                    <a href={`http://localhost:8000${au.url}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm truncate bg-blue-50 px-3 py-2 rounded-md border border-blue-100 flex items-center gap-2">
+                                                        <i className="pi pi-headphones"></i> View Current Audio File
+                                                    </a>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col gap-1">
+                                                    <label className="font-semibold text-gray-600 text-sm">Audio Upload (.mp3, .wav)</label>
+                                                    <div className="flex flex-wrap items-center gap-3">
+                                                        <FileUpload mode="advanced" accept="audio/*" maxFileSize={50000000}
+                                                            name="file" url="http://localhost:8000/api/contents/upload" withCredentials={true}
+                                                            onSelect={(e) => updateAudioUpload(index, 'file', e.files[0])}
+                                                            onClear={() => updateAudioUpload(index, 'file', null)}
+                                                            onRemove={() => updateAudioUpload(index, 'file', null)}
+                                                            onBeforeSend={() => setUploadingCount(prev => prev + 1)}
+                                                            onUpload={(e) => {
+                                                                setUploadingCount(prev => Math.max(0, prev - 1));
+                                                                try {
+                                                                    const res = JSON.parse(e.xhr.response);
+                                                                    if (res.urls && res.urls.length > 0) {
+                                                                        setAudioUploads(prev => {
+                                                                            const arr = [...prev];
+                                                                            arr[index] = { ...arr[index], url: res.urls[0], isExisting: true, file: null };
+                                                                            return arr;
+                                                                        });
+                                                                    }
+                                                                } catch (err) { }
+                                                            }}
+                                                            onError={() => setUploadingCount(prev => Math.max(0, prev - 1))}
+                                                            emptyTemplate={<p className="m-0 text-sm">Drag audio here to upload.</p>} className="w-full" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="font-semibold text-gray-600 text-sm">Audio Language</label>
+                                            <Dropdown value={au.language} options={languageOptions}
+                                                onChange={(e) => updateAudioUpload(index, 'language', e.value)}
+                                                placeholder="Select Language Type" className="w-full" editable />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Video Segment */}
@@ -520,23 +668,32 @@ const CreateContent = () => {
                                 <h3 className="font-bold text-gray-800 m-0 text-sm uppercase tracking-wide flex items-center gap-2"><i className="pi pi-video text-red-500"></i> Reference Videos</h3>
                                 <p className="text-xs text-gray-500 m-0">You can select and upload multiple videos for this book/chapter.</p>
                                 <div className="flex flex-col gap-2 relative z-10 w-full overflow-hidden">
-                                    <FileUpload ref={videoUploadRef}
-                                        accept="video/mp4,video/quicktime,video/webm" maxFileSize={150000000}
-                                        customUpload
-                                        uploadHandler={(e) => { }}
-                                        onSelect={(e) => setVideoFiles([...videoFiles, ...e.files])}
-                                        onRemove={(e) => setVideoFiles(videoFiles.filter(f => f.name !== e.file.name))}
-                                        onClear={() => setVideoFiles([])}
-                                        multiple chooseLabel="Add Video(s)" showUploadButton={false} showCancelButton={true} className="w-full CustomVideoFileUpload" />
-                                    <style>{`
-                                            .CustomVideoFileUpload .p-fileupload-buttonbar { padding: 0.5rem; background: transparent; border: none; border-bottom: 1px solid #e5e7eb;}
-                                            .CustomVideoFileUpload .p-fileupload-content { padding: 0.5rem; background: transparent; border: none;}
-                                            .CustomVideoFileUpload .p-fileupload-row { margin-bottom: 0.25rem; font-size: 0.75rem;}
-                                            .CustomVideoFileUpload .p-fileupload-row > div { padding: 0.2rem; }
-                                            .CustomVideoFileUpload .p-fileupload-row img { display: none; }
-                                            .CustomVideoFileUpload .p-badge { display: none !important; }
-                                            .CustomVideoFileUpload .p-progressbar { display: none !important; }
-                                        `}</style>
+                                    {existingVideos.length > 0 && (
+                                        <div className="mb-2 flex flex-wrap gap-2">
+                                            {existingVideos.map((v, i) => (
+                                                <div key={i} className="bg-blue-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-blue-100 text-sm">
+                                                    <a href={`http://localhost:8000${v}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800">Video {i + 1}</a>
+                                                    <i className="pi pi-times cursor-pointer text-red-500 hover:text-red-700" onClick={() => setExistingVideos(prev => prev.filter((_, idx) => idx !== i))}></i>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <FileUpload name="file" url="http://localhost:8000/api/contents/upload" withCredentials={true}
+                                        multiple accept="video/mp4,video/quicktime,video/webm" maxFileSize={150000000}
+                                        onSelect={(e) => setPendingVideosCount(e.files.length)}
+                                        onClear={() => setPendingVideosCount(0)}
+                                        onRemove={(e) => setPendingVideosCount(prev => Math.max(0, prev - 1))}
+                                        onBeforeSend={() => setUploadingCount(prev => prev + 1)}
+                                        onUpload={(e) => {
+                                            setUploadingCount(prev => Math.max(0, prev - 1));
+                                            setPendingVideosCount(0);
+                                            try {
+                                                const res = JSON.parse(e.xhr.response);
+                                                if (res.urls) setExistingVideos(prev => [...prev, ...res.urls]);
+                                            } catch (err) { }
+                                        }}
+                                        onError={() => setUploadingCount(prev => Math.max(0, prev - 1))}
+                                        emptyTemplate={<p className="m-0 text-sm text-gray-500">Drag and drop videos here or click to select.</p>} className="w-full" />
                                 </div>
                             </div>
 
@@ -545,14 +702,32 @@ const CreateContent = () => {
                                 <h3 className="font-bold text-gray-800 m-0 text-sm uppercase tracking-wide flex items-center gap-2"><i className="pi pi-file-pdf text-red-600"></i> PDF Documents</h3>
                                 <p className="text-xs text-gray-500 m-0">You can upload multiple PDF documents for this chapter.</p>
                                 <div className="flex flex-col gap-2 relative z-10 w-full overflow-hidden">
-                                    <FileUpload ref={pdfUploadRef}
-                                        accept="application/pdf" maxFileSize={150000000}
-                                        customUpload
-                                        uploadHandler={(e) => { }}
-                                        onSelect={(e) => setPdfFiles([...pdfFiles, ...e.files])}
-                                        onRemove={(e) => setPdfFiles(pdfFiles.filter(f => f.name !== e.file.name))}
-                                        onClear={() => setPdfFiles([])}
-                                        multiple chooseLabel="Add PDF(s)" showUploadButton={false} showCancelButton={true} className="w-full CustomVideoFileUpload" />
+                                    {existingPdfs.length > 0 && (
+                                        <div className="mb-2 flex flex-wrap gap-2">
+                                            {existingPdfs.map((v, i) => (
+                                                <div key={i} className="bg-red-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-red-100 text-sm">
+                                                    <a href={`http://localhost:8000${v}`} target="_blank" rel="noreferrer" className="text-red-600 hover:text-red-800">Document {i + 1}</a>
+                                                    <i className="pi pi-times cursor-pointer text-red-500 hover:text-red-700" onClick={() => setExistingPdfs(prev => prev.filter((_, idx) => idx !== i))}></i>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <FileUpload name="file" url="http://localhost:8000/api/contents/upload" withCredentials={true}
+                                        multiple accept="application/pdf" maxFileSize={50000000}
+                                        onSelect={(e) => setPendingPdfsCount(e.files.length)}
+                                        onClear={() => setPendingPdfsCount(0)}
+                                        onRemove={(e) => setPendingPdfsCount(prev => Math.max(0, prev - 1))}
+                                        onBeforeSend={() => setUploadingCount(prev => prev + 1)}
+                                        onUpload={(e) => {
+                                            setUploadingCount(prev => Math.max(0, prev - 1));
+                                            setPendingPdfsCount(0);
+                                            try {
+                                                const res = JSON.parse(e.xhr.response);
+                                                if (res.urls) setExistingPdfs(prev => [...prev, ...res.urls]);
+                                            } catch (err) { }
+                                        }}
+                                        onError={() => setUploadingCount(prev => Math.max(0, prev - 1))}
+                                        emptyTemplate={<p className="m-0 text-sm text-gray-500">Drag and drop PDFs here or click to select.</p>} className="w-full" />
                                 </div>
                             </div>
 
@@ -580,7 +755,7 @@ const CreateContent = () => {
 
                         <div className="flex justify-end gap-3 mt-2 pt-4 border-t border-gray-100">
                             <Button label="Cancel" onClick={hideDialog} className="bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 w-auto px-6 h-10 shadow-sm transition-colors" />
-                            <Button label="Save Content" severity="success" onClick={onSave} loading={loading} className="bg-indigo-600 text-white hover:bg-indigo-700 border border-indigo-600 w-auto px-6 h-10 shadow-sm transition-colors" />
+                            <Button label="Save Content" severity="success" onClick={onSave} disabled={isSaveDisabled} loading={loading} className="bg-indigo-600 text-white hover:bg-indigo-700 border border-indigo-600 w-auto px-6 h-10 shadow-sm transition-colors" />
                         </div>
                     </div>
                 </div>

@@ -86,7 +86,8 @@ const AdminSidebar = ({ visible, onHide }) => {
                 { label: '7TNT Main Chart', icon: 'pi pi-table', to: '/admin/chart-creation/7tnt-main-chart' },
                 { label: '7TNT Day Cycle Chart', icon: 'pi pi-calendar-plus', to: '/admin/chart-creation/7tnt-day-cycle' },
                 { label: 'V-Card Chart', icon: 'pi pi-id-card', to: '/admin/chart-listing/vcard-chart' },
-                { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/twenty-four-seven-chart' }
+                { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/twenty-four-seven-chart' },
+                { label: 'Light Chart', icon: 'pi pi-sun', to: '/admin/chart-creation/light-chart' }
             ]
         }] : []),
         {
@@ -105,6 +106,13 @@ const AdminSidebar = ({ visible, onHide }) => {
                 { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/chart-listing/twenty-four-seven-chart' },
                 { label: '24x7 Morning/Evening', icon: 'pi pi-calendar-plus', to: '/admin/chart-listing/twenty-four-seven-morning-evening-chart' },
                 { label: '24x7 DL Size Chart', icon: 'pi pi-table', to: '/admin/chart-listing/twenty-four-seven-dl-size-chart' }
+            ]
+        },
+        {
+            label: 'Reports',
+            icon: 'pi pi-chart-bar',
+            items: [
+                { label: 'Student Report', icon: 'pi pi-file', to: '/admin/reports/student-report' }
             ]
         },
         {
