@@ -629,7 +629,7 @@ const CreateContent = () => {
                                                     <label className="font-semibold text-gray-600 text-sm">Audio Upload (.mp3, .wav)</label>
                                                     <div className="flex flex-wrap items-center gap-3">
                                                         <FileUpload mode="advanced" accept="audio/*" maxFileSize={50000000}
-                                                            name="file" url="http://" + window.location.hostname + ":8000/api/contents/upload" withCredentials={true}
+                                                            name="file" url={"http://" + window.location.hostname + ":8000/api/contents/upload"} withCredentials={true}
                                                             onSelect={(e) => updateAudioUpload(index, 'file', e.files[0])}
                                                             onClear={() => updateAudioUpload(index, 'file', null)}
                                                             onRemove={() => updateAudioUpload(index, 'file', null)}
@@ -678,7 +678,7 @@ const CreateContent = () => {
                                             ))}
                                         </div>
                                     )}
-                                    <FileUpload name="file" url="http://" + window.location.hostname + ":8000/api/contents/upload" withCredentials={true}
+                                    <FileUpload name="file" url={"http://" + window.location.hostname + ":8000/api/contents/upload"} withCredentials={true}
                                         multiple accept="video/mp4,video/quicktime,video/webm" maxFileSize={150000000}
                                         onSelect={(e) => setPendingVideosCount(e.files.length)}
                                         onClear={() => setPendingVideosCount(0)}
@@ -712,7 +712,7 @@ const CreateContent = () => {
                                             ))}
                                         </div>
                                     )}
-                                    <FileUpload name="file" url="http://" + window.location.hostname + ":8000/api/contents/upload" withCredentials={true}
+                                    <FileUpload name="file" url={"http://" + window.location.hostname + ":8000/api/contents/upload"} withCredentials={true}
                                         multiple accept="application/pdf" maxFileSize={50000000}
                                         onSelect={(e) => setPendingPdfsCount(e.files.length)}
                                         onClear={() => setPendingPdfsCount(0)}
