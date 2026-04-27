@@ -43,6 +43,10 @@ export const StudentService = {
         return axios.post(`${API_URL}/grouping/auto`, { student_ids: studentIds }, { withCredentials: true }).then(res => res.data);
     },
 
+    manualGroupStudents(studentIds, groupName) {
+        return axios.post(`${API_URL}/grouping/manual`, { student_ids: studentIds, group_name: groupName }, { withCredentials: true }).then(res => res.data);
+    },
+
     ungroupStudents(studentIds) {
         return axios.post(`${API_URL}/grouping/ungroup`, { student_ids: studentIds }, { withCredentials: true }).then(res => res.data);
     },

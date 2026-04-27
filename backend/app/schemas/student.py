@@ -20,6 +20,10 @@ class StudentCreate(StudentBase):
 class AutoGroupPayload(BaseModel):
     student_ids: list[UUID]
 
+class ManualGroupPayload(BaseModel):
+    student_ids: list[UUID]
+    group_name: str
+
 class StudentUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None

@@ -138,10 +138,14 @@ async def create_ttom_user(user: TTOMUserCreate, db: AsyncSession = Depends(get_
     plain_pin = f"{random.randint(0, 9999):04d}"
 
     hashed_password = get_password_hash(plain_pin)
-    new_user = TTOMUser(**user.model_dump(), password_hash=hashed_password, plain_password=plain_pin, is_active=True)
+    new_user = TTOMUser(**user.model_dump(), password_hash=hashed_password, plain_password=plain_pin)
     db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
+    try:
+        await db.commit()
+        await db.refresh(new_user)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
     return TTOMUserResponse(
         id=new_user.id,
@@ -183,8 +187,12 @@ async def update_ttom_user(user_id: UUID, payload: TTOMUserUpdate, db: AsyncSess
     for field, value in update_data.items():
         setattr(user, field, value)
 
-    await db.commit()
-    await db.refresh(user)
+    try:
+        await db.commit()
+        await db.refresh(user)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     
     loc_res = await db.execute(select(Location).where(Location.id == user.location_id))
     location = loc_res.scalar_one_or_none()
@@ -226,7 +234,11 @@ async def delete_ttom_user(user_id: UUID, db: AsyncSession = Depends(get_db), cu
     await db.execute(delete(TTOMAssignment).where(TTOMAssignment.user_id == user_id))
 
     await db.delete(user)
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/assignments/bulk", response_model=dict)
 async def bulk_create_ttom_assignments(payload: AssignmentBulkCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_super)):
@@ -252,7 +264,11 @@ async def bulk_create_ttom_assignments(payload: AssignmentBulkCreate, db: AsyncS
         db.add(new_assignment)
         created_count += 1
         
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     return {"message": f"Successfully assigned chart to {created_count} TTOM users."}
 
 @router.post("/assignments/bulk_remove", response_model=dict)
@@ -261,7 +277,10 @@ async def bulk_remove_ttom_assignments(payload: AssignmentBulkRemove, db: AsyncS
         raise HTTPException(status_code=400, detail="No users selected.")
     
     from sqlalchemy import delete
-    result = await db.execute(delete(TTOMAssignment).where(TTOMAssignment.user_id.in_(payload.user_ids)))
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     
     return {"message": f"Successfully removed assigned charts for {result.rowcount} users."}

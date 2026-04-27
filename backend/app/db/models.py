@@ -358,4 +358,10 @@ class SevenTNTDayCycleChartMapping(Base):
 
     __table_args__ = (UniqueConstraint('module', 'facet', 'phase', name='uq_seven_tnt_day_cycle_chart_mapping_mfp'),)
 
+class ImageGallery(Base):
+    __tablename__ = "image_gallery"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    image_url = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 

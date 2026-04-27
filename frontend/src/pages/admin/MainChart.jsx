@@ -40,11 +40,11 @@ const CHUNK_COLORS = ['#00a8ff', '#2ed573', '#0A1F35', '#f1c40f', '#9b59b6', '#d
 // Upload helper
 const ImageUploadPlaceholder = ({ state, setState, label }) => {
     const imageUrl = typeof state === 'object' && state !== null ? state.url : state;
-    
+
     return (
         <label className="w-full h-full flex items-center justify-center cursor-pointer bg-white overflow-hidden relative group">
             <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                if(e.target.files && e.target.files[0]) {
+                if (e.target.files && e.target.files[0]) {
                     const file = e.target.files[0];
                     setState({ file, url: URL.createObjectURL(file) });
                 }
@@ -52,12 +52,12 @@ const ImageUploadPlaceholder = ({ state, setState, label }) => {
             {imageUrl ? (
                 <img src={imageUrl} className="w-full h-full object-contain" />
             ) : (
-            <div className="flex flex-col items-center justify-center text-gray-400 p-1 text-center w-full h-full">
-                <i className="pi pi-camera text-xl group-hover:text-[#00a8ff] transition-colors"></i>
-                {label && <span className="text-[10px] font-bold leading-tight mt-1">{label}</span>}
-            </div>
-        )}
-    </label>
+                <div className="flex flex-col items-center justify-center text-gray-400 p-1 text-center w-full h-full">
+                    <i className="pi pi-camera text-xl group-hover:text-[#00a8ff] transition-colors"></i>
+                    {label && <span className="text-[10px] font-bold leading-tight mt-1">{label}</span>}
+                </div>
+            )}
+        </label>
     );
 };
 
@@ -97,7 +97,7 @@ const MainChart = () => {
     const [headerSubtitle, setHeaderSubtitle] = useState("MODULE1:FACET1:PHASE-1/1");
     const [bannerText, setBannerText] = useState("MAIN CHART - 30 DAYS");
     const [tLabel, setTLabel] = useState("T");
-    
+
     // Upload image states
     const [logo1, setLogo1] = useState(null);
     const [logo2, setLogo2] = useState(null);
@@ -117,7 +117,7 @@ const MainChart = () => {
     const initialBookRow = () => ({ id: Date.now() + Math.random(), book_id: null, chFrom: null, chTo: null });
     const initialDayObj = () => ({ s1: [initialBookRow()], s2: [initialBookRow()], s3: [initialBookRow()] });
 
-    const [mappingConfig, setMappingConfig] = useState(Array.from({length: 30}, () => initialDayObj()));
+    const [mappingConfig, setMappingConfig] = useState(Array.from({ length: 30 }, () => initialDayObj()));
     const [expandedDay, setExpandedDay] = useState(0);
 
     const setChartType = (days) => {
@@ -127,7 +127,7 @@ const MainChart = () => {
     // Reset function for manual chart type changes
     const handleChartTypeChange = (days) => {
         setChartType(days);
-        setMappingConfig(Array.from({length: days}, () => initialDayObj()));
+        setMappingConfig(Array.from({ length: days }, () => initialDayObj()));
         setChunks(generateInitialData(days));
         if (days === 40) {
             setBannerText("40 DAYS MAIN CHART");
@@ -141,7 +141,7 @@ const MainChart = () => {
     useEffect(() => {
         setMappingConfig(prev => {
             if (prev.length === chartDays) return prev;
-            return Array.from({length: chartDays}, () => initialDayObj());
+            return Array.from({ length: chartDays }, () => initialDayObj());
         });
     }, [chartDays]);
 
@@ -149,8 +149,8 @@ const MainChart = () => {
         axios.get('http://localhost:8000/api/books', { withCredentials: true })
             .then(res => {
                 const booksWithDisplay = res.data.map(b => ({
-                    ...b, 
-                    displayName: b.short_form ? `${b.short_form} - ${b.name}` : b.name 
+                    ...b,
+                    displayName: b.short_form ? `${b.short_form} - ${b.name}` : b.name
                 }));
                 setBooksDB(booksWithDisplay);
             })
@@ -166,7 +166,7 @@ const MainChart = () => {
                 setRlltDB(data);
                 const queryParams = new URLSearchParams(window.location.search);
                 if (data.length > 0 && !queryParams.has('editMod')) {
-                    const uniqueModules = [...new Set(data.map(d => d.module))].sort((a,b)=>a-b);
+                    const uniqueModules = [...new Set(data.map(d => d.module))].sort((a, b) => a - b);
                     if (uniqueModules.length > 0) setMdl(uniqueModules[0]);
                 }
             })
@@ -194,7 +194,7 @@ const MainChart = () => {
                     setBannerText(data.banner_text || "");
                     setTLabel(data.t_label || "T");
                     setLogo1(data.logo_url ? `http://localhost:8000${data.logo_url}` : null);
-                    
+
                     if (data.state_payload) {
                         try {
                             const parsed = JSON.parse(data.state_payload);
@@ -202,7 +202,7 @@ const MainChart = () => {
                                 setChartDays(parsed.length * 5);
                                 setChunks(parsed);
                             }
-                        } catch(e) { /* ignore parse error */ }
+                        } catch (e) { /* ignore parse error */ }
                     }
                     toast.current?.show({ severity: 'info', summary: 'Editing Session', detail: 'Chart loaded from listing', life: 3000 });
                 })
@@ -275,7 +275,7 @@ const MainChart = () => {
         formData.append("banner_text", bannerText);
         formData.append("t_label", tLabel);
         formData.append("state_payload", JSON.stringify(chunks));
-        
+
         if (logo1 && typeof logo1 === 'object' && logo1.file) {
             formData.append("logo", logo1.file);
         }
@@ -292,10 +292,10 @@ const MainChart = () => {
                 setBannerText(chartDays === 40 ? "40 DAYS MAIN CHART" : "MAIN CHART - 30 DAYS");
                 setTLabel("T");
                 setLogo1(null);
-                setMappingConfig(Array.from({length: chartDays}, () => initialDayObj()));
+                setMappingConfig(Array.from({ length: chartDays }, () => initialDayObj()));
                 setHeaderSubtitle(`MODULE${mdl}:FACET${fct}:PHASE-${currentPhs}/${maxPhases}`);
             }, 500);
-        } catch(err) {
+        } catch (err) {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to save chart', life: 3000 });
         }
     };
@@ -331,7 +331,7 @@ const MainChart = () => {
             let totalChapters = 0;
             let totalVerses = 0;
             let totalArt = 0.0;
-            
+
             rows.filter(r => r.book_id).forEach(r => {
                 const book = booksDB.find(b => b.id === r.book_id);
                 if (book) {
@@ -340,9 +340,9 @@ const MainChart = () => {
                     totalChapters += (endCh - startCh) + 1;
 
                     // Filter chapters from DB
-                    const matchedChapters = chaptersDB.filter(c => 
-                        c.book_id === book.id && 
-                        c.chapter_number >= startCh && 
+                    const matchedChapters = chaptersDB.filter(c =>
+                        c.book_id === book.id &&
+                        c.chapter_number >= startCh &&
                         c.chapter_number <= endCh
                     );
 
@@ -376,17 +376,17 @@ const MainChart = () => {
 
         const newChunks = [...chunks];
         const finalPhaseStr = `MDL ${mdl}: FCT ${fct}: PHS - ${phs}/${maxPhases}`;
-        
+
         for (let dIdx = 0; dIdx < chartDays; dIdx++) {
             const conf = mappingConfig[dIdx];
             const dayNum = dIdx + 1;
 
             const m1bString = buildString(conf.s1);
             const m1Stats = calculateStats(conf.s1);
-            
+
             const m2bString = buildString(conf.s2);
             const m2Stats = calculateStats(conf.s2);
-            
+
             const m3bString = buildString(conf.s3);
             const m3Stats = calculateStats(conf.s3);
 
@@ -410,7 +410,7 @@ const MainChart = () => {
                         dayObj.m3b = m3bString;
                         dayObj.m3t = formatHrMin(m3Stats.totalArt);
                     }
-                    
+
                     if (m1bString || m2bString || m3bString) {
                         dayObj.chap = dayChapters || dayObj.chap;
                         dayObj.verse = dayVerses || dayObj.verse;
@@ -439,17 +439,17 @@ const MainChart = () => {
                     const chapterOptions = Array.from({ length: chapCount }, (_, i) => ({ label: `Ch ${i + 1}`, value: i + 1 }));
 
                     // Dynamic 'To' options ensuring they are >= 'From'
-                    const toChapterOptions = row.chFrom 
-                        ? chapterOptions.filter(opt => opt.value >= row.chFrom) 
+                    const toChapterOptions = row.chFrom
+                        ? chapterOptions.filter(opt => opt.value >= row.chFrom)
                         : chapterOptions;
 
                     return (
                         <div key={row.id} className="flex gap-2 items-center mb-2">
-                            <Dropdown 
-                                value={row.book_id} 
-                                options={booksDB} 
-                                optionLabel="displayName" 
-                                optionValue="id" 
+                            <Dropdown
+                                value={row.book_id}
+                                options={booksDB}
+                                optionLabel="displayName"
+                                optionValue="id"
                                 placeholder="Select Book"
                                 filter
                                 className="flex-1 bg-white text-black border border-gray-400 shadow-sm custom-white-dropdown"
@@ -460,9 +460,9 @@ const MainChart = () => {
                                     setRows(newRows);
                                 }}
                             />
-                            <Dropdown 
-                                value={row.chFrom} 
-                                options={chapterOptions} 
+                            <Dropdown
+                                value={row.chFrom}
+                                options={chapterOptions}
                                 placeholder="From"
                                 disabled={!row.book_id}
                                 className="w-28 bg-white text-black border border-gray-400 shadow-sm custom-white-dropdown"
@@ -477,9 +477,9 @@ const MainChart = () => {
                                     setRows(newRows);
                                 }}
                             />
-                            <Dropdown 
-                                value={row.chTo} 
-                                options={toChapterOptions} 
+                            <Dropdown
+                                value={row.chTo}
+                                options={toChapterOptions}
                                 placeholder="To"
                                 disabled={!row.chFrom}
                                 className="w-28 bg-white text-black border border-gray-400 shadow-sm custom-white-dropdown"
@@ -521,7 +521,7 @@ const MainChart = () => {
         const ws = XLSX.utils.json_to_sheet(templateData);
         // Style a bit or set column widths
         const wscols = [
-            {wch:6}, {wch:15}, {wch:10}, {wch:10}, {wch:15}, {wch:10}, {wch:10}, {wch:15}, {wch:10}, {wch:10}
+            { wch: 6 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }
         ];
         ws['!cols'] = wscols;
 
@@ -555,7 +555,7 @@ const MainChart = () => {
                     return;
                 }
 
-                const newConfig = Array.from({length: chartDays}, () => ({ s1: [], s2: [], s3: [] }));
+                const newConfig = Array.from({ length: chartDays }, () => ({ s1: [], s2: [], s3: [] }));
                 let mappedCount = 0;
                 let lastDay = null; // Sticky day tracker for multi-row entries
 
@@ -567,7 +567,7 @@ const MainChart = () => {
                     });
 
                     let dayVal = parseInt(normalized['day']);
-                    
+
                     // If Day is blank/invalid, use the last successfully parsed day (sticky feature)
                     if (isNaN(dayVal)) {
                         dayVal = lastDay;
@@ -584,7 +584,7 @@ const MainChart = () => {
                             if (val === undefined || val === null) return null;
                             const rawBook = String(val).trim();
                             if (!rawBook || rawBook.toLowerCase() === 'undefined' || rawBook.toLowerCase() === 'null') return null;
-                            
+
                             const bookStrClean = rawBook.toLowerCase().replace(/[^a-z0-9]/g, '');
                             const matchBook = booksDB.find(b => {
                                 const bNameClean = (b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -593,7 +593,7 @@ const MainChart = () => {
                             });
 
                             if (!matchBook) return null;
-                            
+
                             return {
                                 // High-precision unique ID for batch imports
                                 id: `${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 9)}`,
@@ -605,10 +605,10 @@ const MainChart = () => {
 
                         const s1Bk = parseSegment('s1book', 's1from', 's1to');
                         if (s1Bk) newConfig[dIdx].s1.push(s1Bk);
-                        
+
                         const s2Bk = parseSegment('s2book', 's2from', 's2to');
                         if (s2Bk) newConfig[dIdx].s2.push(s2Bk);
-                        
+
                         const s3Bk = parseSegment('s3book', 's3from', 's3to');
                         if (s3Bk) newConfig[dIdx].s3.push(s3Bk);
                     }
@@ -676,26 +676,26 @@ const MainChart = () => {
             })()}
 
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6">
-                
+
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] p-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 pb-4 gap-4">
                     <div className="flex-shrink-0 text-center xl:text-left mb-4 xl:mb-0">
                         <h1 className="text-2xl font-black tracking-tight mb-1 text-[#c8a165] whitespace-nowrap">{chartDays === 40 ? "40 Days Main Chart" : "Main Chart - 30 Days"}</h1>
                         <p className="text-xs font-medium text-gray-300 uppercase tracking-widest mb-3">{chartDays} Days Tracking</p>
-                        
+
                         {/* Font Size Scaling Controls */}
                         <div className="flex gap-2 items-center bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 shadow-inner inline-flex">
                             <span className="text-[11px] uppercase font-black text-gray-300 mr-2">Scale</span>
-                            <Button 
-                                icon="pi pi-minus" 
-                                className="p-button-rounded p-button-text text-white h-7 w-7 min-w-[28px] p-0 hover:bg-white/20 transition-all border border-transparent hover:border-white/30" 
+                            <Button
+                                icon="pi pi-minus"
+                                className="p-button-rounded p-button-text text-white h-7 w-7 min-w-[28px] p-0 hover:bg-white/20 transition-all border border-transparent hover:border-white/30"
                                 onClick={() => setTableFontSize(prev => Math.max(8, prev - 1))}
                                 tooltip="Decrease Font Size"
                                 tooltipOptions={{ position: 'bottom' }}
                             />
                             <span className="font-black text-lg w-8 text-center text-[#c8a165] drop-shadow-sm">{tableFontSize}</span>
-                            <Button 
-                                icon="pi pi-plus" 
-                                className="p-button-rounded p-button-text text-white h-7 w-7 min-w-[28px] p-0 hover:bg-white/20 transition-all border border-transparent hover:border-white/30" 
+                            <Button
+                                icon="pi pi-plus"
+                                className="p-button-rounded p-button-text text-white h-7 w-7 min-w-[28px] p-0 hover:bg-white/20 transition-all border border-transparent hover:border-white/30"
                                 onClick={() => setTableFontSize(prev => Math.min(20, prev + 1))}
                                 tooltip="Increase Font Size"
                                 tooltipOptions={{ position: 'bottom' }}
@@ -705,27 +705,27 @@ const MainChart = () => {
                     <div className="flex flex-col items-center xl:items-end w-full xl:w-auto gap-3">
                         <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-200 w-full md:w-auto justify-center">
                             <span className="text-black font-bold whitespace-nowrap text-sm">Setup:</span>
-                            <Dropdown 
-                                value={chartDays} 
-                                options={[{label: '30 Days Tracking', value: 30}, {label: '40 Days Tracking', value: 40}]} 
+                            <Dropdown
+                                value={chartDays}
+                                options={[{ label: '30 Days Tracking', value: 30 }, { label: '40 Days Tracking', value: 40 }]}
                                 onChange={(e) => handleChartTypeChange(e.value)}
                                 className="bg-gray-100 text-black border border-gray-300 shadow-sm w-[200px] h-[38px] flex items-center custom-white-dropdown"
                                 panelClassName="bg-white text-black custom-white-panel"
                             />
                         </div>
                         <div className="flex items-center gap-3 justify-center w-full">
-                            <Button 
-                                label="Add Details" 
-                                icon="pi pi-list" 
-                                className="p-button-sm shadow-md font-bold px-4 py-2" 
+                            <Button
+                                label="Add Details"
+                                icon="pi pi-list"
+                                className="p-button-sm shadow-md font-bold px-4 py-2"
                                 style={{ backgroundColor: '#c8a165', border: 'none' }}
-                                onClick={() => setShowPopup(true)} 
+                                onClick={() => setShowPopup(true)}
                             />
-                            <Button 
+                            <Button
                                 label="Save Chart"
-                                icon="pi pi-save" 
+                                icon="pi pi-save"
                                 className="p-button-sm p-button-success shadow-md font-bold px-4 py-2"
-                                onClick={saveChart} 
+                                onClick={saveChart}
                             />
                         </div>
                     </div>
@@ -735,97 +735,97 @@ const MainChart = () => {
                 <div className="p-4 pb-4 pt-6">
                     {/* NEW OUTER BORDER WRAPPER */}
                     <div className="w-full border-[3px] border-black p-3 flex flex-col bg-white overflow-hidden">
-                    {/* TOP HEADER BLOCK - MATCHING SCREENSHOT EXACTLY */}
-                    <div className="flex flex-col w-full mb-2">
-                        {/* ROW 1: T | REAL LIFE... | PH */}
-                        <table className="w-full bg-white table-fixed border-collapse border-2 border-black" style={{ borderSpacing: 0 }}>
-                            <tbody>
-                                <tr className="h-[55px]">
-                                    {/* T BLOCK */}
-                                    <td className="w-[55px] bg-[#00b050] border-r-2 border-black p-0 align-middle">
-                                        <input 
-                                            className="w-full h-full text-center bg-transparent text-white font-serif text-[32px] border-none outline-none" 
-                                            value={tLabel} 
-                                            onChange={(e) => setTLabel(e.target.value)} 
-                                        />
-                                    </td>
-                                    
-                                    {/* CENTER TEXT */}
-                                    <td className="p-0 align-middle text-center bg-white">
-                                        <span className="text-[#ff0000] font-bold text-[20px] tracking-wide uppercase" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-                                            REAL LIFE LEADERSHIP TRAINING - <span className="text-[16px] font-bold">{headerSubtitle}</span>
-                                        </span>
-                                    </td>
-                                    
-                                    {/* PH BLOCK */}
-                                    <td className="w-[60px] bg-[#00b050] border-l-2 border-black p-0 h-[55px]">
-                                        <div className="flex flex-col h-[55px] w-full">
-                                            <div className="flex-1 flex items-center justify-center border-b-2 border-black">
-                                                <span className="text-white font-black text-[15px] tracking-tighter">PH</span>
-                                            </div>
-                                            <div className="flex-1 flex items-center justify-center">
-                                                <span className="text-white font-bold text-[18px]">{phs}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        
-                        {/* ROW 2: 3 MAPS | ORANGE INPUT | BK-AR */}
-                        <table className="w-full bg-white table-fixed border-collapse border-b-2 border-l-2 border-r-2 border-black" style={{ borderSpacing: 0 }}>
-                            <tbody>
-                                <tr className="h-[65px]">
-                                    {/* MAP 1 */}
-                                    <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
-                                        <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
-                                            <ImageUploadPlaceholder state={logo1} setState={setLogo1} label="" />
-                                        </div>
-                                    </td>
-                                    {/* MAP 2 */}
-                                    <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
-                                        <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
-                                            <ImageUploadPlaceholder state={logo1} setState={setLogo1} label="" />
-                                        </div>
-                                    </td>
-                                    {/* MAP 3 */}
-                                    <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
-                                        <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
-                                            <ImageUploadPlaceholder state={logo1} setState={setLogo1} label="" />
-                                        </div>
-                                    </td>
-                                    
-                                    {/* ORANGE BANNER BOX */}
-                                    <td className="border-r-2 border-black p-1 align-middle bg-white relative">
-                                        <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
-                                        <input 
-                                            type="text" 
-                                            value={bannerText}
-                                            onChange={(e) => setBannerText(e.target.value)}
-                                            className="w-full h-full min-h-[50px] outline-none text-black font-bold px-4 text-[22px] uppercase bg-transparent relative z-10"
-                                            placeholder="..."
-                                        />
-                                    </td>
-                                    
-                                    {/* BK-AR BLOCK */}
-                                    <td className="w-[140px] bg-[#ffff00] p-0 h-[65px] align-middle">
-                                        <div className="flex flex-col h-[65px] w-full">
-                                            <div className="flex-1 flex items-center justify-center border-b-2 border-black pt-1">
-                                                <span className="text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
-                                            </div>
-                                            <div className="flex-1 flex items-center justify-center pb-1">
-                                                <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>6 6 - 4 0 +</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                        {/* TOP HEADER BLOCK - MATCHING SCREENSHOT EXACTLY */}
+                        <div className="flex flex-col w-full mb-2">
+                            {/* ROW 1: T | REAL LIFE... | PH */}
+                            <table className="w-full bg-white table-fixed border-collapse border-2 border-black" style={{ borderSpacing: 0 }}>
+                                <tbody>
+                                    <tr className="h-[55px]">
+                                        {/* T BLOCK */}
+                                        <td className="w-[55px] bg-[#00b050] border-r-2 border-black p-0 align-middle">
+                                            <input
+                                                className="w-full h-full text-center bg-transparent text-white font-serif text-[32px] border-none outline-none"
+                                                value={tLabel}
+                                                onChange={(e) => setTLabel(e.target.value)}
+                                            />
+                                        </td>
 
-                {/* Nested Data Table Area */}
-                <div className="pb-1 overflow-x-auto">
-                    <style>{`
+                                        {/* CENTER TEXT */}
+                                        <td className="p-0 align-middle text-center bg-white">
+                                            <span className="text-[#ff0000] font-bold text-[20px] tracking-wide uppercase" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+                                                REAL LIFE LEADERSHIP TRAINING - <span className="text-[16px] font-bold">{headerSubtitle}</span>
+                                            </span>
+                                        </td>
+
+                                        {/* PH BLOCK */}
+                                        <td className="w-[60px] bg-[#00b050] border-l-2 border-black p-0 h-[55px]">
+                                            <div className="flex flex-col h-[55px] w-full">
+                                                <div className="flex-1 flex items-center justify-center border-b-2 border-black">
+                                                    <span className="text-white font-black text-[15px] tracking-tighter">PH</span>
+                                                </div>
+                                                <div className="flex-1 flex items-center justify-center">
+                                                    <span className="text-white font-bold text-[18px]">{phs}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            {/* ROW 2: 3 MAPS | ORANGE INPUT | BK-AR */}
+                            <table className="w-full bg-white table-fixed border-collapse border-b-2 border-l-2 border-r-2 border-black" style={{ borderSpacing: 0 }}>
+                                <tbody>
+                                    <tr className="h-[65px]">
+                                        {/* MAP 1 */}
+                                        <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
+                                            <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
+                                                <ImageUploadPlaceholder state={logo1} setState={setLogo1} label="" />
+                                            </div>
+                                        </td>
+                                        {/* MAP 2 */}
+                                        <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
+                                            <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
+                                                <ImageUploadPlaceholder state={logo1} setState={setLogo1} label="" />
+                                            </div>
+                                        </td>
+                                        {/* MAP 3 */}
+                                        <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
+                                            <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
+                                                <ImageUploadPlaceholder state={logo1} setState={setLogo1} label="" />
+                                            </div>
+                                        </td>
+
+                                        {/* ORANGE BANNER BOX */}
+                                        <td className="border-r-2 border-black p-1 align-middle bg-white relative">
+                                            <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
+                                            <input
+                                                type="text"
+                                                value={bannerText}
+                                                onChange={(e) => setBannerText(e.target.value)}
+                                                className="w-full h-full min-h-[50px] outline-none text-black font-bold px-4 text-[22px] uppercase bg-transparent relative z-10"
+                                                placeholder="..."
+                                            />
+                                        </td>
+
+                                        {/* BK-AR BLOCK */}
+                                        <td className="w-[140px] bg-[#ffff00] p-0 h-[65px] align-middle">
+                                            <div className="flex flex-col h-[65px] w-full">
+                                                <div className="flex-1 flex items-center justify-center border-b-2 border-black pt-1">
+                                                    <span className="text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
+                                                </div>
+                                                <div className="flex-1 flex items-center justify-center pb-1">
+                                                    <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>6 6 - 4 0 +</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Nested Data Table Area */}
+                        <div className="pb-1 overflow-x-auto">
+                            <style>{`
                         .editor-table, .editor-table td, .editor-table th { 
                             border: 1px solid #000 !important; 
                             border-collapse: collapse !important; 
@@ -872,225 +872,219 @@ const MainChart = () => {
                             background: #3b82f6;
                         }
                     `}</style>
-                    <div className="editor-table-container">
-                    <table className="w-full bg-white table-fixed border-collapse" style={{ borderSpacing: 0 }}>
-                        <colgroup>
-                            <col style={{ width: '2%' }} />
-                            <col style={{ width: '2%' }} />
-                            <col style={{ width: '12%' }} />
-                            <col style={{ width: '4%' }} />
-                            <col style={{ width: '15%' }} />
-                            <col style={{ width: '4%' }} />
-                            <col style={{ width: '36%' }} />
-                            <col style={{ width: '5%' }} />
-                            <col style={{ width: '4%' }} />
-                            <col style={{ width: '4%' }} />
-                            <col style={{ width: '5%' }} />
-                            <col style={{ width: '3%' }} />
-                            <col style={{ width: '4%' }} />
-                        </colgroup>
-                        
-                        {chunks.map((chunk, cIdx) => {
-                            const m1Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m1t), 0);
-                            const m2Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m2t), 0);
-                            const m3Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m3t), 0);
-                            const chapTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.chap) || 0), 0);
-                            const verseTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.verse) || 0), 0);
-                            const artTotal = chunk.days.reduce((acc, curr) => acc + parseTime(curr.art), 0);
+                            <div className="editor-table-container">
+                                <table className="w-full bg-white table-fixed border-collapse" style={{ borderSpacing: 0 }}>
+                                    <colgroup>
+                                        <col style={{ width: '2%' }} />
+                                        <col style={{ width: '2%' }} />
+                                        <col style={{ width: '12%' }} />
+                                        <col style={{ width: '4%' }} />
+                                        <col style={{ width: '15%' }} />
+                                        <col style={{ width: '4%' }} />
+                                        <col style={{ width: '36%' }} />
+                                        <col style={{ width: '5%' }} />
+                                        <col style={{ width: '4%' }} />
+                                        <col style={{ width: '4%' }} />
+                                        <col style={{ width: '5%' }} />
+                                        <col style={{ width: '3%' }} />
+                                        <col style={{ width: '4%' }} />
+                                    </colgroup>
 
-                            return (
-                                <tbody key={chunk.id} className="text-black font-bold text-sm rllt-condensed">
-                                    <tr className="bg-white h-[35px]">
-                                        <td className="border-2 border-black bg-white"></td>
-                                        <td colSpan={7} className="border-2 border-black px-2 align-middle bg-white">
-                                            <div className="flex h-full w-full items-center">
-                                                <input 
-                                                    value={chunk.promiseLabel || "GOD'S PROMISES :"}
-                                                    onChange={(e) => updateChunk(cIdx, 'promiseLabel', e.target.value)}
-                                                    className="w-[150px] outline-none font-bold whitespace-nowrap mr-2 text-black tracking-wide bg-transparent font-serif"
-                                                    style={{ fontSize: getFS(14) }}
-                                                />
-                                                <input 
-                                                    value={chunk.promises}
-                                                    onChange={(e) => updateChunk(cIdx, 'promises', e.target.value)}
-                                                    className="outline-none flex-1 font-bold bg-transparent text-black font-serif tracking-tight text-center uppercase"
-                                                    style={{ fontSize: getFS(14) }}
-                                                    placeholder="ENTER GOD'S PROMISES HERE"
-                                                />
-                                            </div>
-                                        </td>
-                                        <td colSpan={5} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
-                                            <input 
-                                                className="w-full h-full outline-none p-1 font-bold text-center bg-transparent text-black block"
-                                                style={{ fontSize: getFS(14) }}
-                                                value={chunk.promiseInput}
-                                                onChange={(e) => updateChunk(cIdx, 'promiseInput', e.target.value)}
-                                            />
-                                        </td>
-                                    </tr>
+                                    {chunks.map((chunk, cIdx) => {
+                                        const m1Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m1t), 0);
+                                        const m2Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m2t), 0);
+                                        const m3Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m3t), 0);
+                                        const chapTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.chap) || 0), 0);
+                                        const verseTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.verse) || 0), 0);
+                                        const artTotal = chunk.days.reduce((acc, curr) => acc + parseTime(curr.art), 0);
 
-                                    <tr className="bg-white text-center font-bold h-[30px]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
-                                        <th rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(10) }}>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(11) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center w-full">
-                                                    <input 
-                                                        className="bg-transparent text-center outline-none w-full font-extrabold"
-                                                        value={chunk.team}
-                                                        onChange={(e) => updateChunk(cIdx, 'team', e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </th>
-                                        <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
-                                        <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">
-                                            <input className="w-full bg-transparent outline-none font-bold" value={chunk.h1} onChange={(e) => updateChunk(cIdx, 'h1', e.target.value)} />
-                                        </th>
-                                        <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                        <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">
-                                            <input className="w-full bg-transparent outline-none font-bold" value={chunk.h2} onChange={(e) => updateChunk(cIdx, 'h2', e.target.value)} />
-                                        </th>
-                                        <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                        <th style={{ fontSize: getFS(14) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">
-                                            <input className="w-full bg-transparent outline-none font-bold" value={chunk.h3} onChange={(e) => updateChunk(cIdx, 'h3', e.target.value)} />
-                                        </th>
-                                        <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                        <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
-                                        <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
-                                        <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
-                                        <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
-                                        <th rowSpan={7} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(10) }}>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <div style={{ transform: 'rotate(-90deg)' }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center">
-                                                    {headerSubtitle}
-                                                </div>
-                                            </div>
-                                        </th>
-                                    </tr>
+                                        return (
+                                            <tbody key={chunk.id} className="text-black font-bold text-sm rllt-condensed">
+                                                <tr className="bg-white h-[35px]">
+                                                    <td className="border-2 border-black bg-white"></td>
+                                                    <td colSpan={7} className="border-2 border-black px-2 align-middle bg-white">
+                                                        <div className="flex h-full w-full items-center">
+                                                            <input
+                                                                value={chunk.promises}
+                                                                onChange={(e) => updateChunk(cIdx, 'promises', e.target.value)}
+                                                                className="w-full h-full outline-none font-bold bg-transparent text-black font-serif tracking-tight text-left uppercase pl-2"
+                                                                style={{ fontSize: getFS(14) }}
+                                                                placeholder="GOD'S PROMISES : ENTER GOD'S PROMISES HERE"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                    <td colSpan={5} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
+                                                        <input
+                                                            className="w-full h-full outline-none p-1 font-bold text-center bg-transparent text-black block"
+                                                            style={{ fontSize: getFS(14) }}
+                                                            value={chunk.promiseInput}
+                                                            onChange={(e) => updateChunk(cIdx, 'promiseInput', e.target.value)}
+                                                        />
+                                                    </td>
+                                                </tr>
 
-                                    {chunk.days.map((d, dIdx) => (
-                                        <tr key={d.id} className="bg-white text-center hover:bg-gray-50 border-b-2 border-black h-[38px]">
-                                            <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(12) }}>{d.day}</td>
-                                            
-                                            <td className="border-2 border-black p-0 bg-white">
-                                                <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(12) }} value={d.m1b} onChange={(e) => updateDay(cIdx, d.id, 'm1b', e.target.value)} />
-                                            </td>
-                                            <td className="border-2 border-black p-0 bg-white font-bold text-black">
-                                                <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(11) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
-                                            </td>
+                                                <tr className="bg-white text-center font-bold h-[30px]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
+                                                    <th rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(10) }}>
+                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                            <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(11) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center w-full">
+                                                                <input
+                                                                    className="bg-transparent text-center outline-none w-full font-extrabold"
+                                                                    value={chunk.team}
+                                                                    onChange={(e) => updateChunk(cIdx, 'team', e.target.value)}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
+                                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">
+                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h1} onChange={(e) => updateChunk(cIdx, 'h1', e.target.value)} />
+                                                    </th>
+                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">
+                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h2} onChange={(e) => updateChunk(cIdx, 'h2', e.target.value)} />
+                                                    </th>
+                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                    <th style={{ fontSize: getFS(14) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">
+                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h3} onChange={(e) => updateChunk(cIdx, 'h3', e.target.value)} />
+                                                    </th>
+                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
+                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
+                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
+                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
+                                                    <th rowSpan={7} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(10) }}>
+                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                            <div style={{ transform: 'rotate(-90deg)' }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center">
+                                                                {headerSubtitle}
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                </tr>
 
-                                            <td className="border-2 border-black p-0 bg-white">
-                                                <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(12) }} value={d.m2b} onChange={(e) => updateDay(cIdx, d.id, 'm2b', e.target.value)} />
-                                            </td>
-                                            <td className="border-2 border-black p-0 bg-white font-bold text-black">
-                                                <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(11) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
-                                            </td>
+                                                {chunk.days.map((d, dIdx) => (
+                                                    <tr key={d.id} className="bg-white text-center hover:bg-gray-50 border-b-2 border-black h-[38px]">
+                                                        <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(12) }}>{d.day}</td>
 
-                                            <td className="border-2 border-black p-1 bg-white text-left">
-                                                <input className="w-full text-left outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(13) }} value={d.m3b} onChange={(e) => updateDay(cIdx, d.id, 'm3b', e.target.value)} />
-                                            </td>
-                                            <td className="border-2 border-black p-0 bg-white font-bold text-black">
-                                                <input className="w-full text-left outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(11) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
-                                            </td>
+                                                        <td className="border-2 border-black p-0 bg-white">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(12) }} value={d.m1b} onChange={(e) => updateDay(cIdx, d.id, 'm1b', e.target.value)} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(11) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
+                                                        </td>
 
-                                            <td className="border-2 border-black p-0">
-                                                <input className="w-full text-center outline-none bg-transparent font-bold leading-none text-black" style={{ fontSize: getFS(11) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
+                                                        <td className="border-2 border-black p-0 bg-white">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(12) }} value={d.m2b} onChange={(e) => updateDay(cIdx, d.id, 'm2b', e.target.value)} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(11) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
+                                                        </td>
+
+                                                        <td className="border-2 border-black p-1 bg-white text-left">
+                                                            <input className="w-full text-left outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(13) }} value={d.m3b} onChange={(e) => updateDay(cIdx, d.id, 'm3b', e.target.value)} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black">
+                                                            <input className="w-full text-left outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(11) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
+                                                        </td>
+
+                                                        <td className="border-2 border-black p-0">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold leading-none text-black" style={{ fontSize: getFS(11) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold leading-none text-black" style={{ fontSize: getFS(11) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold leading-none text-black" style={{ fontSize: getFS(11) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
+                                                        </td>
+
+                                                        <td className="border-2 border-black p-0 text-center align-middle">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                                                checked={d.yes}
+                                                                onChange={(e) => updateDay(cIdx, d.id, 'yes', e.target.checked)}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+
+                                                <tr className="bg-white text-center font-extrabold tracking-wide h-[35px]" style={{ fontSize: getFS(13) }}>
+                                                    <td className="border-2 border-black bg-white"></td>
+                                                    <td className="border-2 border-black bg-white"></td>
+                                                    <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m1Total, 'HrMins')}</td>
+                                                    <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m2Total, 'HrMins')}</td>
+                                                    <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m3Total, 'HrMins')}</td>
+                                                    <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{chapTotal}</td>
+                                                    <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{verseTotal}</td>
+                                                    <td colSpan={2} className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{formatSum(artTotal, 'Hm')}</td>
+                                                </tr>
+                                            </tbody>
+                                        );
+                                    })}
+                                    <tfoot className="pb-4 rllt-condensed">
+                                        <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(11) }}>
+                                            <td colSpan={8} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-gray-50" style={{ fontSize: getFS(14) }}>
+                                                TOTAL AVERAGE READING TIME {formatSum(
+                                                    chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
+                                                    'HrMins'
+                                                )}
                                             </td>
-                                            <td className="border-2 border-black p-0">
-                                                <input className="w-full text-center outline-none bg-transparent font-bold leading-none text-black" style={{ fontSize: getFS(11) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
+                                            <td className="border-2 border-black p-1 text-center font-extrabold" style={{ fontSize: getFS(14) }}>
+                                                {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.chap) || 0), 0), 0)}
                                             </td>
-                                            <td className="border-2 border-black p-0">
-                                                <input className="w-full text-center outline-none bg-transparent font-bold leading-none text-black" style={{ fontSize: getFS(11) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
+                                            <td className="border-2 border-black p-1 text-center font-extrabold font-black text-blue-900" style={{ fontSize: getFS(14) }}>
+                                                {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.verse) || 0), 0), 0)}
                                             </td>
-                                            
-                                            <td className="border-2 border-black p-0 text-center align-middle">
-                                                <input 
-                                                    type="checkbox" 
-                                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                                                    checked={d.yes}
-                                                    onChange={(e) => updateDay(cIdx, d.id, 'yes', e.target.checked)}
+                                            <td colSpan={3} className="border-2 border-black p-1 text-center font-extrabold bg-gray-50" style={{ fontSize: getFS(14) }}>
+                                                {formatSum(
+                                                    chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
+                                                    'Hm'
+                                                )}
+                                            </td>
+                                        </tr>
+                                        <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(11) }}>
+                                            <td colSpan={13} className="border-2 border-black p-1">
+                                                <input
+                                                    className="w-full text-center outline-none bg-transparent whitespace-nowrap overflow-hidden text-ellipsis italic font-semibold"
+                                                    style={{ fontSize: getFS(11) }}
+                                                    defaultValue={`It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11`}
                                                 />
                                             </td>
                                         </tr>
-                                    ))}
+                                    </tfoot>
+                                </table>
+                            </div>
 
-                                    <tr className="bg-white text-center font-extrabold tracking-wide h-[35px]" style={{ fontSize: getFS(13) }}>
-                                        <td className="border-2 border-black bg-white"></td>
-                                        <td className="border-2 border-black bg-white"></td>
-                                        <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m1Total, 'HrMins')}</td>
-                                        <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m2Total, 'HrMins')}</td>
-                                        <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m3Total, 'HrMins')}</td>
-                                        <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{chapTotal}</td>
-                                        <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{verseTotal}</td>
-                                        <td colSpan={2} className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{formatSum(artTotal, 'Hm')}</td>
-                                    </tr>
-                                </tbody>
-                            );
-                        })}
-                        <tfoot className="pb-4 rllt-condensed">
-                            <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(11) }}>
-                                <td colSpan={8} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-gray-50" style={{ fontSize: getFS(14) }}>
-                                    TOTAL AVERAGE READING TIME {formatSum(
-                                        chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0), 
-                                        'HrMins'
-                                    )}
-                                </td>
-                                <td className="border-2 border-black p-1 text-center font-extrabold" style={{ fontSize: getFS(14) }}>
-                                    {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.chap) || 0), 0), 0)}
-                                </td>
-                                <td className="border-2 border-black p-1 text-center font-extrabold font-black text-blue-900" style={{ fontSize: getFS(14) }}>
-                                    {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.verse) || 0), 0), 0)}
-                                </td>
-                                <td colSpan={3} className="border-2 border-black p-1 text-center font-extrabold bg-gray-50" style={{ fontSize: getFS(14) }}>
-                                    {formatSum(
-                                        chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0), 
-                                        'Hm'
-                                    )}
-                                </td>
-                            </tr>
-                            <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(11) }}>
-                                <td colSpan={13} className="border-2 border-black p-1">
-                                    <input 
-                                        className="w-full text-center outline-none bg-transparent whitespace-nowrap overflow-hidden text-ellipsis italic font-semibold"
-                                        style={{ fontSize: getFS(11) }}
-                                        defaultValue={`It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11`}
-                                    />
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                    </div>
-                    
-                    <div className="flex items-center w-full px-2 pt-2 pb-4 bg-transparent mt-1 uppercase">
-                        <span className="font-extrabold text-[15px] text-[#c8a165]">1</span>
-                        <div className="flex-1 text-center">
-                            <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: 'Arial, sans-serif' }}>
-                                MODULE {mdl} - FACET {fct}/{maxFacets}: PHASE - {phs}/{maxPhases}
-                            </span>
+                            <div className="flex items-center w-full px-2 pt-2 pb-4 bg-transparent mt-1 uppercase">
+                                <span className="font-extrabold text-[15px] text-[#c8a165]">1</span>
+                                <div className="flex-1 text-center">
+                                    <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                        MODULE {mdl} - FACET {fct}/{maxFacets}: PHASE - {phs}/{maxPhases}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                </div> {/* END OF OUTER BORDER WRAPPER */}
+                    </div> {/* END OF OUTER BORDER WRAPPER */}
                 </div> {/* END OF P-4 WRAPPER */}
-                </div> {/* END OF SHADOW-2XL MAIN CONTENT CONTAINER */}
-            
+            </div> {/* END OF SHADOW-2XL MAIN CONTENT CONTAINER */}
+
             {/* Popup Dialog for Adding Details */}
-            <Dialog 
+            <Dialog
                 header={
                     <div className="flex items-center gap-3 w-full border-b pb-3 border-gray-200">
                         <i className="pi pi-list text-2xl text-blue-600"></i>
                         <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-600">Bind Component Day Mapping</h2>
                     </div>
-                } 
-                visible={showPopup} 
+                }
+                visible={showPopup}
                 onHide={() => setShowPopup(false)}
-                style={{ width: '45rem' }} 
+                style={{ width: '45rem' }}
                 breakpoints={{ '960px': '75vw', '641px': '90vw' }}
                 className="p-fluid shadow-2xl"
                 contentClassName="bg-gray-100 p-4"
                 footer={<Button label="Add Details Sync -> Map" icon="pi pi-check" onClick={handleAddDetails} className="p-button-lg p-button-primary mt-4 font-bold" />}
             >
                 <div className="flex flex-col gap-6 mt-2 p-4 bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-                    
+
                     {/* Row 1: MDL, FCT, PHS */}
                     <div className="flex gap-4">
                         <div className="flex-1">
@@ -1133,15 +1127,15 @@ const MainChart = () => {
                 <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
                     {mappingConfig.map((dayConf, dIdx) => (
                         <div key={dIdx} className="shrink-0 bg-white rounded-xl border border-gray-300 overflow-hidden shadow-sm">
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 className={`w-full px-4 py-3 font-bold text-left flex justify-between items-center transition-colors shrink-0 ${expandedDay === dIdx ? 'bg-[#c8a165] text-white' : 'bg-[#051220] hover:bg-gray-800 text-white'}`}
                                 onClick={() => setExpandedDay(expandedDay === dIdx ? -1 : dIdx)}
                             >
                                 <span className="tracking-wide text-lg">Day {dIdx + 1} Configuration</span>
                                 <i className={`pi ${expandedDay === dIdx ? 'pi-chevron-down' : 'pi-chevron-right'} text-xl`}></i>
                             </button>
-                            
+
                             {expandedDay === dIdx && (
                                 <div className="p-4 bg-gray-50 border-t border-gray-200">
                                     {renderBookRows(`Segment 1: Book Mapping`, dayConf.s1, (newRows) => {

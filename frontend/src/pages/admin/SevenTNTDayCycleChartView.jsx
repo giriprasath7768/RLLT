@@ -522,17 +522,11 @@ const SevenTNTDayCycleChartView = () => {
                                         <td colSpan={10} className="border-2 border-l-0 border-black px-2 align-middle bg-white">
                                             <div className="flex w-full items-center">
                                                 <input
-                                                    value={promiseLabel}
-                                                    onChange={(e) => setPromiseLabel(e.target.value)}
-                                                    className="w-[180px] outline-none font-extrabold whitespace-nowrap text-black tracking-widest bg-transparent font-serif"
-                                                    style={{ fontSize: getFS(14) }}
-                                                />
-                                                <input
                                                     value={promises}
                                                     onChange={(e) => setPromises(e.target.value)}
-                                                    className="outline-none flex-1 font-extrabold bg-transparent text-black font-serif tracking-tight text-center uppercase"
+                                                    className="w-full h-full flex-1 outline-none font-bold bg-transparent text-black font-serif tracking-tight text-left uppercase pl-2"
                                                     style={{ fontSize: getFS(15) }}
-                                                    placeholder="ENTER GOD'S PROMISSES HERE"
+                                                    placeholder="GOD'S PROMISES : ENTER GOD'S PROMISES HERE"
                                                 />
                                             </div>
                                         </td>

@@ -41,7 +41,7 @@ from app.api.ttom_users import router as ttom_users_router
 from app.api.seven_tnt_charts import router as seven_tnt_charts_router
 from app.api.seven_tnt_daycycle_charts import router as seven_tnt_daycycle_charts_router
 from app.api.screen_recorder import router as screen_recorder_router
-
+from app.api.images import router as images_router
 
 app.include_router(auth_router, prefix="/api", tags=["auth"])
 app.include_router(profile_router, prefix="/api/profile", tags=["profile"])
@@ -63,7 +63,7 @@ app.include_router(ttom_users_router, prefix="/api/ttom_users", tags=["ttom_user
 app.include_router(seven_tnt_charts_router, prefix="/api/seven_tnt_charts", tags=["seven_tnt_charts"])
 app.include_router(seven_tnt_daycycle_charts_router, prefix="/api/seven_tnt_daycycle_charts", tags=["seven_tnt_daycycle_charts"])
 app.include_router(screen_recorder_router, prefix="/api/screen-recorder", tags=["screen_recorder"])
-
+app.include_router(images_router, prefix="/api/images", tags=["images"])
 
 import os
 from fastapi.staticfiles import StaticFiles

@@ -126,7 +126,8 @@ const AdminSidebar = ({ visible, onHide }) => {
             items: [
                 { label: 'Book Master', icon: 'pi pi-book', to: '/admin/books' },
                 { label: 'Chapter Master', icon: 'pi pi-bookmark', to: '/admin/chapters' },
-                { label: 'RLLT Table Data', icon: 'pi pi-table', to: '/admin/rllt-data' }
+                { label: 'RLLT Table Data', icon: 'pi pi-table', to: '/admin/rllt-data' },
+                { label: 'Image', icon: 'pi pi-image', to: '/admin/image-gallery' }
             ]
         }] : []),
         ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'Book Index', icon: 'pi pi-book', to: '/admin/book-index' }] : []),

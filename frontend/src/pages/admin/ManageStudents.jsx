@@ -13,6 +13,7 @@ import { InputSwitch } from 'primereact/inputswitch';
 import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { Paginator } from 'primereact/paginator';
+import { MultiSelect } from 'primereact/multiselect';
 import { StudentService } from '../../services/studentService';
 import MobileDataCard from '../../components/common/MobileDataCard';
 import { calculateStudentLevel } from '../../utils/studentUtils';
@@ -51,6 +52,14 @@ export default function ManageStudents() {
     const [selectedChart, setSelectedChart] = useState(null);
     const [aStartDate, setAStartDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [aEndDate, setAEndDate] = useState('');
+    const [manualGroupDialog, setManualGroupDialog] = useState(false);
+    const [manualGroupName, setManualGroupName] = useState('');
+    const [groupFilter, setGroupFilter] = useState('All');
+    const groupFilterOptions = [
+        { label: 'All Students', value: 'All' },
+        { label: 'Ungrouped Only', value: 'Ungrouped' },
+        { label: 'Grouped Only', value: 'Grouped' }
+    ];
 
     const printColumns = [
         { field: 'category', header: 'Category' },
@@ -270,9 +279,40 @@ export default function ManageStudents() {
 
         StudentService.autoGroupStudents(selectedIds).then(res => {
             toast.current.show({ severity: 'success', summary: 'Grouped', detail: res.message, life: 3000 });
+            setSelectedStudents(null);
             loadData();
         }).catch(err => {
             toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.message || 'Failed to auto group', life: 3000 });
+        });
+    };
+
+    const handleOpenManualGroup = () => {
+        setManualGroupName('');
+        if (!selectedStudents) {
+            setSelectedStudents([]);
+        }
+        setManualGroupDialog(true);
+    };
+
+    const submitManualGroup = () => {
+        if (!manualGroupName.trim()) {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Group name cannot be empty.', life: 3000 });
+            return;
+        }
+
+        const selectedIds = (selectedStudents || []).map(s => s.id);
+        if (selectedIds.length === 0) {
+            toast.current.show({ severity: 'warn', summary: 'No Selection', detail: 'Please select at least one student to group.', life: 3000 });
+            return;
+        }
+
+        StudentService.manualGroupStudents(selectedIds, manualGroupName.trim()).then(res => {
+            toast.current.show({ severity: 'success', summary: 'Grouped', detail: res.message, life: 3000 });
+            setManualGroupDialog(false);
+            setSelectedStudents(null);
+            loadData();
+        }).catch(err => {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.message || 'Failed to manually group', life: 3000 });
         });
     };
 
@@ -286,6 +326,7 @@ export default function ManageStudents() {
         const studentIds = selected.map(s => s.id);
         StudentService.ungroupStudents(studentIds).then(res => {
             toast.current.show({ severity: 'success', summary: 'Ungrouped', detail: res.message, life: 3000 });
+            setSelectedStudents(null);
             loadData();
         }).catch(err => {
             toast.current.show({ severity: 'error', summary: 'Error', detail: err.response?.data?.message || 'Failed to ungroup', life: 3000 });
@@ -333,13 +374,21 @@ export default function ManageStudents() {
         </React.Fragment>
     );
 
+    const manualGroupDialogFooter = (
+        <React.Fragment>
+            <Button label="Cancel" icon="pi pi-times" outlined onClick={() => setManualGroupDialog(false)} />
+            <Button label="Group" icon="pi pi-check" onClick={submitManualGroup} />
+        </React.Fragment>
+    );
+
     const topCardContent = (
         <div className="flex flex-wrap gap-4 w-full justify-start items-center">
             <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg">
                 <span className="font-bold text-[#2F5597] text-sm">BULK ACTIVATE:</span>
                 <InputSwitch checked={bulkToggle} onChange={handleBulkToggle} />
             </div>
-            <Button label="Group Students" icon="pi pi-users" severity="info" onClick={handleAutoGroup} className="hidden md:flex ml-4" />
+            <Button label="Auto Group" icon="pi pi-users" severity="info" onClick={handleAutoGroup} className="hidden md:flex ml-4" />
+            <Button label="Manual Group" icon="pi pi-users" severity="success" onClick={handleOpenManualGroup} className="hidden md:flex ml-2" />
             <Button label="Ungroup" icon="pi pi-user-minus" severity="warning" outlined onClick={handleUngroup} className="hidden md:flex ml-2" />
             <Button label="Assign Chart" icon="pi pi-chart-line" severity="success" outlined onClick={handleOpenAssignChart} className="hidden md:flex ml-2" />
             <Button label="Export" icon="pi pi-file-pdf" severity="help" onClick={() => setExportModalVisible(true)} className="ml-auto hidden md:flex" />
@@ -347,12 +396,15 @@ export default function ManageStudents() {
     );
 
     const tableHeader = (
-        <div className="flex justify-between items-center w-full">
+        <div className="flex flex-col md:flex-row justify-between items-center w-full gap-2">
             <h4 className="m-0 text-lg sm:text-xl font-bold text-black border-none">Manage Students</h4>
-            <span className="p-input-icon-left w-full md:w-auto relative flex items-center search-input-wrapper">
-                <i className="pi pi-search absolute left-3 text-gray-400 z-10" />
-                <InputText type="search" onInput={(e) => setGlobalFilter(e.target.value)} placeholder="Search Enroll No, Name..." className="w-full md:w-auto pl-10 text-black py-2 border border-gray-300 rounded-md" />
-            </span>
+            <div className="flex gap-2 w-full md:w-auto">
+                <Dropdown value={groupFilter} options={groupFilterOptions} onChange={(e) => setGroupFilter(e.value)} className="w-full md:w-48" />
+                <span className="p-input-icon-left w-full md:w-auto relative flex items-center search-input-wrapper">
+                    <i className="pi pi-search absolute left-3 text-gray-400 z-10" />
+                    <InputText type="search" onInput={(e) => setGlobalFilter(e.target.value)} placeholder="Search Enroll No, Name..." className="w-full md:w-auto pl-10 text-black py-2 border border-gray-300 rounded-md" />
+                </span>
+            </div>
         </div>
     );
 
@@ -390,6 +442,9 @@ export default function ManageStudents() {
     };
 
     const filteredStudents = (students || []).filter(stu => {
+        if (groupFilter === 'Ungrouped' && stu.group_name) return false;
+        if (groupFilter === 'Grouped' && !stu.group_name) return false;
+
         if (!globalFilter) return true;
         const search = globalFilter.toLowerCase();
         return (
@@ -664,6 +719,30 @@ export default function ManageStudents() {
                         />
                         <small className="block mt-1 text-gray-500 text-xs">Generated based on Chart tracking duration automatically.</small>
                     </div>
+                </div>
+            </Dialog>
+
+            <Dialog visible={manualGroupDialog} style={{ width: '30rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Manual Grouping" modal footer={manualGroupDialogFooter} onHide={() => setManualGroupDialog(false)}>
+                <div className="flex flex-col gap-4 mt-2">
+                    <div className="field">
+                        <label htmlFor="groupMembers" className="font-bold block mb-2">Select Students</label>
+                        <MultiSelect
+                            id="groupMembers"
+                            value={selectedStudents}
+                            options={students}
+                            onChange={(e) => setSelectedStudents(e.value)}
+                            optionLabel="name"
+                            placeholder="Select Students"
+                            display="chip"
+                            filter
+                            className="w-full"
+                        />
+                    </div>
+                    <div className="field">
+                        <label htmlFor="groupName" className="font-bold block mb-2">Group Name</label>
+                        <InputText id="groupName" value={manualGroupName} onChange={(e) => setManualGroupName(e.target.value)} required placeholder="Enter Group Name" className="w-full" />
+                    </div>
+                    <small className="text-gray-500">Selected students will be grouped under this name in your location.</small>
                 </div>
             </Dialog>
 

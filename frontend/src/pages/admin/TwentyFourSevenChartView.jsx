@@ -632,8 +632,7 @@ const TwentyFourSevenChartView = () => {
                                                             <td className="border-2 border-black bg-white"></td>
                                                             <td colSpan={9} className="border-2 border-black px-2 align-middle bg-white">
                                                                 <div className="flex h-full w-full items-center">
-                                                                    <span className="font-bold whitespace-nowrap mr-2 text-black tracking-wide" style={{ fontSize: getFS(14) }}>{chunk.promiseLabel || "GOD'S PROMISES :"}</span>
-                                                                    <span className="flex-1 font-bold text-center uppercase text-black leading-none tracking-tight" style={{ fontSize: getFS(14) }}>{chunk.promises}</span>
+                                                                    <span className="w-full flex-1 font-bold text-left uppercase text-black leading-none tracking-tight pl-2" style={{ fontSize: getFS(14) }}>{chunk.promises}</span>
                                                                 </div>
                                                             </td>
                                                             <td colSpan={5} className="bg-white p-0 align-middle" style={{ '--cell-border': `3.5px solid ${currentBorderColor}` }}>

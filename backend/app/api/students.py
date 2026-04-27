@@ -8,7 +8,7 @@ from uuid import UUID
 
 from app.db.database import get_db
 from app.db.models import User, UserRole, Admin, Leader, Location, Assessment, AssessmentResult, StudentGroup
-from app.schemas.student import StudentCreate, StudentUpdate, StudentResponse, StudentActivation, AssessmentSubmissionPayload, StudentGroupResponse, AutoGroupPayload
+from app.schemas.student import StudentCreate, StudentUpdate, StudentResponse, StudentActivation, AssessmentSubmissionPayload, StudentGroupResponse, AutoGroupPayload, ManualGroupPayload
 from sqlalchemy import delete, update, func
 from sqlalchemy.orm import selectinload
 import math
@@ -374,6 +374,79 @@ async def ungroup_students(payload: AutoGroupPayload, db: AsyncSession = Depends
         
     await db.commit()
     return {"message": "Successfully ungrouped selected students."}
+
+@router.post("/grouping/manual", response_model=dict)
+async def manual_group_students(payload: ManualGroupPayload, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    if not payload.student_ids:
+        return {"message": "No students provided for grouping."}
+        
+    if not payload.group_name or not payload.group_name.strip():
+        return {"message": "Group name cannot be empty."}
+
+    group_name = payload.group_name.strip()
+
+    loc_id = None
+    if current_user.role == UserRole.admin:
+        admin_res = await db.execute(select(Admin).where(Admin.user_id == current_user.id))
+        admin = admin_res.scalar_one_or_none()
+        if admin:
+            loc_id = admin.location_id
+    elif current_user.role == UserRole.leader:
+        leader_res = await db.execute(select(Leader).where(Leader.user_id == current_user.id))
+        leader = leader_res.scalar_one_or_none()
+        if leader and leader.admin_id:
+            adm_res = await db.execute(select(Admin).where(Admin.id == leader.admin_id))
+            adm = adm_res.scalar_one_or_none()
+            if adm:
+                loc_id = adm.location_id
+                
+    query = select(User).where(User.id.in_(payload.student_ids))
+    if loc_id:
+        query = query.where(User.location_id == loc_id)
+        
+    result = await db.execute(query)
+    students = result.scalars().all()
+    
+    if not students:
+        return {"message": "No valid students found in your location."}
+
+    # Group students by their location, since manual grouping requires creating a StudentGroup tied to a location
+    students_by_loc = {}
+    for stu in students:
+        if stu.location_id:
+            if stu.location_id not in students_by_loc:
+                students_by_loc[stu.location_id] = []
+            students_by_loc[stu.location_id].append(stu)
+
+    total_grouped = 0
+    assigned_groups = []
+
+    for l_id, stus in students_by_loc.items():
+        # Check if group already exists for this location
+        g_res = await db.execute(select(StudentGroup).where(StudentGroup.name == group_name, StudentGroup.location_id == l_id))
+        group = g_res.scalar_one_or_none()
+        
+        if not group:
+            group = StudentGroup(name=group_name, location_id=l_id)
+            db.add(group)
+            await db.flush() # get ID
+            
+        for s in stus:
+            s.group_id = group.id
+            total_grouped += 1
+            
+        assigned_groups.append(group.name)
+        
+    # Clean up empty groups globally if needed, similarly to ungroup
+    query_empty = select(StudentGroup.id).outerjoin(User, User.group_id == StudentGroup.id).group_by(StudentGroup.id).having(func.count(User.id) == 0)
+    res_empty = await db.execute(query_empty)
+    empty_group_ids = res_empty.scalars().all()
+    if empty_group_ids:
+        await db.execute(delete(StudentGroup).where(StudentGroup.id.in_(empty_group_ids)))
+
+    await db.commit()
+    
+    return {"message": f"Successfully grouped {total_grouped} student(s) into '{group_name}'."}
 
 @router.get("/grouping", response_model=List[StudentGroupResponse])
 async def get_student_groups(db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):

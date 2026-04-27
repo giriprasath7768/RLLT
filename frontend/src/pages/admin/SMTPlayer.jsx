@@ -7,10 +7,17 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { splitS3Data, splitS4Data } from '../../utils/chartDataSplitter';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
-    import.meta.url,
-).toString();
+// Suppress harmless pdf.js WebAssembly decode warnings for JPEG2000 formats
+const originalWarn = console.warn;
+console.warn = (...args) => {
+    const msg = args[0] || '';
+    if (typeof msg === 'string' && (msg.includes('JpxError') || msg.includes('Dependent image'))) {
+        return; // Ignore harmless JPX codec failure
+    }
+    originalWarn(...args);
+};
+
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const pdfOptions = {
     cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
@@ -718,6 +725,85 @@ const SMTPlayer = () => {
     const [playerBgColor, setPlayerBgColor] = useState('#547395');
     const [playerBorderColor, setPlayerBorderColor] = useState('#080b12');
 
+    // Auto Read / TTS States
+    const [isTTSPlaying, setIsTTSPlaying] = useState(false);
+    const ttsUtteranceRef = useRef(null);
+    const activeSpansRef = useRef([]);
+
+    const handleAutoReadToggle = () => {
+        if (isTTSPlaying) {
+            window.speechSynthesis.cancel();
+            setIsTTSPlaying(false);
+            activeSpansRef.current.forEach(s => {
+                if (s && s.style) s.style.backgroundColor = '';
+            });
+            activeSpansRef.current = [];
+            return;
+        }
+
+        const pageContainers = document.querySelectorAll('.react-pdf__Page__textContent');
+        if (pageContainers.length === 0) return;
+
+        let fullText = "";
+        let spanMapping = [];
+
+        pageContainers.forEach(container => {
+            const spans = container.querySelectorAll('span');
+            spans.forEach(span => {
+                const text = span.textContent + " ";
+                const startIndex = fullText.length;
+                fullText += text;
+                spanMapping.push({
+                    start: startIndex,
+                    end: fullText.length,
+                    span: span
+                });
+            });
+        });
+
+        if (!fullText.trim()) return;
+
+        const utterance = new SpeechSynthesisUtterance(fullText);
+
+        utterance.onboundary = (event) => {
+            activeSpansRef.current.forEach(s => {
+                if (s && s.style) s.style.backgroundColor = '';
+            });
+            activeSpansRef.current = [];
+
+            const charIndex = event.charIndex;
+            const target = spanMapping.find(m => charIndex >= m.start && charIndex < m.end);
+
+            if (target && target.span) {
+                target.span.style.backgroundColor = 'rgba(255, 235, 59, 0.4)';
+                target.span.style.borderRadius = '2px';
+                target.span.style.transition = 'background-color 0.2s';
+                activeSpansRef.current.push(target.span);
+            }
+        };
+
+        const cleanupTTS = () => {
+            setIsTTSPlaying(false);
+            activeSpansRef.current.forEach(s => {
+                if (s && s.style) s.style.backgroundColor = '';
+            });
+            activeSpansRef.current = [];
+        };
+
+        utterance.onend = cleanupTTS;
+        utterance.onerror = cleanupTTS;
+
+        ttsUtteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+        setIsTTSPlaying(true);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+        };
+    }, []);
+
     useEffect(() => {
         const ad = audioRef.current;
         const updateTime = () => setAudioProgress(ad.currentTime);
@@ -749,32 +835,50 @@ const SMTPlayer = () => {
         }
     }, [audioProgress, activeTrackName, isPlaying]);
 
-    const togglePlay = () => {
-        if (!activeTrackName) return;
-
-        if (audioLoadedTrackName !== activeTrackName) {
+    useEffect(() => {
+        if (activeTrackName && audioLoadedTrackName !== activeTrackName && contentDB.length > 0) {
             const parts = activeTrackName.trim().split(' ');
             const chapNum = parseInt(parts.pop());
             const bookName = parts.join(' ').toUpperCase();
 
             const content = contentDB.find(c => c.book_name.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
             if (content && content.audio_url) {
-                audioRef.current.src = `http://localhost:8000${content.audio_url}`;
+                let actualAudioUrl = content.audio_url;
+                try {
+                    const parsed = JSON.parse(content.audio_url);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        actualAudioUrl = parsed[0].url;
+                    }
+                } catch (e) {
+                    // Plain string fallback
+                }
+
+                audioRef.current.src = `http://localhost:8000${actualAudioUrl}`;
                 setAudioLoadedTrackName(activeTrackName);
-                audioRef.current.play().catch(e => console.error(e));
-                setIsPlaying(true);
-            } else {
-                console.log("No audio found for:", activeTrackName);
-                return;
-            }
-        } else {
-            if (audioRef.current.paused) {
-                audioRef.current.play().catch(e => console.error(e));
-                setIsPlaying(true);
+
+                audioRef.current.play().then(() => {
+                    setIsPlaying(true);
+                    setShowAudioPlayer(true);
+                }).catch(e => {
+                    console.error("Autoplay blocked by browser:", e);
+                    setIsPlaying(false);
+                });
             } else {
                 audioRef.current.pause();
                 setIsPlaying(false);
+                setAudioLoadedTrackName(activeTrackName);
             }
+        }
+    }, [activeTrackName, audioLoadedTrackName, contentDB]);
+
+    const togglePlay = () => {
+        if (!activeTrackName) return;
+
+        if (audioRef.current.paused) {
+            audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
+        } else {
+            audioRef.current.pause();
+            setIsPlaying(false);
         }
     };
 
@@ -1213,9 +1317,20 @@ const SMTPlayer = () => {
                     <div className="flex items-center relative">
                         <div className={`absolute right-12 flex items-center pr-2 gap-2 transition-all duration-300 ${showToolMenu ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
                             <button
+                                onClick={handleAutoReadToggle}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-xl shrink-0 ${isTTSPlaying ? 'bg-yellow-400 border-yellow-500 text-black' : 'bg-gray-800 text-white border-gray-600 hover:bg-blue-600'}`}
+                                title="Auto Read Page TTS"
+                            >
+                                <i className={`pi ${isTTSPlaying ? 'pi-pause' : 'pi-microphone'} text-lg`}></i>
+                            </button>
+                            <button
                                 onClick={() => {
-                                    setShowAudioPlayer(!showAudioPlayer);
+                                    const nextState = !showAudioPlayer;
+                                    setShowAudioPlayer(nextState);
                                     setShowToolMenu(false);
+                                    if (nextState && activeTrackName && audioRef.current && audioRef.current.paused) {
+                                        audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
+                                    }
                                 }}
                                 className="bg-gray-800 hover:bg-blue-600 text-white px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
                             >

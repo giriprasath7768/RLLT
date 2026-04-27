@@ -417,33 +417,38 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
         );
     };
 
-    // Extract rendering of the data arrays directly
     const renderDataCols = (blockChunks) => {
         if (!blockChunks || blockChunks.length === 0) return null;
         const colCount = blockChunks.length;
         return (
             <div className="flex-1 flex">
-                {blockChunks.map((chunk, colIndex) => {
-                    return (
-                        <div key={chunk.id || colIndex} className="flex-1 flex flex-col p-3 border-r-[1px] border-black last:border-r-0">
-                            {chunk.days.map((d, dIndex) => {
-                                const parsedLines = processDayData(d);
-                                return (
-                                    <div key={d.id} className={`flex ${dIndex < 4 ? 'mb-4' : ''}`}>
-                                        <div className="w-[50px] flex-shrink-0 font-bold text-red-600 tracking-wider" style={{ fontSize: getFS(11) }}>
-                                            DAY {d.day}
-                                        </div>
-                                        <div className="flex-1 flex flex-col font-black text-black leading-tight" style={{ fontSize: getFS(10) }}>
-                                            {parsedLines.map((line, lIdx) => (
-                                                <div key={lIdx}>{line}</div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    );
-                })}
+                <table className="w-full h-full table-fixed border-collapse">
+                    <tbody>
+                        {[0, 1, 2, 3, 4].map(rowIndex => (
+                            <tr key={rowIndex}>
+                                {blockChunks.map((chunk, colIndex) => {
+                                    const d = chunk.days[rowIndex];
+                                    if (!d) return <td key={colIndex} className="p-3"></td>;
+                                    const parsedLines = processDayData(d);
+                                    return (
+                                        <td key={chunk.id || colIndex} className={`align-top px-3 ${rowIndex === 0 ? 'pt-3' : ''} ${rowIndex === 4 ? 'pb-3' : ''} ${colIndex < colCount - 1 ? 'border-r-[1px] border-black' : ''}`}>
+                                            <div className={`flex ${rowIndex < 4 ? 'mb-4' : ''}`}>
+                                                <div className="w-[50px] flex-shrink-0 font-bold text-red-600 tracking-wider" style={{ fontSize: getFS(11) }}>
+                                                    DAY {d.day}
+                                                </div>
+                                                <div className="flex-1 flex flex-col font-black text-black leading-tight" style={{ fontSize: getFS(10) }}>
+                                                    {parsedLines.map((line, lIdx) => (
+                                                        <div key={lIdx}>{line}</div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         );
     };

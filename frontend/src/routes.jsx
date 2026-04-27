@@ -55,6 +55,7 @@ import Recordings from './pages/Recordings';
 import WordEditor from './pages/admin/WordEditor';
 import BookIndex from './pages/admin/BookIndex';
 import ScreenRecorder from './pages/admin/ScreenRecorder';
+import ImageGallery from './pages/admin/ImageGallery';
 
 // Dashboard Components
 const DashboardSuperAdmin = () => (
@@ -203,6 +204,7 @@ const AppRoutes = () => {
                     <Route path="/admin/books" element={<BookMaster />} />
                     <Route path="/admin/chapters" element={<ChapterMaster />} />
                     <Route path="/admin/rllt-data" element={<RLLTTableData />} />
+                    <Route path="/admin/image-gallery" element={<ImageGallery />} />
                     <Route path="/admin/smt-player" element={<SMTPlayer />} />
                     <Route path="/admin/book-index" element={<BookIndex />} />
                     <Route path="/admin/players" element={<Players />} />
