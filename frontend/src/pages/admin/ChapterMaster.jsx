@@ -48,7 +48,7 @@ const ChapterMaster = () => {
 
     const fetchChapters = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/api/chapters', { withCredentials: true });
+            const response = await axios.get('http://' + window.location.hostname + ':8000/api/chapters', { withCredentials: true });
             setChapters(response.data);
             setLoading(false);
         } catch (error) {
@@ -59,7 +59,7 @@ const ChapterMaster = () => {
 
     const fetchBooks = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/api/books', { withCredentials: true });
+            const response = await axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true });
             setBooks(response.data);
         } catch (error) {
             console.error('Error fetching books for dropdown:', error);
@@ -89,14 +89,14 @@ const ChapterMaster = () => {
 
             try {
                 if (chapter.id) {
-                    const response = await axios.put(`http://localhost:8000/api/chapters/${chapter.id}`, _chapter, { withCredentials: true });
+                    const response = await axios.put(`http://${window.location.hostname}:8000/api/chapters/${chapter.id}`, _chapter, { withCredentials: true });
                     const index = findIndexById(chapter.id);
                     // Fast update book_name locally instead of full refresh
                     const selectedBook = books.find(b => b.id === _chapter.book_id);
                     _chapters[index] = { ...response.data, book_name: selectedBook ? selectedBook.name : 'Unknown' };
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Chapter Updated', life: 3000 });
                 } else {
-                    const response = await axios.post('http://localhost:8000/api/chapters/', _chapter, { withCredentials: true });
+                    const response = await axios.post('http://' + window.location.hostname + ':8000/api/chapters/', _chapter, { withCredentials: true });
                     const selectedBook = books.find(b => b.id === _chapter.book_id);
                     _chapters.push({ ...response.data, book_name: selectedBook ? selectedBook.name : 'Unknown' });
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Chapter Created', life: 3000 });
@@ -123,7 +123,7 @@ const ChapterMaster = () => {
 
     const deleteChapter = async () => {
         try {
-            await axios.delete(`http://localhost:8000/api/chapters/${chapter.id}`, { withCredentials: true });
+            await axios.delete(`http://${window.location.hostname}:8000/api/chapters/${chapter.id}`, { withCredentials: true });
             let _chapters = chapters.filter((val) => val.id !== chapter.id);
             setChapters(_chapters);
             setDeleteChapterDialog(false);
@@ -219,7 +219,7 @@ const ChapterMaster = () => {
                 }
 
                 setLoading(true);
-                axios.post('http://localhost:8000/api/chapters/bulk', parsedChapters, { withCredentials: true })
+                axios.post('http://' + window.location.hostname + ':8000/api/chapters/bulk', parsedChapters, { withCredentials: true })
                     .then(res => {
                         let msg = res.data.message || 'Imported Chapters successfully';
                         if (missingBooks > 0) msg += ` (Skipped ${missingBooks} rows due to unmapped books)`;

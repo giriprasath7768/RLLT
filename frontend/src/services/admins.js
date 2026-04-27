@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/admins';
+const API_URL = 'http://' + window.location.hostname + ':8000/api/admins';
 
 export const AdminService = {
     getAdmins() {

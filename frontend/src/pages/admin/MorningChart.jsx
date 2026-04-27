@@ -50,14 +50,14 @@ const MorningChart = () => {
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
 
     const fetchChartList = () => {
-        axios.get('http://localhost:8000/api/charts/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
             .then(res => setChartsList(res.data))
             .catch(err => console.error("Could not fetch charts list", err));
             
-        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => setBooksDB(res.data));
             
-        axios.get('http://localhost:8000/api/chapters', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/chapters', { withCredentials: true })
             .then(res => setChaptersDB(res.data));
     };
 
@@ -72,7 +72,7 @@ const MorningChart = () => {
         }
 
         const { module, facet, phase } = selectedChart;
-        axios.get(`http://localhost:8000/api/charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
+        axios.get(`http://${window.location.hostname}:8000/api/charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
             .then(res => {
                 const data = res.data;
                 if (data.state_payload) {

@@ -51,7 +51,7 @@ const BookMaster = () => {
 
     const fetchBooks = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/api/books', { withCredentials: true });
+            const response = await axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true });
             setBooks(response.data);
             setLoading(false);
         } catch (error) {
@@ -83,12 +83,12 @@ const BookMaster = () => {
 
             try {
                 if (book.id) {
-                    const response = await axios.put(`http://localhost:8000/api/books/${book.id}`, _book, { withCredentials: true });
+                    const response = await axios.put(`http://${window.location.hostname}:8000/api/books/${book.id}`, _book, { withCredentials: true });
                     const index = findIndexById(book.id);
                     _books[index] = response.data;
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Book Updated', life: 3000 });
                 } else {
-                    const response = await axios.post('http://localhost:8000/api/books/', _book, { withCredentials: true });
+                    const response = await axios.post('http://' + window.location.hostname + ':8000/api/books/', _book, { withCredentials: true });
                     _books.push(response.data);
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Book Created', life: 3000 });
                 }
@@ -114,7 +114,7 @@ const BookMaster = () => {
 
     const deleteBook = async () => {
         try {
-            await axios.delete(`http://localhost:8000/api/books/${book.id}`, { withCredentials: true });
+            await axios.delete(`http://${window.location.hostname}:8000/api/books/${book.id}`, { withCredentials: true });
             let _books = books.filter((val) => val.id !== book.id);
             setBooks(_books);
             setDeleteBookDialog(false);
@@ -131,7 +131,7 @@ const BookMaster = () => {
     };
 
     const deleteSelectedBooks = () => {
-        const deletePromises = selectedBooks.map(b => axios.delete(`http://localhost:8000/api/books/${b.id}`, { withCredentials: true }));
+        const deletePromises = selectedBooks.map(b => axios.delete(`http://${window.location.hostname}:8000/api/books/${b.id}`, { withCredentials: true }));
         Promise.all(deletePromises)
             .then(() => {
                 toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Books Deleted', life: 3000 });
@@ -215,7 +215,7 @@ const BookMaster = () => {
                 }
 
                 setLoading(true);
-                axios.post('http://localhost:8000/api/books/bulk', parsedBooks, { withCredentials: true })
+                axios.post('http://' + window.location.hostname + ':8000/api/books/bulk', parsedBooks, { withCredentials: true })
                     .then(res => {
                         toast.current.show({ severity: 'success', summary: 'Success', detail: res.data.message || 'Imported Books successfully' });
                         setImportDialog(false);

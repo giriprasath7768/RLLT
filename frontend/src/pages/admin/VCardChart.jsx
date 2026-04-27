@@ -270,7 +270,7 @@ const VCardChart = () => {
     });
 
     const fetchChartList = () => {
-        axios.get('http://localhost:8000/api/vcards/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/vcards/list', { withCredentials: true })
             .then(res => setChartsList(res.data))
             .catch(err => console.error("Could not fetch vcards list", err));
     };
@@ -288,11 +288,11 @@ const VCardChart = () => {
 
         const { module, facet, phase, label } = selectedChart;
 
-        axios.get(`http://localhost:8000/api/vcards/sync/${module}/${facet}/${phase}`, { withCredentials: true })
+        axios.get(`http://${window.location.hostname}:8000/api/vcards/sync/${module}/${facet}/${phase}`, { withCredentials: true })
             .then(res => {
                 const data = res.data;
                 setHeaderSubtitle(`MDL${module} FCT${facet} PHS${phase}`);
-                setLogoUrl(data.logo_url ? `http://localhost:8000${data.logo_url}` : null);
+                setLogoUrl(data.logo_url ? `http://${window.location.hostname}:8000${data.logo_url}` : null);
                 setBannerText(data.banner_text || "");
                 setTLabel(data.t_label || "T");
                 setPhaseLabel(`${phase}`);
@@ -350,7 +350,7 @@ const VCardChart = () => {
         formData.append('state_payload', JSON.stringify(vCards));
 
         try {
-            await axios.post('http://localhost:8000/api/vcards/sync', formData, {
+            await axios.post('http://' + window.location.hostname + ':8000/api/vcards/sync', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });

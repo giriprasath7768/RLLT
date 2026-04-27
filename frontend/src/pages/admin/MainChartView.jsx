@@ -104,12 +104,12 @@ const MainChartView = () => {
 
     const fetchChartList = () => {
         // Fetch saved charts
-        axios.get('http://localhost:8000/api/charts/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
             .then(res => setChartsList(res.data))
             .catch(err => console.error("Could not fetch charts list", err));
 
         // Fetch RLLT Database for dynamic max facets/phases
-        axios.get('http://localhost:8000/api/rllt_lookup', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/rllt_lookup', { withCredentials: true })
             .then(res => setRlltDB(res.data))
             .catch(err => console.error("Could not fetch RLLT db", err));
     };
@@ -147,7 +147,7 @@ const MainChartView = () => {
         const __fixedPreload = location.state?.chartData;
         const fetchPromise = __fixedPreload
             ? Promise.resolve({ data: __fixedPreload })
-            : axios.get(`http://localhost:8000/api/charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
+            : axios.get(`http://${window.location.hostname}:8000/api/charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
 
         fetchPromise.then(res => {
             const data = res.data;
@@ -156,7 +156,7 @@ const MainChartView = () => {
             const phase = selectedChart?.phase || location.state?.assignment?.phase || '1';
             setBannerText(data.banner_text || "");
             setTLabel(data.t_label || "T");
-            setLogoUrl(data.logo_url ? `http://localhost:8000${data.logo_url}` : null);
+            setLogoUrl(data.logo_url ? `http://${window.location.hostname}:8000${data.logo_url}` : null);
             setHeaderSubtitle(`MODULE${module}:FACET${facet}:PHASE-${phase}`);
             setPhaseLabel(String(phase));
 
@@ -194,7 +194,7 @@ const MainChartView = () => {
             acceptClassName: 'p-button-danger',
             accept: () => {
                 const { module, facet, phase } = selectedChart;
-                axios.delete(`http://localhost:8000/api/charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
+                axios.delete(`http://${window.location.hostname}:8000/api/charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
                     .then(res => {
                         toast.current?.show({ severity: 'success', summary: 'Deleted', detail: 'Chart deleted successfully.', life: 3000 });
                         setSelectedChart(null);

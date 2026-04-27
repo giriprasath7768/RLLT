@@ -112,14 +112,14 @@ const WordEditor = () => {
     const [expandedChapterId, setExpandedChapterId] = useState(null);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => {
                 const sorted = res.data.sort((a, b) => a.name.localeCompare(b.name));
                 setBooksDB(sorted);
             })
             .catch(console.error);
 
-        axios.get('http://localhost:8000/api/chapters', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/chapters', { withCredentials: true })
             .then(res => setChaptersDB(res.data))
             .catch(console.error);
     }, []);
@@ -159,7 +159,7 @@ const WordEditor = () => {
 
     const fetchSavedDocuments = async () => {
         try {
-            const res = await axios.get('http://localhost:8000/api/documents/', { withCredentials: true });
+            const res = await axios.get('http://' + window.location.hostname + ':8000/api/documents/', { withCredentials: true });
             setSavedDocuments(res.data);
             setSavedDocsModalOpen(true);
         } catch (error) {
@@ -186,7 +186,7 @@ const WordEditor = () => {
     const deleteDocument = async (id) => {
         if (!window.confirm("Are you sure you want to delete this document? This cannot be undone.")) return;
         try {
-            await axios.delete(`http://localhost:8000/api/documents/${id}`, { withCredentials: true });
+            await axios.delete(`http://${window.location.hostname}:8000/api/documents/${id}`, { withCredentials: true });
             setSavedDocuments(prev => prev.filter(doc => doc.id !== id));
             if (documentId === id) {
                 setDocumentId(null);
@@ -213,9 +213,9 @@ const WordEditor = () => {
         setIsSaving(true);
         try {
             if (currentDocId) {
-                await axios.put(`http://localhost:8000/api/documents/${currentDocId}`, payload, { withCredentials: true });
+                await axios.put(`http://${window.location.hostname}:8000/api/documents/${currentDocId}`, payload, { withCredentials: true });
             } else {
-                const res = await axios.post('http://localhost:8000/api/documents/', payload, { withCredentials: true });
+                const res = await axios.post('http://' + window.location.hostname + ':8000/api/documents/', payload, { withCredentials: true });
                 setDocumentId(res.data.id);
             }
         } catch (error) {

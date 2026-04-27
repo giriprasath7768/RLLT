@@ -27,7 +27,7 @@ const Login = () => {
             formData.append('password', password);
 
             // Assuming backend runs on localhost:8000
-            await axios.post('http://localhost:8000/api/login', formData, {
+            await axios.post('http://' + window.location.hostname + ':8000/api/login', formData, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
@@ -35,7 +35,7 @@ const Login = () => {
             });
 
             // After successful login, fetch user info to know role
-            const userResponse = await axios.get('http://localhost:8000/api/me', {
+            const userResponse = await axios.get('http://' + window.location.hostname + ':8000/api/me', {
                 withCredentials: true
             });
 
@@ -55,7 +55,7 @@ const Login = () => {
         e.preventDefault();
         setTtomError('');
         try {
-            await axios.post('http://localhost:8000/api/ttom-login', {
+            await axios.post('http://' + window.location.hostname + ':8000/api/ttom-login', {
                 mobile_number: ttomMobile,
                 pin: ttomPin
             }, {

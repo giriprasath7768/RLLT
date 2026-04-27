@@ -93,7 +93,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const res = await axios.get('http://localhost:8000/api/me', { withCredentials: true });
+                const res = await axios.get('http://' + window.location.hostname + ':8000/api/me', { withCredentials: true });
                 setIsAuthenticated(true);
                 setUserRole(res.data.role);
             } catch (err) {
@@ -122,7 +122,7 @@ const EnhancedStudentDashboardWrapper = ({ children }) => {
     const [status, setStatus] = useState(null);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/me', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/me', { withCredentials: true })
             .then(res => setStatus(res.data.assessment_status || 'pending'))
             .catch(() => setStatus('error'));
     }, []);

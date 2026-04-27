@@ -539,7 +539,7 @@ const ScrollMenuPopup = ({ position, onSelect, onClose, contentDB = [], activeTr
                                 ) : (
                                     <div className="flex flex-col gap-3 w-full px-2">
                                         {refVideos.map((v, i) => (
-                                            <a key={`v-${i}`} href={`http://localhost:8000${v}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-all text-red-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
+                                            <a key={`v-${i}`} href={`http://${window.location.hostname}:8000${v}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-all text-red-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
                                                 <i className="pi pi-video text-red-600 text-[14px]"></i>
                                                 <span className="truncate">Chapter Video {i + 1}</span>
                                             </a>
@@ -853,7 +853,7 @@ const SMTPlayer = () => {
                     // Plain string fallback
                 }
 
-                audioRef.current.src = `http://localhost:8000${actualAudioUrl}`;
+                audioRef.current.src = `http://${window.location.hostname}:8000${actualAudioUrl}`;
                 setAudioLoadedTrackName(activeTrackName);
 
                 audioRef.current.play().then(() => {
@@ -1011,15 +1011,15 @@ const SMTPlayer = () => {
     }, [aspectRatio]);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => setBooksDB(res.data))
             .catch(console.error);
 
-        axios.get('http://localhost:8000/api/chapters', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/chapters', { withCredentials: true })
             .then(res => setChaptersDB(res.data))
             .catch(console.error);
 
-        axios.get('http://localhost:8000/api/contents/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/contents/list', { withCredentials: true })
             .then(res => setContentDB(res.data))
             .catch(console.error);
 
@@ -1118,13 +1118,13 @@ const SMTPlayer = () => {
             try {
                 const pdfs = JSON.parse(content.pdf_url);
                 if (Array.isArray(pdfs) && pdfs.length > 0) {
-                    return `http://localhost:8000${pdfs[0]}`;
+                    return `http://${window.location.hostname}:8000${pdfs[0]}`;
                 }
                 if (typeof pdfs === 'string') {
-                    return `http://localhost:8000${pdfs}`;
+                    return `http://${window.location.hostname}:8000${pdfs}`;
                 }
             } catch (e) {
-                return `http://localhost:8000${content.pdf_url}`;
+                return `http://${window.location.hostname}:8000${content.pdf_url}`;
             }
         }
         return null;

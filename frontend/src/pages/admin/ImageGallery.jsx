@@ -10,7 +10,7 @@ const ImageGallery = () => {
     const [fullScreenImage, setFullScreenImage] = useState(null);
     const toast = useRef(null);
 
-    const API_BASE_URL = 'http://localhost:8000/api/images';
+    const API_BASE_URL = 'http://' + window.location.hostname + ':8000/api/images';
 
     const fetchImages = async () => {
         setLoading(true);
@@ -199,7 +199,7 @@ const ImageGallery = () => {
             ) : images.length > 0 ? (
                 <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6">
                     {images.map((img) => {
-                        const fullUrl = img.url.startsWith('/') ? `http://localhost:8000${img.url}` : img.url;
+                        const fullUrl = img.url.startsWith('/') ? `http://${window.location.hostname}:8000${img.url}` : img.url;
                         return (
                             <div
                                 key={img.id}

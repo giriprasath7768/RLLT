@@ -17,11 +17,11 @@ const StudentChartListing = () => {
         const fetchAssignments = async () => {
             try {
                 // Fetch all charts
-                const chartsRes = await axios.get('http://localhost:8000/api/charts/list', { withCredentials: true });
+                const chartsRes = await axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true });
                 const allCharts = chartsRes.data;
 
                 // Fetch student assignments
-                const assignmentsRes = await axios.get('http://localhost:8000/api/assignments/my', { withCredentials: true });
+                const assignmentsRes = await axios.get('http://' + window.location.hostname + ':8000/api/assignments/my', { withCredentials: true });
                 const assignments = assignmentsRes.data;
 
                 const mapped = [];

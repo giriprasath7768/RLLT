@@ -128,7 +128,7 @@ const SevenTNTMainChart = () => {
     const [mappingConfig, setMappingConfig] = useState(Array.from({ length: 30 }, () => initialDayObj()));
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => {
                 const booksWithDisplay = res.data.map(b => ({
                     ...b,
@@ -138,11 +138,11 @@ const SevenTNTMainChart = () => {
             })
             .catch(err => console.error("Could not fetch books", err));
 
-        axios.get('http://localhost:8000/api/chapters?limit=3000', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/chapters?limit=3000', { withCredentials: true })
             .then(res => setChaptersDB(res.data))
             .catch(err => console.error("Could not fetch chapters", err));
 
-        axios.get('http://localhost:8000/api/rllt_lookup', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/rllt_lookup', { withCredentials: true })
             .then(res => {
                 const data = res.data;
                 setRlltDB(data);
@@ -280,7 +280,7 @@ const SevenTNTMainChart = () => {
         }
 
         try {
-            const res = await axios.post('http://localhost:8000/api/seven_tnt_charts/sync', formData, {
+            const res = await axios.post('http://' + window.location.hostname + ':8000/api/seven_tnt_charts/sync', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });

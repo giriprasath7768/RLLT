@@ -76,7 +76,7 @@ const CreateContent = () => {
 
     const fetchBooks = async () => {
         try {
-            const res = await axios.get('http://localhost:8000/api/books/', { withCredentials: true });
+            const res = await axios.get('http://' + window.location.hostname + ':8000/api/books/', { withCredentials: true });
             setBooks(res.data);
         } catch (error) {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Could not fetch books' });
@@ -85,7 +85,7 @@ const CreateContent = () => {
 
     const fetchContents = async () => {
         try {
-            const res = await axios.get('http://localhost:8000/api/contents/list', { withCredentials: true });
+            const res = await axios.get('http://' + window.location.hostname + ':8000/api/contents/list', { withCredentials: true });
             setContents(res.data);
         } catch (error) {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Could not fetch contents' });
@@ -251,7 +251,7 @@ const CreateContent = () => {
 
         try {
             setLoading(true);
-            await axios.post('http://localhost:8000/api/contents/sync', formData, {
+            await axios.post('http://' + window.location.hostname + ':8000/api/contents/sync', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });
@@ -314,7 +314,7 @@ const CreateContent = () => {
                     return;
                 }
 
-                const res = await axios.post('http://localhost:8000/api/contents/bulk', { items }, { withCredentials: true });
+                const res = await axios.post('http://' + window.location.hostname + ':8000/api/contents/bulk', { items }, { withCredentials: true });
                 toast.current?.show({ severity: 'success', summary: 'Import Success', detail: `Imported ${res.data.processed} records.` });
                 fetchContents();
             } catch (error) {
@@ -328,7 +328,7 @@ const CreateContent = () => {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`http://localhost:8000/api/contents/${id}`, { withCredentials: true });
+            await axios.delete(`http://${window.location.hostname}:8000/api/contents/${id}`, { withCredentials: true });
             toast.current?.show({ severity: 'success', summary: 'Deleted', detail: 'Content removed' });
             fetchContents();
         } catch (e) {
@@ -447,7 +447,7 @@ const CreateContent = () => {
                                                     <div className="flex flex-col gap-1.5 mt-1">
                                                         {audios.map((a, i) => (
                                                             <div key={i} className="flex items-center gap-2">
-                                                                <a href={`http://localhost:8000${a.url}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1">
+                                                                <a href={`http://${window.location.hostname}:8000${a.url}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1">
                                                                     <i className="pi pi-play-circle"></i> Play Audio {i + 1}
                                                                 </a>
                                                                 {a.language && (
@@ -474,7 +474,7 @@ const CreateContent = () => {
                                                         return (
                                                             <div className="flex flex-wrap gap-2 mt-1">
                                                                 {vids.map((v, i) => (
-                                                                    <a key={i} href={`http://localhost:8000${v}`} target="_blank" rel="noreferrer" className="bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-900 transition-colors text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1 border border-blue-100">
+                                                                    <a key={i} href={`http://${window.location.hostname}:8000${v}`} target="_blank" rel="noreferrer" className="bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-900 transition-colors text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1 border border-blue-100">
                                                                         <i className="pi pi-play" style={{ fontSize: '10px' }}></i> View {i + 1}
                                                                     </a>
                                                                 ))}
@@ -482,10 +482,10 @@ const CreateContent = () => {
                                                         )
                                                     }
                                                     if (typeof vids === 'string') {
-                                                        return <a href={`http://localhost:8000${vids}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm font-medium">Watch</a>;
+                                                        return <a href={`http://${window.location.hostname}:8000${vids}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm font-medium">Watch</a>;
                                                     }
                                                 } catch (e) {
-                                                    return <a href={`http://localhost:8000${chapter.video_url}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm font-medium">Watch</a>;
+                                                    return <a href={`http://${window.location.hostname}:8000${chapter.video_url}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm font-medium">Watch</a>;
                                                 }
                                                 return <span className="text-gray-400 text-sm">Not uploaded</span>;
                                             })()}
@@ -503,7 +503,7 @@ const CreateContent = () => {
                                                         return (
                                                             <div className="flex flex-col gap-1.5 mt-1">
                                                                 {pdfs.map((p, i) => (
-                                                                    <a key={i} href={`http://localhost:8000${p}`} target="_blank" rel="noreferrer" className="text-gray-700 hover:text-red-600 text-[13px] hover:underline flex items-center gap-1.5 w-full">
+                                                                    <a key={i} href={`http://${window.location.hostname}:8000${p}`} target="_blank" rel="noreferrer" className="text-gray-700 hover:text-red-600 text-[13px] hover:underline flex items-center gap-1.5 w-full">
                                                                         <i className="pi pi-file-pdf text-red-400 text-[12px] shrink-0"></i>
                                                                         <span>Document {i + 1}</span>
                                                                     </a>
@@ -512,10 +512,10 @@ const CreateContent = () => {
                                                         )
                                                     }
                                                     if (typeof pdfs === 'string') {
-                                                        return <a href={`http://localhost:8000${pdfs}`} target="_blank" rel="noreferrer" className="text-red-600 hover:text-red-800 text-sm font-medium">View PDF</a>;
+                                                        return <a href={`http://${window.location.hostname}:8000${pdfs}`} target="_blank" rel="noreferrer" className="text-red-600 hover:text-red-800 text-sm font-medium">View PDF</a>;
                                                     }
                                                 } catch (e) {
-                                                    return <a href={`http://localhost:8000${chapter.pdf_url}`} target="_blank" rel="noreferrer" className="text-red-600 hover:text-red-800 text-sm font-medium">View PDF</a>;
+                                                    return <a href={`http://${window.location.hostname}:8000${chapter.pdf_url}`} target="_blank" rel="noreferrer" className="text-red-600 hover:text-red-800 text-sm font-medium">View PDF</a>;
                                                 }
                                                 return <span className="text-gray-400 text-sm">Not uploaded</span>;
                                             })()}
@@ -620,7 +620,7 @@ const CreateContent = () => {
                                             {au.isExisting ? (
                                                 <div className="flex flex-col gap-1">
                                                     <label className="font-semibold text-gray-600 text-sm">Existing Audio</label>
-                                                    <a href={`http://localhost:8000${au.url}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm truncate bg-blue-50 px-3 py-2 rounded-md border border-blue-100 flex items-center gap-2">
+                                                    <a href={`http://${window.location.hostname}:8000${au.url}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm truncate bg-blue-50 px-3 py-2 rounded-md border border-blue-100 flex items-center gap-2">
                                                         <i className="pi pi-headphones"></i> View Current Audio File
                                                     </a>
                                                 </div>
@@ -629,7 +629,7 @@ const CreateContent = () => {
                                                     <label className="font-semibold text-gray-600 text-sm">Audio Upload (.mp3, .wav)</label>
                                                     <div className="flex flex-wrap items-center gap-3">
                                                         <FileUpload mode="advanced" accept="audio/*" maxFileSize={50000000}
-                                                            name="file" url="http://localhost:8000/api/contents/upload" withCredentials={true}
+                                                            name="file" url="http://" + window.location.hostname + ":8000/api/contents/upload" withCredentials={true}
                                                             onSelect={(e) => updateAudioUpload(index, 'file', e.files[0])}
                                                             onClear={() => updateAudioUpload(index, 'file', null)}
                                                             onRemove={() => updateAudioUpload(index, 'file', null)}
@@ -672,13 +672,13 @@ const CreateContent = () => {
                                         <div className="mb-2 flex flex-wrap gap-2">
                                             {existingVideos.map((v, i) => (
                                                 <div key={i} className="bg-blue-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-blue-100 text-sm">
-                                                    <a href={`http://localhost:8000${v}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800">Video {i + 1}</a>
+                                                    <a href={`http://${window.location.hostname}:8000${v}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800">Video {i + 1}</a>
                                                     <i className="pi pi-times cursor-pointer text-red-500 hover:text-red-700" onClick={() => setExistingVideos(prev => prev.filter((_, idx) => idx !== i))}></i>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
-                                    <FileUpload name="file" url="http://localhost:8000/api/contents/upload" withCredentials={true}
+                                    <FileUpload name="file" url="http://" + window.location.hostname + ":8000/api/contents/upload" withCredentials={true}
                                         multiple accept="video/mp4,video/quicktime,video/webm" maxFileSize={150000000}
                                         onSelect={(e) => setPendingVideosCount(e.files.length)}
                                         onClear={() => setPendingVideosCount(0)}
@@ -706,13 +706,13 @@ const CreateContent = () => {
                                         <div className="mb-2 flex flex-wrap gap-2">
                                             {existingPdfs.map((v, i) => (
                                                 <div key={i} className="bg-red-50 px-3 py-1.5 rounded-md flex items-center gap-2 border border-red-100 text-sm">
-                                                    <a href={`http://localhost:8000${v}`} target="_blank" rel="noreferrer" className="text-red-600 hover:text-red-800">Document {i + 1}</a>
+                                                    <a href={`http://${window.location.hostname}:8000${v}`} target="_blank" rel="noreferrer" className="text-red-600 hover:text-red-800">Document {i + 1}</a>
                                                     <i className="pi pi-times cursor-pointer text-red-500 hover:text-red-700" onClick={() => setExistingPdfs(prev => prev.filter((_, idx) => idx !== i))}></i>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
-                                    <FileUpload name="file" url="http://localhost:8000/api/contents/upload" withCredentials={true}
+                                    <FileUpload name="file" url="http://" + window.location.hostname + ":8000/api/contents/upload" withCredentials={true}
                                         multiple accept="application/pdf" maxFileSize={50000000}
                                         onSelect={(e) => setPendingPdfsCount(e.files.length)}
                                         onClear={() => setPendingPdfsCount(0)}

@@ -12,8 +12,8 @@ const DashboardLeader = () => {
         const fetchStats = async () => {
             try {
                 const authConfig = { withCredentials: true };
-                const stRes = await axios.get('http://localhost:8000/api/students', authConfig);
-                const asstRes = await axios.get('http://localhost:8000/api/assessments', authConfig);
+                const stRes = await axios.get('http://' + window.location.hostname + ':8000/api/students', authConfig);
+                const asstRes = await axios.get('http://' + window.location.hostname + ':8000/api/assessments', authConfig);
                 setStats({
                     students: stRes.data.length || 0,
                     assessments: asstRes.data.length || 0,

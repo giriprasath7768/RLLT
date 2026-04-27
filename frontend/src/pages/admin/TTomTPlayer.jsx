@@ -352,7 +352,7 @@ const TTomTPlayer = () => {
 
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:8000/api/logout', {}, { withCredentials: true });
+            await axios.post('http://' + window.location.hostname + ':8000/api/logout', {}, { withCredentials: true });
         } catch (error) {
             console.error("Logout error", error);
         }
@@ -466,7 +466,7 @@ const TTomTPlayer = () => {
                 // If not JSON or fails to parse, leave it as is
             }
         }
-        return vUrl ? `http://localhost:8000${vUrl}` : null;
+        return vUrl ? `http://${window.location.hostname}:8000${vUrl}` : null;
     }, [activeTrackName, activeVideoIndex, contentDB]);
 
     const activeRefLink = React.useMemo(() => {
@@ -498,19 +498,19 @@ const TTomTPlayer = () => {
     }, [activeTrackName, contentDB]);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/me', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/me', { withCredentials: true })
             .then(res => setUserRole(res.data.role))
             .catch(err => console.error("Could not fetch user role", err));
 
-        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => setBooksDB(res.data))
             .catch(console.error);
 
-        axios.get('http://localhost:8000/api/chapters', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/chapters', { withCredentials: true })
             .then(res => setChaptersDB(res.data))
             .catch(console.error);
 
-        axios.get('http://localhost:8000/api/contents/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/contents/list', { withCredentials: true })
             .then(res => setContentDB(res.data))
             .catch(err => console.error("Contents DB fetch error", err));
 
@@ -553,7 +553,7 @@ const TTomTPlayer = () => {
                                 if (matchIdx !== -1) targetIdx = matchIdx;
                             }
 
-                            ad.src = `http://localhost:8000${parsedAudios[targetIdx].url}`;
+                            ad.src = `http://${window.location.hostname}:8000${parsedAudios[targetIdx].url}`;
                             ad.play();
                             setActiveTrackName(nextTrackName);
                             setActiveAudioIndex(targetIdx);
@@ -612,7 +612,7 @@ const TTomTPlayer = () => {
                     if (matchIdx !== -1) targetIdx = matchIdx;
                 }
                 const track = parsedAudios[targetIdx] || parsedAudios[0];
-                audioRef.current.src = `http://localhost:8000${track.url}`;
+                audioRef.current.src = `http://${window.location.hostname}:8000${track.url}`;
                 audioRef.current.play();
                 setActiveTrackName(bookStr);
                 setActiveAudioIndex(targetIdx);
@@ -669,7 +669,7 @@ const TTomTPlayer = () => {
 
     useEffect(() => {
         if (!location.state?.payload) {
-            axios.get('http://localhost:8000/api/ttom_users/me/chart', { withCredentials: true })
+            axios.get('http://' + window.location.hostname + ':8000/api/ttom_users/me/chart', { withCredentials: true })
                 .then(res => {
                     setFetchedPayload(typeof res.data.payload === 'string' ? JSON.parse(res.data.payload) : res.data.payload);
                     setFetchedFilter(res.data.filter);

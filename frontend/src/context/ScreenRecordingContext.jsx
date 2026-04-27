@@ -53,7 +53,7 @@ export const ScreenRecordingProvider = ({ children }) => {
                     const formData = new FormData();
                     formData.append('file', blob, 'video.webm');
 
-                    const response = await fetch('http://localhost:8000/api/screen-recorder/convert', {
+                    const response = await fetch('http://' + window.location.hostname + ':8000/api/screen-recorder/convert', {
                         method: 'POST',
                         body: formData
                     });

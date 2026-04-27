@@ -13,10 +13,10 @@ const AssignChart = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const studentsRes = await axios.get('http://localhost:8000/api/students/', { withCredentials: true });
+                const studentsRes = await axios.get('http://' + window.location.hostname + ':8000/api/students/', { withCredentials: true });
                 setStudents(studentsRes.data);
                 
-                const assignmentsRes = await axios.get('http://localhost:8000/api/assignments/', { withCredentials: true });
+                const assignmentsRes = await axios.get('http://' + window.location.hostname + ':8000/api/assignments/', { withCredentials: true });
                 setAssignments(assignmentsRes.data);
             } catch (err) {
                 console.error('Error fetching data:', err);
@@ -60,7 +60,7 @@ const AssignChart = () => {
                 end_date: new Date(endDate).toISOString(),
             };
             
-            const res = await axios.post('http://localhost:8000/api/assignments/', payload, { withCredentials: true });
+            const res = await axios.post('http://' + window.location.hostname + ':8000/api/assignments/', payload, { withCredentials: true });
             
             setAssignments([res.data, ...assignments]);
             setMessage('Chart successfully assigned!');

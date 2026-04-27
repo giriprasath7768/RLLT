@@ -103,7 +103,7 @@ const SevenTNTDayCycleChart = () => {
     const [chaptersDB, setChaptersDB] = useState([]);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => {
                 const booksWithDisplay = res.data.map(b => ({
                     ...b,
@@ -113,11 +113,11 @@ const SevenTNTDayCycleChart = () => {
             })
             .catch(err => console.error("Could not fetch books", err));
 
-        axios.get('http://localhost:8000/api/chapters?limit=3000', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/chapters?limit=3000', { withCredentials: true })
             .then(res => setChaptersDB(res.data))
             .catch(err => console.error("Could not fetch chapters", err));
 
-        axios.get('http://localhost:8000/api/rllt_lookup', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/rllt_lookup', { withCredentials: true })
             .then(res => {
                 const data = res.data;
                 setRlltDB(data);
@@ -444,7 +444,7 @@ const SevenTNTDayCycleChart = () => {
         formData.append("state_payload", JSON.stringify(rowsData));
 
         try {
-            await axios.post('http://localhost:8000/api/seven_tnt_daycycle_charts/sync', formData, {
+            await axios.post('http://' + window.location.hostname + ':8000/api/seven_tnt_daycycle_charts/sync', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });

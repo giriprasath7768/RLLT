@@ -9,9 +9,9 @@ const DashboardStudent = () => {
         const fetchData = async () => {
             try {
                 // Fetch me for marks
-                const meRes = await axios.get('http://localhost:8000/api/me', { withCredentials: true });
+                const meRes = await axios.get('http://' + window.location.hostname + ':8000/api/me', { withCredentials: true });
                 // Fetch assigned charts count
-                const chartsRes = await axios.get('http://localhost:8000/api/assignments/my', { withCredentials: true });
+                const chartsRes = await axios.get('http://' + window.location.hostname + ':8000/api/assignments/my', { withCredentials: true });
 
                 setStats({
                     marks: meRes.data.assessment_marks || 0,

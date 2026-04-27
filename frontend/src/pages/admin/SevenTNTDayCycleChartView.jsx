@@ -99,7 +99,7 @@ const SevenTNTDayCycleChartView = () => {
     const getFS = (base) => (base + (tableFontSize - 12)) + 'px';
 
     const fetchChartList = () => {
-        axios.get('http://localhost:8000/api/seven_tnt_daycycle_charts/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/seven_tnt_daycycle_charts/list', { withCredentials: true })
             .then(res => setChartsList(res.data))
             .catch(err => console.error("Could not fetch charts list", err));
     };
@@ -123,7 +123,7 @@ const SevenTNTDayCycleChartView = () => {
 
         const fetchPromise = preloadData
             ? Promise.resolve({ data: preloadData })
-            : axios.get(`http://localhost:8000/api/seven_tnt_daycycle_charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
+            : axios.get(`http://${window.location.hostname}:8000/api/seven_tnt_daycycle_charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
 
         fetchPromise.then(res => {
             const data = res.data;
@@ -135,7 +135,7 @@ const SevenTNTDayCycleChartView = () => {
             setTLabel(data.t_label || "T");
             // In creation, there are 3 logos technically, but DB usually keeps 1 for MainChart. 
             // We set logo1 here if needed.
-            if (data.logo_url) setLogo1(`http://localhost:8000${data.logo_url}`);
+            if (data.logo_url) setLogo1(`http://${window.location.hostname}:8000${data.logo_url}`);
 
             setPhaseLabel(String(phase));
 
@@ -165,7 +165,7 @@ const SevenTNTDayCycleChartView = () => {
             acceptClassName: 'p-button-danger',
             accept: () => {
                 const { module, facet, phase } = selectedChart;
-                axios.delete(`http://localhost:8000/api/seven_tnt_daycycle_charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
+                axios.delete(`http://${window.location.hostname}:8000/api/seven_tnt_daycycle_charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
                     .then(res => {
                         toast.current?.show({ severity: 'success', summary: 'Deleted', detail: 'Chart deleted successfully.', life: 3000 });
                         setSelectedChart(null);

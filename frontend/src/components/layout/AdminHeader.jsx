@@ -25,7 +25,7 @@ const AdminHeader = ({ onMenuToggle }) => {
     React.useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const res = await axios.get('http://localhost:8000/api/profile/me', { withCredentials: true });
+                const res = await axios.get('http://' + window.location.hostname + ':8000/api/profile/me', { withCredentials: true });
                 const data = res.data;
                 setUserProfile({
                     name: data.name || '',
@@ -45,7 +45,7 @@ const AdminHeader = ({ onMenuToggle }) => {
 
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:8000/api/logout', {}, { withCredentials: true });
+            await axios.post('http://' + window.location.hostname + ':8000/api/logout', {}, { withCredentials: true });
             navigate('/login');
         } catch (err) {
             console.error('Logout failed:', err);

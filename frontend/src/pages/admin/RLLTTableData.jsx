@@ -47,7 +47,7 @@ const RLLTTableData = () => {
 
     const fetchData = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/api/rllt_lookup', { withCredentials: true });
+            const response = await axios.get('http://' + window.location.hostname + ':8000/api/rllt_lookup', { withCredentials: true });
             setDataList(response.data);
             setLoading(false);
         } catch (error) {
@@ -79,12 +79,12 @@ const RLLTTableData = () => {
 
             try {
                 if (record.id) {
-                    const response = await axios.put(`http://localhost:8000/api/rllt_lookup/${record.id}`, _record, { withCredentials: true });
+                    const response = await axios.put(`http://${window.location.hostname}:8000/api/rllt_lookup/${record.id}`, _record, { withCredentials: true });
                     const index = findIndexById(record.id);
                     _dataList[index] = response.data;
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Record Updated', life: 3000 });
                 } else {
-                    const response = await axios.post('http://localhost:8000/api/rllt_lookup/', _record, { withCredentials: true });
+                    const response = await axios.post('http://' + window.location.hostname + ':8000/api/rllt_lookup/', _record, { withCredentials: true });
                     _dataList.push(response.data);
                     toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Record Created', life: 3000 });
                 }
@@ -110,7 +110,7 @@ const RLLTTableData = () => {
 
     const deleteRecord = async () => {
         try {
-            await axios.delete(`http://localhost:8000/api/rllt_lookup/${record.id}`, { withCredentials: true });
+            await axios.delete(`http://${window.location.hostname}:8000/api/rllt_lookup/${record.id}`, { withCredentials: true });
             let _dataList = dataList.filter((val) => val.id !== record.id);
             setDataList(_dataList);
             setDeleteRecordDialog(false);
@@ -190,7 +190,7 @@ const RLLTTableData = () => {
                 }
 
                 setLoading(true);
-                axios.post('http://localhost:8000/api/rllt_lookup/bulk', parsedRllt, { withCredentials: true })
+                axios.post('http://' + window.location.hostname + ':8000/api/rllt_lookup/bulk', parsedRllt, { withCredentials: true })
                     .then(res => {
                         toast.current.show({ severity: 'success', summary: 'Success', detail: res.data.message || 'Imported RLLT Data successfully', life: 3000 });
                         setImportDialog(false);

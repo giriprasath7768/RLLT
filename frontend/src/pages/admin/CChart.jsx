@@ -82,17 +82,17 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
     const getFS = (base) => (base + (tableFontSize - 12)) + 'px';
 
     const fetchChartList = () => {
-        axios.get('http://localhost:8000/api/charts/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
             .then(res => setChartsList(res.data))
             .catch(err => console.error("Could not fetch charts list", err));
 
-        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => setBooksDB(res.data));
 
-        axios.get('http://localhost:8000/api/chapters', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/chapters', { withCredentials: true })
             .then(res => setChaptersDB(res.data));
 
-        axios.get('http://localhost:8000/api/rllt_lookup', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/rllt_lookup', { withCredentials: true })
             .then(res => setRlltDB(res.data));
     };
 
@@ -114,7 +114,7 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
         const __fixedPreload = location.state?.chartData;
         const fetchPromise = __fixedPreload
             ? Promise.resolve({ data: __fixedPreload })
-            : axios.get(`http://localhost:8000/api/charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
+            : axios.get(`http://${window.location.hostname}:8000/api/charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
 
         fetchPromise.then(res => {
             const data = res.data;
@@ -129,7 +129,7 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
             const maxPhases = availablePhases.length > 0 ? Math.max(...availablePhases.map(d => d.phase)) : phase;
 
             setHeaderSubtitle(`MDL${module} FCT${facet}/${maxFacets} PHS${phase}/${maxPhases}`);
-            setLogoUrl(data.logo_url ? `http://localhost:8000${data.logo_url}` : null);
+            setLogoUrl(data.logo_url ? `http://${window.location.hostname}:8000${data.logo_url}` : null);
             setBannerText(data.banner_text || "");
             setTLabel(data.t_label || "T");
             setPhaseLabel(`${phase}/${maxPhases}`);

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/students';
+const API_URL = 'http://' + window.location.hostname + ':8000/api/students';
 
 export const StudentService = {
     getStudents() {
@@ -60,10 +60,10 @@ export const StudentService = {
     },
 
     getAvailableCharts() {
-        return axios.get(`http://localhost:8000/api/charts/list`, { withCredentials: true }).then(res => res.data);
+        return axios.get(`http://${window.location.hostname}:8000/api/charts/list`, { withCredentials: true }).then(res => res.data);
     },
 
     bulkAssignChart(payload) {
-        return axios.post(`http://localhost:8000/api/assignments/bulk`, payload, { withCredentials: true }).then(res => res.data);
+        return axios.post(`http://${window.location.hostname}:8000/api/assignments/bulk`, payload, { withCredentials: true }).then(res => res.data);
     }
 };

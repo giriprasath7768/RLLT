@@ -17,7 +17,7 @@ const StudentPlayers = () => {
         // Fetch assignments for the student to only show players they have access to
         const fetchAssignments = async () => {
             try {
-                const assignmentRes = await axios.get('http://localhost:8000/api/assignments/my', { withCredentials: true });
+                const assignmentRes = await axios.get('http://' + window.location.hostname + ':8000/api/assignments/my', { withCredentials: true });
                 const assignments = assignmentRes.data;
                 if (assignments.length === 0) {
                     setAssignedCharts([]);
@@ -25,7 +25,7 @@ const StudentPlayers = () => {
                     return;
                 }
 
-                const allChartsRes = await axios.get('http://localhost:8000/api/charts/list', { withCredentials: true });
+                const allChartsRes = await axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true });
                 const allCharts = allChartsRes.data;
 
                 const mapped = [];

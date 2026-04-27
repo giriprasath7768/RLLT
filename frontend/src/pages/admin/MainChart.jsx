@@ -146,7 +146,7 @@ const MainChart = () => {
     }, [chartDays]);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => {
                 const booksWithDisplay = res.data.map(b => ({
                     ...b,
@@ -156,11 +156,11 @@ const MainChart = () => {
             })
             .catch(err => console.error("Could not fetch books", err));
 
-        axios.get('http://localhost:8000/api/chapters?limit=3000', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/chapters?limit=3000', { withCredentials: true })
             .then(res => setChaptersDB(res.data))
             .catch(err => console.error("Could not fetch chapters", err));
 
-        axios.get('http://localhost:8000/api/rllt_lookup', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/rllt_lookup', { withCredentials: true })
             .then(res => {
                 const data = res.data;
                 setRlltDB(data);
@@ -188,12 +188,12 @@ const MainChart = () => {
             setFct(f);
             setPhs(p);
 
-            axios.get(`http://localhost:8000/api/charts/sync/${m}/${f}/${p}`, { withCredentials: true })
+            axios.get(`http://${window.location.hostname}:8000/api/charts/sync/${m}/${f}/${p}`, { withCredentials: true })
                 .then(res => {
                     const data = res.data;
                     setBannerText(data.banner_text || "");
                     setTLabel(data.t_label || "T");
-                    setLogo1(data.logo_url ? `http://localhost:8000${data.logo_url}` : null);
+                    setLogo1(data.logo_url ? `http://${window.location.hostname}:8000${data.logo_url}` : null);
 
                     if (data.state_payload) {
                         try {
@@ -253,7 +253,7 @@ const MainChart = () => {
         // Prevent accidental overwrites when creating multiple new unlinked charts manually
         if (!isEditing) {
             try {
-                const listRes = await axios.get('http://localhost:8000/api/charts/list', { withCredentials: true });
+                const listRes = await axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true });
                 const existingCharts = listRes.data.filter(c => c.module === mdl && c.facet === fct);
                 if (existingCharts.length > 0) {
                     const maxUsedPhase = Math.max(...existingCharts.map(c => c.phase));
@@ -281,7 +281,7 @@ const MainChart = () => {
         }
 
         try {
-            const res = await axios.post('http://localhost:8000/api/charts/sync', formData, {
+            const res = await axios.post('http://' + window.location.hostname + ':8000/api/charts/sync', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });

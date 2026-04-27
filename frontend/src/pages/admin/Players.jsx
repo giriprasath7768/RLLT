@@ -14,7 +14,7 @@ const Players = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/charts/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
             .then(res => {
                 const mapped = res.data.map(chartData => {
                     const payloadStr = chartData.state_payload || "";

@@ -64,7 +64,7 @@ const AdminSidebar = ({ visible, onHide }) => {
     const [userRole, setUserRole] = useState(null);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/me', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/me', { withCredentials: true })
             .then(res => setUserRole(res.data.role))
             .catch(err => console.error("Failed to fetch role", err));
     }, []);

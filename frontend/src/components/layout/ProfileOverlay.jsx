@@ -65,7 +65,7 @@ export default function ProfileOverlay({ visible, viewMode = 'profile', onHide, 
     const handleSave = async () => {
         setIsLoading(true);
         try {
-            await axios.put('http://localhost:8000/api/profile/me', {
+            await axios.put('http://' + window.location.hostname + ':8000/api/profile/me', {
                 name: formData.name,
                 mobile_number: formData.mobile_number,
                 address: formData.address,
@@ -103,7 +103,7 @@ export default function ProfileOverlay({ visible, viewMode = 'profile', onHide, 
 
         setIsPasswordLoading(true);
         try {
-            await axios.put('http://localhost:8000/api/profile/password', {
+            await axios.put('http://' + window.location.hostname + ':8000/api/profile/password', {
                 current_password: passwordData.current_password,
                 new_password: passwordData.new_password
             }, { withCredentials: true });

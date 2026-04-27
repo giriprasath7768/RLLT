@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/ttom_users';
+const API_URL = 'http://' + window.location.hostname + ':8000/api/ttom_users';
 
 export const TTOMUserService = {
     getUsers() {

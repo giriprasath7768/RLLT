@@ -31,7 +31,7 @@ const Register = () => {
     useEffect(() => {
         const fetchLocations = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/locations');
+                const response = await axios.get('http://' + window.location.hostname + ':8000/api/locations');
                 const locOptions = response.data.map(loc => ({
                     label: `${loc.city}, ${loc.country} (${loc.continent})`,
                     value: loc.id
@@ -70,7 +70,7 @@ const Register = () => {
                 stage: cal.stage
             };
 
-            await axios.post('http://localhost:8000/api/register', payload);
+            await axios.post('http://' + window.location.hostname + ':8000/api/register', payload);
 
             toast.current.show({ severity: 'success', summary: 'Registration successful!', detail: 'Check your email for your enrollment number and temporary password.', life: 5000 });
 

@@ -76,16 +76,16 @@ const OilChart = () => {
 
     const fetchChartsLists = async () => {
         try {
-            const resOils = await axios.get('http://localhost:8000/api/oils/list', { withCredentials: true });
+            const resOils = await axios.get('http://' + window.location.hostname + ':8000/api/oils/list', { withCredentials: true });
             setChartsList(resOils.data);
 
-            const resMain = await axios.get('http://localhost:8000/api/charts/list', { withCredentials: true });
+            const resMain = await axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true });
             setMainChartsList(resMain.data);
 
-            const booksRes = await axios.get('http://localhost:8000/api/books', { withCredentials: true });
+            const booksRes = await axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true });
             setBooksDB(booksRes.data);
 
-            const chapRes = await axios.get('http://localhost:8000/api/chapters', { withCredentials: true });
+            const chapRes = await axios.get('http://' + window.location.hostname + ':8000/api/chapters', { withCredentials: true });
             setChaptersDB(chapRes.data);
         } catch (err) {
             console.error("Failed to fetch charts lists", err);
@@ -95,7 +95,7 @@ const OilChart = () => {
     const loadMainChartToOil = async (ref) => {
         if (!ref) return;
         try {
-            const res = await axios.get(`http://localhost:8000/api/charts/sync/${ref.module}/${ref.facet}/${ref.phase}`, { withCredentials: true });
+            const res = await axios.get(`http://${window.location.hostname}:8000/api/charts/sync/${ref.module}/${ref.facet}/${ref.phase}`, { withCredentials: true });
             const data = res.data;
             const module = ref?.module || location.state?.assignment?.module || '1';
             const facet = ref?.facet || location.state?.assignment?.facet || '1';
@@ -160,7 +160,7 @@ const OilChart = () => {
         }
 
         try {
-            await axios.post('http://localhost:8000/api/oils/sync', formData, {
+            await axios.post('http://' + window.location.hostname + ':8000/api/oils/sync', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });

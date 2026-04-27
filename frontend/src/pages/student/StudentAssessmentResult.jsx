@@ -11,7 +11,7 @@ const StudentAssessmentResult = () => {
     useEffect(() => {
         const fetchResults = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/assessments/student/me/results', {
+                const response = await axios.get('http://' + window.location.hostname + ':8000/api/assessments/student/me/results', {
                     withCredentials: true
                 });
                 setResults(response.data);

@@ -499,7 +499,7 @@ const BookIndex = () => {
         if (audioLoadedTrackName !== trackIdentifier) {
             const content = contentDB.find(c => c.book_id === selectedBook.id && c.chapter_id === selectedChapter.id);
             if (content && content.audio_url) {
-                audioRef.current.src = `http://localhost:8000${content.audio_url}`;
+                audioRef.current.src = `http://${window.location.hostname}:8000${content.audio_url}`;
                 setAudioLoadedTrackName(trackIdentifier);
                 audioRef.current.play().catch(e => console.error(e));
                 setIsPlaying(true);
@@ -636,18 +636,18 @@ const BookIndex = () => {
     // Cleanup: When the user opens the accordion, no chapter should be selected automatically.
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/books', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => {
                 const sorted = res.data.sort((a, b) => a.name.localeCompare(b.name));
                 setBooksDB(sorted);
             })
             .catch(console.error);
 
-        axios.get('http://localhost:8000/api/chapters', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/chapters', { withCredentials: true })
             .then(res => setChaptersDB(res.data))
             .catch(console.error);
 
-        axios.get('http://localhost:8000/api/contents/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/contents/list', { withCredentials: true })
             .then(res => setContentDB(res.data))
             .catch(console.error);
     }, []);
@@ -660,10 +660,10 @@ const BookIndex = () => {
         if (content && content.pdf_url) {
             try {
                 const pdfs = JSON.parse(content.pdf_url);
-                if (Array.isArray(pdfs) && pdfs.length > 0) return `http://localhost:8000${pdfs[0]}`;
-                if (typeof pdfs === 'string') return `http://localhost:8000${pdfs}`;
+                if (Array.isArray(pdfs) && pdfs.length > 0) return `http://${window.location.hostname}:8000${pdfs[0]}`;
+                if (typeof pdfs === 'string') return `http://${window.location.hostname}:8000${pdfs}`;
             } catch (e) {
-                return `http://localhost:8000${content.pdf_url}`;
+                return `http://${window.location.hostname}:8000${content.pdf_url}`;
             }
         }
         return null;

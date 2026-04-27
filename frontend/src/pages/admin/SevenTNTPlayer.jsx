@@ -176,7 +176,7 @@ const SevenTNTPlayer = () => {
     }, []);
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/seven_tnt_charts/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/seven_tnt_charts/list', { withCredentials: true })
             .then(res => {
                 if (res.data && res.data.length > 0) {
                     // Try to find a chart with a payload
@@ -192,12 +192,12 @@ const SevenTNTPlayer = () => {
             .catch(err => console.error("Could not load charts", err));
 
         // Fetch a default audio from our DB to make the player functional
-        axios.get('http://localhost:8000/api/contents/list', { withCredentials: true })
+        axios.get('http://' + window.location.hostname + ':8000/api/contents/list', { withCredentials: true })
             .then(res => {
                 if (res.data && res.data.length > 0) {
                     const contentWithAudio = res.data.find(c => c.audio_url);
                     if (contentWithAudio) {
-                        audioRef.current.src = `http://localhost:8000${contentWithAudio.audio_url}`;
+                        audioRef.current.src = `http://${window.location.hostname}:8000${contentWithAudio.audio_url}`;
                     }
                 }
             })
