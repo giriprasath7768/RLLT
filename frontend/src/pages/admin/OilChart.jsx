@@ -43,7 +43,7 @@ const OilChart = () => {
     const [bannerText, setBannerText] = useState("OIL CHART - WISDOM & OT BOOKS");
     const [headerSubtitle, setHeaderSubtitle] = useState("MODULE 2: FACT 3: PHASE 1/3");
     const [logo1, setLogo1] = useState(null);
-    const [tableFontSize, setTableFontSize] = useState(14);
+    const [tableFontSize, setTableFontSize] = useState(8);
 
     // Chart Content State (5 specialized rows - Empty Template)
     const initialRows = [
@@ -195,7 +195,7 @@ const OilChart = () => {
     const [showShareModal, setShowShareModal] = useState(false);
     const [readyShareFile, setReadyShareFile] = useState(null);
 
-    const generatePdfBlob = async (returnCanvasOnly = false) => {
+    const generatePdfBlob = async (returnCanvasOnly = false, forPrint = false) => {
         setIsProcessingPdf(true);
         try {
             if (!window.html2canvas) {
@@ -212,7 +212,7 @@ const OilChart = () => {
             const EXACT_WIDTH = 1220;
 
             const canvas = await window.html2canvas(element, {
-                scale: 1,
+                scale: 3,
                 useCORS: true,
                 backgroundColor: '#ffffff',
                 logging: false,
@@ -235,25 +235,52 @@ const OilChart = () => {
             }
 
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
+            
+            // Revert back to logical CSS DOM dimensions by dividing by the scale factor (3)
+            // This ensures default PDF zoom levels present the text at normal display sizes 
+            // rather than zoomed out drastically from 3660 physical canvas units.
+            const CSS_SCALE = 3;
+            const pdfWidthPx = canvas.width / CSS_SCALE;
+            const pdfHeightPx = canvas.height / CSS_SCALE;
+            
+            // Allow the canvas dimensions to dictate portrait/landscape
+            const pdfOrientation = pdfWidthPx > pdfHeightPx ? 'landscape' : 'portrait';
 
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
+            let pdf;
+            if (forPrint) {
+                // User explicitly requested SINGLE PAGE print layout for everything.
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: 'a4'
+                });
+                
+                const a4Width = pdf.internal.pageSize.getWidth();
+                const a4Height = pdf.internal.pageSize.getHeight();
+                
+                // Standard 30pt hardware margin (~1cm) around the edges.
+                const marginSafeW = a4Width - 60;
+                const marginSafeH = a4Height - 60;
+                
+                // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
+                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
+                const printW = pdfWidthPx * ratio;
+                const printH = pdfHeightPx * ratio;
+                
+                const marginX = (a4Width - printW) / 2;
+                const marginY = (a4Height - printH) / 2;
+                
+                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
+                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+            } else {
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: [pdfWidthPx, pdfHeightPx]
+                });
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidthPx, pdfHeightPx);
+            }
 
-            const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
-            const width = canvasWidth * ratio;
-            const height = canvasHeight * ratio;
-
-            const marginX = (pdfWidth - width) / 2;
-            const marginY = (pdfHeight - height) / 2;
-
-            pdf.addImage(imgData, 'PNG', marginX, marginY, width, height);
             return pdf;
         } catch (e) {
             console.error('PDF generation error', e);
@@ -317,14 +344,33 @@ const OilChart = () => {
 
     const handlePrint = async () => {
         try {
-            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing high-quality print layout...', life: 2000 });
-            const pdf = await generatePdfBlob();
-            pdf.autoPrint();
-            const blobUrl = pdf.output('bloburl');
-            const printWindow = window.open(blobUrl, '_blank');
+            // STEP 1: Synchronously open the popup to bypass the blocker immediately on click
+            const printWindow = window.open('', '_blank');
             if (!printWindow) {
                 toast.current?.show({ severity: 'warn', summary: 'Popup Blocked', detail: 'Please allow popups for this site to view the print format.', life: 5000 });
+                return;
             }
+            
+            // Show a visual loading state in the popup
+            printWindow.document.write(`
+                <html>
+                <head><title>Generating Print...</title></head>
+                <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f3f4f6;">
+                    <h2>Preparing High-Quality Print Document...</h2>
+                </body>
+                </html>
+            `);
+
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing perfect print layout...', life: 2000 });
+            
+            // STEP 2: Asynchronously generate the perfectly scaled A4 PDF
+            const pdf = await generatePdfBlob(false, true);
+            pdf.autoPrint();
+            const blobUrl = pdf.output('bloburl');
+
+            // STEP 3: Redirect the already-trusted popup to the generated blob
+            printWindow.location.href = blobUrl;
+
         } catch (e) {
             console.error(e);
             toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare perfect document for printing.', life: 3000 });

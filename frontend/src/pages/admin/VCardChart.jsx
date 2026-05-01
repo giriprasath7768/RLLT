@@ -248,7 +248,7 @@ const VCardChart = () => {
     const [phaseLabel, setPhaseLabel] = useState("1/1");
 
     // Scale
-    const [tableFontSize, setTableFontSize] = useState(12);
+    const [tableFontSize, setTableFontSize] = useState(8);
 
     // V-Cards Data
     const [vCards, setVCards] = useState([]);

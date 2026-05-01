@@ -108,7 +108,7 @@ const LightChart = () => {
     const [bannerText, setBannerText] = useState("MAIN CHART - 30 DAYS");
 
     const [chartDays, setChartDays] = useState(30);
-    const [tableFontSize, setTableFontSize] = useState(14);
+    const [tableFontSize, setTableFontSize] = useState(8);
 
     // Feature States
     const toast = useRef(null);

@@ -35,3 +35,13 @@ body {
     background-color: #ffffff;
   }
 }
+
+/* Suppress bold in screen mode for all chart bodies, but allow it during PDF generation */
+body:not(.pdf-is-generating) .printable-chart-area tbody *:not(.always-bold) {
+  font-weight: 400 !important;
+}
+
+body:not(.pdf-is-generating) .printable-chart-area tbody input,
+body:not(.pdf-is-generating) .printable-chart-area tbody textarea {
+  font-weight: 400 !important;
+}

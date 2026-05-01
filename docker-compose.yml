@@ -25,6 +25,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@db:5432/media_platform
       - SECRET_KEY=YOUR_SUPER_SECRET_KEY_FOR_JWT_SIGNING_CHANGEME
+      - FORCE_RESTART=1
     ports:
       - "8000:8000"
     depends_on:

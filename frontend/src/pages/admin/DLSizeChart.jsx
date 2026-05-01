@@ -81,7 +81,7 @@ const DLSizeChart = () => {
     const [chaptersDB, setChaptersDB] = useState([]);
 
     // Aesthetic & UX Scaling
-    const [tableFontSize, setTableFontSize] = useState(10); 
+    const [tableFontSize, setTableFontSize] = useState(8); 
     const getFS = (base) => (base + (tableFontSize - 10)) + 'px';
 
     const fetchChartList = () => {
@@ -220,7 +220,7 @@ const DLSizeChart = () => {
             const EXACT_WIDTH = 1220; 
             
             const canvas = await window.html2canvas(element, { 
-                scale: 1, 
+                scale: 3, 
                 useCORS: true,
                 backgroundColor: '#ffffff',
                 logging: false,
@@ -237,25 +237,52 @@ const DLSizeChart = () => {
             });
 
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
             
-            const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
-            const width = canvasWidth * ratio;
-            const height = canvasHeight * ratio;
+            // Revert back to logical CSS DOM dimensions by dividing by the scale factor (3)
+            // This ensures default PDF zoom levels present the text at normal display sizes 
+            // rather than zoomed out drastically from 3660 physical canvas units.
+            const CSS_SCALE = 3;
+            const pdfWidthPx = canvas.width / CSS_SCALE;
+            const pdfHeightPx = canvas.height / CSS_SCALE;
             
-            const marginX = (pdfWidth - width) / 2;
-            const marginY = (pdfHeight - height) / 2;
+            // Allow the canvas dimensions to dictate portrait/landscape
+            const pdfOrientation = pdfWidthPx > pdfHeightPx ? 'landscape' : 'portrait';
 
-            pdf.addImage(imgData, 'PNG', marginX, marginY, width, height);
+            let pdf;
+            if (forPrint) {
+                // User explicitly requested SINGLE PAGE print layout for everything.
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: 'a4'
+                });
+                
+                const a4Width = pdf.internal.pageSize.getWidth();
+                const a4Height = pdf.internal.pageSize.getHeight();
+                
+                // Standard 30pt hardware margin (~1cm) around the edges.
+                const marginSafeW = a4Width - 60;
+                const marginSafeH = a4Height - 60;
+                
+                // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
+                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
+                const printW = pdfWidthPx * ratio;
+                const printH = pdfHeightPx * ratio;
+                
+                const marginX = (a4Width - printW) / 2;
+                const marginY = (a4Height - printH) / 2;
+                
+                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
+                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+            } else {
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: [pdfWidthPx, pdfHeightPx]
+                });
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidthPx, pdfHeightPx);
+            }
+
             return pdf;
         } catch (e) {
             console.error('PDF generation error', e);
@@ -278,13 +305,36 @@ const DLSizeChart = () => {
 
     const handlePrint = async () => {
         try {
-            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing print layout...', life: 2000 });
-            const pdf = await generatePdfBlob();
+            // STEP 1: Synchronously open the popup to bypass the blocker immediately on click
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                toast.current?.show({ severity: 'warn', summary: 'Popup Blocked', detail: 'Please allow popups for this site to view the print format.', life: 5000 });
+                return;
+            }
+            
+            // Show a visual loading state in the popup
+            printWindow.document.write(`
+                <html>
+                <head><title>Generating Print...</title></head>
+                <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f3f4f6;">
+                    <h2>Preparing High-Quality Print Document...</h2>
+                </body>
+                </html>
+            `);
+
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing perfect print layout...', life: 2000 });
+            
+            // STEP 2: Asynchronously generate the perfectly scaled A4 PDF
+            const pdf = await generatePdfBlob(false, true);
             pdf.autoPrint();
             const blobUrl = pdf.output('bloburl');
-            window.open(blobUrl, '_blank');
+
+            // STEP 3: Redirect the already-trusted popup to the generated blob
+            printWindow.location.href = blobUrl;
+
         } catch (e) {
-            toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare print document.', life: 3000 });
+            console.error(e);
+            toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare perfect document for printing.', life: 3000 });
         }
     };
 
@@ -370,7 +420,7 @@ const DLSizeChart = () => {
             
             return (
                 <div key={chunk.id} className="mb-0">
-                    <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
+                    <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                         <colgroup>
                             <col style={{ width: '8%' }} /> {/* DAY */}
                             <col style={{ width: '17%' }} /> {/* PRO */}
@@ -402,29 +452,29 @@ const DLSizeChart = () => {
                             
                             {/* COLUMN HEADERS */}
                             <tr className="bg-white text-center font-bold h-[20px]">
-                                <th className="border-2 border-black p-0" style={{ fontSize: getFS(10) }}>DAY</th>
+                                <th className="border-2 border-black p-0" style={{ fontSize: getFS(23) }}>DAY</th>
                                 <th colSpan={3} className="border-2 border-black p-0 bg-white"></th>
-                                <th className="border-2 border-black p-0" style={{ fontSize: getFS(10) }}>ART</th>
-                                <th className="border-2 border-black p-0" style={{ fontSize: getFS(10) }}>YES</th>
+                                <th className="border-2 border-black p-0" style={{ fontSize: getFS(23) }}>ART</th>
+                                <th className="border-2 border-black p-0" style={{ fontSize: getFS(23) }}>YES</th>
                             </tr>
 
                             {/* DAILY ROWS */}
                             {chunk.days.map(d => (
                                 <tr key={d.id} className="bg-white text-center border-b-2 border-black h-[22px]">
-                                    <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(11) }}>{d.day}</td>
+                                    <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(25) }}>{d.day}</td>
                                     
                                     {/* M1 TEXT (Green) */}
-                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight" style={{ color: greenColor, fontSize: getFS(10) }}>
+                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight" style={{ color: greenColor, fontSize: getFS(23) }}>
                                         {d.m1b}
                                     </td>
                                     
                                     {/* M2 TEXT (Green) */}
-                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight" style={{ color: greenColor, fontSize: getFS(10) }}>
+                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight" style={{ color: greenColor, fontSize: getFS(23) }}>
                                         {d.m2b}
                                     </td>
                                     
                                     {/* M3 TEXT (Split Green / Blue) */}
-                                    <td className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(10) }}>
+                                    <td className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}>
                                         <div className="flex w-full h-full text-left leading-tight">
                                             <div className="w-1/2 px-1 font-bold border-r border-gray-200 h-full flex items-center" style={{ color: greenColor }}>
                                                 {d.m3b_morning}
@@ -436,7 +486,7 @@ const DLSizeChart = () => {
                                     </td>
                                     
                                     {/* ART TIME (Split Green / Blue) */}
-                                    <td className="border-2 border-black p-0 bg-white font-bold text-center" style={{ fontSize: getFS(9) }}>
+                                    <td className="border-2 border-black p-0 bg-white font-bold text-center" style={{ fontSize: getFS(20) }}>
                                         <div className="flex w-full h-full items-center">
                                             <div className="w-1/2" style={{ color: greenColor }}>
                                                 {d.m3t_morning}
@@ -447,7 +497,7 @@ const DLSizeChart = () => {
                                         </div>
                                     </td>
 
-                                    <td className="border-2 border-black p-0 text-center" style={{ fontSize: getFS(10) }}>
+                                    <td className="border-2 border-black p-0 text-center" style={{ fontSize: getFS(23) }}>
                                         {d.yes ? '✔️' : ''}
                                     </td>
                                 </tr>
@@ -455,21 +505,21 @@ const DLSizeChart = () => {
 
                             {/* CHUNK TOTALS */}
                             <tr className="bg-white text-center font-extrabold h-[22px]">
-                                <td colSpan={2} className="border-2 border-black bg-white" style={{ fontSize: getFS(10) }}>{formatSum(m1Total, 'HrMins')}</td>
-                                <td className="border-2 border-black bg-white text-center" style={{ fontSize: getFS(10) }}>{formatSum(m2Total, 'HrMins')}</td>
+                                <td colSpan={2} className="border-2 border-black bg-white" style={{ fontSize: getFS(23) }}>{formatSum(m1Total, 'HrMins')}</td>
+                                <td className="border-2 border-black bg-white text-center" style={{ fontSize: getFS(23) }}>{formatSum(m2Total, 'HrMins')}</td>
                                 
                                 <td className="border-2 border-black bg-white p-0">
-                                   <div className="w-full text-center tracking-widest uppercase font-bold text-gray-500" style={{ fontSize: getFS(10) }}>
+                                   <div className="w-full text-center tracking-widest uppercase font-bold text-gray-500" style={{ fontSize: getFS(23) }}>
                                         TOTAL
                                    </div>
                                 </td>
                                 
                                 <td className="border-2 border-black bg-white p-0">
                                     <div className="flex w-full h-full items-center">
-                                        <div className="w-1/2 font-bold" style={{ color: greenColor, fontSize: getFS(9) }}>
+                                        <div className="w-1/2 font-bold" style={{ color: greenColor, fontSize: getFS(20) }}>
                                             {formatHrMinDetailed(mornArtTotal)}
                                         </div>
-                                        <div className="w-1/2 font-bold" style={{ color: blueColor, fontSize: getFS(9) }}>
+                                        <div className="w-1/2 font-bold" style={{ color: blueColor, fontSize: getFS(20) }}>
                                             {formatHrMinDetailed(eveArtTotal)}
                                         </div>
                                     </div>
@@ -492,7 +542,7 @@ const DLSizeChart = () => {
                     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                     body { background-color: transparent !important; }
                 }
-                .rllt-condensed { font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif !important; }
+                .rllt-condensed { font-family: 'Arial Narrow', Arial, sans-serif !important; }
                 .pdf-table, .pdf-table td, .pdf-table th { 
                     border: var(--cell-border, 1px solid #000) !important; 
                     border-collapse: collapse !important; 

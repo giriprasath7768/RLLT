@@ -1,6 +1,6 @@
 import enum
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, func, Enum as SQLEnum, Integer, Float, UniqueConstraint
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, func, Enum as SQLEnum, Integer, Float, UniqueConstraint, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.database import Base
@@ -365,3 +365,133 @@ class ImageGallery(Base):
     image_url = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+class ClassroomCourse(Base):
+    __tablename__ = "classroom_courses"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    modules = relationship("ClassroomModule", back_populates="course", cascade="all, delete-orphan")
+    location = relationship("Location")
+
+class ClassroomModule(Base):
+    __tablename__ = "classroom_modules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    course_id = Column(UUID(as_uuid=True), ForeignKey("classroom_courses.id"), nullable=False)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    course = relationship("ClassroomCourse", back_populates="modules")
+    lessons = relationship("ClassroomLesson", back_populates="module", cascade="all, delete-orphan")
+
+class ClassroomLesson(Base):
+    __tablename__ = "classroom_lessons"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    module_id = Column(UUID(as_uuid=True), ForeignKey("classroom_modules.id"), nullable=False)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=False)
+    title = Column(String, nullable=False)
+    content = Column(String, nullable=True)
+    video_url = Column(String, nullable=True)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    module = relationship("ClassroomModule", back_populates="lessons")
+
+class ClassroomAssignment(Base):
+    __tablename__ = "classroom_assignments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    lesson_id = Column(UUID(as_uuid=True), ForeignKey("classroom_lessons.id"), nullable=True)
+    course_id = Column(UUID(as_uuid=True), ForeignKey("classroom_courses.id"), nullable=True)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=False)
+    group_id = Column(UUID(as_uuid=True), ForeignKey("student_groups.id"), nullable=True)
+    student_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    due_date = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    lesson = relationship("ClassroomLesson")
+    course = relationship("ClassroomCourse")
+    submissions = relationship("ClassroomSubmission", back_populates="assignment", cascade="all, delete-orphan")
+
+class ClassroomSubmission(Base):
+    __tablename__ = "classroom_submissions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    assignment_id = Column(UUID(as_uuid=True), ForeignKey("classroom_assignments.id"), nullable=False)
+    student_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=False)
+    content = Column(String, nullable=True)
+    file_url = Column(String, nullable=True)
+    status = Column(String, default="submitted")
+    grade = Column(Float, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    assignment = relationship("ClassroomAssignment", back_populates="submissions")
+    student = relationship("User")
+
+class ClassroomProgress(Base):
+    __tablename__ = "classroom_progress"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    student_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    lesson_id = Column(UUID(as_uuid=True), ForeignKey("classroom_lessons.id"), nullable=False)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=False)
+    completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+    student = relationship("User")
+    lesson = relationship("ClassroomLesson")
+
+class ClassroomResource(Base):
+    __tablename__ = "classroom_resources"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=True)
+    title = Column(String, nullable=False)
+    resource_type = Column(String, nullable=False) # 'video', 'audio', 'study_material', 'link', 'book'
+    url = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    location = relationship("Location")
+
+
+class ClassroomQnA(Base):
+    __tablename__ = "classroom_qna"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=True)
+    topic = Column(String, nullable=False, index=True)
+    question_number = Column(String, nullable=True)
+    question_text = Column(String, nullable=False)
+    
+    # New fields
+    seven_tnt = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    stage = Column(String, nullable=True)
+    
+    # Store choices and grades as a list of dicts: [{"choice": "A", "grade": 10}, ...]
+    choices = Column(JSON, nullable=True)
+    
+    # Optional/deprecated
+    answer_text = Column(String, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    location = relationship("Location")

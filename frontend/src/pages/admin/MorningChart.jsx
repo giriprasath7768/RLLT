@@ -46,7 +46,7 @@ const MorningChart = () => {
     const [chaptersDB, setChaptersDB] = useState([]);
 
     // Aesthetic & UX Scaling
-    const [tableFontSize, setTableFontSize] = useState(14); 
+    const [tableFontSize, setTableFontSize] = useState(8); 
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
 
     const fetchChartList = () => {
@@ -100,7 +100,7 @@ const MorningChart = () => {
     const [showShareModal, setShowShareModal] = useState(false);
     const [readyShareFile, setReadyShareFile] = useState(null);
 
-    const generatePdfBlob = async (returnCanvasOnly = false) => {
+    const generatePdfBlob = async (returnCanvasOnly = false, forPrint = false) => {
         setIsProcessingPdf(true);
         try {
             if (!window.html2canvas) {
@@ -116,7 +116,7 @@ const MorningChart = () => {
             const EXACT_WIDTH = 1220; 
             
             const canvas = await window.html2canvas(element, { 
-                scale: 1, 
+                scale: 3, 
                 backgroundColor: '#ffffff',
                 logging: false,
                 width: EXACT_WIDTH,
@@ -133,17 +133,52 @@ const MorningChart = () => {
             if (returnCanvasOnly) return canvas;
 
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            
+            // Revert back to logical CSS DOM dimensions by dividing by the scale factor (3)
+            // This ensures default PDF zoom levels present the text at normal display sizes 
+            // rather than zoomed out drastically from 3660 physical canvas units.
+            const CSS_SCALE = 3;
+            const pdfWidthPx = canvas.width / CSS_SCALE;
+            const pdfHeightPx = canvas.height / CSS_SCALE;
+            
+            // Allow the canvas dimensions to dictate portrait/landscape
+            const pdfOrientation = pdfWidthPx > pdfHeightPx ? 'landscape' : 'portrait';
 
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
-            const width = canvas.width * ratio;
-            const height = canvas.height * ratio;
-            const marginX = (pdfWidth - width) / 2;
-            const marginY = (pdfHeight - height) / 2;
+            let pdf;
+            if (forPrint) {
+                // User explicitly requested SINGLE PAGE print layout for everything.
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: 'a4'
+                });
+                
+                const a4Width = pdf.internal.pageSize.getWidth();
+                const a4Height = pdf.internal.pageSize.getHeight();
+                
+                // Standard 30pt hardware margin (~1cm) around the edges.
+                const marginSafeW = a4Width - 60;
+                const marginSafeH = a4Height - 60;
+                
+                // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
+                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
+                const printW = pdfWidthPx * ratio;
+                const printH = pdfHeightPx * ratio;
+                
+                const marginX = (a4Width - printW) / 2;
+                const marginY = (a4Height - printH) / 2;
+                
+                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
+                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+            } else {
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: [pdfWidthPx, pdfHeightPx]
+                });
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidthPx, pdfHeightPx);
+            }
 
-            pdf.addImage(imgData, 'PNG', marginX, marginY, width, height);
             return pdf;
         } catch (e) {
             throw e;
@@ -197,12 +232,36 @@ const MorningChart = () => {
 
     const handlePrint = async () => {
         try {
-            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing print layout...', life: 2000 });
-            const pdf = await generatePdfBlob();
+            // STEP 1: Synchronously open the popup to bypass the blocker immediately on click
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                toast.current?.show({ severity: 'warn', summary: 'Popup Blocked', detail: 'Please allow popups for this site to view the print format.', life: 5000 });
+                return;
+            }
+            
+            // Show a visual loading state in the popup
+            printWindow.document.write(`
+                <html>
+                <head><title>Generating Print...</title></head>
+                <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f3f4f6;">
+                    <h2>Preparing High-Quality Print Document...</h2>
+                </body>
+                </html>
+            `);
+
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing perfect print layout...', life: 2000 });
+            
+            // STEP 2: Asynchronously generate the perfectly scaled A4 PDF
+            const pdf = await generatePdfBlob(false, true);
             pdf.autoPrint();
-            window.open(pdf.output('bloburl'), '_blank');
+            const blobUrl = pdf.output('bloburl');
+
+            // STEP 3: Redirect the already-trusted popup to the generated blob
+            printWindow.location.href = blobUrl;
+
         } catch (e) {
-            toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare print document.', life: 3000 });
+            console.error(e);
+            toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare perfect document for printing.', life: 3000 });
         }
     };
 
@@ -216,7 +275,7 @@ const MorningChart = () => {
                     body { background-color: transparent !important; }
                     .print\\:overflow-visible { overflow: visible !important; }
                 }
-                .rllt-condensed { font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif !important; }
+                .rllt-condensed { font-family: 'Arial Narrow', Arial, sans-serif !important; }
                 .custom-white-dropdown .p-dropdown-label, .custom-white-dropdown .p-inputtext, .p-dropdown-panel.custom-white-panel .p-dropdown-item { color: #000 !important; }
                 .p-dropdown-panel.custom-white-panel .p-dropdown-item { background-color: #fff !important; }
                 .p-dropdown-panel.custom-white-panel .p-dropdown-item:hover { background-color: #e2e8f0 !important; }
@@ -254,7 +313,7 @@ const MorningChart = () => {
                 <div id="printable-chart-area" className="w-full bg-white p-6">
                     <div className="w-full border-[3px] border-black p-3 bg-white">
                         <div className="pb-1 overflow-x-auto print:overflow-visible">
-                            <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
+                            <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                 <colgroup>
                                     <col style={{ width: '2%' }} />
                                     <col style={{ width: '2%' }} />

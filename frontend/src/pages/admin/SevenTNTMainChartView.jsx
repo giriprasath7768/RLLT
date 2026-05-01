@@ -114,7 +114,7 @@ const SevenTNTMainChartView = () => {
     const [maxPhases, setMaxPhases] = useState(1);
 
     // Aesthetic & UX Scaling
-    const [tableFontSize, setTableFontSize] = useState(14);
+    const [tableFontSize, setTableFontSize] = useState(8);
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
 
     const fetchChartList = () => {
@@ -232,7 +232,7 @@ const SevenTNTMainChartView = () => {
     const [showShareModal, setShowShareModal] = useState(false);
     const [readyShareFile, setReadyShareFile] = useState(null);
 
-    const generatePdfBlob = async (returnCanvasOnly = false) => {
+    const generatePdfBlob = async (returnCanvasOnly = false, forPrint = false) => {
         setIsProcessingPdf(true);
         try {
             if (!window.html2canvas) {
@@ -250,7 +250,7 @@ const SevenTNTMainChartView = () => {
             const EXACT_WIDTH = 1220;
 
             const canvas = await window.html2canvas(element, {
-                scale: 1,
+                scale: 3,
                 useCORS: true,
                 backgroundColor: '#ffffff',
                 logging: false,
@@ -276,25 +276,52 @@ const SevenTNTMainChartView = () => {
             }
 
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
+            
+            // Revert back to logical CSS DOM dimensions by dividing by the scale factor (3)
+            // This ensures default PDF zoom levels present the text at normal display sizes 
+            // rather than zoomed out drastically from 3660 physical canvas units.
+            const CSS_SCALE = 3;
+            const pdfWidthPx = canvas.width / CSS_SCALE;
+            const pdfHeightPx = canvas.height / CSS_SCALE;
+            
+            // Allow the canvas dimensions to dictate portrait/landscape
+            const pdfOrientation = pdfWidthPx > pdfHeightPx ? 'landscape' : 'portrait';
 
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
+            let pdf;
+            if (forPrint) {
+                // User explicitly requested SINGLE PAGE print layout for everything.
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: 'a4'
+                });
+                
+                const a4Width = pdf.internal.pageSize.getWidth();
+                const a4Height = pdf.internal.pageSize.getHeight();
+                
+                // Standard 30pt hardware margin (~1cm) around the edges.
+                const marginSafeW = a4Width - 60;
+                const marginSafeH = a4Height - 60;
+                
+                // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
+                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
+                const printW = pdfWidthPx * ratio;
+                const printH = pdfHeightPx * ratio;
+                
+                const marginX = (a4Width - printW) / 2;
+                const marginY = (a4Height - printH) / 2;
+                
+                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
+                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+            } else {
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: [pdfWidthPx, pdfHeightPx]
+                });
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidthPx, pdfHeightPx);
+            }
 
-            const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
-            const width = canvasWidth * ratio;
-            const height = canvasHeight * ratio;
-
-            const marginX = (pdfWidth - width) / 2;
-            const marginY = (pdfHeight - height) / 2;
-
-            pdf.addImage(imgData, 'PNG', marginX, marginY, width, height);
             return pdf;
         } catch (e) {
             console.error('PDF generation error', e);
@@ -362,19 +389,33 @@ const SevenTNTMainChartView = () => {
 
     const handlePrint = async () => {
         try {
-            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing high-quality print layout...', life: 2000 });
-            const pdf = await generatePdfBlob();
-
-            // Inject javascript payload into the PDF to trigger native Print dialog upon browser preview loading
-            pdf.autoPrint();
-
-            const blobUrl = pdf.output('bloburl');
-
-            // Open the PDF in a new tab securely. The injected autoPrint() will prompt the dialog immediately.
-            const printWindow = window.open(blobUrl, '_blank');
+            // STEP 1: Synchronously open the popup to bypass the blocker immediately on click
+            const printWindow = window.open('', '_blank');
             if (!printWindow) {
                 toast.current?.show({ severity: 'warn', summary: 'Popup Blocked', detail: 'Please allow popups for this site to view the print format.', life: 5000 });
+                return;
             }
+            
+            // Show a visual loading state in the popup
+            printWindow.document.write(`
+                <html>
+                <head><title>Generating Print...</title></head>
+                <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f3f4f6;">
+                    <h2>Preparing High-Quality Print Document...</h2>
+                </body>
+                </html>
+            `);
+
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing perfect print layout...', life: 2000 });
+            
+            // STEP 2: Asynchronously generate the perfectly scaled A4 PDF
+            const pdf = await generatePdfBlob(false, true);
+            pdf.autoPrint();
+            const blobUrl = pdf.output('bloburl');
+
+            // STEP 3: Redirect the already-trusted popup to the generated blob
+            printWindow.location.href = blobUrl;
+
         } catch (e) {
             console.error(e);
             toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare perfect document for printing.', life: 3000 });
@@ -404,7 +445,7 @@ const SevenTNTMainChartView = () => {
                 }
 
                 .rllt-condensed {
-                    font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif !important;
+                    font-family: 'Arial Narrow', Arial, sans-serif !important;
                 }
 
                 /* Ensure dropdown label text is black */
@@ -428,6 +469,11 @@ const SevenTNTMainChartView = () => {
 
                 .custom-white-dropdown .p-placeholder {
                     color: #4b5563 !important;
+                }
+                .text-vertical {
+                    writing-mode: vertical-rl;
+                    transform: scale(-1);
+                    text-align: center;
                 }
             `}</style>
             <Toast ref={toast} />
@@ -599,7 +645,7 @@ const SevenTNTMainChartView = () => {
 
                         <div className="pb-1 overflow-x-auto w-full">
                             <style>{`
-                            .rllt-condensed { font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif !important; }
+                            .rllt-condensed { font-family: 'Arial Narrow', Arial, sans-serif !important; }
                         `}</style>
                             <table className="w-full bg-white table-fixed border-collapse rllt-condensed" style={{ border: '3px solid #000' }}>
                                 {/* 11 Column setup as per 7TNT Specs */}
@@ -648,7 +694,7 @@ const SevenTNTMainChartView = () => {
                                             <td colSpan={4} className="border-2 border-black p-1 align-middle bg-white">
                                                 <input
                                                     className="w-full bg-transparent border-2 text-black font-bold focus:outline-none px-1"
-                                                    style={{ fontSize: getFS(11), height: '20px', borderColor: promiseBorderColors[cIdx % promiseBorderColors.length] }}
+                                                    style={{ fontSize: getFS(25), height: '20px', borderColor: promiseBorderColors[cIdx % promiseBorderColors.length] }}
                                                     type="text"
                                                     value={chunk.promiseInput || ''}
                                                     onChange={(e) => {
@@ -663,16 +709,16 @@ const SevenTNTMainChartView = () => {
                                             </td>
                                         </tr>
                                         <tr className="bg-white text-center font-bold h-[30px]">
-                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(10) }}></th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>DAY</th>
-                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(10) }}>
+                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}></th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>DAY</th>
+                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}>
                                                 {chunk.bookNameHeader || ''}
                                             </th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>PAGES</th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>CHAP</th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>ART</th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>YES</th>
-                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(10) }}></th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>PAGES</th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>CHAP</th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>ART</th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>YES</th>
+                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}></th>
                                         </tr>
                                         {chunk.days.map((d, dIdx) => (
                                             <tr key={d.id} className="bg-white text-center border-b-2 border-black h-[38px]">
@@ -680,29 +726,29 @@ const SevenTNTMainChartView = () => {
                                                 {dIdx === 0 && (
                                                     <td rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative">
                                                         <div className="absolute inset-0 flex items-center justify-center">
-                                                            <div className="bg-transparent text-center font-extrabold text-black uppercase origin-center w-32" style={{ transform: 'rotate(-90deg)', fontSize: getFS(11) }}>{chunk.team}</div>
+                                                            <div className="bg-transparent text-center font-extrabold text-black uppercase leading-none w-[150px]" style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }}>{chunk.team}</div>
                                                         </div>
                                                     </td>
                                                 )}
 
-                                                <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black whitespace-nowrap px-1" style={{ fontSize: getFS(12) }}>{d.day}</td>
+                                                <td className="border-2 border-black p-0 font-extrabold bg-white text-black whitespace-nowrap px-1 align-middle" style={{ fontSize: getFS(25) }}>{d.day}</td>
 
                                                 {/* BOOKS/CONTENT CELLS */}
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
-                                                    <div className="w-full text-left uppercase font-bold text-black px-1" style={{ fontSize: getFS(12) }}>{d.content || ''}</div>
+                                                    <div className="w-full text-center uppercase font-bold text-black px-1" style={{ fontSize: getFS(25) }}>{d.content || ''}</div>
                                                 </td>
 
                                                 {/* PAGES */}
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
-                                                    <div className="w-full text-center uppercase font-bold text-black px-1" style={{ fontSize: getFS(13) }}>{d.pages || ''}</div>
+                                                    <div className="w-full text-center uppercase font-bold text-black px-1" style={{ fontSize: getFS(20) }}>{d.pages || ''}</div>
                                                 </td>
 
                                                 {/* STATS */}
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
-                                                    <div className="w-full text-center font-bold text-black" style={{ fontSize: getFS(11) }}>{d.chap || ''}</div>
+                                                    <div className="w-full text-center font-bold text-black" style={{ fontSize: getFS(25) }}>{d.chap || ''}</div>
                                                 </td>
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
-                                                    <div className="w-full text-center font-bold text-black" style={{ fontSize: getFS(11) }}>{d.art || ''}</div>
+                                                    <div className="w-full text-center font-bold text-black" style={{ fontSize: getFS(25) }}>{d.art || ''}</div>
                                                 </td>
 
                                                 {/* CHECKBOX */}
@@ -718,7 +764,7 @@ const SevenTNTMainChartView = () => {
                                                 {dIdx === 0 && (
                                                     <td rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative">
                                                         <div className="absolute inset-0 flex items-center justify-center">
-                                                            <div className="bg-transparent text-center font-extrabold text-black uppercase origin-center w-32" style={{ transform: 'rotate(-90deg)', fontSize: getFS(11) }}>{chunk.week}</div>
+                                                            <div className="bg-transparent text-center font-extrabold text-black uppercase leading-none w-[150px]" style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }}>{chunk.week}</div>
                                                         </div>
                                                     </td>
                                                 )}
@@ -731,7 +777,7 @@ const SevenTNTMainChartView = () => {
                                             <td colSpan={3} className="border-2 border-black p-0 bg-white align-middle text-center">
                                                 <input
                                                     className="w-full bg-transparent border-none text-center font-extrabold tracking-[0.2em] text-black focus:outline-none uppercase"
-                                                    style={{ fontSize: getFS(12) }}
+                                                    style={{ fontSize: getFS(25) }}
                                                     type="text"
                                                     value={chunk.footerHash || ''}
                                                     onChange={(e) => {
@@ -741,7 +787,7 @@ const SevenTNTMainChartView = () => {
                                                     }}
                                                 />
                                             </td>
-                                            <td colSpan={2} className="border-2 border-black p-0 font-bold text-black" style={{ fontSize: getFS(11) }}>
+                                            <td colSpan={2} className="border-2 border-black p-0 font-bold text-black" style={{ fontSize: getFS(25) }}>
                                                 {formatSum(chunk.days.reduce((acc, curr) => acc + parseTime(curr.art), 0), 'Hm').replace('H ', '.').replace('m', '.h')}
                                             </td>
                                         </tr>
@@ -755,13 +801,13 @@ const SevenTNTMainChartView = () => {
                                         <td colSpan={3} className="border-2 border-black p-0 bg-white align-middle text-center">
                                             <input
                                                 className="w-full bg-transparent border-none text-center font-extrabold tracking-[0.2em] text-black focus:outline-none uppercase"
-                                                style={{ fontSize: getFS(12) }}
+                                                style={{ fontSize: getFS(25) }}
                                                 type="text"
                                                 value={grandTotalHash1}
                                                 onChange={(e) => setGrandTotalHash1(e.target.value)}
                                             />
                                         </td>
-                                        <td colSpan={3} className="border-2 border-black p-0 font-bold text-black" style={{ fontSize: getFS(11) }}>
+                                        <td colSpan={3} className="border-2 border-black p-0 font-bold text-black" style={{ fontSize: getFS(25) }}>
                                             {formatSum(chunks.flatMap(c => c.days).reduce((acc, curr) => acc + parseTime(curr.art), 0), 'Hm').replace('H ', '.').replace('m', '.h')}
                                         </td>
                                     </tr>
@@ -769,7 +815,7 @@ const SevenTNTMainChartView = () => {
                                         <td colSpan={8} className="border-2 border-black p-0 bg-white align-middle text-center">
                                             <input
                                                 className="w-full bg-transparent border-none text-center font-extrabold tracking-[0.5em] text-black focus:outline-none uppercase"
-                                                style={{ fontSize: getFS(12) }}
+                                                style={{ fontSize: getFS(25) }}
                                                 type="text"
                                                 value={grandTotalHash2}
                                                 onChange={(e) => setGrandTotalHash2(e.target.value)}

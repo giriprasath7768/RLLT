@@ -103,7 +103,7 @@ const MainChart = () => {
     const [logo2, setLogo2] = useState(null);
 
     // Aesthetic & UX Scaling
-    const [tableFontSize, setTableFontSize] = useState(14); // Default base data size now 14 (requested shift from 12->14)
+    const [tableFontSize, setTableFontSize] = useState(8); // Default base data size now 14 (requested shift from 12->14)
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px'; // scaling relative to the new 14px default
 
     // Popup state
@@ -640,8 +640,8 @@ const MainChart = () => {
         <div className="p-8 w-full max-w-full overflow-x-auto bg-gray-50 min-h-screen">
             <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet" />
             <style>{`
-                .rllt-condensed {
-                    font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif !important;
+                .rllt-condensed, .rllt-condensed input, .rllt-condensed textarea {
+                    font-family: 'Arial Narrow', Arial, sans-serif !important;
                 }
                 
                 /* Ensure dropdown label text is black */
@@ -876,15 +876,15 @@ const MainChart = () => {
                                 <table className="w-full bg-white table-fixed border-collapse" style={{ borderSpacing: 0 }}>
                                     <colgroup>
                                         <col style={{ width: '2%' }} />
-                                        <col style={{ width: '2%' }} />
+                                        <col style={{ width: '4%' }} />
                                         <col style={{ width: '12%' }} />
                                         <col style={{ width: '4%' }} />
                                         <col style={{ width: '15%' }} />
                                         <col style={{ width: '4%' }} />
-                                        <col style={{ width: '36%' }} />
+                                        <col style={{ width: '33%' }} />
+                                        <col style={{ width: '4%' }} />
                                         <col style={{ width: '5%' }} />
-                                        <col style={{ width: '4%' }} />
-                                        <col style={{ width: '4%' }} />
+                                        <col style={{ width: '5%' }} />
                                         <col style={{ width: '5%' }} />
                                         <col style={{ width: '3%' }} />
                                         <col style={{ width: '4%' }} />
@@ -902,13 +902,13 @@ const MainChart = () => {
                                             <tbody key={chunk.id} className="text-black font-bold text-sm rllt-condensed">
                                                 <tr className="bg-white h-[35px]">
                                                     <td className="border-2 border-black bg-white"></td>
-                                                    <td colSpan={7} className="border-2 border-black px-2 align-middle bg-white">
+                                                    <td colSpan={6} className="border-2 border-black px-2 align-middle bg-white">
                                                         <div className="flex h-full w-full items-center">
                                                             <input
                                                                 value={chunk.promises}
                                                                 onChange={(e) => updateChunk(cIdx, 'promises', e.target.value)}
                                                                 className="w-full h-full outline-none font-bold bg-transparent text-black font-serif tracking-tight text-left uppercase pl-2"
-                                                                style={{ fontSize: getFS(14) }}
+                                                                style={{ fontSize: getFS(20) }}
                                                                 placeholder="GOD'S PROMISES : ENTER GOD'S PROMISES HERE"
                                                             />
                                                         </div>
@@ -916,84 +916,84 @@ const MainChart = () => {
                                                     <td colSpan={5} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
                                                         <input
                                                             className="w-full h-full outline-none p-1 font-bold text-center bg-transparent text-black block"
-                                                            style={{ fontSize: getFS(14) }}
+                                                            style={{ fontSize: getFS(20) }}
                                                             value={chunk.promiseInput}
                                                             onChange={(e) => updateChunk(cIdx, 'promiseInput', e.target.value)}
                                                         />
                                                     </td>
-                                                </tr>
-
-                                                <tr className="bg-white text-center font-bold h-[30px]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
-                                                    <th rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(10) }}>
-                                                        <div className="absolute inset-0 flex items-center justify-center">
-                                                            <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(11) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center w-full">
-                                                                <input
-                                                                    className="bg-transparent text-center outline-none w-full font-extrabold"
-                                                                    value={chunk.team}
-                                                                    onChange={(e) => updateChunk(cIdx, 'team', e.target.value)}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </th>
-                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
-                                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">
-                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h1} onChange={(e) => updateChunk(cIdx, 'h1', e.target.value)} />
-                                                    </th>
-                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">
-                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h2} onChange={(e) => updateChunk(cIdx, 'h2', e.target.value)} />
-                                                    </th>
-                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                    <th style={{ fontSize: getFS(14) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">
-                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h3} onChange={(e) => updateChunk(cIdx, 'h3', e.target.value)} />
-                                                    </th>
-                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
-                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
-                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
-                                                    <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
-                                                    <th rowSpan={7} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(10) }}>
-                                                        <div className="absolute inset-0 flex items-center justify-center">
-                                                            <div style={{ transform: 'rotate(-90deg)' }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center">
+                                                    <td rowSpan={8} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(20) }}>
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                            <div style={{ transform: 'rotate(-90deg)' }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center text-center leading-none">
                                                                 {headerSubtitle}
                                                             </div>
                                                         </div>
+                                                    </td>
+                                                </tr>
+
+                                                <tr className="bg-white text-center font-bold h-[30px]" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
+                                                    <th rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative cursor-text" style={{ fontSize: getFS(20) }} onClick={() => document.getElementById(`team-input-${chunk.id}`)?.focus()}>
+                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                            <input
+                                                                id={`team-input-${chunk.id}`}
+                                                                className="bg-transparent text-center outline-none font-extrabold text-black uppercase leading-none w-[150px]"
+                                                                style={{ transform: 'rotate(-90deg)', fontSize: getFS(20) }}
+                                                                value={chunk.team}
+                                                                onChange={(e) => updateChunk(cIdx, 'team', e.target.value)}
+                                                            />
+                                                        </div>
                                                     </th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`DAY`}</th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">
+                                                        <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h1} onChange={(e) => updateChunk(cIdx, 'h1', e.target.value)} />
+                                                    </th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`TIME`}</th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">
+                                                        <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h2} onChange={(e) => updateChunk(cIdx, 'h2', e.target.value)} />
+                                                    </th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`TIME`}</th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle pl-1 pr-1">
+                                                        <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h3} onChange={(e) => updateChunk(cIdx, 'h3', e.target.value)} />
+                                                    </th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`TIME`}</th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`CHAP`}</th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`VERSE`}</th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`ART`}</th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`YES`}</th>
                                                 </tr>
 
                                                 {chunk.days.map((d, dIdx) => (
                                                     <tr key={d.id} className="bg-white text-center hover:bg-gray-50 border-b-2 border-black h-[38px]">
-                                                        <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(12) }}>{d.day}</td>
+                                                        <td className="border-2 border-black p-0 font-extrabold bg-white text-black align-middle" style={{ fontSize: getFS(20) }}>{d.day}</td>
 
-                                                        <td className="border-2 border-black p-0 bg-white">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(12) }} value={d.m1b} onChange={(e) => updateDay(cIdx, d.id, 'm1b', e.target.value)} />
+                                                        <td className="border-2 border-black p-0 bg-white align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m1b} onChange={(e) => updateDay(cIdx, d.id, 'm1b', e.target.value)} />
                                                         </td>
-                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(11) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
-                                                        </td>
-
-                                                        <td className="border-2 border-black p-0 bg-white">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(12) }} value={d.m2b} onChange={(e) => updateDay(cIdx, d.id, 'm2b', e.target.value)} />
-                                                        </td>
-                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(11) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
+                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
                                                         </td>
 
-                                                        <td className="border-2 border-black p-1 bg-white text-left">
-                                                            <input className="w-full text-left outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(13) }} value={d.m3b} onChange={(e) => updateDay(cIdx, d.id, 'm3b', e.target.value)} />
+                                                        <td className="border-2 border-black p-0 bg-white align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m2b} onChange={(e) => updateDay(cIdx, d.id, 'm2b', e.target.value)} />
                                                         </td>
-                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black">
-                                                            <input className="w-full text-left outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(11) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
+                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
                                                         </td>
 
-                                                        <td className="border-2 border-black p-0">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold leading-none text-black" style={{ fontSize: getFS(11) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
+                                                        <td className="border-2 border-black p-1 bg-white text-center align-middle">
+                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m3b} onChange={(e) => updateDay(cIdx, d.id, 'm3b', e.target.value)} />
                                                         </td>
-                                                        <td className="border-2 border-black p-0">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold leading-none text-black" style={{ fontSize: getFS(11) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
+                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
                                                         </td>
-                                                        <td className="border-2 border-black p-0">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold leading-none text-black" style={{ fontSize: getFS(11) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
+
+                                                        <td className="border-2 border-black p-0 align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0 align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0 align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-0 text-center align-middle">
@@ -1007,45 +1007,44 @@ const MainChart = () => {
                                                     </tr>
                                                 ))}
 
-                                                <tr className="bg-white text-center font-extrabold tracking-wide h-[35px]" style={{ fontSize: getFS(13) }}>
+                                                <tr className="bg-white text-center font-extrabold tracking-wide h-[35px]" style={{ fontSize: getFS(20) }}>
                                                     <td className="border-2 border-black bg-white"></td>
-                                                    <td className="border-2 border-black bg-white"></td>
-                                                    <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m1Total, 'HrMins')}</td>
+                                                    <td colSpan={3} className="border-2 border-black bg-white">{formatSum(m1Total, 'HrMins')}</td>
                                                     <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m2Total, 'HrMins')}</td>
                                                     <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m3Total, 'HrMins')}</td>
-                                                    <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{chapTotal}</td>
-                                                    <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{verseTotal}</td>
-                                                    <td colSpan={2} className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{formatSum(artTotal, 'Hm')}</td>
+                                                    <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{chapTotal}</td>
+                                                    <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{verseTotal}</td>
+                                                    <td colSpan={2} className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{formatSum(artTotal, 'Hm')}</td>
                                                 </tr>
                                             </tbody>
                                         );
                                     })}
                                     <tfoot className="pb-4 rllt-condensed">
-                                        <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(11) }}>
-                                            <td colSpan={8} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-gray-50" style={{ fontSize: getFS(14) }}>
+                                        <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(25) }}>
+                                            <td colSpan={8} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-gray-50" style={{ fontSize: getFS(20) }}>
                                                 TOTAL AVERAGE READING TIME {formatSum(
                                                     chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
                                                     'HrMins'
                                                 )}
                                             </td>
-                                            <td className="border-2 border-black p-1 text-center font-extrabold" style={{ fontSize: getFS(14) }}>
+                                            <td className="border-2 border-black p-1 text-center font-extrabold" style={{ fontSize: getFS(20) }}>
                                                 {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.chap) || 0), 0), 0)}
                                             </td>
-                                            <td className="border-2 border-black p-1 text-center font-extrabold font-black text-blue-900" style={{ fontSize: getFS(14) }}>
+                                            <td className="border-2 border-black p-1 text-center font-extrabold font-black text-blue-900" style={{ fontSize: getFS(20) }}>
                                                 {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.verse) || 0), 0), 0)}
                                             </td>
-                                            <td colSpan={3} className="border-2 border-black p-1 text-center font-extrabold bg-gray-50" style={{ fontSize: getFS(14) }}>
+                                            <td colSpan={3} className="border-2 border-black p-1 text-center font-extrabold bg-gray-50" style={{ fontSize: getFS(20) }}>
                                                 {formatSum(
                                                     chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
                                                     'Hm'
                                                 )}
                                             </td>
                                         </tr>
-                                        <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(11) }}>
+                                        <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(25) }}>
                                             <td colSpan={13} className="border-2 border-black p-1">
                                                 <input
                                                     className="w-full text-center outline-none bg-transparent whitespace-nowrap overflow-hidden text-ellipsis italic font-semibold"
-                                                    style={{ fontSize: getFS(11) }}
+                                                    style={{ fontSize: getFS(25) }}
                                                     defaultValue={`It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11`}
                                                 />
                                             </td>
@@ -1057,7 +1056,7 @@ const MainChart = () => {
                             <div className="flex items-center w-full px-2 pt-2 pb-4 bg-transparent mt-1 uppercase">
                                 <span className="font-extrabold text-[15px] text-[#c8a165]">1</span>
                                 <div className="flex-1 text-center">
-                                    <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                    <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                         MODULE {mdl} - FACET {fct}/{maxFacets}: PHASE - {phs}/{maxPhases}
                                     </span>
                                 </div>

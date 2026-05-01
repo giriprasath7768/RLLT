@@ -56,6 +56,15 @@ import WordEditor from './pages/admin/WordEditor';
 import BookIndex from './pages/admin/BookIndex';
 import ScreenRecorder from './pages/admin/ScreenRecorder';
 import ImageGallery from './pages/admin/ImageGallery';
+import DynamicCycleChart from './pages/admin/DynamicCycleChart';
+import ClassroomAdmin from './pages/admin/ClassroomAdmin';
+import StudentClassroom from './pages/student/StudentClassroom';
+import StudentAssignments from './pages/student/StudentAssignments';
+import ClassroomResources from './pages/ClassroomResources';
+import ClassroomQnA from './pages/admin/ClassroomQnA';
+import ClassroomAssignments from './pages/admin/ClassroomAssignments';
+import EvaluateAssignments from './pages/admin/EvaluateAssignments';
+import Shanaz357 from './pages/admin/Shanaz357';
 
 // Dashboard Components
 const DashboardSuperAdmin = () => (
@@ -153,6 +162,7 @@ const AppRoutes = () => {
                     <Route path="/dashboard/super-admin" element={<DashboardSuperAdmin />} />
                     <Route path="/admin/manage-admin" element={<AdminManagement />} />
                     <Route path="/admin/locations" element={<LocationCRUD />} />
+                    <Route path="/admin/classroom" element={<ClassroomAdmin />} />
                 </Route>
 
                 {/* Admin Restricted Routes */}
@@ -191,12 +201,18 @@ const AppRoutes = () => {
 
                 {/* Shared Restricted Routes (SuperAdmin, Admin, Leader) */}
                 <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'leader']} />}>
+                    <Route path="/admin/classroom/resources" element={<ClassroomResources />} />
+                    <Route path="/admin/classroom/qna" element={<ClassroomQnA />} />
+                    <Route path="/admin/classroom/assignments" element={<ClassroomAssignments />} />
+                    <Route path="/admin/classroom/evaluate" element={<EvaluateAssignments />} />
                     <Route path="/admin/7tnt-word" element={<WordEditor />} />
                     <Route path="/admin/charts" element={<MainChart />} />
+                    <Route path="/admin/chart-creation/357-chart" element={<DynamicCycleChart />} />
                     <Route path="/admin/chart-creation/7tnt-main-chart" element={<SevenTNTMainChart />} />
                     <Route path="/admin/chart-creation/7tnt-day-cycle" element={<SevenTNTDayCycleChart />} />
                     <Route path="/admin/chart-creation/light-chart" element={<LightChart />} />
                     <Route path="/admin/reports/student-report" element={<StudentReport />} />
+                    <Route path="/admin/shanaz-357" element={<Shanaz357 />} />
                     <Route path="/admin/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />
                     <Route path="/admin/chart-listing/7tnt-weekly-chart" element={<SevenTNTWeeklyChart />} />
                     <Route path="/admin/chart-listing/7tnt-day-cycle" element={<SevenTNTDayCycleChartView />} />
@@ -230,6 +246,10 @@ const AppRoutes = () => {
                 <Route path="/dashboard/student/smt-player" element={<SMTPlayer />} />
                 <Route path="/dashboard/student/book-index" element={<BookIndex />} />
                 <Route path="/dashboard/student/recordings" element={<Recordings />} />
+                <Route path="/dashboard/student/classroom" element={<StudentClassroom />} />
+                <Route path="/dashboard/student/classroom/assignments" element={<StudentAssignments />} />
+                <Route path="/dashboard/student/classroom/resources" element={<ClassroomResources />} />
+                <Route path="/dashboard/student/classroom/qna" element={<ClassroomQnA />} />
 
                 {/* Dynamically Reused Chart Interfaces (Preloaded with User Data) */}
                 <Route path="/dashboard/student/chart-listing/twenty-four-seven-chart" element={<TwentyFourSevenChartView />} />

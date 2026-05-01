@@ -99,7 +99,7 @@ const TwentyFourSevenChartView = () => {
     const [maxPhases, setMaxPhases] = useState(1);
 
     // Aesthetic & UX Scaling
-    const [tableFontSize, setTableFontSize] = useState(14);
+    const [tableFontSize, setTableFontSize] = useState(8);
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
 
     const fetchChartList = () => {
@@ -215,7 +215,7 @@ const TwentyFourSevenChartView = () => {
     const [showShareModal, setShowShareModal] = useState(false);
     const [readyShareFile, setReadyShareFile] = useState(null);
 
-    const generatePdfBlob = async (returnCanvasOnly = false) => {
+    const generatePdfBlob = async (returnCanvasOnly = false, forPrint = false) => {
         setIsProcessingPdf(true);
         try {
             if (!window.html2canvas) {
@@ -233,7 +233,7 @@ const TwentyFourSevenChartView = () => {
             const EXACT_WIDTH = 1220;
 
             const canvas = await window.html2canvas(element, {
-                scale: 1,
+                scale: 3,
                 useCORS: true,
                 backgroundColor: '#ffffff',
                 logging: false,
@@ -258,25 +258,52 @@ const TwentyFourSevenChartView = () => {
             }
 
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
+            
+            // Revert back to logical CSS DOM dimensions by dividing by the scale factor (3)
+            // This ensures default PDF zoom levels present the text at normal display sizes 
+            // rather than zoomed out drastically from 3660 physical canvas units.
+            const CSS_SCALE = 3;
+            const pdfWidthPx = canvas.width / CSS_SCALE;
+            const pdfHeightPx = canvas.height / CSS_SCALE;
+            
+            // Allow the canvas dimensions to dictate portrait/landscape
+            const pdfOrientation = pdfWidthPx > pdfHeightPx ? 'landscape' : 'portrait';
 
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
+            let pdf;
+            if (forPrint) {
+                // User explicitly requested SINGLE PAGE print layout for everything.
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: 'a4'
+                });
+                
+                const a4Width = pdf.internal.pageSize.getWidth();
+                const a4Height = pdf.internal.pageSize.getHeight();
+                
+                // Standard 30pt hardware margin (~1cm) around the edges.
+                const marginSafeW = a4Width - 60;
+                const marginSafeH = a4Height - 60;
+                
+                // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
+                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
+                const printW = pdfWidthPx * ratio;
+                const printH = pdfHeightPx * ratio;
+                
+                const marginX = (a4Width - printW) / 2;
+                const marginY = (a4Height - printH) / 2;
+                
+                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
+                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+            } else {
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: [pdfWidthPx, pdfHeightPx]
+                });
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidthPx, pdfHeightPx);
+            }
 
-            const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
-            const width = canvasWidth * ratio;
-            const height = canvasHeight * ratio;
-
-            const marginX = (pdfWidth - width) / 2;
-            const marginY = (pdfHeight - height) / 2;
-
-            pdf.addImage(imgData, 'PNG', marginX, marginY, width, height);
             return pdf;
         } catch (e) {
             console.error('PDF generation error', e);
@@ -341,17 +368,33 @@ const TwentyFourSevenChartView = () => {
 
     const handlePrint = async () => {
         try {
-            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing high-quality print layout...', life: 2000 });
-            const pdf = await generatePdfBlob();
-
-            pdf.autoPrint();
-
-            const blobUrl = pdf.output('bloburl');
-
-            const printWindow = window.open(blobUrl, '_blank');
+            // STEP 1: Synchronously open the popup to bypass the blocker immediately on click
+            const printWindow = window.open('', '_blank');
             if (!printWindow) {
                 toast.current?.show({ severity: 'warn', summary: 'Popup Blocked', detail: 'Please allow popups for this site to view the print format.', life: 5000 });
+                return;
             }
+            
+            // Show a visual loading state in the popup
+            printWindow.document.write(`
+                <html>
+                <head><title>Generating Print...</title></head>
+                <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f3f4f6;">
+                    <h2>Preparing High-Quality Print Document...</h2>
+                </body>
+                </html>
+            `);
+
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing perfect print layout...', life: 2000 });
+            
+            // STEP 2: Asynchronously generate the perfectly scaled A4 PDF
+            const pdf = await generatePdfBlob(false, true);
+            pdf.autoPrint();
+            const blobUrl = pdf.output('bloburl');
+
+            // STEP 3: Redirect the already-trusted popup to the generated blob
+            printWindow.location.href = blobUrl;
+
         } catch (e) {
             console.error(e);
             toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare perfect document for printing.', life: 3000 });
@@ -380,7 +423,7 @@ const TwentyFourSevenChartView = () => {
                 }
 
                 .rllt-condensed {
-                    font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif !important;
+                    font-family: 'Arial Narrow', Arial, sans-serif !important;
                 }
 
                 .custom-white-dropdown .p-dropdown-label,
@@ -596,7 +639,7 @@ const TwentyFourSevenChartView = () => {
                             <div className="bg-black p-0 mt-0.5">
                                 {(() => {
                                     return (
-                                        <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
+                                        <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                             <colgroup>
                                                 <col style={{ width: '2%' }} />
                                                 <col style={{ width: '2%' }} />
@@ -632,40 +675,40 @@ const TwentyFourSevenChartView = () => {
                                                             <td className="border-2 border-black bg-white"></td>
                                                             <td colSpan={9} className="border-2 border-black px-2 align-middle bg-white">
                                                                 <div className="flex h-full w-full items-center">
-                                                                    <span className="w-full flex-1 font-bold text-left uppercase text-black leading-none tracking-tight pl-2" style={{ fontSize: getFS(14) }}>{chunk.promises}</span>
+                                                                    <span className="w-full flex-1 font-bold text-left uppercase text-black leading-none tracking-tight pl-2" style={{ fontSize: getFS(20) }}>{chunk.promises}</span>
                                                                 </div>
                                                             </td>
                                                             <td colSpan={5} className="bg-white p-0 align-middle" style={{ '--cell-border': `3.5px solid ${currentBorderColor}` }}>
-                                                                <div className="w-full h-full flex items-center justify-center p-1 text-center font-bold text-black px-2 block" style={{ fontSize: getFS(14) }}>
+                                                                <div className="w-full h-full flex items-center justify-center p-1 text-center font-bold text-black px-2 block" style={{ fontSize: getFS(20) }}>
                                                                     {chunk.promiseInput}
                                                                 </div>
                                                             </td>
                                                         </tr>
 
-                                                        <tr className="bg-white text-center font-bold h-[30px]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
-                                                            <th rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(10) }}>
-                                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                                    <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(11) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center">
+                                                        <tr className="bg-white text-center font-bold h-[30px]" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
+                                                            <th rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(23) }}>
+                                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                                    <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center leading-none">
                                                                         {chunk.team}
                                                                     </div>
                                                                 </div>
                                                             </th>
-                                                            <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
-                                                            <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h1}</th>
-                                                            <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h2}</th>
-                                                            <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h3}</th>
-                                                            <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(14) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">{chunk.h4}</th>
-                                                            <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
-                                                            <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
-                                                            <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
-                                                            <th style={{ fontSize: getFS(10) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
-                                                            <th rowSpan={7} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(10) }}>
-                                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                                    <div style={{ transform: 'rotate(-90deg)' }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center">
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
+                                                            <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h1}</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                            <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h2}</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                            <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h3}</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">{chunk.h4}</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
+                                                            <th rowSpan={7} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(23) }}>
+                                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                                    <div style={{ transform: 'rotate(-90deg)' }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center leading-none">
                                                                         {headerSubtitle}
                                                                     </div>
                                                                 </div>
@@ -674,23 +717,23 @@ const TwentyFourSevenChartView = () => {
 
                                                         {chunk.days.map((d, dIdx) => (
                                                             <tr key={d.id} className="bg-white text-center border-b-2 border-black h-[38px]">
-                                                                <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(12) }}>{d.day}</td>
+                                                                <td className="border-2 border-black p-0 font-extrabold bg-white text-black align-middle" style={{ fontSize: getFS(25) }}>{d.day}</td>
 
-                                                                <td className="border-2 border-black p-0 bg-white uppercase font-bold leading-tight align-middle" style={{ fontSize: getFS(12) }}>{d.m1b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(11) }}>{d.m1t}</td>
+                                                                <td className="border-2 border-black p-0 bg-white uppercase font-bold leading-tight align-middle" style={{ fontSize: getFS(25) }}>{d.m1b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m1t}</td>
 
-                                                                <td className="border-2 border-black p-0 bg-white uppercase font-bold leading-tight align-middle" style={{ fontSize: getFS(12) }}>{d.m2b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(11) }}>{d.m2t}</td>
+                                                                <td className="border-2 border-black p-0 bg-white uppercase font-bold leading-tight align-middle" style={{ fontSize: getFS(25) }}>{d.m2b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m2t}</td>
 
-                                                                <td className="border-2 border-black p-0 bg-white uppercase font-bold leading-tight align-middle" style={{ fontSize: getFS(12) }}>{d.m3b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(11) }}>{d.m3t}</td>
+                                                                <td className="border-2 border-black p-0 bg-white uppercase font-bold leading-tight align-middle" style={{ fontSize: getFS(25) }}>{d.m3b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m3t}</td>
 
-                                                                <td className="border-2 border-black p-1 bg-white text-left uppercase font-bold leading-tight align-middle whitespace-nowrap overflow-hidden" style={{ fontSize: getFS(13) }}>{d.m4b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(11) }}>{d.m4t}</td>
+                                                                <td className="border-2 border-black p-1 bg-white text-center uppercase font-bold leading-tight align-middle break-words" style={{ fontSize: getFS(20) }}>{d.m4b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m4t}</td>
 
-                                                                <td className="border-2 border-black p-0 font-bold leading-none align-middle" style={{ fontSize: getFS(11) }}>{d.chap}</td>
-                                                                <td className="border-2 border-black p-0 font-bold leading-none align-middle" style={{ fontSize: getFS(11) }}>{d.verse}</td>
-                                                                <td className="border-2 border-black p-0 font-bold leading-none align-middle" style={{ fontSize: getFS(11) }}>{d.art}</td>
+                                                                <td className="border-2 border-black p-0 font-bold align-middle" style={{ fontSize: getFS(25) }}>{d.chap}</td>
+                                                                <td className="border-2 border-black p-0 font-bold align-middle" style={{ fontSize: getFS(25) }}>{d.verse}</td>
+                                                                <td className="border-2 border-black p-0 font-bold align-middle" style={{ fontSize: getFS(25) }}>{d.art}</td>
 
                                                                 <td className="border-2 border-black p-0 text-center align-middle">
                                                                     {d.yes ? '✔️' : ''}
@@ -698,42 +741,42 @@ const TwentyFourSevenChartView = () => {
                                                             </tr>
                                                         ))}
 
-                                                        <tr className="bg-white text-center font-extrabold tracking-wide h-[35px]" style={{ fontSize: getFS(13) }}>
+                                                        <tr className="bg-white text-center font-extrabold tracking-wide h-[35px]" style={{ fontSize: getFS(20) }}>
                                                             <td className="border-2 border-black bg-white"></td>
                                                             <td className="border-2 border-black bg-white"></td>
                                                             <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m1Total, 'HrMins')}</td>
                                                             <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m2Total, 'HrMins')}</td>
                                                             <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m3Total, 'HrMins')}</td>
                                                             <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m4Total, 'HrMins')}</td>
-                                                            <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{chapTotal}</td>
-                                                            <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{verseTotal}</td>
-                                                            <td colSpan={2} className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(13) }}>{formatSum(artTotal, 'Hm')}</td>
+                                                            <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{chapTotal}</td>
+                                                            <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{verseTotal}</td>
+                                                            <td colSpan={2} className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{formatSum(artTotal, 'Hm')}</td>
                                                         </tr>
                                                     </tbody>
                                                 );
                                             })}
                                             <tfoot className="pb-4 rllt-condensed">
-                                                <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(11) }}>
-                                                    <td colSpan={10} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-white" style={{ fontSize: getFS(14) }}>
+                                                <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(25) }}>
+                                                    <td colSpan={10} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-white" style={{ fontSize: getFS(20) }}>
                                                         TOTAL AVERAGE READING TIME {formatSum(
                                                             chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
                                                             'HrMins'
                                                         )}
                                                     </td>
-                                                    <td className="border-2 border-black p-1 text-center font-extrabold" style={{ fontSize: getFS(14) }}>
+                                                    <td className="border-2 border-black p-1 text-center font-extrabold" style={{ fontSize: getFS(20) }}>
                                                         {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.chap) || 0), 0), 0)}
                                                     </td>
-                                                    <td className="border-2 border-black p-1 text-center font-extrabold font-black text-blue-900" style={{ fontSize: getFS(14) }}>
+                                                    <td className="border-2 border-black p-1 text-center font-extrabold font-black text-blue-900" style={{ fontSize: getFS(20) }}>
                                                         {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.verse) || 0), 0), 0)}
                                                     </td>
-                                                    <td colSpan={3} className="border-2 border-black p-1 text-center font-extrabold bg-white" style={{ fontSize: getFS(14) }}>
+                                                    <td colSpan={3} className="border-2 border-black p-1 text-center font-extrabold bg-white" style={{ fontSize: getFS(20) }}>
                                                         {formatSum(
                                                             chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
                                                             'Hm'
                                                         )}
                                                     </td>
                                                 </tr>
-                                                <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(11) }}>
+                                                <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(25) }}>
                                                     <td colSpan={15} className="border-2 border-black p-1 text-center font-semibold tracking-wide">
                                                         It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11
                                                     </td>
@@ -747,7 +790,7 @@ const TwentyFourSevenChartView = () => {
                             <div className="flex items-center w-full px-2 pt-2 pb-2 bg-transparent mt-1 uppercase">
                                 <span className="font-extrabold text-[15px] text-[#c8a165]">1</span>
                                 <div className="flex-1 text-center">
-                                    <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                    <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                         MODULE {selectedChart?.module || '1'} - FACET {selectedChart?.facet || '1'}/{maxFacets}: PHASE - {selectedChart?.phase || '1'}/{maxPhases}
                                     </span>
                                 </div>

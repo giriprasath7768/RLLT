@@ -112,7 +112,7 @@ const SevenTNTMainChart = () => {
     const [logo2, setLogo2] = useState(null);
     const [logo3, setLogo3] = useState(null);
 
-    const [tableFontSize, setTableFontSize] = useState(14);
+    const [tableFontSize, setTableFontSize] = useState(8);
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
 
     const [showPopup, setShowPopup] = useState(false);
@@ -478,6 +478,12 @@ const SevenTNTMainChart = () => {
                             <style>{`
                                 .black-dropdown .p-dropdown-label {
                                     color: black !important;
+                                }
+                                .text-vertical {
+                                    writing-mode: vertical-rl;
+                                    transform: scale(-1);
+                                    text-align: center;
+                                }
                                     font-weight: bold;
                                 }
                             `}</style>
@@ -582,7 +588,7 @@ const SevenTNTMainChart = () => {
 
                         <div className="pb-1 overflow-x-auto w-full">
                             <style>{`
-                            .rllt-condensed { font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif !important; }
+                            .rllt-condensed { font-family: 'Arial Narrow', Arial, sans-serif !important; }
                         `}</style>
                             <table className="w-full bg-white table-fixed border-collapse rllt-condensed" style={{ border: '3px solid #000' }}>
                                 {/* 11 Column setup as per 7TNT Specs */}
@@ -628,7 +634,7 @@ const SevenTNTMainChart = () => {
                                             <td className="border-2 border-black p-0 align-middle bg-white font-extrabold text-black">
                                                 <input
                                                     className="w-full bg-transparent border-none text-black font-extrabold text-center focus:outline-none"
-                                                    style={{ fontSize: getFS(12) }}
+                                                    style={{ fontSize: getFS(25) }}
                                                     type="text"
                                                     value={chunk.dayLabel !== undefined ? chunk.dayLabel : `DAY ${chunk.days.map(d => d.day).join(', ')}`}
                                                     onChange={(e) => {
@@ -641,7 +647,7 @@ const SevenTNTMainChart = () => {
                                             <td colSpan={4} className="border-2 border-black p-1 align-middle bg-white">
                                                 <input
                                                     className="w-full bg-transparent border-2 text-black font-bold focus:outline-none px-1"
-                                                    style={{ fontSize: getFS(11), height: '20px', borderColor: promiseBorderColors[cIdx % promiseBorderColors.length] }}
+                                                    style={{ fontSize: getFS(25), height: '20px', borderColor: promiseBorderColors[cIdx % promiseBorderColors.length] }}
                                                     type="text"
                                                     value={chunk.promiseInput || ''}
                                                     onChange={(e) => {
@@ -656,12 +662,12 @@ const SevenTNTMainChart = () => {
                                             </td>
                                         </tr>
                                         <tr className="bg-white text-center font-bold h-[30px]">
-                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(10) }}></th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>DAY</th>
-                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(10) }}>
+                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}></th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>DAY</th>
+                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}>
                                                 <input
                                                     className="w-full bg-transparent border-none text-center font-bold text-black uppercase focus:outline-none"
-                                                    style={{ fontSize: getFS(10) }}
+                                                    style={{ fontSize: getFS(23) }}
                                                     type="text"
                                                     value={chunk.bookNameHeader || ''}
                                                     onChange={(e) => {
@@ -671,21 +677,22 @@ const SevenTNTMainChart = () => {
                                                     }}
                                                 />
                                             </th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>PAGES</th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>CHAP</th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>ART</th>
-                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(10) }}>YES</th>
-                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(10) }}></th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>PAGES</th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>CHAP</th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>ART</th>
+                                            <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>YES</th>
+                                            <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}></th>
                                         </tr>
                                         {chunk.days.map((d, dIdx) => (
                                             <tr key={d.id} className="bg-white text-center border-b-2 border-black h-[38px]">
                                                 {/* LEFT SIDEBAR LABEL */}
                                                 {dIdx === 0 && (
-                                                    <td rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative">
+                                                    <td rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative cursor-text" onClick={() => document.getElementById(`team-input-${chunk.id}`)?.focus()}>
                                                         <div className="absolute inset-0 flex items-center justify-center">
                                                             <input
-                                                                className="bg-transparent text-center font-extrabold text-black uppercase origin-center w-32 border-none outline-none focus:ring-1 focus:ring-blue-500"
-                                                                style={{ transform: 'rotate(-90deg)', fontSize: getFS(11) }}
+                                                                id={`team-input-${chunk.id}`}
+                                                                className="bg-transparent text-center outline-none font-extrabold text-black uppercase leading-none w-[150px]"
+                                                                style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }}
                                                                 value={chunk.team}
                                                                 onChange={(e) => {
                                                                     const newChunks = [...chunks];
@@ -697,13 +704,13 @@ const SevenTNTMainChart = () => {
                                                     </td>
                                                 )}
 
-                                                <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black whitespace-nowrap px-1" style={{ fontSize: getFS(12) }}>{d.day}</td>
+                                                <td className="border-2 border-black p-0 font-extrabold bg-white text-black whitespace-nowrap px-1 align-middle" style={{ fontSize: getFS(25) }}>{d.day}</td>
 
                                                 {/* BOOKS/CONTENT CELLS */}
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
                                                     <input
-                                                        className="w-full bg-transparent border-none text-left uppercase font-bold text-black focus:outline-none px-1"
-                                                        style={{ fontSize: getFS(12) }}
+                                                        className="w-full bg-transparent border-none text-center uppercase font-bold text-black focus:outline-none px-1"
+                                                        style={{ fontSize: getFS(25) }}
                                                         type="text"
                                                         value={d.content || ''}
                                                         onChange={(e) => {
@@ -718,7 +725,7 @@ const SevenTNTMainChart = () => {
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
                                                     <input
                                                         className="w-full bg-transparent border-none text-center uppercase font-bold text-black focus:outline-none px-1"
-                                                        style={{ fontSize: getFS(13) }}
+                                                        style={{ fontSize: getFS(20) }}
                                                         type="text"
                                                         value={d.pages || ''}
                                                         onChange={(e) => {
@@ -733,7 +740,7 @@ const SevenTNTMainChart = () => {
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
                                                     <input
                                                         className="w-full bg-transparent border-none text-center font-bold text-black focus:outline-none"
-                                                        style={{ fontSize: getFS(11) }}
+                                                        style={{ fontSize: getFS(25) }}
                                                         type="text"
                                                         value={d.chap || ''}
                                                         onChange={(e) => {
@@ -746,7 +753,7 @@ const SevenTNTMainChart = () => {
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
                                                     <input
                                                         className="w-full bg-transparent border-none text-center font-bold text-black focus:outline-none"
-                                                        style={{ fontSize: getFS(11) }}
+                                                        style={{ fontSize: getFS(25) }}
                                                         type="text"
                                                         value={d.art || ''}
                                                         onChange={(e) => {
@@ -768,11 +775,12 @@ const SevenTNTMainChart = () => {
 
                                                 {/* RIGHT SIDEBAR LABEL */}
                                                 {dIdx === 0 && (
-                                                    <td rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative">
+                                                    <td rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative cursor-text" onClick={() => document.getElementById(`week-input-${chunk.id}`)?.focus()}>
                                                         <div className="absolute inset-0 flex items-center justify-center">
                                                             <input
-                                                                className="bg-transparent text-center font-extrabold text-black uppercase origin-center w-32 border-none outline-none focus:ring-1 focus:ring-blue-500"
-                                                                style={{ transform: 'rotate(-90deg)', fontSize: getFS(11) }}
+                                                                id={`week-input-${chunk.id}`}
+                                                                className="bg-transparent text-center outline-none font-extrabold text-black uppercase leading-none w-[150px]"
+                                                                style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }}
                                                                 value={chunk.week}
                                                                 onChange={(e) => {
                                                                     const newChunks = [...chunks];
@@ -792,7 +800,7 @@ const SevenTNTMainChart = () => {
                                             <td colSpan={3} className="border-2 border-black p-0 bg-white align-middle text-center">
                                                 <input
                                                     className="w-full bg-transparent border-none text-center font-extrabold tracking-[0.2em] text-black focus:outline-none uppercase"
-                                                    style={{ fontSize: getFS(12) }}
+                                                    style={{ fontSize: getFS(25) }}
                                                     type="text"
                                                     value={chunk.footerHash || ''}
                                                     onChange={(e) => {
@@ -802,7 +810,7 @@ const SevenTNTMainChart = () => {
                                                     }}
                                                 />
                                             </td>
-                                            <td colSpan={2} className="border-2 border-black p-0 font-bold text-black" style={{ fontSize: getFS(11) }}>
+                                            <td colSpan={2} className="border-2 border-black p-0 font-bold text-black" style={{ fontSize: getFS(25) }}>
                                                 {formatSum(chunk.days.reduce((acc, curr) => acc + parseTime(curr.art), 0), 'Hm').replace('H ', '.').replace('m', '.h')}
                                             </td>
                                         </tr>
@@ -816,13 +824,13 @@ const SevenTNTMainChart = () => {
                                         <td colSpan={3} className="border-2 border-black p-0 bg-white align-middle text-center">
                                             <input
                                                 className="w-full bg-transparent border-none text-center font-extrabold tracking-[0.2em] text-black focus:outline-none uppercase"
-                                                style={{ fontSize: getFS(12) }}
+                                                style={{ fontSize: getFS(25) }}
                                                 type="text"
                                                 value={grandTotalHash1}
                                                 onChange={(e) => setGrandTotalHash1(e.target.value)}
                                             />
                                         </td>
-                                        <td colSpan={3} className="border-2 border-black p-0 font-bold text-black" style={{ fontSize: getFS(11) }}>
+                                        <td colSpan={3} className="border-2 border-black p-0 font-bold text-black" style={{ fontSize: getFS(25) }}>
                                             {formatSum(chunks.flatMap(c => c.days).reduce((acc, curr) => acc + parseTime(curr.art), 0), 'Hm').replace('H ', '.').replace('m', '.h')}
                                         </td>
                                     </tr>
@@ -830,7 +838,7 @@ const SevenTNTMainChart = () => {
                                         <td colSpan={8} className="border-2 border-black p-0 bg-white align-middle text-center">
                                             <input
                                                 className="w-full bg-transparent border-none text-center font-extrabold tracking-[0.5em] text-black focus:outline-none uppercase"
-                                                style={{ fontSize: getFS(12) }}
+                                                style={{ fontSize: getFS(25) }}
                                                 type="text"
                                                 value={grandTotalHash2}
                                                 onChange={(e) => setGrandTotalHash2(e.target.value)}

@@ -78,7 +78,7 @@ const WeeklyChart = () => {
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
 
-    const [tableFontSize, setTableFontSize] = useState(12); 
+    const [tableFontSize, setTableFontSize] = useState(8); 
     const getFS = (base) => (base + (tableFontSize - 12)) + 'px';
 
     const dayNames = ['SATURDAY', 'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY'];
@@ -220,7 +220,7 @@ const WeeklyChart = () => {
             const EXACT_WIDTH = 1220; 
             
             const canvas = await window.html2canvas(element, { 
-                scale: 1, 
+                scale: 3, 
                 useCORS: true,
                 backgroundColor: '#ffffff',
                 logging: false,
@@ -244,25 +244,52 @@ const WeeklyChart = () => {
             });
 
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
             
-            const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
-            const width = canvasWidth * ratio;
-            const height = canvasHeight * ratio;
+            // Revert back to logical CSS DOM dimensions by dividing by the scale factor (3)
+            // This ensures default PDF zoom levels present the text at normal display sizes 
+            // rather than zoomed out drastically from 3660 physical canvas units.
+            const CSS_SCALE = 3;
+            const pdfWidthPx = canvas.width / CSS_SCALE;
+            const pdfHeightPx = canvas.height / CSS_SCALE;
             
-            const marginX = (pdfWidth - width) / 2;
-            const marginY = (pdfHeight - height) / 2;
+            // Allow the canvas dimensions to dictate portrait/landscape
+            const pdfOrientation = pdfWidthPx > pdfHeightPx ? 'landscape' : 'portrait';
 
-            pdf.addImage(imgData, 'PNG', marginX, marginY, width, height);
+            let pdf;
+            if (forPrint) {
+                // User explicitly requested SINGLE PAGE print layout for everything.
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: 'a4'
+                });
+                
+                const a4Width = pdf.internal.pageSize.getWidth();
+                const a4Height = pdf.internal.pageSize.getHeight();
+                
+                // Standard 30pt hardware margin (~1cm) around the edges.
+                const marginSafeW = a4Width - 60;
+                const marginSafeH = a4Height - 60;
+                
+                // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
+                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
+                const printW = pdfWidthPx * ratio;
+                const printH = pdfHeightPx * ratio;
+                
+                const marginX = (a4Width - printW) / 2;
+                const marginY = (a4Height - printH) / 2;
+                
+                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
+                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+            } else {
+                pdf = new jsPDF({
+                    orientation: pdfOrientation,
+                    unit: 'pt',
+                    format: [pdfWidthPx, pdfHeightPx]
+                });
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidthPx, pdfHeightPx);
+            }
+
             return pdf;
         } catch (e) {
             console.error('PDF generation error', e);
@@ -285,13 +312,36 @@ const WeeklyChart = () => {
 
     const handlePrint = async () => {
         try {
-            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing print layout...', life: 2000 });
-            const pdf = await generatePdfBlob();
+            // STEP 1: Synchronously open the popup to bypass the blocker immediately on click
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                toast.current?.show({ severity: 'warn', summary: 'Popup Blocked', detail: 'Please allow popups for this site to view the print format.', life: 5000 });
+                return;
+            }
+            
+            // Show a visual loading state in the popup
+            printWindow.document.write(`
+                <html>
+                <head><title>Generating Print...</title></head>
+                <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f3f4f6;">
+                    <h2>Preparing High-Quality Print Document...</h2>
+                </body>
+                </html>
+            `);
+
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing perfect print layout...', life: 2000 });
+            
+            // STEP 2: Asynchronously generate the perfectly scaled A4 PDF
+            const pdf = await generatePdfBlob(false, true);
             pdf.autoPrint();
             const blobUrl = pdf.output('bloburl');
-            window.open(blobUrl, '_blank');
+
+            // STEP 3: Redirect the already-trusted popup to the generated blob
+            printWindow.location.href = blobUrl;
+
         } catch (e) {
-            toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare print document.', life: 3000 });
+            console.error(e);
+            toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare perfect document for printing.', life: 3000 });
         }
     };
 
@@ -305,7 +355,7 @@ const WeeklyChart = () => {
                     body { background-color: transparent !important; }
                     .print\\:overflow-visible { overflow: visible !important; }
                 }
-                .rllt-condensed { font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif !important; }
+                .rllt-condensed { font-family: 'Arial Narrow', Arial, sans-serif !important; }
                 .pdf-table, .pdf-table td, .pdf-table th { 
                     border: 2px solid #000 !important; 
                     border-collapse: collapse !important; 
@@ -415,7 +465,7 @@ const WeeklyChart = () => {
 
                         {/* WEEKLY DATA TABLES GRID (0 PADDING BETWEEN BLOCKS) */}
                         <div className="w-full relative">
-                            <table className="w-full pdf-table bg-white table-fixed border-collapse" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
+                            <table className="w-full pdf-table bg-white table-fixed border-collapse" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                 <colgroup>
                                     <col className="w-[4%]" />
                                     <col className="w-[10%]" />
@@ -460,10 +510,10 @@ const WeeklyChart = () => {
                                                     <td colSpan={2} className="border-2 border-black bg-white"></td>
                                                     <td className="border-2 border-black px-2 align-middle border-r-0">
                                                         <div className="flex items-center">
-                                                            <span className="font-bold whitespace-nowrap mr-2 text-black" style={{ fontSize: getFS(14) }}>GOD'S PROMISES</span>
+                                                            <span className="font-bold whitespace-nowrap mr-2 text-black" style={{ fontSize: getFS(20) }}>GOD'S PROMISES</span>
                                                             <input 
                                                                 className="flex-1 font-bold bg-transparent border-none focus:outline-none uppercase text-black w-full" 
-                                                                style={{ fontSize: getFS(14) }} 
+                                                                style={{ fontSize: getFS(20) }} 
                                                                 value={currentPromise}
                                                                 onChange={(e) => handlePeriodChange(chunkIndex, `${dayIndex}_promise`, e.target.value)}
                                                             />
@@ -476,15 +526,15 @@ const WeeklyChart = () => {
 
                                                 {/* HEADER ROW */}
                                                 <tr className="bg-white text-center font-bold h-[25px]">
-                                                    <th colSpan={2} className="border-2 border-black p-1 align-middle bg-white" style={{ fontSize: getFS(13) }}>
+                                                    <th colSpan={2} className="border-2 border-black p-1 align-middle bg-white" style={{ fontSize: getFS(20) }}>
                                                         DATE
                                                     </th>
                                                     <th className="border-2 border-black"></th>
-                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(11) }}>TIME</th>
-                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(11) }}>CHAP</th>
-                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(11) }}>VERSE</th>
-                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(11) }}>ART</th>
-                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(11) }}>DAY</th>
+                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(25) }}>TIME</th>
+                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(25) }}>CHAP</th>
+                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(25) }}>VERSE</th>
+                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(25) }}>ART</th>
+                                                    <th className="border-2 border-black text-center bg-white" style={{ fontSize: getFS(25) }}>DAY</th>
                                                     <th className="border-2 border-black text-center bg-white"></th>
                                                 </tr>
 
@@ -499,7 +549,7 @@ const WeeklyChart = () => {
                                                             {rIdx === 0 && (
                                                                 <td rowSpan={5} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden">
                                                                     <div className="absolute inset-0 flex items-center justify-center bg-white z-10 w-full h-full">
-                                                                        <div className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase text-vertical" style={{ fontSize: getFS(14) }}>
+                                                                        <div className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase text-vertical" style={{ fontSize: getFS(20) }}>
                                                                             TEAM / WEEK - <span className="text-[#cc0000] font-black">{chunkIndex + 1}</span>
                                                                         </div>
                                                                     </div>
@@ -510,8 +560,8 @@ const WeeklyChart = () => {
                                                             {rIdx === 0 && (
                                                                 <td rowSpan={2} className="border-2 border-black p-0 text-center align-middle whitespace-normal leading-tight bg-white">
                                                                     <div className="flex flex-col items-center justify-center h-full w-full py-1">
-                                                                        <div className="font-extrabold mb-1" style={{ fontSize: getFS(12) }}>{dayNames[chunkIndex % 6]}</div>
-                                                                        <div className="font-black text-red-600 mb-1" style={{ fontSize: getFS(26), lineHeight: '1' }}>{chunkIndex + 1}</div>
+                                                                        <div className="font-extrabold mb-1" style={{ fontSize: getFS(25) }}>{dayNames[chunkIndex % 6]}</div>
+                                                                        <div className="font-black text-red-600 mb-1" style={{ fontSize: getFS(36), lineHeight: '1' }}>{chunkIndex + 1}</div>
                                                                     </div>
                                                                 </td>
                                                             )}
@@ -523,7 +573,7 @@ const WeeklyChart = () => {
                                                                         <textarea 
                                                                             spellCheck="false"
                                                                             className="w-full text-center bg-transparent border-none focus:outline-none resize-none overflow-hidden font-bold leading-tight uppercase"
-                                                                            style={{ fontSize: getFS(11), height: '4em' }}
+                                                                            style={{ fontSize: getFS(25), height: '4em' }}
                                                                             value={currentPeriod}
                                                                             onChange={(e) => handlePeriodChange(chunkIndex, dayIndex, e.target.value)}
                                                                         />
@@ -532,31 +582,31 @@ const WeeklyChart = () => {
                                                             )}
                                                             
                                                             {/* Actual Reading Rows */}
-                                                            <td className={`border-2 border-black px-2 pb-0 bg-white font-extrabold uppercase leading-none align-middle ${textColor}`} style={{ fontSize: getFS(13) }}>
+                                                            <td className={`border-2 border-black px-2 pb-0 bg-white font-extrabold uppercase leading-none align-middle ${textColor}`} style={{ fontSize: getFS(20) }}>
                                                                 {row.books ? `${rIdx + 1}. ${row.books}` : ''}
                                                             </td>
                                                             
-                                                            <td className={`border-2 border-black text-center pb-0 font-bold align-middle bg-white ${textColor}`} style={{ fontSize: getFS(13) }}>
+                                                            <td className={`border-2 border-black text-center pb-0 font-bold align-middle bg-white ${textColor}`} style={{ fontSize: getFS(20) }}>
                                                                 {row.time ? `${row.time} m` : ''}
                                                             </td>
                                                             
                                                             {/* Stats Colspan/Rowspan Logic */}
                                                             {rIdx === 0 && (
                                                                 <>
-                                                                    <td rowSpan={2} className="border-2 border-black text-center align-middle font-bold bg-white" style={{ fontSize: getFS(13) }}>{day.chap || ''}</td>
-                                                                    <td rowSpan={2} className="border-2 border-black text-center align-middle font-bold bg-white" style={{ fontSize: getFS(13) }}>{day.verse || ''}</td>
-                                                                    <td rowSpan={2} className="border-2 border-black text-center align-middle font-bold bg-white" style={{ fontSize: getFS(13) }}>{totalArtMins ? `${totalArtMins}m` : ''}</td>
-                                                                    <td rowSpan={2} className="border-2 border-black text-center align-middle font-extrabold bg-white" style={{ fontSize: getFS(14) }}>{dayIndex + 1}</td>
+                                                                    <td rowSpan={2} className="border-2 border-black text-center align-middle font-bold bg-white" style={{ fontSize: getFS(20) }}>{day.chap || ''}</td>
+                                                                    <td rowSpan={2} className="border-2 border-black text-center align-middle font-bold bg-white" style={{ fontSize: getFS(20) }}>{day.verse || ''}</td>
+                                                                    <td rowSpan={2} className="border-2 border-black text-center align-middle font-bold bg-white" style={{ fontSize: getFS(20) }}>{totalArtMins ? `${totalArtMins}m` : ''}</td>
+                                                                    <td rowSpan={2} className="border-2 border-black text-center align-middle font-extrabold bg-white" style={{ fontSize: getFS(20) }}>{dayIndex + 1}</td>
                                                                 </>
                                                             )}
                                                             {rIdx === 2 && (
-                                                                <td colSpan={4} rowSpan={3} className="border-2 border-black text-center align-middle font-black tracking-widest bg-white" style={{ fontSize: getFS(14), fontFamily: 'Arial, sans-serif' }}>
+                                                                <td colSpan={4} rowSpan={3} className="border-2 border-black text-center align-middle font-black tracking-widest bg-white" style={{ fontSize: getFS(20), fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                                                     BOOKS OVERVIEW
                                                                 </td>
                                                             )}
 
                                                             {rIdx === 0 && (
-                                                                <td rowSpan={5} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(13) }}>
+                                                                <td rowSpan={5} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(20) }}>
                                                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-10 w-full h-full pt-1 pb-1">
                                                                         <div className="whitespace-nowrap font-extrabold text-black uppercase text-vertical" style={{ fontSize: getFS(15), letterSpacing: '0.1em' }}>
                                                                             24.7 - 30 DAYS
@@ -579,7 +629,7 @@ const WeeklyChart = () => {
                     <div className="flex items-center w-full px-2 pt-2 bg-transparent mt-1 uppercase justify-between">
                         <span className="font-extrabold text-[15px] text-[#c8a165]">1</span>
                         <div className="flex-1 text-center">
-                            <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                 MODULE {selectedChart?.module || '1'} - FACET {selectedChart?.facet || '1'}/{maxFacets}: PHASE - {selectedChart?.phase || '1'}/{maxPhases}
                             </span>
                         </div>

@@ -78,7 +78,7 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
     const [phaseLabel, setPhaseLabel] = useState("1/1");
     const [rlltDB, setRlltDB] = useState([]);
 
-    const [tableFontSize, setTableFontSize] = useState(12);
+    const [tableFontSize, setTableFontSize] = useState(8);
     const getFS = (base) => (base + (tableFontSize - 12)) + 'px';
 
     const fetchChartList = () => {
@@ -433,10 +433,10 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
                                     return (
                                         <td key={chunk.id || colIndex} className={`align-top px-3 ${rowIndex === 0 ? 'pt-3' : ''} ${rowIndex === 4 ? 'pb-3' : ''} ${colIndex < colCount - 1 ? 'border-r-[1px] border-black' : ''}`}>
                                             <div className={`flex ${rowIndex < 4 ? 'mb-4' : ''}`}>
-                                                <div className="w-[50px] flex-shrink-0 font-bold text-red-600 tracking-wider" style={{ fontSize: getFS(11) }}>
+                                                <div className="w-[50px] flex-shrink-0 font-bold text-red-600 tracking-wider" style={{ fontSize: getFS(25) }}>
                                                     DAY {d.day}
                                                 </div>
-                                                <div className="flex-1 flex flex-col font-black text-black leading-tight" style={{ fontSize: getFS(10) }}>
+                                                <div className="flex-1 flex flex-col font-black text-black leading-tight" style={{ fontSize: getFS(23) }}>
                                                     {parsedLines.map((line, lIdx) => (
                                                         <div key={lIdx}>{line}</div>
                                                     ))}

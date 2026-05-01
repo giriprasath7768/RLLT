@@ -396,28 +396,18 @@ const TTomTPlayer = () => {
     const audioRef = useRef(new Audio());
     const playerStateRef = useRef(null);
 
-    // Local Completion Tracking to Unlock Days
-    const [completedBooks, setCompletedBooks] = useState(() => {
+    // Local Completion Tracking
+    const [finishedDays, setFinishedDays] = useState(() => {
         try {
-            return new Set(JSON.parse(localStorage.getItem('completed_books') || '[]'));
+            return new Set(JSON.parse(localStorage.getItem('finished_days_ttomt') || '[]'));
         } catch {
             return new Set();
         }
     });
 
     useEffect(() => {
-        localStorage.setItem('completed_books', JSON.stringify([...completedBooks]));
-    }, [completedBooks]);
-
-    useEffect(() => {
-        if (activeTrackName && activeTrackName !== '') {
-            setCompletedBooks(prev => {
-                const newSet = new Set(prev);
-                newSet.add(activeTrackName);
-                return newSet;
-            });
-        }
-    }, [activeTrackName]);
+        localStorage.setItem('finished_days_ttomt', JSON.stringify([...finishedDays]));
+    }, [finishedDays]);
 
     // Core Refs for Cube Math
     const playerRef = useRef(null);
@@ -521,13 +511,14 @@ const TTomTPlayer = () => {
         const onEnd = () => {
             setIsPlaying(false);
             if (!playerStateRef.current) return;
-            const { activeTrackName: currTrack, playlistBooks: currPlaylist, contentDB: currDB, activeLanguage: currLang } = playerStateRef.current;
+            const { activeTrackName: currTrack, playlistBooks: currPlaylist, contentDB: currDB, activeLanguage: currLang, selectedDay } = playerStateRef.current;
 
             if (!currTrack || !currPlaylist) return;
 
             const currentIndex = currPlaylist.findIndex(b => b.name === currTrack);
             if (currentIndex !== -1 && currentIndex < currPlaylist.length - 1) {
                 // Find next valid track with audio
+                let foundNext = false;
                 for (let i = currentIndex + 1; i < currPlaylist.length; i++) {
                     const nextTrackName = currPlaylist[i].name;
                     const parts = nextTrackName.trim().split(' ');
@@ -560,10 +551,16 @@ const TTomTPlayer = () => {
                             setActiveLanguage(parsedAudios[targetIdx].language || '');
                             setActiveVideoIndex(0);
                             setIsPlaying(true);
+                            foundNext = true;
                             break;
                         }
                     }
                 }
+                if (!foundNext) {
+                    setFinishedDays(prev => new Set(prev).add(selectedDay));
+                }
+            } else if (currentIndex !== -1 && currentIndex === currPlaylist.length - 1) {
+                setFinishedDays(prev => new Set(prev).add(selectedDay));
             }
         };
 
@@ -760,53 +757,11 @@ const TTomTPlayer = () => {
     }, [activeDayNode, booksDB, location.state?.filter]);
 
     useEffect(() => {
-        playerStateRef.current = { activeTrackName, playlistBooks, contentDB, activeLanguage };
-    }, [activeTrackName, playlistBooks, contentDB, activeLanguage]);
+        playerStateRef.current = { activeTrackName, playlistBooks, contentDB, activeLanguage, selectedDay };
+    }, [activeTrackName, playlistBooks, contentDB, activeLanguage, selectedDay]);
 
-    // Completed Days Logic
-    const completedDays = React.useMemo(() => {
-        const filter = location.state?.filter || 'main';
-        const daysNodes = parsedPayload.flatMap(chunk => chunk.days || []);
-        let completed = new Set();
-
-        let is24x7 = false;
-        try { is24x7 = JSON.stringify(parsedPayload).includes('"m4b"'); } catch (e) { }
-
-        for (let i = 0; i < daysNodes.length; i++) {
-            const dayObj = daysNodes[i];
-
-            let raw = [];
-            if (filter === 'morning_evening') {
-                if (is24x7) {
-                    raw = [
-                        dayObj.m1b, dayObj.m2b, dayObj.m3b, dayObj.m4b_morning,
-                        dayObj.m4b_evening
-                    ].filter(Boolean);
-                } else {
-                    raw = [
-                        dayObj.m1b, dayObj.m2b, dayObj.m3b_morning,
-                        dayObj.m3b_evening
-                    ].filter(Boolean);
-                }
-            } else {
-                raw = [
-                    dayObj.m1b, dayObj.m2b, dayObj.m3b, dayObj.m4b
-                ].filter(Boolean);
-            }
-
-            let dayLinks = [];
-            raw.forEach(str => {
-                dayLinks = dayLinks.concat(explodeBookString(str, booksDB));
-            });
-
-            // Is everyday link tracked?
-            const isFinished = dayLinks.length > 0 && dayLinks.every(b => completedBooks.has(b));
-            if (isFinished) {
-                completed.add(dayObj.day);
-            }
-        }
-        return completed;
-    }, [parsedPayload, booksDB, completedBooks]);
+    // Completed Days Logic is now handled by finishedDays
+    const completedDays = finishedDays;
 
     useEffect(() => {
         if (!activeTrackName && playlistBooks && playlistBooks.length > 0) {

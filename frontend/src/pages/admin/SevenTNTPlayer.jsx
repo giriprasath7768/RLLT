@@ -168,6 +168,27 @@ const SevenTNTPlayer = () => {
     const [audioDuration, setAudioDuration] = useState(0);
     const [audioProgress, setAudioProgress] = useState(0);
 
+    const [visitedDays, setVisitedDays] = useState(() => {
+        try {
+            return new Set(JSON.parse(localStorage.getItem('visited_days_seven') || '[]'));
+        } catch {
+            return new Set([1]);
+        }
+    });
+
+    useEffect(() => {
+        localStorage.setItem('visited_days_seven', JSON.stringify([...visitedDays]));
+    }, [visitedDays]);
+
+    const handleDaySelect = (num) => {
+        setSelectedDay(num);
+        setVisitedDays(prev => {
+            const newSet = new Set(prev);
+            newSet.add(num);
+            return newSet;
+        });
+    };
+
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(formatDateTime(new Date()));
@@ -375,16 +396,20 @@ const SevenTNTPlayer = () => {
                     >
                         <div className="bg-[#12182b] p-6 pb-12 w-full h-full overflow-y-auto custom-scrollbar rounded-b-lg">
                             <div className="grid grid-cols-5 gap-y-6">
-                                {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => (
-                                    <div
-                                        key={num}
-                                        onClick={() => setSelectedDay(num)}
-                                        className={`text-center font-black cursor-pointer transition-all duration-300 ${selectedDay === num ? 'text-white scale-125' : 'text-white/90 hover:text-white'}`}
-                                        style={{ fontSize: '18px' }}
-                                    >
-                                        {num}
-                                    </div>
-                                ))}
+                                {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => {
+                                    const isSelected = selectedDay === num;
+                                    const isCompleted = visitedDays.has(num);
+                                    return (
+                                        <div
+                                            key={num}
+                                            onClick={() => handleDaySelect(num)}
+                                            className={`mx-auto flex items-center justify-center text-center font-black cursor-pointer transition-all duration-300 w-8 h-8 rounded-lg ${isSelected ? 'bg-blue-500 text-white scale-125 ring-2 ring-blue-300' : isCompleted ? 'bg-blue-500/80 text-white shadow-md' : 'text-white/90 hover:text-white'}`}
+                                            style={{ fontSize: '15px' }}
+                                        >
+                                            {num}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

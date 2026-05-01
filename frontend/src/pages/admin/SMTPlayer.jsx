@@ -591,71 +591,99 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                     }
                 >
                     {/* Render Highlight Overlays bound permanently to identical grid geometry */}
-                    {props.pageHighlights && props.pageHighlights.map(h => (
-                        <React.Fragment key={h.id}>
-                            {h.rects.map((rect, i) => {
-                                let styles = {
-                                    position: 'absolute',
-                                    top: `${rect.top}%`,
-                                    left: `${rect.left}%`,
-                                    width: `${rect.width}%`,
-                                    height: `${rect.height}%`,
-                                    pointerEvents: 'none',
-                                    zIndex: (h.format === 'highlight' || (!h.format && !h.isSquare)) ? 45 : 55
-                                };
+                    {props.pageHighlights && props.pageHighlights.map(h => {
+                        let renderRects = h.rects;
+                        const isBoxFormat = h.format === 'square' || h.format === 'circle' || (!h.format && h.isSquare);
 
-                                let bStyle = 'solid';
-                                let bWidth = '2px';
-                                if (h.styleOption === 'double-3px') { bStyle = 'double'; bWidth = '4px'; }
-                                else if (h.styleOption === 'solid-3px') { bStyle = 'solid'; bWidth = '3px'; }
-                                else if (h.styleOption === 'dotted-2px') { bStyle = 'dotted'; bWidth = '3px'; }
-                                else if (h.styleOption === 'dashed-2px') { bStyle = 'dashed'; bWidth = '3px'; }
+                        if (isBoxFormat && h.rects.length > 1) {
+                            const minLeft = Math.min(...h.rects.map(r => r.left));
+                            const maxRight = Math.max(...h.rects.map(r => r.left + r.width));
+                            const minTop = Math.min(...h.rects.map(r => r.top));
+                            const maxBottom = Math.max(...h.rects.map(r => r.top + r.height));
 
-                                if (h.format === 'underline') {
-                                    return (
-                                        <div key={`${h.id}_${i}`} style={styles}>
-                                            <div style={{
-                                                position: 'absolute',
-                                                bottom: '-2px',
-                                                left: 0,
-                                                width: '100%',
-                                                height: '2px', // Explicit layout height
-                                                boxSizing: 'content-box', // Forces border strictly OUTSIDE height bounding calculations
-                                                borderBottomStyle: bStyle,
-                                                borderBottomWidth: bWidth,
-                                                borderBottomColor: h.color || '#dc2626'
-                                            }} />
-                                        </div>
-                                    );
-                                }
+                            renderRects = [{
+                                top: minTop,
+                                left: minLeft,
+                                width: maxRight - minLeft,
+                                height: maxBottom - minTop
+                            }];
+                        }
 
-                                // Set uniform shape bounds based on format options
-                                if (h.format === 'circle') {
-                                    styles.borderStyle = bStyle;
-                                    styles.borderWidth = bWidth;
-                                    styles.borderColor = h.color || '#dc2626';
-                                    styles.borderRadius = '9999px';
-                                    styles.opacity = 1;
-                                } else if (h.format === 'square' || (!h.format && h.isSquare)) {
-                                    styles.borderStyle = bStyle;
-                                    styles.borderWidth = bWidth;
-                                    styles.borderColor = h.color || '#dc2626';
-                                    styles.borderRadius = '4px';
-                                    styles.opacity = 1;
-                                } else {
-                                    styles.backgroundColor = h.color || '#dc2626';
-                                    styles.opacity = 0.35;
-                                    styles.mixBlendMode = 'multiply';
-                                    styles.borderStyle = bStyle;
-                                    styles.borderWidth = bWidth;
-                                    styles.borderColor = h.color;
-                                    styles.boxSizing = 'content-box';
-                                }
+                        return (
+                            <React.Fragment key={h.id}>
+                                {renderRects.map((rect, i) => {
+                                    let styles = {
+                                        position: 'absolute',
+                                        top: `${rect.top}%`,
+                                        left: `${rect.left}%`,
+                                        width: `${rect.width}%`,
+                                        height: `${rect.height}%`,
+                                        pointerEvents: 'none',
+                                        zIndex: (h.format === 'highlight' || (!h.format && !h.isSquare)) ? 45 : 55
+                                    };
 
-                                return <div key={`${h.id}_${i}`} style={styles} />;
-                            })}
-                        </React.Fragment>
-                    ))}
+                                    let bStyle = 'solid';
+                                    let bWidth = '2px';
+                                    if (h.styleOption === 'double-3px') { bStyle = 'double'; bWidth = '4px'; }
+                                    else if (h.styleOption === 'solid-3px') { bStyle = 'solid'; bWidth = '3px'; }
+                                    else if (h.styleOption === 'dotted-2px') { bStyle = 'dotted'; bWidth = '3px'; }
+                                    else if (h.styleOption === 'dashed-2px') { bStyle = 'dashed'; bWidth = '3px'; }
+
+                                    if (h.format === 'underline') {
+                                        return (
+                                            <div key={`${h.id}_${i}`} style={styles}>
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    bottom: '-2px',
+                                                    left: 0,
+                                                    width: '100%',
+                                                    height: '2px', // Explicit layout height
+                                                    boxSizing: 'content-box', // Forces border strictly OUTSIDE height bounding calculations
+                                                    borderBottomStyle: bStyle,
+                                                    borderBottomWidth: bWidth,
+                                                    borderBottomColor: h.color || '#dc2626'
+                                                }} />
+                                            </div>
+                                        );
+                                    }
+
+                                    const isMacroBox = isBoxFormat && h.rects.length > 1;
+
+                                    if (h.format === 'circle') {
+                                        styles.borderStyle = bStyle;
+                                        styles.borderWidth = bWidth;
+                                        styles.borderColor = h.color || '#dc2626';
+                                        styles.borderRadius = isMacroBox ? '14px' : '9999px';
+                                        styles.opacity = 1;
+                                        styles.boxSizing = 'content-box';
+                                        styles.padding = isMacroBox ? '4px 8px' : '0px 4px';
+                                        styles.margin = isMacroBox ? '-4px 0 0 -8px' : '2px 0 0 -4px';
+                                        styles.height = isMacroBox ? `${rect.height}%` : `calc(${rect.height}% - 4px)`;
+                                    } else if (h.format === 'square' || (!h.format && h.isSquare)) {
+                                        styles.borderStyle = bStyle;
+                                        styles.borderWidth = bWidth;
+                                        styles.borderColor = h.color || '#dc2626';
+                                        styles.borderRadius = isMacroBox ? '8px' : '4px';
+                                        styles.opacity = 1;
+                                        styles.boxSizing = 'content-box';
+                                        styles.padding = isMacroBox ? '2px 4px' : '0px 2px';
+                                        styles.margin = isMacroBox ? '-2px 0 0 -4px' : '2px 0 0 -2px';
+                                        styles.height = isMacroBox ? `${rect.height}%` : `calc(${rect.height}% - 4px)`;
+                                    } else {
+                                        styles.backgroundColor = h.color || '#dc2626';
+                                        styles.opacity = 0.35;
+                                        styles.mixBlendMode = 'multiply';
+                                        styles.borderStyle = bStyle;
+                                        styles.borderWidth = bWidth;
+                                        styles.borderColor = h.color;
+                                        styles.boxSizing = 'content-box';
+                                    }
+
+                                    return <div key={`${h.id}_${i}`} style={styles} />;
+                                })}
+                            </React.Fragment>
+                        );
+                    })}
                 </Page>
 
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />
@@ -714,6 +742,22 @@ const SMTPlayer = () => {
     // Audio Wisdom Highlighting
     const [activePoint, setActivePoint] = useState(null);
 
+    // Local Completion Tracking
+    const [finishedDays, setFinishedDays] = useState(() => {
+        try {
+            return new Set(JSON.parse(localStorage.getItem('finished_days_smt') || '[]'));
+        } catch {
+            return new Set();
+        }
+    });
+
+    useEffect(() => {
+        localStorage.setItem('finished_days_smt', JSON.stringify([...finishedDays]));
+    }, [finishedDays]);
+
+    // Completed Days Logic is now handled by finishedDays
+    const completedDays = finishedDays;
+
     // Audio Player State
     const audioRef = useRef(new Audio());
     const [isPlaying, setIsPlaying] = useState(false);
@@ -725,90 +769,30 @@ const SMTPlayer = () => {
     const [playerBgColor, setPlayerBgColor] = useState('#547395');
     const [playerBorderColor, setPlayerBorderColor] = useState('#080b12');
 
-    // Auto Read / TTS States
-    const [isTTSPlaying, setIsTTSPlaying] = useState(false);
-    const ttsUtteranceRef = useRef(null);
-    const activeSpansRef = useRef([]);
-
-    const handleAutoReadToggle = () => {
-        if (isTTSPlaying) {
-            window.speechSynthesis.cancel();
-            setIsTTSPlaying(false);
-            activeSpansRef.current.forEach(s => {
-                if (s && s.style) s.style.backgroundColor = '';
-            });
-            activeSpansRef.current = [];
-            return;
-        }
-
-        const pageContainers = document.querySelectorAll('.react-pdf__Page__textContent');
-        if (pageContainers.length === 0) return;
-
-        let fullText = "";
-        let spanMapping = [];
-
-        pageContainers.forEach(container => {
-            const spans = container.querySelectorAll('span');
-            spans.forEach(span => {
-                const text = span.textContent + " ";
-                const startIndex = fullText.length;
-                fullText += text;
-                spanMapping.push({
-                    start: startIndex,
-                    end: fullText.length,
-                    span: span
-                });
-            });
-        });
-
-        if (!fullText.trim()) return;
-
-        const utterance = new SpeechSynthesisUtterance(fullText);
-
-        utterance.onboundary = (event) => {
-            activeSpansRef.current.forEach(s => {
-                if (s && s.style) s.style.backgroundColor = '';
-            });
-            activeSpansRef.current = [];
-
-            const charIndex = event.charIndex;
-            const target = spanMapping.find(m => charIndex >= m.start && charIndex < m.end);
-
-            if (target && target.span) {
-                target.span.style.backgroundColor = 'rgba(255, 235, 59, 0.4)';
-                target.span.style.borderRadius = '2px';
-                target.span.style.transition = 'background-color 0.2s';
-                activeSpansRef.current.push(target.span);
-            }
-        };
-
-        const cleanupTTS = () => {
-            setIsTTSPlaying(false);
-            activeSpansRef.current.forEach(s => {
-                if (s && s.style) s.style.backgroundColor = '';
-            });
-            activeSpansRef.current = [];
-        };
-
-        utterance.onend = cleanupTTS;
-        utterance.onerror = cleanupTTS;
-
-        ttsUtteranceRef.current = utterance;
-        window.speechSynthesis.speak(utterance);
-        setIsTTSPlaying(true);
-    };
+    const playerStateRef = useRef(null);
 
     useEffect(() => {
-        return () => {
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
-        };
-    }, []);
+        playerStateRef.current = { activeTrackName, playlistBooks, selectedDay };
+    }, [activeTrackName, playlistBooks, selectedDay]);
 
+    const dragStartRef = useRef({ y: 0 });
     useEffect(() => {
         const ad = audioRef.current;
         const updateTime = () => setAudioProgress(ad.currentTime);
         const updateDuration = () => setAudioDuration(ad.duration);
-        const onEnd = () => setIsPlaying(false);
+        const onEnd = () => {
+            setIsPlaying(false);
+            if (!playerStateRef.current) return;
+            const { activeTrackName: currTrack, playlistBooks: currPlaylist, selectedDay: currDay } = playerStateRef.current;
+            
+            if (!currTrack || !currPlaylist) return;
+            
+            const currentIndex = currPlaylist.findIndex(b => b.name === currTrack);
+            // If this is the last track in the playlist, mark the day as finished
+            if (currentIndex !== -1 && currentIndex === currPlaylist.length - 1) {
+                setFinishedDays(prev => new Set(prev).add(currDay));
+            }
+        };
 
         ad.addEventListener('timeupdate', updateTime);
         ad.addEventListener('loadedmetadata', updateDuration);
@@ -856,13 +840,9 @@ const SMTPlayer = () => {
                 audioRef.current.src = `http://${window.location.hostname}:8000${actualAudioUrl}`;
                 setAudioLoadedTrackName(activeTrackName);
 
-                audioRef.current.play().then(() => {
-                    setIsPlaying(true);
-                    setShowAudioPlayer(true);
-                }).catch(e => {
-                    console.error("Autoplay blocked by browser:", e);
-                    setIsPlaying(false);
-                });
+                // Disable autoplay: Wait for explicit user interaction via the player button
+                audioRef.current.pause();
+                setIsPlaying(false);
             } else {
                 audioRef.current.pause();
                 setIsPlaying(false);
@@ -900,6 +880,10 @@ const SMTPlayer = () => {
         document.body.style.overflow = 'hidden';
 
         const handleStopPropagation = (e) => {
+            if (e.type === 'mousedown' || e.type === 'touchstart' || e.type === 'pointerdown') {
+                const clientY = e.clientY || (e.touches && e.touches.length > 0 ? e.touches[0].clientY : 0);
+                if (clientY) dragStartRef.current = { y: clientY };
+            }
             // Intercept mouse actions over the invisible PDF text-layer before the FlipBook registers them as "drags"
             if (e.target.closest('.react-pdf__Page__textContent')) {
                 e.stopPropagation();
@@ -919,7 +903,24 @@ const SMTPlayer = () => {
             const selection = window.getSelection();
             if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
                 const range = selection.getRangeAt(0);
-                const rects = Array.from(range.getClientRects());
+
+                const clientY = e.clientY || (e.changedTouches && e.changedTouches.length > 0 ? e.changedTouches[0].clientY : dragStartRef.current?.y || 0);
+                const startY = dragStartRef.current?.y || clientY;
+
+                const minY = Math.min(startY, clientY) - 35; // Generous 35px height buffer
+                const maxY = Math.max(startY, clientY) + 35;
+
+                // Filter out erratic out-of-bounds browser selection rects generated by nested absolute positioning layout shifts
+                const rawRects = Array.from(range.getClientRects()).filter(r => {
+                    const rectCenterY = r.top + (r.height / 2);
+                    return rectCenterY >= minY && rectCenterY <= maxY && r.width > 2 && r.height > 2;
+                });
+
+                if (rawRects.length === 0) {
+                    setSelectionMenu(null);
+                    window.getSelection().removeAllRanges();
+                    return;
+                }
 
                 const pageNode = textContentNode.closest('.react-pdf__Page');
                 if (!pageNode) return;
@@ -929,17 +930,33 @@ const SMTPlayer = () => {
                 const pageNumber = pageNumberStr ? parseInt(pageNumberStr) : 1;
 
                 // Map the browser physical viewport rects into safe percentage floats proportional to the exact React-PDF instance!
-                const mappedRects = rects.map(r => ({
+                const mappedRects = rawRects.map(r => ({
                     top: ((r.top - pageRect.top) / pageRect.height) * 100,
                     left: ((r.left - pageRect.left) / pageRect.width) * 100,
                     width: (r.width / pageRect.width) * 100,
                     height: (r.height / pageRect.height) * 100,
                 }));
 
+                // Improve grouping logic: Merge adjacent rects to prevent multi-line selection fragmentation
+                const mergedRects = [];
+                mappedRects.forEach(rect => {
+                    const existing = mergedRects.find(m => Math.abs(m.top - rect.top) < (Math.max(m.height, rect.height) * 0.5));
+                    if (existing) {
+                        const maxRight = Math.max(existing.left + existing.width, rect.left + rect.width);
+                        const minLeft = Math.min(existing.left, rect.left);
+                        existing.top = Math.min(existing.top, rect.top);
+                        existing.left = minLeft;
+                        existing.width = maxRight - minLeft;
+                        existing.height = Math.max(existing.height, rect.height);
+                    } else {
+                        mergedRects.push({ ...rect });
+                    }
+                });
+
                 setSelectionMenu({
                     x: e.clientX,
                     y: e.clientY,
-                    rects: mappedRects,
+                    rects: mergedRects,
                     pageNumber: pageNumber,
                     text: selection.toString().trim()
                 });
@@ -1242,15 +1259,19 @@ const SMTPlayer = () => {
                 <div className="bg-[#1a2234] p-4 shrink-0 border-t border-gray-800 z-10">
                     <h3 className="text-gray-400 text-xs font-bold tracking-wider mb-3">DAY NAVIGATION</h3>
                     <div className="grid grid-cols-5 gap-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-1">
-                        {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => (
-                            <div
-                                key={num}
-                                onClick={() => setSelectedDay(num)}
-                                className={`text-center font-bold text-sm py-1.5 rounded-md cursor-pointer transition-all ${selectedDay === num ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.6)]' : 'bg-[#131b2e] text-gray-400 hover:bg-gray-700 hover:text-white'}`}
-                            >
-                                {num}
-                            </div>
-                        ))}
+                        {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => {
+                            const isCompleted = completedDays && completedDays.has(num);
+                            const isSelected = selectedDay === num;
+                            return (
+                                <div
+                                    key={num}
+                                    onClick={() => setSelectedDay(num)}
+                                    className={`text-center font-bold text-sm py-1.5 rounded-md cursor-pointer transition-all ${isSelected ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.6)] border border-blue-400' : isCompleted ? 'bg-blue-600/80 text-white shadow-[0_0_5px_rgba(37,99,235,0.3)]' : 'bg-[#131b2e] text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                                >
+                                    {num}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
@@ -1316,13 +1337,6 @@ const SMTPlayer = () => {
 
                     <div className="flex items-center relative">
                         <div className={`absolute right-12 flex items-center pr-2 gap-2 transition-all duration-300 ${showToolMenu ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
-                            <button
-                                onClick={handleAutoReadToggle}
-                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-xl shrink-0 ${isTTSPlaying ? 'bg-yellow-400 border-yellow-500 text-black' : 'bg-gray-800 text-white border-gray-600 hover:bg-blue-600'}`}
-                                title="Auto Read Page TTS"
-                            >
-                                <i className={`pi ${isTTSPlaying ? 'pi-pause' : 'pi-microphone'} text-lg`}></i>
-                            </button>
                             <button
                                 onClick={() => {
                                     const nextState = !showAudioPlayer;

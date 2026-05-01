@@ -431,7 +431,7 @@ const SevenTNTDayCycleChart = () => {
     const [hashVal2, setHashVal2] = useState("########");
     const [blueBox, setBlueBox] = useState("");
 
-    const [tableFontSize, setTableFontSize] = useState(12);
+    const [tableFontSize, setTableFontSize] = useState(8);
     const getFS = (base) => (base + (tableFontSize - 12)) + 'px';
 
     const saveChart = async () => {
@@ -464,7 +464,7 @@ const SevenTNTDayCycleChart = () => {
                     body { background-color: transparent !important; }
                     .print\\:overflow-visible { overflow: visible !important; }
                 }
-                .rllt-condensed { font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif !important; }
+                .rllt-condensed { font-family: 'Arial Narrow', Arial, sans-serif !important; }
                 .text-vertical {
                     writing-mode: vertical-rl;
                     transform: scale(-1);
@@ -587,7 +587,7 @@ const SevenTNTDayCycleChart = () => {
 
                     {/* DAY CYCLE TABLE FORMAT - REBUILT TO SCREENSHOT */}
                     <div className="w-full mt-2 mb-2 relative">
-                        <table className="w-full bg-white table-fixed border-collapse" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
+                        <table className="w-full bg-white table-fixed border-collapse" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                             <colgroup>
                                 <col className="w-[28px]" />   {/* TEA Side */}
                                 <col className="w-[35px]" />   {/* DAY */}
@@ -622,7 +622,7 @@ const SevenTNTDayCycleChart = () => {
                                         <div className="w-full h-full min-h-[35px] flex items-center justify-center p-1">
                                             <input
                                                 className="w-full h-full text-center font-bold text-black focus:outline-none bg-transparent"
-                                                style={{ fontSize: getFS(14) }}
+                                                style={{ fontSize: getFS(20) }}
                                                 value={promiseInput}
                                                 onChange={(e) => setPromiseInput(e.target.value)}
                                             />
@@ -631,34 +631,34 @@ const SevenTNTDayCycleChart = () => {
                                 </tr>
 
                                 {/* TABLE HEADERS */}
-                                <tr className="bg-white border-2 border-black text-center font-bold h-[25px]" style={{ fontFamily: 'Roboto Condensed, sans-serif' }}>
-                                    <th rowSpan={totalDays + 3} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(10) }}>
+                                <tr className="bg-white border-2 border-black text-center font-bold h-[25px]" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
+                                    <th rowSpan={totalDays + 3} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(23) }}>
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(12) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase">
+                                            <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase">
                                                 TEA
                                             </div>
                                         </div>
                                     </th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white">
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white">
                                         <input className="w-full text-center bg-transparent outline-none font-bold block" value={h1} onChange={(e) => setH1(e.target.value)} />
                                     </th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white">
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white">
                                         <input className="w-full text-center bg-transparent outline-none font-bold block" value={h2} onChange={(e) => setH2(e.target.value)} />
                                     </th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white">
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white">
                                         <input className="w-full text-center bg-transparent outline-none font-bold block" value={h3} onChange={(e) => setH3(e.target.value)} />
                                     </th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
-                                    <th style={{ fontSize: getFS(11) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
-                                    <th rowSpan={totalDays + 1} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(10) }}>
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
+                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
+                                    <th rowSpan={totalDays + 1} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(23) }}>
                                         <div className="absolute inset-0 flex items-center justify-center w-full h-full bg-white z-[5]">
-                                            <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(11) }} className="whitespace-nowrap font-extrabold text-black origin-center">
+                                            <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }} className="whitespace-nowrap font-extrabold text-black origin-center">
                                                 <input className="bg-transparent text-center outline-none border-none uppercase font-extrabold" value={headerSubtitle} onChange={(e) => setHeaderSubtitle(e.target.value)} style={{ width: `${(totalDays * 35) + 105}px` }} placeholder="MODULE1:FACET1:PHASE-1/1" />
                                             </div>
                                         </div>
@@ -671,14 +671,14 @@ const SevenTNTDayCycleChart = () => {
                                         <td className="border-2 border-black p-0 font-extrabold bg-white text-black" style={{ fontSize: getFS(15) }}>{d.day}</td>
 
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-[95%] text-left ml-[5%] outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(14) }} value={d.m1b} onChange={(e) => {
+                                            <input className="w-[95%] text-left ml-[5%] outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m1b} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m1b = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(13) }} value={d.m1t} onChange={(e) => {
+                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m1t} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m1t = e.target.value;
                                                 setRowsData(newData);
@@ -686,14 +686,14 @@ const SevenTNTDayCycleChart = () => {
                                         </td>
 
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-[95%] text-left ml-[5%] outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(14) }} value={d.m2b} onChange={(e) => {
+                                            <input className="w-[95%] text-left ml-[5%] outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m2b} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m2b = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(13) }} value={d.m2t} onChange={(e) => {
+                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m2t} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m2t = e.target.value;
                                                 setRowsData(newData);
@@ -701,14 +701,14 @@ const SevenTNTDayCycleChart = () => {
                                         </td>
 
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-[95%] text-left ml-[5%] outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(14) }} value={d.m3b} onChange={(e) => {
+                                            <input className="w-[95%] text-left ml-[5%] outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m3b} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m3b = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(13) }} value={d.m3t} onChange={(e) => {
+                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m3t = e.target.value;
                                                 setRowsData(newData);
@@ -716,21 +716,21 @@ const SevenTNTDayCycleChart = () => {
                                         </td>
 
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(13) }} value={d.chap} onChange={(e) => {
+                                            <input className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(20) }} value={d.chap} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].chap = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(13) }} value={d.verse} onChange={(e) => {
+                                            <input className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(20) }} value={d.verse} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].verse = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(13) }} value={d.art} onChange={(e) => {
+                                            <input className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(20) }} value={d.art} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].art = e.target.value;
                                                 setRowsData(newData);
@@ -754,7 +754,7 @@ const SevenTNTDayCycleChart = () => {
                                 ))}
                             </tbody>
                             <tfoot className="bg-white">
-                                <tr className="text-black font-extrabold tracking-wide uppercase h-[35px]" style={{ fontSize: getFS(14) }}>
+                                <tr className="text-black font-extrabold tracking-wide uppercase h-[35px]" style={{ fontSize: getFS(20) }}>
                                     <td colSpan={7} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-white">
                                         TOTAL AVERAGE READING TIME {formatSum(
                                             rowsData.slice(0, totalDays).reduce((acc, current) => acc + parseTime(current.art), 0),
@@ -775,11 +775,11 @@ const SevenTNTDayCycleChart = () => {
                                     </td>
                                     <td colSpan={2} className="border-2 border-black p-1 text-center font-extrabold bg-white"></td>
                                 </tr>
-                                <tr className="bg-white text-black text-center font-bold italic h-[25px]" style={{ fontSize: getFS(11) }}>
+                                <tr className="bg-white text-black text-center font-bold italic h-[25px]" style={{ fontSize: getFS(25) }}>
                                     <td colSpan={12} className="border-2 border-black p-0 align-middle">
                                         <input
                                             className="w-full text-center outline-none bg-transparent whitespace-nowrap overflow-hidden text-ellipsis italic font-bold"
-                                            style={{ fontSize: getFS(11) }}
+                                            style={{ fontSize: getFS(25) }}
                                             defaultValue={`It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11`}
                                         />
                                     </td>

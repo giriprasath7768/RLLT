@@ -43,6 +43,7 @@ from app.api.seven_tnt_charts import router as seven_tnt_charts_router
 from app.api.seven_tnt_daycycle_charts import router as seven_tnt_daycycle_charts_router
 from app.api.screen_recorder import router as screen_recorder_router
 from app.api.images import router as images_router
+from app.api.classroom import router as classroom_router
 
 app.include_router(auth_router, prefix="/api", tags=["auth"])
 app.include_router(profile_router, prefix="/api/profile", tags=["profile"])
@@ -65,6 +66,7 @@ app.include_router(seven_tnt_charts_router, prefix="/api/seven_tnt_charts", tags
 app.include_router(seven_tnt_daycycle_charts_router, prefix="/api/seven_tnt_daycycle_charts", tags=["seven_tnt_daycycle_charts"])
 app.include_router(screen_recorder_router, prefix="/api/screen-recorder", tags=["screen_recorder"])
 app.include_router(images_router, prefix="/api/images", tags=["images"])
+app.include_router(classroom_router, prefix="/api/classroom", tags=["classroom"])
 
 import os
 from fastapi.staticfiles import StaticFiles
@@ -72,6 +74,11 @@ from fastapi.staticfiles import StaticFiles
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/api/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+# Mount static folder for classroom submissions
+STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+os.makedirs(STATIC_DIR, exist_ok=True)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/health")
 async def health_check():
