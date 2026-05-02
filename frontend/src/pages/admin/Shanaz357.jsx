@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Tooltip } from 'primereact/tooltip';
 import { Toast } from 'primereact/toast';
+import { OverlayPanel } from 'primereact/overlaypanel';
+
 
 const parseTime = (t) => {
     if (!t) return 0;
@@ -113,6 +115,40 @@ const Shanaz357 = () => {
     const [fct, setFct] = useState(1);
     const [phs, setPhs] = useState(1);
     const [isViewing, setIsViewing] = useState(false);
+
+    const daysOp = React.useRef(null);
+
+    const moduleDaysOptions = React.useMemo(() => {
+        const options = [];
+        const seen = new Set();
+        
+        rlltDB.filter(d => Number(d.module) === Number(mdl)).forEach(d => {
+            const days = d.day;
+            if (days && !seen.has(days)) {
+                seen.add(days);
+                options.push({
+                    days: days,
+                    facet: d.facet
+                });
+            }
+        });
+        
+        return options.sort((a, b) => parseInt(a.days) - parseInt(b.days));
+    }, [rlltDB, mdl]);
+
+    const handleDaySelect = (option) => {
+        setEnteredDays(option.days.toString());
+        setFct(Number(option.facet));
+        daysOp.current?.hide();
+    };
+
+    const toggleDaySelection = (e) => {
+        if (daysOp.current) {
+            daysOp.current.toggle(e);
+        }
+    };
+    const [chartStats, setChartStats] = useState(null);
+    const [enteredDays, setEnteredDays] = useState('');
     const navigate = useNavigate();
     const toast = React.useRef(null);
 
@@ -138,6 +174,7 @@ const Shanaz357 = () => {
     }, []);
 
     const toggleBook = (id) => {
+        setChartStats(null); // Clear phase-loaded stats if user interacts manually
         if (selectedBooks.includes(id)) {
             setSelectedBooks(selectedBooks.filter(b => b !== id));
         } else {
@@ -156,13 +193,13 @@ const Shanaz357 = () => {
     
     // Derived available options based on selections (1 up to the highest recorded value)
     const availableFacets = (() => {
-        const unique = [...new Set(rlltDB.filter(d => d.module === mdl).map(d => d.facet))];
+        const unique = [...new Set(rlltDB.filter(d => Number(d.module) === Number(mdl)).map(d => Number(d.facet)))];
         const max = unique.length > 0 ? Math.max(...unique) : 1;
         return Array.from({ length: max }, (_, i) => i + 1);
     })();
 
     const availablePhases = (() => {
-        const unique = [...new Set(rlltDB.filter(d => d.module === mdl && d.facet === fct).map(d => d.phase))];
+        const unique = [...new Set(rlltDB.filter(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct)).map(d => Number(d.phase)))];
         const max = unique.length > 0 ? Math.max(...unique) : 1;
         return Array.from({ length: max }, (_, i) => i + 1);
     })();
@@ -180,8 +217,53 @@ const Shanaz357 = () => {
         }
     }, [mdl, fct, availablePhases, phs]);
 
-    const currentPhaseData = rlltDB.find(d => d.module === mdl && d.facet === fct && d.phase === phs);
+
+    let currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct) && Number(d.phase) === Number(phs));
+    if (!currentPhaseData) {
+        // Fallback: if exact phase is not found, use any phase's data within the same facet to grab the scheduled days
+        currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
+    }
     const eachPhsDays = currentPhaseData ? currentPhaseData.scheduled_value_days : 0;
+
+    const stats = React.useMemo(() => {
+        let bks = selectedBooks.length;
+        let chp = 0;
+        let vrs = 0;
+        let artMins = 0;
+
+        selectedBooks.forEach(bookId => {
+            const bChaps = chaptersDB.filter(c => c.book_id === bookId);
+            chp += bChaps.length;
+            bChaps.forEach(c => {
+                vrs += (c.verse_count || 0);
+                artMins += (typeof c.art === 'number' ? c.art : parseTime(c.art));
+            });
+        });
+
+        let formattedArt = '0:00H';
+        if (artMins > 0) {
+            const h = Math.floor(artMins / 60);
+            const m = Math.round(artMins % 60);
+            formattedArt = `${h}:${m.toString().padStart(2, '0')}H`;
+        }
+
+        return { bks, chp, vrs, art: formattedArt };
+    }, [selectedBooks, chaptersDB]);
+
+    const displayStats = chartStats || stats;
+
+    const handleNumberClick = (num) => {
+        setEnteredDays(prev => {
+            if (prev.length < 3) {
+                return prev + num.toString();
+            }
+            return prev;
+        });
+    };
+
+    const clearEnteredDays = () => {
+        setEnteredDays('');
+    };
 
     const handleIncrement = () => {
         const currIdx = uniqueModules.indexOf(mdl);
@@ -220,9 +302,7 @@ const Shanaz357 = () => {
             const exists = listRes.data.some(c => Number(c.module) === Number(mdl) && Number(c.facet) === Number(fct) && Number(c.phase) === Number(phs));
             
             if (exists) {
-                navigate('/admin/chart-listing/main-chart', {
-                    state: { preselect: { module: mdl, facet: fct, phase: phs } }
-                });
+                navigate(`/admin/charts?editMod=${mdl}&editFct=${fct}&editPhs=${phs}`);
             } else {
                 toast.current?.show({ severity: 'warn', summary: 'Not Found', detail: `No saved chart found for Module ${mdl}, Facet ${fct}, Phase ${phs}. Please create it first.`, life: 4000 });
             }
@@ -230,6 +310,193 @@ const Shanaz357 = () => {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Could not verify chart existence.', life: 3000 });
         } finally {
             setIsViewing(false);
+        }
+    };
+
+    const handleSubmit = async () => {
+        if (!enteredDays) {
+            toast.current?.show({ severity: 'warn', summary: 'Missing Selection', detail: 'Please enter or select a day first.' });
+            return;
+        }
+        if (selectedBooks.length === 0) {
+            toast.current?.show({ severity: 'warn', summary: 'Missing Books', detail: 'Please select at least one book.' });
+            return;
+        }
+
+        let targetMdl = mdl;
+        let targetFct = fct;
+        let targetPhs = phs;
+
+        const exactMatch = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct) && Number(d.phase) === Number(phs)) 
+            || rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
+
+        const chartLength = exactMatch ? parseInt(exactMatch.scheduled_value_days) : parseInt(enteredDays || 0);
+
+        if (chartLength !== 30 && chartLength !== 40) {
+            toast.current?.show({ severity: 'error', summary: 'Invalid Days', detail: `The scheduled period (${chartLength} days) is not supported. Only 30-day (6 teams) and 40-day (8 teams) charts are supported.` });
+            return;
+        }
+
+
+
+        const distributeBooks = (booksArr, daysOutCount) => {
+            if (!booksArr || !booksArr.length) return Array.from({ length: daysOutCount }, () => null);
+            let allChaps = [];
+            for (let b of booksArr) {
+                const bChaps = chaptersDB.filter(c => c.book_id === b.id).sort((a, b) => a.chapter_number - b.chapter_number);
+                bChaps.forEach(c => c._bookAbbr = b.short_form || b.name);
+                allChaps = allChaps.concat(bChaps);
+            }
+            if (!allChaps.length) return Array.from({ length: daysOutCount }, () => null);
+
+            let cum = [], sum = 0;
+            for (let c of allChaps) { 
+                sum += (typeof c.art === 'number' ? c.art : parseTime(c.art)); 
+                cum.push(sum); 
+            }
+            const totalART = sum;
+            const daysOut = [];
+            let lastChapterIndex = -1;
+
+            for (let day = 1; day <= daysOutCount; day++) {
+                const target = (day / daysOutCount) * totalART;
+                let bestIdx = lastChapterIndex;
+                let minDiffLocal = Infinity;
+                for (let i = lastChapterIndex + 1; i < allChaps.length; i++) {
+                    const diff = Math.abs(cum[i] - target);
+                    if (diff <= minDiffLocal) { minDiffLocal = diff; bestIdx = i; } else break;
+                }
+                if (day === daysOutCount) bestIdx = allChaps.length - 1;
+
+                if (bestIdx > lastChapterIndex) {
+                    let portionStr = "";
+                    const segments = [];
+                    let currentBook = allChaps[lastChapterIndex + 1]._bookAbbr;
+                    let currentStartCh = allChaps[lastChapterIndex + 1].chapter_number;
+                    let currentEndCh = currentStartCh;
+
+                    for (let i = lastChapterIndex + 2; i <= bestIdx; i++) {
+                        const c = allChaps[i];
+                        if (c._bookAbbr === currentBook) {
+                            currentEndCh = c.chapter_number;
+                        } else {
+                            segments.push(currentStartCh === currentEndCh ? `${currentBook} ${currentStartCh}` : `${currentBook} ${currentStartCh}-${currentEndCh}`);
+                            currentBook = c._bookAbbr;
+                            currentStartCh = c.chapter_number;
+                            currentEndCh = c.chapter_number;
+                        }
+                    }
+                    segments.push(currentStartCh === currentEndCh ? `${currentBook} ${currentStartCh}` : `${currentBook} ${currentStartCh}-${currentEndCh}`);
+                    portionStr = segments.join(', ');
+
+                    const segART = cum[bestIdx] - (lastChapterIndex >= 0 ? cum[lastChapterIndex] : 0);
+                    let vs = 0;
+                    for (let i = lastChapterIndex + 1; i <= bestIdx; i++) vs += (allChaps[i].verse_count || 0);
+
+                    let timeStr = "";
+                    const h = Math.floor(segART / 60);
+                    const m = Math.round(segART % 60);
+                    if (h > 0 && m > 0) timeStr = `${h}h.${m}m`;
+                    else if (h > 0) timeStr = `${h}h`;
+                    else timeStr = `${m}m`;
+
+                    daysOut.push({ portion: portionStr, time: segART, timeStr: timeStr, timeFloat: segART, chapCount: (bestIdx - lastChapterIndex), verseCount: vs });
+                    lastChapterIndex = bestIdx;
+                } else {
+                    daysOut.push(null);
+                }
+            }
+            return daysOut;
+        };
+        
+        const validBooks = selectedBooks.map(id => booksDB.find(b => b.id === id)).filter(Boolean);
+        
+        const seg1Books = validBooks.slice(0, 1);
+        const seg2Books = validBooks.slice(1, 2);
+        const seg3Books = validBooks.slice(2);
+
+        const dist1 = distributeBooks(seg1Books, chartLength);
+        const dist2 = distributeBooks(seg2Books, chartLength);
+        const dist3 = distributeBooks(seg3Books, chartLength);
+
+        const newChunks = [];
+        const numChunks = Math.ceil(chartLength / 5);
+        let dayCounter = 1;
+
+        for (let c = 0; c < numChunks; c++) {
+            const chunkDays = [];
+            for (let d = 0; d < 5; d++) {
+                if (dayCounter > chartLength) break;
+                const dIndex = dayCounter - 1;
+                
+                const bd1 = dist1[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 };
+                const bd2 = dist2[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 };
+                const bd3 = dist3[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 };
+
+                const totChap = bd1.chapCount + bd2.chapCount + bd3.chapCount;
+                const totVerse = bd1.verseCount + bd2.verseCount + bd3.verseCount;
+                const totArtFloat = (bd1.timeFloat || 0) + (bd2.timeFloat || 0) + (bd3.timeFloat || 0);
+
+                let totArtStr = "";
+                if (totArtFloat > 0) {
+                    const h = Math.floor(totArtFloat / 60);
+                    const m = Math.round(totArtFloat % 60);
+                    if (h > 0 && m > 0) totArtStr = `${h}h.${m}m`;
+                    else if (h > 0) totArtStr = `${h}h`;
+                    else totArtStr = `${m}m`;
+                }
+
+                chunkDays.push({
+                    id: dayCounter,
+                    day: dayCounter,
+                    m1b: bd1.portion,
+                    m1t: bd1.timeStr,
+                    m2b: bd2.portion,
+                    m2t: bd2.timeStr,
+                    m3b: bd3.portion,
+                    m3t: bd3.timeStr,
+                    chap: totChap,
+                    verse: totVerse,
+                    art: totArtStr,
+                    yes: false
+                });
+                dayCounter++;
+            }
+            if (chunkDays.length > 0) {
+                newChunks.push({
+                    id: `chunk_${c + 1}`,
+                    team: `TEAM -${c + 1}`,
+                    phase: `PHASE - 1/1`,
+                    promiseLabel: "GOD'S PROMISES :",
+                    promises: "ENTER GOD'S PROMISSES HERE",
+                    promiseInput: "",
+                    h1: "",
+                    h2: "",
+                    h3: "",
+                    days: chunkDays
+                });
+            }
+        }
+
+        const formData = new FormData();
+        formData.append("module", targetMdl);
+        formData.append("facet", targetFct);
+        formData.append("phase", targetPhs);
+        formData.append("banner_text", `MAIN CHART - ${chartLength} DAYS`);
+        formData.append("t_label", "T");
+        formData.append("state_payload", JSON.stringify(newChunks));
+
+        try {
+            await axios.post(`http://${window.location.hostname}:8000/api/charts/sync`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                withCredentials: true
+            });
+            toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Chart Automated Successfully!', life: 2000 });
+            setTimeout(() => {
+                navigate(`/admin/charts?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
+            }, 1000);
+        } catch (err) {
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to generate chart', life: 3000 });
         }
     };
 
@@ -279,15 +546,15 @@ const Shanaz357 = () => {
 
                 {/* Stats Section */}
                 <div className="flex justify-between border border-gray-200 rounded-xl mb-6 bg-white shadow-sm overflow-hidden">
-                    <StatItem title="BKS" icon="pi pi-book" value="3" color="text-[#1976d2]" />
+                    <StatItem title="BKS" icon="pi pi-book" value={displayStats.bks} color="text-[#1976d2]" />
                     <div className="w-px bg-gray-200 my-2"></div>
-                    <StatItem title="CHP" icon="pi pi-file" value="75" color="text-[#388e3c]" />
+                    <StatItem title="CHP" icon="pi pi-file" value={displayStats.chp} color="text-[#388e3c]" />
                     <div className="w-px bg-gray-200 my-2"></div>
-                    <StatItem title="VRS" icon="pi pi-crown" value="200" color="text-[#f57c00]" />
+                    <StatItem title="VRS" icon="pi pi-crown" value={displayStats.vrs} color="text-[#f57c00]" />
                     <div className="w-px bg-gray-200 my-2"></div>
-                    <StatItem title="ART" icon="pi pi-clock" value="1:30H" color="text-[#7b1fa2]" />
+                    <StatItem title="ART" icon="pi pi-clock" value={displayStats.art} color="text-[#7b1fa2]" />
                     <div className="w-px bg-gray-200 my-2"></div>
-                    <StatItem title="DAYS" icon="pi pi-calendar" value="60" color="text-[#d32f2f]" />
+                    <StatItem title="DAYS" icon="pi pi-calendar" value={eachPhsDays || 0} color="text-[#d32f2f]" />
                 </div>
 
                 {/* Books Grid - Combined Scrollable Card */}
@@ -300,7 +567,7 @@ const Shanaz357 = () => {
                         scrollbar-width: none;
                     }
                 `}</style>
-                <div className="border border-gray-200 rounded-xl mb-6 shadow-sm overflow-hidden flex flex-col">
+                <div className="border border-gray-200 rounded-t-xl shadow-sm overflow-hidden flex flex-col">
                     <div className="overflow-y-auto scrollbar-hide h-[215px]">
                         <div className="bg-[#0B2149] text-white text-center font-bold py-2 text-sm tracking-wide sticky top-0 z-10">
                             OLD TESTAMENT
@@ -319,31 +586,86 @@ const Shanaz357 = () => {
                 </div>
 
                 {/* Middle Input Section */}
-                <div className="flex gap-2 mb-4 h-14">
-                    <div className="flex-1 border border-[#388e3c] rounded-xl flex items-center justify-center text-center text-[#388e3c] text-[10px] font-bold uppercase bg-[#f1f8e9]">
+                <div className="flex gap-2 mb-4 h-16 border border-gray-200 border-t-0 rounded-b-xl p-2 bg-white shadow-sm">
+                    <div className="flex-1 border border-[#388e3c] rounded-lg flex items-center justify-center text-center text-[#388e3c] text-[10px] font-bold uppercase bg-[#f1f8e9]">
                         PSALMS<br/>CHP 119
                     </div>
-                    <div className="flex-[1.5] border border-gray-300 rounded-xl flex justify-evenly items-center px-2">
+                    <div className="flex-[1.5] border border-gray-300 rounded-lg flex justify-evenly items-center px-2">
                         <div className="h-6 w-px bg-gray-200"></div>
                         <div className="h-6 w-px bg-gray-200"></div>
                         <div className="h-6 w-px bg-gray-200"></div>
                     </div>
-                    <div className="flex-1 border border-[#388e3c] rounded-xl flex items-center justify-center text-center text-[#388e3c] text-[10px] font-bold uppercase bg-[#f1f8e9]">
+                    <div className="flex-1 border border-[#388e3c] rounded-lg flex items-center justify-center text-center text-[#388e3c] text-[10px] font-bold uppercase bg-[#f1f8e9]">
                         PSA OF DAVID<br/>73 CHP
                     </div>
                 </div>
 
-                {/* Numbers Grid */}
-                <div className="border border-[#1976d2] rounded-xl mb-4 py-2 flex justify-evenly text-center text-sm font-bold text-[#1976d2] bg-[#f8faff]">
-                    <div className="flex flex-col"><div className="mb-1">0</div><div>5</div></div>
-                    <div className="w-px bg-gray-300 my-1"></div>
-                    <div className="flex flex-col"><div className="mb-1">1</div><div>6</div></div>
-                    <div className="w-px bg-gray-300 my-1"></div>
-                    <div className="flex flex-col"><div className="mb-1">2</div><div>7</div></div>
-                    <div className="w-px bg-gray-300 my-1"></div>
-                    <div className="flex flex-col"><div className="mb-1">3</div><div>8</div></div>
-                    <div className="w-px bg-gray-300 my-1"></div>
-                    <div className="flex flex-col"><div className="mb-1">4</div><div>9</div></div>
+                {/* Numbers and Controls Section */}
+                <div className="mb-4">
+                    {/* Top Row: Refresh - Circle - Submit */}
+                    <div className="flex justify-center items-center gap-6 mb-3">
+                        <button 
+                            onClick={() => {
+                                setEnteredDays('');
+                                setSelectedBooks([]);
+                                setChartStats(null);
+                            }}
+                            className="w-10 h-10 rounded-full border-2 border-red-300 text-red-500 flex items-center justify-center bg-white hover:bg-red-50 transition-colors shadow-sm"
+                            title="Refresh Data"
+                        >
+                            <i className="pi pi-refresh font-bold"></i>
+                        </button>
+
+                        <div className="w-16 h-16 shrink-0 rounded-full border-4 border-gray-100 flex items-center justify-center bg-white shadow-inner mx-4 overflow-hidden relative cursor-pointer hover:border-[#1976d2] transition-colors" onClick={toggleDaySelection} title="Click to select days">
+                            {enteredDays ? <span className="text-xl font-black text-[#1976d2]">{enteredDays}</span> : <span className="text-[10px] font-bold text-gray-300">DAYS</span>}
+                        </div>
+                        
+                        <OverlayPanel ref={daysOp} className="w-48 shadow-lg rounded-xl">
+                            <div className="p-2 flex flex-col gap-1 max-h-60 overflow-y-auto">
+                                <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider text-center">Module {mdl} Days</div>
+                                {moduleDaysOptions.length > 0 ? moduleDaysOptions.map((opt, i) => (
+                                    <button 
+                                        key={i}
+                                        onClick={() => handleDaySelect(opt)}
+                                        className="w-full text-left px-4 py-2 hover:bg-[#f8faff] hover:text-[#1976d2] rounded-lg transition-colors font-bold text-sm border border-transparent hover:border-[#e0ebf5]"
+                                    >
+                                        {opt.days} Days <span className="text-xs text-gray-400 font-normal ml-2">(Facet {opt.facet})</span>
+                                    </button>
+                                )) : (
+                                    <div className="text-xs text-center text-gray-400 py-4">No days configured</div>
+                                )}
+                                <div className="border-t border-gray-100 mt-2 pt-2">
+                                    <button 
+                                        onClick={() => { clearEnteredDays(); daysOp.current?.hide(); }}
+                                        className="w-full text-center px-4 py-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors font-bold text-xs"
+                                    >
+                                        Clear Selection
+                                    </button>
+                                </div>
+                            </div>
+                        </OverlayPanel>
+
+                        <button 
+                            onClick={handleSubmit}
+                            className="w-10 h-10 rounded-full border-2 border-green-400 text-green-600 flex items-center justify-center bg-white hover:bg-green-50 transition-colors shadow-sm"
+                            title="Submit"
+                        >
+                            <i className="pi pi-check font-bold text-lg"></i>
+                        </button>
+                    </div>
+
+                    {/* Numbers Card */}
+                    <div className="border border-[#1976d2] rounded-xl py-2 px-4 flex justify-between items-center text-lg font-black text-[#1976d2] bg-[#f8faff] shadow-sm">
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                            <button 
+                                key={num} 
+                                onClick={() => handleNumberClick(num)} 
+                                className="hover:text-orange-500 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-100"
+                            >
+                                {num}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Plus/Minus Section */}
@@ -393,7 +715,7 @@ const Shanaz357 = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3 mb-3">
                     <button className="flex flex-row items-center justify-center gap-2 border border-[#1976d2] text-[#1976d2] rounded-xl py-2 font-bold text-xs hover:bg-blue-50 transition-colors bg-white">
                         <i className="pi pi-print text-base"></i> PRINT
                     </button>

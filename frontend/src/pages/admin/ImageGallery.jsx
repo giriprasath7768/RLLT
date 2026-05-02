@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import * as XLSX from 'xlsx';
 import { Toast } from 'primereact/toast';
 
 const ImageGallery = () => {
@@ -53,69 +52,6 @@ const ImageGallery = () => {
             setUploading(false);
         }
     };
-
-    const handleExcelImport = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async (evt) => {
-            const bstr = evt.target.result;
-            const wb = XLSX.read(bstr, { type: 'binary' });
-            const wsname = wb.SheetNames[0];
-            const ws = wb.Sheets[wsname];
-            const data = XLSX.utils.sheet_to_json(ws);
-
-            // Extract URLs: Look for common headers like 'url', 'image', 'link' or just take the first string that starts with http
-            const urls = [];
-            data.forEach(row => {
-                let foundUrl = null;
-
-                // First try to match explicitly by column name
-                const searchKeys = ['location', 'url', 'image', 'link'];
-                for (let key in row) {
-                    if (searchKeys.includes(key.toLowerCase())) {
-                        foundUrl = row[key];
-                        break;
-                    }
-                }
-
-                // Fallback to checking values if no column name matched
-                if (!foundUrl) {
-                    const values = Object.values(row);
-                    for (let val of values) {
-                        if (typeof val === 'string' && (val.startsWith('http') || val.startsWith('/'))) {
-                            foundUrl = val;
-                            break;
-                        }
-                    }
-                }
-
-                if (foundUrl && typeof foundUrl === 'string') {
-                    urls.push(foundUrl.trim());
-                }
-            });
-
-            if (!urls.length) {
-                toast.current?.show({ severity: 'warn', summary: 'Warning', detail: 'No valid URLs found in the Excel sheet.' });
-                return;
-            }
-
-            setUploading(true);
-            try {
-                await axios.post(`${API_BASE_URL}/urls`, { urls }, { withCredentials: true });
-                toast.current?.show({ severity: 'success', summary: 'Success', detail: `${urls.length} image URLs imported successfully` });
-                fetchImages();
-            } catch (err) {
-                console.error(err);
-                toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to import image URLs' });
-            } finally {
-                setUploading(false);
-            }
-        };
-        reader.readAsBinaryString(file);
-    };
-
     const handleDeleteImage = async (e, imageId) => {
         e.stopPropagation();
         if (!window.confirm("Are you sure you want to delete this image?")) return;
@@ -129,17 +65,6 @@ const ImageGallery = () => {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to delete image' });
         }
     };
-
-    const downloadExcelTemplate = () => {
-        const ws = XLSX.utils.json_to_sheet([
-            { location: "/api/uploads/image1.jpg" },
-            { location: "/api/uploads/image2.png" }
-        ]);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "ImagesTemplate");
-        XLSX.writeFile(wb, "Image_Upload_Template.xlsx");
-    };
-
     return (
         <div className="p-8 bg-gray-50 min-h-screen">
             <Toast ref={toast} />
@@ -152,15 +77,6 @@ const ImageGallery = () => {
                     {uploading && <span className="text-sm font-bold text-blue-600 animate-pulse">Uploading...</span>}
 
                     <div className="flex items-center gap-4">
-                        {/* Download Template */}
-                        <button
-                            onClick={downloadExcelTemplate}
-                            className="relative overflow-hidden group border-2 border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer shadow-sm"
-                        >
-                            <i className="pi pi-download"></i>
-                            <span className="font-bold text-sm tracking-wide">Download Template</span>
-                        </button>
-
                         {/* Manual Image Upload */}
                         <div className="relative overflow-hidden group border-2 border-dashed border-blue-400 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer shadow-sm">
                             <i className="pi pi-upload"></i>
@@ -171,19 +87,6 @@ const ImageGallery = () => {
                                 accept="image/*"
                                 className="absolute inset-0 opacity-0 cursor-pointer"
                                 onChange={handleManualUpload}
-                                disabled={uploading}
-                            />
-                        </div>
-
-                        {/* Excel Sheet Import */}
-                        <div className="relative overflow-hidden group border-2 border-dashed border-green-400 bg-green-50 text-green-600 hover:bg-green-100 transition-colors rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer shadow-sm">
-                            <i className="pi pi-file-excel"></i>
-                            <span className="font-bold text-sm tracking-wide">Import Excel Links</span>
-                            <input
-                                type="file"
-                                accept=".xlsx, .xls, .csv"
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                onChange={handleExcelImport}
                                 disabled={uploading}
                             />
                         </div>
@@ -240,7 +143,7 @@ const ImageGallery = () => {
                 <div className="py-20 text-center border-4 border-dashed border-gray-200 rounded-3xl bg-white/50 w-full">
                     <div className="text-gray-400 text-6xl mb-4"><i className="pi pi-image"></i></div>
                     <h3 className="text-xl font-bold text-gray-700">No images found</h3>
-                    <p className="text-gray-500 mt-2">Upload images manually or import an Excel sheet to populate the gallery.</p>
+                    <p className="text-gray-500 mt-2">Upload images manually to populate the gallery.</p>
                 </div>
             )}
 

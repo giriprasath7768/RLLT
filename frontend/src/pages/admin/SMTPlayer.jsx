@@ -305,7 +305,6 @@ const GlobalPDFPageOverrides = () => (
 
 // Constants for PDF Highlighting Tool
 const HIGHLIGHT_CATEGORIES = [
-    { label: "Wisdom of God", color: "#8e2b8c" },
     { label: "Imagination", color: "#294291" },
     { label: "Scriptures to prayer", color: "#86c5f7" },
     { label: "Daily growing in Godliness", color: "#38b948" },
@@ -402,23 +401,28 @@ const ScrollMenuPopup = ({ position, onSelect, onClose, contentDB = [], activeTr
             >
                 {/* FRONT FACE */}
                 <div
-                    className={`absolute inset-0 flex flex-col items-center justify-start drop-shadow-2xl transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
-                    style={{
-                        backgroundImage: "url('/scrollimage.png')",
-                        backgroundSize: '100% 100%',
-                        backgroundPosition: 'center',
-                        backgroundRepeat: 'no-repeat'
-                    }}
+                    className={`absolute inset-0 flex flex-col items-center justify-start bg-[#faf4ec] border-[3px] border-[#8b5a2b]/80 rounded-2xl drop-shadow-2xl overflow-hidden transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
                 >
+                    <div 
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                            backgroundImage: "url('/scrollimage.png')",
+                            backgroundSize: '100% 100%',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                            mixBlendMode: 'multiply'
+                        }}
+                    />
+                    
                     {/* Info toggle instead of Close button */}
                     <button
                         onClick={(e) => { e.stopPropagation(); setFlipMode('info'); setIsFlipped(true); }}
-                        className="absolute top-[80px] right-[50px] text-[#8b5a2b]/80 hover:text-red-700 hover:scale-110 transition-all z-[101]"
+                        className="absolute top-[80px] right-[50px] text-[#8b5a2b] hover:text-red-700 hover:scale-110 transition-all z-[101]"
                         title="Reference Info"
                     >
                         <i className="pi pi-info-circle text-[22px] font-bold"></i>
                     </button>
-                    <div className="px-6 pt-[95px] pb-[60px] flex flex-col gap-[7px] items-center text-[#2d1a11] font-serif w-full h-full justify-center">
+                    <div className="relative z-10 px-6 pt-[60px] pb-[60px] flex flex-col gap-[7px] items-center text-[#2d1a11] font-serif w-full h-full justify-center -translate-y-2">
                         <h2 className="text-[17px] font-black uppercase tracking-widest text-[#2d1a11] drop-shadow-sm mb-1 text-center leading-tight w-full flex flex-col gap-[2px]">
                             <button onClick={(e) => handleCategoryClick(e, { label: "The Power of God", color: "#FCD34D" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
                                 The Power of God &
@@ -486,46 +490,77 @@ const ScrollMenuPopup = ({ position, onSelect, onClose, contentDB = [], activeTr
                                 <span className="font-serif font-black text-[13px] text-[#2d1a11] tracking-wider uppercase drop-shadow-sm text-center leading-tight w-full break-words mb-4 border-b pb-2 border-[#8b5a2b]/30">{selectedCategory?.label || ''}</span>
 
                                 <div className="flex flex-col gap-2 w-[95%] flex-shrink-0">
-                                    {['Underline', 'Circle', 'Square', 'Highlight'].map(fmt => (
-                                        <div key={fmt} className="relative group w-full flex flex-col items-center z-10 bg-[#faf4ec] border border-[#8b5a2b]/20 shadow-sm rounded-lg overflow-hidden">
-                                            <div className="w-full px-3 py-1 bg-[#8b5a2b]/10 font-bold font-serif text-[12px] text-[#2d1a11] text-center border-b border-[#8b5a2b]/10">
-                                                {fmt}
-                                            </div>
-                                            <div className="grid grid-cols-5 gap-1 p-1.5 w-full bg-[#faf4ec]">
-                                                {[
-                                                    { id: 'solid-1px', bWidth: '2px', bStyle: 'solid' },
-                                                    { id: 'double-3px', bWidth: '4px', bStyle: 'double' },
-                                                    { id: 'solid-3px', bWidth: '4px', bStyle: 'solid' },
-                                                    { id: 'dotted-2px', bWidth: '3px', bStyle: 'dotted' },
-                                                    { id: 'dashed-2px', bWidth: '3px', bStyle: 'dashed' }
-                                                ].map(opt => {
-                                                    let renderPreview;
-                                                    const activeColor = selectedCategory?.color || '#8b5a2b';
-                                                    const bProps = { borderStyle: opt.bStyle, borderWidth: opt.bWidth, borderColor: activeColor };
+                                    {['Underline', 'Circle', 'Square', 'Highlight'].map(fmt => {
+                                        let formatOptions = [];
+                                        if (fmt === 'Square' || fmt === 'Circle') {
+                                            formatOptions = [
+                                                { id: 'solid-1px', bWidth: '2px', bStyle: 'solid' },
+                                                { id: 'solid-3px', bWidth: '4px', bStyle: 'solid' },
+                                                { id: 'double-3px', bWidth: '4px', bStyle: 'double' },
+                                                { id: 'inner-shadow', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'outer-shadow', bWidth: '0px', bStyle: 'none' }
+                                            ];
+                                        } else if (fmt === 'Underline') {
+                                            formatOptions = [
+                                                { id: 'line-1px', bWidth: '1px', bStyle: 'solid' },
+                                                { id: 'line-2px', bWidth: '2px', bStyle: 'solid' },
+                                                { id: 'line-3px', bWidth: '3px', bStyle: 'solid' },
+                                                { id: 'line-4px', bWidth: '4px', bStyle: 'solid' },
+                                                { id: 'line-5px', bWidth: '5px', bStyle: 'solid' }
+                                            ];
+                                        } else if (fmt === 'Highlight') {
+                                            formatOptions = [
+                                                { id: 'hl-1', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'hl-2', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'hl-3', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'hl-4', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'hl-5', bWidth: '0px', bStyle: 'none' }
+                                            ];
+                                        }
 
-                                                    if (fmt === 'Underline') {
-                                                        renderPreview = <div className="w-[90%]" style={{ borderBottomStyle: opt.bStyle, borderBottomWidth: opt.bWidth, borderBottomColor: activeColor }} />;
-                                                    } else if (fmt === 'Circle') {
-                                                        renderPreview = <div className="w-[14px] h-[14px] rounded-full flex-shrink-0" style={bProps} />;
-                                                    } else if (fmt === 'Square') {
-                                                        renderPreview = <div className="w-[14px] h-[14px] rounded-[2px] flex-shrink-0" style={bProps} />;
-                                                    } else {
-                                                        renderPreview = <div className="w-[90%] h-[10px] rounded-[2px]" style={{ ...bProps, backgroundColor: activeColor, opacity: 0.35 }} />;
-                                                    }
+                                        return (
+                                            <div key={fmt} className="relative group w-full flex flex-col items-center z-10 bg-[#faf4ec] border border-[#8b5a2b]/20 shadow-sm rounded-lg overflow-hidden">
+                                                <div className="w-full px-3 py-1 bg-[#8b5a2b]/10 font-bold font-serif text-[12px] text-[#2d1a11] text-center border-b border-[#8b5a2b]/10">
+                                                    {fmt}
+                                                </div>
+                                                <div className="grid grid-cols-5 gap-1 p-1.5 w-full bg-[#faf4ec]">
+                                                    {formatOptions.map(opt => {
+                                                        let renderPreview;
+                                                        const activeColor = selectedCategory?.color || '#8b5a2b';
+                                                        const bProps = { borderStyle: opt.bStyle, borderWidth: opt.bWidth, borderColor: activeColor };
 
-                                                    return (
-                                                        <button
-                                                            key={opt.id}
-                                                            onClick={(e) => { e.stopPropagation(); handleFormatClick(fmt.toLowerCase(), opt.id); }}
-                                                            className="w-full h-6 flex items-center justify-center hover:bg-[#8b5a2b]/20 rounded transition-colors"
-                                                        >
-                                                            {renderPreview}
-                                                        </button>
-                                                    );
-                                                })}
+                                                        if (fmt === 'Underline') {
+                                                            renderPreview = <div className="w-[90%]" style={{ borderBottomStyle: opt.bStyle, borderBottomWidth: opt.bWidth, borderBottomColor: activeColor }} />;
+                                                        } else if (fmt === 'Circle') {
+                                                            const isInner = opt.id === 'inner-shadow';
+                                                            const isOuter = opt.id === 'outer-shadow';
+                                                            const shadowStyle = isInner ? { boxShadow: `inset 0 0 4px ${activeColor}` } : isOuter ? { boxShadow: `0 0 6px ${activeColor}` } : bProps;
+                                                            renderPreview = <div className="w-[14px] h-[14px] rounded-full flex-shrink-0" style={shadowStyle} />;
+                                                        } else if (fmt === 'Square') {
+                                                            const isInner = opt.id === 'inner-shadow';
+                                                            const isOuter = opt.id === 'outer-shadow';
+                                                            const shadowStyle = isInner ? { boxShadow: `inset 0 0 4px ${activeColor}` } : isOuter ? { boxShadow: `0 0 6px ${activeColor}` } : bProps;
+                                                            renderPreview = <div className="w-[14px] h-[14px] rounded-[2px] flex-shrink-0" style={shadowStyle} />;
+                                                        } else {
+                                                            const hlLvl = parseInt(opt.id.split('-')[1]);
+                                                            renderPreview = <div className="w-[90%] rounded-[2px]" style={{ height: `${hlLvl * 2}px`, backgroundColor: activeColor, opacity: 0.35, alignSelf: 'flex-end', marginBottom: '2px' }} />;
+                                                        }
+
+                                                        return (
+                                                            <button
+                                                                key={opt.id}
+                                                                onClick={(e) => { e.stopPropagation(); handleFormatClick(fmt.toLowerCase(), opt.id); }}
+                                                                className="w-full h-6 flex items-end justify-center hover:bg-[#8b5a2b]/20 rounded transition-colors pb-1"
+                                                                title={opt.id}
+                                                            >
+                                                                {renderPreview}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </>
                         )}
@@ -563,8 +598,29 @@ const ScrollMenuPopup = ({ position, onSelect, onClose, contentDB = [], activeTr
 };
 
 const PDFPageRender = React.forwardRef((props, ref) => {
-
+    const contentRef = React.useRef(null);
     const isRightPage = props.pageNumber % 2 !== 0;
+
+    React.useEffect(() => {
+        const el = contentRef.current;
+        if (!el) return;
+
+        const stopFlip = (e) => {
+            // Unconditionally stop flip events from reaching react-pageflip
+            // This disables all swipe/peel interactions, allowing 100% reliable text selection.
+            e.stopPropagation();
+        };
+
+        el.addEventListener('pointerdown', stopFlip);
+        el.addEventListener('touchstart', stopFlip, { passive: false });
+        el.addEventListener('mousedown', stopFlip);
+
+        return () => {
+            el.removeEventListener('pointerdown', stopFlip);
+            el.removeEventListener('touchstart', stopFlip);
+            el.removeEventListener('mousedown', stopFlip);
+        };
+    }, []);
 
     const rightSpineObj = { background: 'linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.2) 3%, rgba(0,0,0,0.05) 8%, rgba(0,0,0,0) 25%)' };
     const leftSpineObj = { background: 'linear-gradient(to left, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.2) 3%, rgba(0,0,0,0.05) 8%, rgba(0,0,0,0) 25%)' };
@@ -575,7 +631,7 @@ const PDFPageRender = React.forwardRef((props, ref) => {
 
     return (
         <div className={`page ${props.isCover ? 'bg-[#1e2433]' : 'bg-[#e5e7eb]'} shadow-2xl`} ref={ref} data-density={props.isCover ? "hard" : "soft"}>
-            <div className={`page-content w-full h-full ${props.isCover ? 'bg-[#2a3045] border-[3px] border-[#151a26] p-[8px]' : 'bg-[#ffffff]'} flex flex-col justify-center items-center relative`}>
+            <div ref={contentRef} className={`page-content w-full h-full ${props.isCover ? 'bg-[#2a3045] border-[3px] border-[#151a26] p-[8px]' : 'bg-[#ffffff]'} flex flex-col justify-center items-center relative overflow-hidden`}>
 
                 <Page
                     pageNumber={props.pageNumber}
@@ -625,9 +681,14 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                                     let bStyle = 'solid';
                                     let bWidth = '2px';
                                     if (h.styleOption === 'double-3px') { bStyle = 'double'; bWidth = '4px'; }
-                                    else if (h.styleOption === 'solid-3px') { bStyle = 'solid'; bWidth = '3px'; }
+                                    else if (h.styleOption === 'solid-3px') { bStyle = 'solid'; bWidth = '4px'; }
+                                    else if (h.styleOption === 'solid-1px') { bStyle = 'solid'; bWidth = '2px'; }
                                     else if (h.styleOption === 'dotted-2px') { bStyle = 'dotted'; bWidth = '3px'; }
                                     else if (h.styleOption === 'dashed-2px') { bStyle = 'dashed'; bWidth = '3px'; }
+                                    else if (h.styleOption?.startsWith('line-')) {
+                                        bStyle = 'solid';
+                                        bWidth = `${h.styleOption.split('-')[1]}`;
+                                    }
 
                                     if (h.format === 'underline') {
                                         return (
@@ -648,6 +709,16 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                                     }
 
                                     const isMacroBox = isBoxFormat && h.rects.length > 1;
+                                    let shadowStyle = {};
+                                    if (h.styleOption === 'inner-shadow') {
+                                        bStyle = 'none';
+                                        bWidth = '0';
+                                        shadowStyle = { boxShadow: `inset 0 0 12px ${h.color || '#dc2626'}` };
+                                    } else if (h.styleOption === 'outer-shadow') {
+                                        bStyle = 'none';
+                                        bWidth = '0';
+                                        shadowStyle = { boxShadow: `0 0 12px ${h.color || '#dc2626'}` };
+                                    }
 
                                     if (h.format === 'circle') {
                                         styles.borderStyle = bStyle;
@@ -659,6 +730,7 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                                         styles.padding = isMacroBox ? '4px 8px' : '0px 4px';
                                         styles.margin = isMacroBox ? '-4px 0 0 -8px' : '2px 0 0 -4px';
                                         styles.height = isMacroBox ? `${rect.height}%` : `calc(${rect.height}% - 4px)`;
+                                        Object.assign(styles, shadowStyle);
                                     } else if (h.format === 'square' || (!h.format && h.isSquare)) {
                                         styles.borderStyle = bStyle;
                                         styles.borderWidth = bWidth;
@@ -669,14 +741,19 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                                         styles.padding = isMacroBox ? '2px 4px' : '0px 2px';
                                         styles.margin = isMacroBox ? '-2px 0 0 -4px' : '2px 0 0 -2px';
                                         styles.height = isMacroBox ? `${rect.height}%` : `calc(${rect.height}% - 4px)`;
+                                        Object.assign(styles, shadowStyle);
                                     } else {
+                                        let thicknessRatio = 1; // default full
+                                        if (h.styleOption && h.styleOption.startsWith('hl-')) {
+                                            const level = parseInt(h.styleOption.split('-')[1]);
+                                            thicknessRatio = level / 5;
+                                        }
+                                        
                                         styles.backgroundColor = h.color || '#dc2626';
                                         styles.opacity = 0.35;
                                         styles.mixBlendMode = 'multiply';
-                                        styles.borderStyle = bStyle;
-                                        styles.borderWidth = bWidth;
-                                        styles.borderColor = h.color;
-                                        styles.boxSizing = 'content-box';
+                                        styles.height = `${rect.height * thicknessRatio}%`;
+                                        styles.top = `${rect.top + rect.height * (1 - thicknessRatio)}%`;
                                     }
 
                                     return <div key={`${h.id}_${i}`} style={styles} />;
@@ -690,11 +767,6 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-30" style={isRightPage ? rightEdgeObj : leftEdgeObj} />
 
-                {/* Explicit Corner Hover Zones to guarantee visually-mapped 'hand pointer' grab mechanics where peeling is allowed without destroying center text-selection */}
-                <div className="absolute top-0 left-0 w-[15%] h-[15%] cursor-pointer z-[60]" />
-                <div className="absolute top-0 right-0 w-[15%] h-[15%] cursor-pointer z-[60]" />
-                <div className="absolute bottom-0 left-0 w-[15%] h-[15%] cursor-pointer z-[60]" />
-                <div className="absolute bottom-0 right-0 w-[15%] h-[15%] cursor-pointer z-[60]" />
             </div>
         </div>
     );
@@ -760,6 +832,7 @@ const SMTPlayer = () => {
 
     // Audio Player State
     const audioRef = useRef(new Audio());
+    const flipSoundRef = useRef(new Audio('/page-flip.mp3.mp3'));
     const [isPlaying, setIsPlaying] = useState(false);
     const [audioDuration, setAudioDuration] = useState(0);
     const [audioProgress, setAudioProgress] = useState(0);
@@ -768,6 +841,81 @@ const SMTPlayer = () => {
     const [showWisdomOverlay, setShowWisdomOverlay] = useState(false);
     const [playerBgColor, setPlayerBgColor] = useState('#547395');
     const [playerBorderColor, setPlayerBorderColor] = useState('#080b12');
+
+    const parsedPayload = React.useMemo(() => {
+        const filter = location.state?.filter || 'main';
+        let p = [];
+        const payloadString = location.state?.payload;
+        if (payloadString) {
+            try {
+                p = typeof payloadString === 'string' ? JSON.parse(payloadString) : payloadString;
+            } catch (e) { }
+        }
+
+        if (filter === 'morning_evening' && p && p.length > 0 && booksDB.length > 0 && chaptersDB.length > 0) {
+            const is24x7 = JSON.stringify(p).includes('"m4b"');
+            if (is24x7) {
+                const { morningEveningChunks } = splitS4Data(p, booksDB, chaptersDB);
+                p = morningEveningChunks;
+            } else {
+                const { morningEveningChunks } = splitS3Data(p, booksDB, chaptersDB);
+                p = morningEveningChunks;
+            }
+        }
+        return p;
+    }, [location.state?.payload, location.state?.filter, booksDB, chaptersDB]);
+
+    const activeDayNode = React.useMemo(() => {
+        let dayNode = null;
+        for (const chunk of parsedPayload) {
+            if (chunk.days) {
+                const match = chunk.days.find(d => d.day === selectedDay);
+                if (match) {
+                    dayNode = match;
+                    break;
+                }
+            }
+        }
+        return dayNode;
+    }, [selectedDay, parsedPayload]);
+
+    const playlistBooks = React.useMemo(() => {
+        if (!activeDayNode) return [{ name: "PROVERBS 1", type: "default" }];
+        const dayNode = activeDayNode;
+        const filter = location.state?.filter || 'main';
+
+        let fullList = [];
+        let is24x7 = false;
+        try { is24x7 = JSON.stringify(parsedPayload).includes('"m4b"'); } catch (e) { }
+
+        if (filter === 'morning_evening') {
+            if (is24x7) {
+                const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b_morning].filter(Boolean);
+                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
+                const eveningRaw = [dayNode.m4b_evening].filter(Boolean);
+                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
+            } else {
+                const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b_morning].filter(Boolean);
+                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
+                const eveningRaw = [dayNode.m3b_evening].filter(Boolean);
+                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
+            }
+        } else {
+            const defaultRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b].filter(Boolean);
+            defaultRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'default' })));
+        }
+
+        return fullList.length ? fullList : [{ name: "PROVERBS 1", type: "default" }];
+    }, [activeDayNode, booksDB, location.state?.filter]);
+
+    useEffect(() => {
+        if (playlistBooks && playlistBooks.length > 0) {
+            const currentTrackExists = activeTrackName && playlistBooks.some(b => b.name === activeTrackName);
+            if (!activeTrackName || !currentTrackExists) {
+                setActiveTrackName(playlistBooks[0].name);
+            }
+        }
+    }, [playlistBooks, activeTrackName]);
 
     const playerStateRef = useRef(null);
 
@@ -1001,6 +1149,18 @@ const SMTPlayer = () => {
     };
 
     useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                setHighlights(prev => prev.length > 0 ? prev.slice(0, -1) : prev);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    useEffect(() => {
         const updateDimensions = () => {
             if (bookContainerRef.current) {
                 const containerWidth = bookContainerRef.current.offsetWidth;
@@ -1046,82 +1206,6 @@ const SMTPlayer = () => {
 
         return () => clearInterval(timer);
     }, []);
-
-    const parsedPayload = React.useMemo(() => {
-        const filter = location.state?.filter || 'main';
-        let p = [];
-        const payloadString = location.state?.payload;
-        if (payloadString) {
-            try {
-                p = typeof payloadString === 'string' ? JSON.parse(payloadString) : payloadString;
-            } catch (e) { }
-        }
-
-        if (filter === 'morning_evening' && p && p.length > 0 && booksDB.length > 0 && chaptersDB.length > 0) {
-            const is24x7 = JSON.stringify(p).includes('"m4b"');
-            if (is24x7) {
-                const { morningEveningChunks } = splitS4Data(p, booksDB, chaptersDB);
-                p = morningEveningChunks;
-            } else {
-                const { morningEveningChunks } = splitS3Data(p, booksDB, chaptersDB);
-                p = morningEveningChunks;
-            }
-        }
-        return p;
-    }, [location.state?.payload, location.state?.filter, booksDB, chaptersDB]);
-
-    const activeDayNode = React.useMemo(() => {
-        let dayNode = null;
-        for (const chunk of parsedPayload) {
-            if (chunk.days) {
-                const match = chunk.days.find(d => d.day === selectedDay);
-                if (match) {
-                    dayNode = match;
-                    break;
-                }
-            }
-        }
-        return dayNode;
-    }, [selectedDay, parsedPayload]);
-
-    const playlistBooks = React.useMemo(() => {
-        if (!activeDayNode) return [{ name: "PROVERBS 1", type: "default" }];
-        const dayNode = activeDayNode;
-        const filter = location.state?.filter || 'main';
-
-        let fullList = [];
-        let is24x7 = false;
-        try { is24x7 = JSON.stringify(parsedPayload).includes('"m4b"'); } catch (e) { }
-
-        if (filter === 'morning_evening') {
-            if (is24x7) {
-                const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b_morning].filter(Boolean);
-                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
-                const eveningRaw = [dayNode.m4b_evening].filter(Boolean);
-                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
-            } else {
-                const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b_morning].filter(Boolean);
-                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
-                const eveningRaw = [dayNode.m3b_evening].filter(Boolean);
-                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
-            }
-        } else {
-            const defaultRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b].filter(Boolean);
-            defaultRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'default' })));
-        }
-
-        return fullList.length ? fullList : [{ name: "PROVERBS 1", type: "default" }];
-    }, [activeDayNode, booksDB, location.state?.filter]);
-
-    useEffect(() => {
-        if (playlistBooks && playlistBooks.length > 0) {
-            const currentTrackExists = activeTrackName && playlistBooks.some(b => b.name === activeTrackName);
-            if (!activeTrackName || !currentTrackExists) {
-                setActiveTrackName(playlistBooks[0].name);
-            }
-        }
-    }, [playlistBooks, activeTrackName]);
-
 
     const activePdfUrl = React.useMemo(() => {
         if (!activeTrackName) return null;
@@ -1176,6 +1260,10 @@ const SMTPlayer = () => {
 
     const onPageFlip = (e) => {
         setCurrentPage(e.data);
+        if (flipSoundRef.current) {
+            flipSoundRef.current.currentTime = 0;
+            flipSoundRef.current.play().catch(err => console.log("Audio play prevented:", err));
+        }
     };
 
     const totalPagesToRender = numPages ? (numPages % 2 !== 0 ? numPages + 1 : numPages) : 0;
@@ -1339,6 +1427,18 @@ const SMTPlayer = () => {
                         <div className={`absolute right-12 flex items-center pr-2 gap-2 transition-all duration-300 ${showToolMenu ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
                             <button
                                 onClick={() => {
+                                    setHighlights(prev => prev.length > 0 ? prev.slice(0, -1) : prev);
+                                    setShowToolMenu(false);
+                                }}
+                                disabled={highlights.length === 0}
+                                className={`bg-gray-800 hover:bg-red-600 text-white px-4 sm:px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap ${highlights.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title="Undo Last Highlight"
+                            >
+                                <i className="pi pi-undo text-lg"></i>
+                                <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline-block">UNDO</span>
+                            </button>
+                            <button
+                                onClick={() => {
                                     const nextState = !showAudioPlayer;
                                     setShowAudioPlayer(nextState);
                                     setShowToolMenu(false);
@@ -1346,10 +1446,10 @@ const SMTPlayer = () => {
                                         audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
                                     }
                                 }}
-                                className="bg-gray-800 hover:bg-blue-600 text-white px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
+                                className="bg-gray-800 hover:bg-blue-600 text-white px-4 sm:px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
                             >
                                 <i className="pi pi-play-circle text-lg"></i>
-                                <span className="text-[11px] font-black tracking-widest uppercase">PLAYER</span>
+                                <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline-block">PLAYER</span>
                             </button>
                         </div>
                         <button
@@ -1394,6 +1494,23 @@ const SMTPlayer = () => {
                                     height: `${baseHeight}px`,
                                 }}
                             >
+                                {/* Left/Right Screen Navigation Buttons */}
+                                <button 
+                                    className="fixed left-4 sm:left-8 top-1/2 -translate-y-1/2 bg-[#1e2433]/80 hover:bg-[#8b5a2b] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm transition-all z-[100] disabled:opacity-0 disabled:pointer-events-none hover:scale-110"
+                                    onClick={() => flipBookRef.current?.pageFlip().flipPrev()}
+                                    disabled={currentPage === 0}
+                                    title="Previous Page"
+                                >
+                                    <i className="pi pi-angle-left text-lg sm:text-xl"></i>
+                                </button>
+                                <button 
+                                    className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 bg-[#1e2433]/80 hover:bg-[#8b5a2b] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm transition-all z-[100] disabled:opacity-0 disabled:pointer-events-none hover:scale-110"
+                                    onClick={() => flipBookRef.current?.pageFlip().flipNext()}
+                                    disabled={currentPage >= totalPagesToRender - 2}
+                                    title="Next Page"
+                                >
+                                    <i className="pi pi-angle-right text-lg sm:text-xl"></i>
+                                </button>
                                 <div
                                     style={{ width: `${baseWidth * 2}px`, height: `${baseHeight}px` }}
                                     className="shadow-[0_45px_100px_rgba(0,0,0,1)] ring-1 ring-gray-700/50 flex flex-col justify-center items-center bg-[#ffffff]"
@@ -1411,6 +1528,8 @@ const SMTPlayer = () => {
                                         showCover={true}
                                         mobileScrollSupport={true}
                                         disableFlipByClick={true}
+                                        useMouseEvents={false}
+                                        showPageCorners={false}
                                         className="mx-auto"
                                         flippingTime={900}
                                         usePortrait={false}
