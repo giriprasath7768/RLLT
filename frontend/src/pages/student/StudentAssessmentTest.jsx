@@ -80,6 +80,18 @@ const StudentAssessmentTest = () => {
                                             <span dangerouslySetInnerHTML={{ __html: a.choice_3 }}></span>
                                         </label>
                                     )}
+                                    {a.choice_4 && (
+                                        <label className={`flex items-center gap-3 cursor-pointer p-3 bg-white border ${responses[a.id] === '4' ? 'border-[#2F5597] bg-blue-50 cursor-default' : 'border-gray-100 hover:border-blue-300 hover:bg-blue-50'} rounded-lg transition-colors`}>
+                                            <input type="radio" name={`question-${a.id}`} value="4" checked={responses[a.id] === '4'} onChange={() => handleChoice(a.id, '4')} className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500" />
+                                            <span dangerouslySetInnerHTML={{ __html: a.choice_4 }}></span>
+                                        </label>
+                                    )}
+                                    {a.choice_5 && (
+                                        <label className={`flex items-center gap-3 cursor-pointer p-3 bg-white border ${responses[a.id] === '5' ? 'border-[#2F5597] bg-blue-50 cursor-default' : 'border-gray-100 hover:border-blue-300 hover:bg-blue-50'} rounded-lg transition-colors`}>
+                                            <input type="radio" name={`question-${a.id}`} value="5" checked={responses[a.id] === '5'} onChange={() => handleChoice(a.id, '5')} className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500" />
+                                            <span dangerouslySetInnerHTML={{ __html: a.choice_5 }}></span>
+                                        </label>
+                                    )}
                                 </div>
                             </div>
                         ))}

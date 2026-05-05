@@ -1,10 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Sidebar as PrimeSidebar } from 'primereact/sidebar';
 import axios from 'axios';
 
 const SidebarItem = ({ item, onClick, level = 0 }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const location = useLocation();
+
+    const isItemActive = (currentItem) => {
+        if (currentItem.to && (location.pathname === currentItem.to || location.pathname.startsWith(currentItem.to + '/'))) {
+            return true;
+        }
+        if (currentItem.items) {
+            return currentItem.items.some(isItemActive);
+        }
+        return false;
+    };
+
+    const [isOpen, setIsOpen] = useState(() => isItemActive(item));
+
+    useEffect(() => {
+        if (isItemActive(item)) {
+            setIsOpen(true);
+        }
+    }, [location.pathname]);
 
     if (item.isHeader) {
         return (
@@ -79,8 +97,15 @@ const AdminSidebar = ({ visible, onHide }) => {
                 ...(userRole === 'super_admin' ? [{ label: 'Manage Admin', icon: 'pi pi-shield', to: '/admin/manage-admin' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Manage Leaders', icon: 'pi pi-users', to: '/admin/manage-leaders' }] : []),
                 { label: 'Manage Students', icon: 'pi pi-id-card', to: '/admin/manage-students' },
-                { label: 'Manage Assessment', icon: 'pi pi-file-edit', to: '/admin/manage-assessment' },
-                { label: 'Assessment Results', icon: 'pi pi-chart-line', to: '/admin/assessment-results' },
+                {
+                    label: 'Assessment',
+                    icon: 'pi pi-file-edit',
+                    items: [
+                        { label: 'Manage Assessment', icon: 'pi pi-file-edit', to: '/admin/manage-assessment' },
+                        { label: 'Assessment Results', icon: 'pi pi-chart-line', to: '/admin/assessment-results' },
+                        { label: 'Assessment Summary', icon: 'pi pi-list', to: '/admin/assessment-summary' }
+                    ]
+                },
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
                     label: 'Classroom',
                     icon: 'pi pi-book',
@@ -127,8 +152,7 @@ const AdminSidebar = ({ visible, onHide }) => {
                         { label: '7TNT Main Chart', icon: 'pi pi-table', to: '/admin/chart-creation/7tnt-main-chart' },
                         { label: '7TNT Day Cycle Chart', icon: 'pi pi-calendar-plus', to: '/admin/chart-creation/7tnt-day-cycle' },
                         { label: 'V-Card Chart', icon: 'pi pi-id-card', to: '/admin/chart-listing/vcard-chart' },
-                        { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/twenty-four-seven-chart' },
-                        { label: 'Light Chart', icon: 'pi pi-sun', to: '/admin/chart-creation/light-chart' }
+                        { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/twenty-four-seven-chart' }
                     ]
                 }] : []),
                 {
@@ -146,7 +170,8 @@ const AdminSidebar = ({ visible, onHide }) => {
                         { label: 'Weekly Chart', icon: 'pi pi-calendar', to: '/admin/chart-listing/weekly-chart' },
                         { label: '24x7 Chart', icon: 'pi pi-chart-pie', to: '/admin/chart-listing/twenty-four-seven-chart' },
                         { label: '24x7 Morning/Evening', icon: 'pi pi-calendar-plus', to: '/admin/chart-listing/twenty-four-seven-morning-evening-chart' },
-                        { label: '24x7 DL Size Chart', icon: 'pi pi-table', to: '/admin/chart-listing/twenty-four-seven-dl-size-chart' }
+                        { label: '24x7 DL Size Chart', icon: 'pi pi-table', to: '/admin/chart-listing/twenty-four-seven-dl-size-chart' },
+                        { label: 'Light Chart', icon: 'pi pi-sun', to: '/admin/chart-listing/light-chart' }
                     ]
                 },
                 {

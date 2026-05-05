@@ -23,16 +23,26 @@ const RLLTTableData = () => {
         phase: 1,
         day: 1,
         art: '',
-        scheduled_value_days: 1
+        scheduled_value_days: 1,
+        ot_bks: '',
+        nt_bks: '',
+        we5: '',
+        pro: '',
+        psa: '',
+        chp: 0,
+        ver: 0,
+        ppl: ''
     };
 
     const [dataList, setDataList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [globalFilter, setGlobalFilter] = useState('');
+    const [selectedRecords, setSelectedRecords] = useState(null);
 
     // CRUD state
     const [recordDialog, setRecordDialog] = useState(false);
     const [deleteRecordDialog, setDeleteRecordDialog] = useState(false);
+    const [deleteSelectedDialog, setDeleteSelectedDialog] = useState(false);
     const [importDialog, setImportDialog] = useState(false);
     const [record, setRecord] = useState(emptyRecord);
     const [submitted, setSubmitted] = useState(false);
@@ -69,6 +79,10 @@ const RLLTTableData = () => {
 
     const hideDeleteRecordDialog = () => {
         setDeleteRecordDialog(false);
+    };
+
+    const hideDeleteSelectedDialog = () => {
+        setDeleteSelectedDialog(false);
     };
 
     const saveRecord = async () => {
@@ -122,6 +136,51 @@ const RLLTTableData = () => {
         }
     };
 
+    const confirmDeleteSelected = () => {
+        setDeleteSelectedDialog(true);
+    };
+
+    const deleteSelectedRecords = async () => {
+        try {
+            setLoading(true);
+            await Promise.all(selectedRecords.map(rec => 
+                axios.delete(`http://${window.location.hostname}:8000/api/rllt_lookup/${rec.id}`, { withCredentials: true })
+            ));
+            
+            let _dataList = dataList.filter(val => !selectedRecords.some(selected => selected.id === val.id));
+            setDataList(_dataList);
+            setDeleteSelectedDialog(false);
+            setSelectedRecords(null);
+            toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Records Deleted', life: 3000 });
+        } catch (error) {
+            console.error("Bulk delete error: ", error);
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to delete selected records', life: 3000 });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const [clearAllDialog, setClearAllDialog] = useState(false);
+
+    const confirmClearAll = () => {
+        setClearAllDialog(true);
+    };
+
+    const clearAllData = async () => {
+        try {
+            setLoading(true);
+            await axios.delete(`http://${window.location.hostname}:8000/api/rllt_lookup/bulk/all`, { withCredentials: true });
+            setDataList([]);
+            setClearAllDialog(false);
+            toast.current.show({ severity: 'success', summary: 'Successful', detail: 'All Data Cleared', life: 3000 });
+        } catch (error) {
+            console.error("Clear all error: ", error);
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to clear all data', life: 3000 });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const findIndexById = (id) => {
         let index = -1;
         for (let i = 0; i < dataList.length; i++) {
@@ -166,22 +225,49 @@ const RLLTTableData = () => {
                     return;
                 }
 
-                const parsedRllt = data.map(row => {
-                    const normalized = {};
-                    Object.keys(row).forEach(k => {
-                        const cleanKey = k.toLowerCase().replace(/\s+/g, '');
-                        normalized[cleanKey] = row[k];
-                    });
+                    const parsedRllt = data.map(row => {
+                        const normalized = {};
+                        Object.keys(row).forEach(k => {
+                            const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            normalized[cleanKey] = row[k];
+                        });
+                        
+                        const getVal = (keys) => {
+                            for (let key of keys) {
+                                if (normalized[key] !== undefined && normalized[key] !== null && normalized[key] !== '') {
+                                    return normalized[key];
+                                }
+                            }
+                            return undefined;
+                        };
 
-                    return {
-                        module: parseInt(normalized['module']) || 0,
-                        facet: parseInt(normalized['facet']) || 0,
-                        phase: parseInt(normalized['phase']) || 0,
-                        day: parseInt(normalized['day']) || 0,
-                        art: String(normalized['arttime'] || normalized['art'] || ''),
-                        scheduled_value_days: parseInt(normalized['scheduleddays'] || normalized['scheduled'] || normalized['scheduled_value_days']) || 0
-                    };
-                }).filter(r => r.module > 0 && r.facet > 0);
+                        const getStr = (keys) => {
+                            const val = getVal(keys);
+                            return val !== undefined ? String(val).trim() : '';
+                        };
+
+                        const getInt = (keys) => {
+                            const val = parseInt(getVal(keys));
+                            return isNaN(val) ? 0 : val;
+                        };
+    
+                        return {
+                            module: getInt(['module']),
+                            facet: getInt(['facet']),
+                            phase: getInt(['phase']),
+                            day: getInt(['day']),
+                            art: getStr(['arttime', 'art', 'artstring']),
+                            scheduled_value_days: getInt(['scheduleddays', 'scheduled', 'scheduledvaluedays']),
+                            ot_bks: getStr(['otbks', 'ot', 'otbk', 'oldtestament']),
+                            nt_bks: getStr(['ntbks', 'nt', 'ntbk', 'newtestament']),
+                            we5: getStr(['we5', 'we']),
+                            pro: getStr(['pro']),
+                            psa: getStr(['psa']),
+                            chp: getInt(['chp', 'chapter', 'chapters']),
+                            ver: getInt(['ver', 'verse', 'verses']),
+                            ppl: getStr(['ppl'])
+                        };
+                    }).filter(r => r.module > 0 && r.facet > 0);
 
                 if (parsedRllt.length === 0) {
                     toast.current.show({ severity: 'error', summary: 'Mapping Failed', detail: 'Could not match required columns (Module, Facet, etc) from the Excel file.' });
@@ -215,6 +301,8 @@ const RLLTTableData = () => {
             <div className="flex flex-wrap gap-2">
                 <Button label="New Lookup" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
                 <Button label="Import Excel" icon="pi pi-upload" severity="help" onClick={() => setImportDialog(true)} className="hidden md:flex" />
+                <Button label="Clear All Data" icon="pi pi-trash" severity="danger" onClick={confirmClearAll} className="hidden md:flex" />
+                <Button label="Delete" icon="pi pi-trash" severity="danger" onClick={confirmDeleteSelected} disabled={!selectedRecords || !selectedRecords.length} className="hidden md:flex" />
             </div>
         </div>
     );
@@ -252,6 +340,20 @@ const RLLTTableData = () => {
         </React.Fragment>
     );
 
+    const deleteSelectedDialogFooter = (
+        <React.Fragment>
+            <Button label="No" icon="pi pi-times" outlined onClick={hideDeleteSelectedDialog} />
+            <Button label="Yes" icon="pi pi-check" severity="danger" onClick={deleteSelectedRecords} />
+        </React.Fragment>
+    );
+
+    const clearAllDialogFooter = (
+        <React.Fragment>
+            <Button label="No" icon="pi pi-times" outlined onClick={() => setClearAllDialog(false)} />
+            <Button label="Yes" icon="pi pi-check" severity="danger" onClick={clearAllData} />
+        </React.Fragment>
+    );
+
     const filteredData = dataList.filter(rec => {
         if (!globalFilter) return true;
         const search = globalFilter.toLowerCase();
@@ -274,18 +376,28 @@ const RLLTTableData = () => {
 
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
                     <DataTable ref={dt} value={dataList} dataKey="id"
+                        selection={selectedRecords} onSelectionChange={(e) => setSelectedRecords(e.value)}
                         paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
                         loading={loading} globalFilter={globalFilter} header={tableHeader}
                         className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines
                         rowClassName={() => 'bg-white text-black'} emptyMessage="No settings configured.">
+                        <Column selectionMode="multiple" exportable={false} style={{ width: '3rem' }}></Column>
                         <Column header="S.No" body={(data, options) => options.rowIndex + 1} exportable={false} style={{ width: '4rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="module" header="Module" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
                         <Column field="facet" header="Facet" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
                         <Column field="phase" header="Phase" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
-                        <Column field="day" header="Day" sortable style={{ width: '10%' }} headerClassName="admin-table-header"></Column>
-                        <Column field="art" header="ART Time" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
-                        <Column field="scheduled_value_days" header="Scheduled Days" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
-                        <Column header="Activity" body={actionBodyTemplate} exportable={false} style={{ width: '12%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="day" header="Day" sortable style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="art" header="ART Time" sortable style={{ width: '10%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="scheduled_value_days" header="Scheduled Days" sortable style={{ width: '10%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="ot_bks" header="O.T BKS" sortable style={{ width: '10%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="nt_bks" header="N.T BKS" sortable style={{ width: '10%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="we5" header="WE5" sortable style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="pro" header="PRO" sortable style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="psa" header="PSA" sortable style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="chp" header="CHP" sortable style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="ver" header="VER" sortable style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="ppl" header="PPL" sortable style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
+                        <Column header="Activity" body={actionBodyTemplate} exportable={false} style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
                     </DataTable>
                 </div>
 
@@ -363,9 +475,52 @@ const RLLTTableData = () => {
                     {submitted && !record.art && <small className="p-error text-red-500 block mt-1">String value code is strictly required.</small>}
                 </div>
 
-                <div className="field mb-2">
-                    <label htmlFor="scheduled_value_days" className="font-bold block mb-2">Total Scheduled Range</label>
-                    <InputNumber id="scheduled_value_days" value={record.scheduled_value_days} onValueChange={(e) => onInputNumberChange(e, 'scheduled_value_days')} useGrouping={false} />
+                <div className="formgrid grid grid-cols-2 gap-4 mb-4">
+                    <div className="field col-6">
+                        <label htmlFor="scheduled_value_days" className="font-bold block mb-2">Total Scheduled Range</label>
+                        <InputNumber id="scheduled_value_days" value={record.scheduled_value_days} onValueChange={(e) => onInputNumberChange(e, 'scheduled_value_days')} useGrouping={false} />
+                    </div>
+                    <div className="field col-6">
+                        <label htmlFor="ppl" className="font-bold block mb-2">PPL</label>
+                        <InputText id="ppl" value={record.ppl} onChange={(e) => onInputChange(e, 'ppl')} />
+                    </div>
+                </div>
+
+                <div className="formgrid grid grid-cols-2 gap-4 mb-4">
+                    <div className="field col-6">
+                        <label htmlFor="ot_bks" className="font-bold block mb-2">O.T BKS</label>
+                        <InputText id="ot_bks" value={record.ot_bks} onChange={(e) => onInputChange(e, 'ot_bks')} />
+                    </div>
+                    <div className="field col-6">
+                        <label htmlFor="nt_bks" className="font-bold block mb-2">N.T BKS</label>
+                        <InputText id="nt_bks" value={record.nt_bks} onChange={(e) => onInputChange(e, 'nt_bks')} />
+                    </div>
+                </div>
+
+                <div className="formgrid grid grid-cols-3 gap-4 mb-4">
+                    <div className="field col-4">
+                        <label htmlFor="we5" className="font-bold block mb-2">WE5</label>
+                        <InputText id="we5" value={record.we5} onChange={(e) => onInputChange(e, 'we5')} />
+                    </div>
+                    <div className="field col-4">
+                        <label htmlFor="pro" className="font-bold block mb-2">PRO</label>
+                        <InputText id="pro" value={record.pro} onChange={(e) => onInputChange(e, 'pro')} />
+                    </div>
+                    <div className="field col-4">
+                        <label htmlFor="psa" className="font-bold block mb-2">PSA</label>
+                        <InputText id="psa" value={record.psa} onChange={(e) => onInputChange(e, 'psa')} />
+                    </div>
+                </div>
+
+                <div className="formgrid grid grid-cols-2 gap-4 mb-2">
+                    <div className="field col-6">
+                        <label htmlFor="chp" className="font-bold block mb-2">CHP</label>
+                        <InputNumber id="chp" value={record.chp} onValueChange={(e) => onInputNumberChange(e, 'chp')} useGrouping={false} />
+                    </div>
+                    <div className="field col-6">
+                        <label htmlFor="ver" className="font-bold block mb-2">VER</label>
+                        <InputNumber id="ver" value={record.ver} onValueChange={(e) => onInputNumberChange(e, 'ver')} useGrouping={false} />
+                    </div>
                 </div>
             </Dialog>
 
@@ -379,6 +534,20 @@ const RLLTTableData = () => {
                     )}
                 </div>
             </Dialog>
+
+                <Dialog visible={deleteSelectedDialog} style={{ width: '450px' }} header="Confirm" modal footer={deleteSelectedDialogFooter} onHide={hideDeleteSelectedDialog}>
+                    <div className="flex items-center justify-center">
+                        <i className="pi pi-exclamation-triangle mr-3" style={{ fontSize: '2rem' }} />
+                        {selectedRecords && <span>Are you sure you want to delete the selected records?</span>}
+                    </div>
+                </Dialog>
+
+                <Dialog visible={clearAllDialog} style={{ width: '450px' }} header="Confirm Clear All" modal footer={clearAllDialogFooter} onHide={() => setClearAllDialog(false)}>
+                    <div className="flex items-center justify-center">
+                        <i className="pi pi-exclamation-triangle text-red-500 mr-3" style={{ fontSize: '2rem' }} />
+                        <span>Are you sure you want to <b>DELETE ALL DATA</b>? This action cannot be undone.</span>
+                    </div>
+                </Dialog>
 
             <Dialog visible={importDialog} style={{ width: '32rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Import RLLT Data Excel" modal onHide={() => setImportDialog(false)}>
                 <div className="field mb-2 border border-gray-200 rounded-xl overflow-hidden p-2">

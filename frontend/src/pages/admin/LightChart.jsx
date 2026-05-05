@@ -31,24 +31,55 @@ const ImageUploadPlaceholder = ({ state, setState, label }) => {
 };
 
 
-const module1Data = [
-    { sno: 1, fct: 1, dayPpl: 30, otBks: '-', ntBks: '-', phs: 1, we5: 6, pro: '-', psa: 1, chp: 2, ver: 352, art: '1m', ppl: 30 },
-    { sno: 2, fct: 2, dayPpl: 30, otBks: '2', ntBks: '-', phs: 1, we5: 6, pro: '1', psa: 1, chp: 43, ver: 1137, art: '4m', ppl: 30 },
-    { sno: 3, fct: 3, dayPpl: 30, otBks: '2', ntBks: '-', phs: 1, we5: 6, pro: '1', psa: 1, chp: 45, ver: 1489, art: '5m', ppl: 30 },
-    { sno: 4, fct: 4, dayPpl: 30, otBks: '2', ntBks: '-', phs: 1, we5: 6, pro: '1', psa: 1, chp: 191, ver: 3577, art: '12m', ppl: 30 },
-    { sno: 5, fct: 5, dayPpl: 30, otBks: '1', ntBks: '4', phs: 1, we5: 6, pro: '1', psa: 1, chp: 157, ver: 2573, art: '10m', ppl: 30 },
-    { sno: 6, fct: 6, dayPpl: 30, otBks: '2', ntBks: '2', phs: 1, we5: 6, pro: '1', psa: 1, chp: 128, ver: 3496, art: '14m', ppl: 30 },
-    { sno: 7, fct: 7, dayPpl: 30, otBks: '3+', ntBks: '4', phs: 1, we5: 6, pro: '1', psa: 1, chp: 283, ver: 7459, art: '28m', ppl: 30 },
-    { sno: 8, fct: 8, dayPpl: 30, otBks: '5+', ntBks: '19', phs: 1, we5: 6, pro: '1', psa: 1, chp: 315, ver: 7763, art: '30m', ppl: 30 },
-    { sno: 9, fct: 9, dayPpl: 30, otBks: '8+', ntBks: '-', phs: 1, we5: 6, pro: '1', psa: 1, chp: 317, ver: 8314, art: '35m', ppl: 30 },
-    { sno: 10, fct: 10, dayPpl: 30, otBks: '5+', ntBks: '25', phs: 1, we5: 6, pro: '1', psa: 1, chp: 433, ver: 11917, art: '49m', ppl: 30 },
-];
+const LightChartTable = ({ moduleNum, rlltDB }) => {
+    // Calculate totals from database or local data
+    const dbRows = (rlltDB || []).filter(r => r.module === moduleNum);
+    const totalFacets = dbRows.length > 0 ? dbRows.length : 10;
+    const uniquePhases = new Set(dbRows.map(r => r.phase));
+    const totalPhases = dbRows.length > 0 ? uniquePhases.size : 1;
+    
+    // Determine scheduled days intelligently
+    let scheduledDays = 30;
+    if (dbRows.length > 0 && dbRows[0].scheduled_value_days > 0) {
+        scheduledDays = dbRows[0].scheduled_value_days;
+    } else if (dbRows.length > 0 && dbRows[0].day > 0) {
+        scheduledDays = dbRows[0].day;
+    }
 
-const LightChartTable = ({ moduleNum, data }) => {
+    const tableRows = dbRows.length > 0 ? dbRows.map((r, idx) => ({
+        sno: idx + 1,
+        fct: r.facet || '',
+        dayPpl: r.day || '',
+        otBks: r.ot_bks || '',
+        ntBks: r.nt_bks || '',
+        phs: r.phase || '',
+        we5: r.we5 || '',
+        pro: r.pro || '',
+        psa: r.psa || '',
+        chp: r.chp || '',
+        ver: r.ver || '',
+        art: r.art || '',
+        ppl: r.ppl || ''
+    })) : Array.from({ length: 10 }).map((_, idx) => ({
+        sno: idx + 1,
+        fct: idx + 1,
+        dayPpl: '',
+        otBks: '',
+        ntBks: '',
+        phs: '',
+        we5: '',
+        pro: '',
+        psa: '',
+        chp: '',
+        ver: '',
+        art: '',
+        ppl: ''
+    }));
+
     return (
         <div className="mb-2 mx-auto max-w-6xl w-full">
             <h2 className="text-center font-bold text-xs mb-1" style={{ color: '#00A859' }}>
-                MODULE {moduleNum}: <span className="text-black">10 FACETS: 10 PHASES - EACH PHASE 30 DAYS</span>
+                MODULE {moduleNum}: <span className="text-black">{totalFacets} FACETS: {totalPhases} PHASES - EACH PHASE {scheduledDays} DAYS</span>
             </h2>
             <div className="overflow-x-auto w-full">
                 <table className="w-full border-collapse border-2 border-black text-center text-[10px] sm:text-xs font-bold font-sans">
@@ -70,13 +101,13 @@ const LightChartTable = ({ moduleNum, data }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {(data || module1Data).map((row, idx) => {
+                        {tableRows.map((row, idx) => {
                             // Rows 2 and 8 are green, others light blue only for the first S.NO cell.
                             const isGreenRow = row.sno === 2 || row.sno === 8;
                             const snoColor = isGreenRow ? '#00E84D' : '#BCD2E8'; // Vivid green for 2&8
 
                             return (
-                                <tr key={idx} className="border border-black leading-tight">
+                                <tr key={idx} className="border border-black leading-tight h-[22px]">
                                     <td className="border-2 border-black py-0.5 px-1 font-bold bg-white" style={{ backgroundColor: snoColor }}>{row.sno}</td>
                                     <td className="border-2 border-black py-0.5 px-1 bg-white" style={isGreenRow ? { backgroundColor: '#00E84D' } : {}}>{row.fct}</td>
                                     <td className="border-2 border-black py-0.5 px-1 bg-white">{row.dayPpl}</td>
@@ -107,7 +138,6 @@ const LightChart = () => {
     const [logo1, setLogo1] = useState(null);
     const [bannerText, setBannerText] = useState("MAIN CHART - 30 DAYS");
 
-    const [chartDays, setChartDays] = useState(30);
     const [tableFontSize, setTableFontSize] = useState(8);
 
     // Feature States
@@ -119,204 +149,140 @@ const LightChart = () => {
     const [chaptersDB, setChaptersDB] = useState([]);
     const [rlltDB, setRlltDB] = useState([]);
 
-    // Data State Map
-    const [moduleData, setModuleData] = useState({
-        1: module1Data,
-        2: module1Data,
-        3: module1Data,
-        4: module1Data,
-        5: module1Data,
-    });
-
     useEffect(() => {
         const fetchRefs = async () => {
             try {
+                const baseUrl = `http://${window.location.hostname}:8000`;
                 const [booksRes, chaptersRes, rlltRes] = await Promise.all([
-                    axios.get('/api/admin/books'),
-                    axios.get('/api/admin/chapters'),
-                    axios.get('/api/admin/rllt')
+                    axios.get(`${baseUrl}/api/books`, { withCredentials: true }),
+                    axios.get(`${baseUrl}/api/chapters`, { withCredentials: true }),
+                    axios.get(`${baseUrl}/api/rllt_lookup`, { withCredentials: true })
                 ]);
-                setBooksDB(booksRes.data);
-                setChaptersDB(chaptersRes.data);
-                setRlltDB(rlltRes.data);
+                setBooksDB(Array.isArray(booksRes.data) ? booksRes.data : []);
+                setChaptersDB(Array.isArray(chaptersRes.data) ? chaptersRes.data : []);
+                setRlltDB(Array.isArray(rlltRes.data) ? rlltRes.data : []);
             } catch (err) {
                 console.error("Failed to fetch references:", err);
+                setBooksDB([]);
+                setChaptersDB([]);
+                setRlltDB([]);
             }
         };
         fetchRefs();
     }, []);
 
-    const handleDownloadTemplate = () => {
-        const templateData = [{
-            'Module': '',
-            'Person/Day': '',
-            'OTT BKS': '',
-            'NT BKS': '',
-            'WE5': '',
-            'Book 1': '',
-            'Chapter 1': '',
-            'Book 2': '',
-            'Chapter 2': '',
-            'Book 3': '',
-            'Chapter 3': ''
-        }];
-        const ws = XLSX.utils.json_to_sheet(templateData);
-        ws['!cols'] = [{ wch: 8 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 10 }];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, `Bulk Mapping Template`);
-        XLSX.writeFile(wb, `LightChart_Bulk_Module_Mapping_Template.xlsx`);
+    const getBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
     };
 
-    const handleExcelImportSubmit = (e) => {
-        const file = e.files[0];
-        if (!file) return;
-
-        if (booksDB.length === 0 || rlltDB.length === 0) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Wait for databases to load before import.' });
-            e.options.clear();
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            try {
-                const bstr = evt.target.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
-                const wsname = wb.SheetNames[0];
-                const ws = wb.Sheets[wsname];
-                const data = XLSX.utils.sheet_to_json(ws);
-
-                if (data.length === 0) {
-                    toast.current.show({ severity: 'warn', summary: 'Warning', detail: 'No valid rows found.' });
-                    e.options.clear();
-                    return;
-                }
-
-                const processBookSpan = (bookRaw, chapRaw) => {
-                    const rawName = String(bookRaw || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-                    if (!rawName || rawName === 'undefined' || rawName === 'null') return { chapters: 0, verses: 0, art: 0 };
-
-                    const matchBook = booksDB.find(b => {
-                        const bNameClean = (b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-                        const bShortClean = (b.short_form || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-                        return bNameClean === rawName || bShortClean === rawName;
-                    });
-
-                    if (!matchBook) return { chapters: 0, verses: 0, art: 0 };
-
-                    const numChap = parseInt(chapRaw) || 1;
-                    let totalChapters = numChap;
-                    let totalVerses = 0;
-                    let totalArt = 0.0;
-
-                    const matchedChapters = chaptersDB.filter(c =>
-                        c.book_id === matchBook.id &&
-                        c.chapter_number >= 1 &&
-                        c.chapter_number <= numChap
-                    );
-
-                    matchedChapters.forEach(c => {
-                        totalVerses += c.verse_count || 0;
-                        if (c.art != null) {
-                            const valStr = c.art.toString();
-                            if (valStr.includes('.')) {
-                                const parts = valStr.split('.');
-                                let sStr = parts[1] || "0";
-                                if (sStr.length === 1) sStr += '0';
-                                totalArt += parseInt(parts[0] || 0) + (parseInt(sStr.substring(0, 2)) / 60);
-                            } else {
-                                totalArt += parseFloat(valStr) || 0;
-                            }
-                        }
-                    });
-
-                    return { chapters: totalChapters, verses: totalVerses, art: totalArt };
-                };
-
-                const formatHrMin = (mins) => {
-                    if (!mins) return "0m";
-                    const h = Math.floor(mins / 60);
-                    const m = Math.round(mins % 60);
-                    if (h > 0 && m > 0) return `${h}h${m}m`;
-                    if (h > 0) return `${h}h`;
-                    return `${m}m`;
-                };
-
-                // Group by module
-                const groupedData = {};
-                data.forEach(row => {
-                    const normalized = {};
-                    Object.keys(row).forEach(k => normalized[k.trim().toLowerCase()] = row[k]);
-
-                    let m = normalized['module'];
-                    if (m === undefined || m === null || m === '') return;
-                    m = parseInt(m);
-                    if (!groupedData[m]) groupedData[m] = [];
-                    groupedData[m].push(normalized);
-                });
-
-                if (Object.keys(groupedData).length === 0) {
-                    toast.current.show({ severity: 'warn', summary: 'Warning', detail: 'No valid "Module" column found in Excel.' });
-                    e.options.clear();
-                    return;
-                }
-
-                // Process each group
-                const newDataMap = {};
-                Object.keys(groupedData).forEach(modStr => {
-                    const modNum = parseInt(modStr);
-                    const modRows = groupedData[modStr];
-                    const processedRows = [];
-
-                    modRows.forEach((normalized, rawIdx) => {
-                        const idx = rawIdx + 1; // 1-indexed Facet
-
-                        // Lookup PHS directly from RlltLookup model
-                        const rlltMatch = rlltDB.find(r => r.module === modNum && r.facet === idx);
-                        const mappedPhase = rlltMatch ? rlltMatch.phase : 1;
-
-                        const b1Span = processBookSpan(normalized['book 1'], normalized['chapter 1']);
-                        const b2Span = processBookSpan(normalized['book 2'], normalized['chapter 2']);
-                        const b3Span = processBookSpan(normalized['book 3'], normalized['chapter 3']);
-
-                        const totalChp = b1Span.chapters + b2Span.chapters + b3Span.chapters;
-                        const totalVer = b1Span.verses + b2Span.verses + b3Span.verses;
-                        const totalArt = b1Span.art + b2Span.art + b3Span.art;
-
-                        processedRows.push({
-                            sno: idx,
-                            fct: idx,
-                            dayPpl: normalized['person/day'] || '-',
-                            otBks: normalized['ott bks'] || '-',
-                            ntBks: normalized['nt bks'] || '-',
-                            phs: mappedPhase,
-                            we5: normalized['we5'] || '-',
-                            pro: 1, // Fixed placeholder
-                            psa: 1, // Fixed placeholder
-                            chp: totalChp || 0,
-                            ver: totalVer || 0,
-                            art: formatHrMin(totalArt),
-                            ppl: normalized['person/day'] || '-'
-                        });
-                    });
-                    newDataMap[modNum] = processedRows;
-                });
-
-                setModuleData(prev => ({
-                    ...prev,
-                    ...newDataMap
-                }));
-                toast.current.show({ severity: 'success', summary: 'Success', detail: 'Bulk Excel mapping applied successfully for all modules found!' });
-                setShowPopup(false);
-                e.options.clear();
-            } catch (err) {
-                console.error("Excel mapping error:", err);
-                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Invalid Excel format.' });
-                e.options.clear();
+    const handlePrint = () => {
+        const element = document.getElementById('light-chart-content');
+        if (element) {
+            const height = element.offsetHeight;
+            // Standard A4 print area height at 96 DPI is roughly 1050px.
+            // If the content is taller than this, we calculate a scale ratio to fit it.
+            let scale = 1;
+            if (height > 1050) {
+                scale = 1050 / height;
             }
-        };
-        reader.readAsBinaryString(file);
+            
+            let styleEl = document.getElementById('dynamic-print-scale');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'dynamic-print-scale';
+                document.head.appendChild(styleEl);
+            }
+            // By scaling down and scaling the width up proportionally, we maintain the center alignment
+            styleEl.innerHTML = `@media print { #light-chart-content { transform: scale(${scale}); transform-origin: top center; width: ${100 / scale}%; } }`;
+        }
+        
+        setTimeout(() => {
+            window.print();
+        }, 100);
     };
+
+    const generatePDFSinglePage = async () => {
+        const element = document.getElementById('light-chart-content');
+        if (!element) return;
+        
+        toast.current.show({ severity: 'success', summary: 'Generating PDF', detail: 'Fitting chart into a single page...', life: 3000 });
+        
+        try {
+            const canvas = await window.html2canvas(element, { scale: 2, useCORS: true });
+            const imgData = canvas.toDataURL('image/jpeg', 0.98);
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            
+            const margin = 5; // 5mm margin
+            const maxPdfWidth = pdfWidth - margin * 2;
+            const maxPdfHeight = pdfHeight - margin * 2;
+            
+            let finalWidth = maxPdfWidth;
+            let finalHeight = (canvas.height * finalWidth) / canvas.width;
+            
+            if (finalHeight > maxPdfHeight) {
+                finalHeight = maxPdfHeight;
+                finalWidth = (canvas.width * finalHeight) / canvas.height;
+            }
+            
+            const x = margin + (maxPdfWidth - finalWidth) / 2;
+            const y = margin;
+            
+            pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
+            pdf.save('LightChart.pdf');
+        } catch (e) {
+            console.error('PDF error', e);
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to generate PDF.', life: 3000 });
+        }
+    };
+
+    const handleExportPDF = () => {
+        if (!window.html2canvas || !window.jspdf) {
+            toast.current.show({ severity: 'info', summary: 'Loading Engine', detail: 'Preparing single-page PDF engine...', life: 2000 });
+            
+            const script1 = document.createElement('script');
+            script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script1.onload = () => {
+                const script2 = document.createElement('script');
+                script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                script2.onload = () => {
+                    generatePDFSinglePage();
+                };
+                document.body.appendChild(script2);
+            };
+            document.body.appendChild(script1);
+        } else {
+            generatePDFSinglePage();
+        }
+    };
+
+    const handleShare = async () => {
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'Light Chart Configuration',
+                    text: 'Check out this Light Chart configuration',
+                    url: window.location.href,
+                });
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                toast.current.show({ severity: 'success', summary: 'Success', detail: 'Link copied to clipboard!' });
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
+        }
+    };
+
+
 
     return (
         <div className="p-4 sm:p-8 w-full max-w-full overflow-x-auto bg-gray-50 min-h-screen print:bg-white print:p-0">
@@ -325,12 +291,21 @@ const LightChart = () => {
             <style>{`
                 @media print {
                     @page { size: A4 portrait; margin: 5mm; }
-                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: white !important; }
+                    body { 
+                        display: block !important; 
+                        height: auto !important; 
+                        min-height: auto !important; 
+                        -webkit-print-color-adjust: exact; 
+                        print-color-adjust: exact; 
+                        background-color: white !important; 
+                    }
+                    #root { display: block !important; height: auto !important; }
                     .print\\:hidden { display: none !important; }
                     .print\\:p-0 { padding: 0 !important; }
                     .print\\:m-0 { margin: 0 !important; }
                     .print\\:bg-white { background: white !important; }
                     .print\\:shadow-none { box-shadow: none !important; border: none !important; }
+                    .print\\:overflow-visible { overflow: visible !important; }
                 }
                 
                 /* Custom Dropdown Overrides inside LightChart */
@@ -362,7 +337,7 @@ const LightChart = () => {
                 }
             `}</style>
 
-            <div className="bg-white shadow-xl rounded-2xl border border-gray-100 print:shadow-none print:border-none print:rounded-none overflow-hidden mb-6 p-0 sm:p-0 mx-auto max-w-4xl">
+            <div className="bg-white shadow-xl rounded-2xl border border-gray-100 print:shadow-none print:border-none print:rounded-none overflow-hidden print:overflow-visible mb-6 p-0 sm:p-0 mx-auto max-w-4xl">
 
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] p-4 sm:p-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 mb-4 print:hidden gap-4">
                     <div className="flex-shrink-0 text-center xl:text-left mb-4 xl:mb-0">
@@ -387,26 +362,37 @@ const LightChart = () => {
                     <div className="flex flex-col items-center xl:items-end w-full xl:w-auto gap-3">
                         <div className="flex items-center gap-3 justify-center w-full">
                             <Button
-                                label="Add Details"
-                                icon="pi pi-list"
-                                className="p-button-sm shadow-md font-bold px-4 py-2"
-                                style={{ backgroundColor: '#c8a165', border: 'none' }}
-                                onClick={() => setShowPopup(true)}
+                                icon="pi pi-file-pdf"
+                                className="p-button-rounded shadow-md w-10 h-10 p-0 flex items-center justify-center transition-transform hover:scale-105"
+                                style={{ backgroundColor: '#f97316', borderColor: '#f97316', color: '#ffffff' }}
+                                onClick={handleExportPDF}
+                                tooltip="Export to PDF"
+                                tooltipOptions={{ position: 'bottom' }}
                             />
                             <Button
-                                label="Save Chart"
-                                icon="pi pi-save"
-                                className="p-button-sm p-button-success shadow-md font-bold px-4 py-2"
-                                onClick={() => { }}
+                                icon="pi pi-print"
+                                className="p-button-rounded shadow-md w-10 h-10 p-0 flex items-center justify-center transition-transform hover:scale-105"
+                                style={{ backgroundColor: '#64748b', borderColor: '#64748b', color: '#ffffff' }}
+                                onClick={handlePrint}
+                                tooltip="Print"
+                                tooltipOptions={{ position: 'bottom' }}
+                            />
+                            <Button
+                                icon="pi pi-share-alt"
+                                className="p-button-rounded shadow-md w-10 h-10 p-0 flex items-center justify-center transition-transform hover:scale-105"
+                                style={{ backgroundColor: '#10b981', borderColor: '#10b981', color: '#ffffff' }}
+                                onClick={handleShare}
+                                tooltip="Share"
+                                tooltipOptions={{ position: 'bottom' }}
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="p-4 pt-0 print:pt-4">
+                <div className="p-4 pt-0 print:pt-4" id="light-chart-content">
 
                     {/* Global Header Above Tables */}
-                    <div className="w-full border-[2px] border-black p-1.5 flex flex-col bg-white overflow-hidden mb-3 max-w-6xl mx-auto">
+                    <div className="w-full border-[2px] border-black p-1.5 flex flex-col bg-white overflow-hidden print:overflow-visible mb-3 max-w-6xl mx-auto">
                         <div className="flex flex-col w-full mb-1">
                             {/* ROW 1: T | REAL LIFE... | PH */}
                             <table className="w-full bg-white table-fixed border-collapse border-[1.5px] border-black" style={{ borderSpacing: 0 }}>
@@ -497,60 +483,13 @@ const LightChart = () => {
 
                     <div className="flex flex-col gap-2 sm:gap-3 w-full items-center justify-center pt-1">
                         {[1, 2, 3, 4, 5].map((moduleNum) => (
-                            <LightChartTable key={moduleNum} moduleNum={moduleNum} data={moduleData[moduleNum]} />
+                            <LightChartTable key={moduleNum} moduleNum={moduleNum} rlltDB={rlltDB} />
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Config Dialog */}
-            <Dialog
-                header={<span className="font-bold text-xl text-black">Light Chart Configuration</span>}
-                visible={showPopup}
-                className="w-[90vw] md:w-[60vw] max-w-2xl bg-white shadow-2xl rounded-2xl overflow-hidden custom-dialog"
-                contentClassName="p-0 bg-gray-50"
-                headerClassName="bg-white border-b border-gray-200 px-6 py-4"
-                onHide={() => setShowPopup(false)}
-            >
-                <div className="p-6">
-                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6 shadow-sm flex items-center justify-between">
-                        <div>
-                            <h3 className="text-blue-800 font-bold text-lg mb-1">Bulk Module Upload</h3>
-                            <p className="text-blue-600 text-sm">Upload a single Excel file defining mappings across multiple Modules simultaneously. Be sure your Excel sheet contains the "Module" column!</p>
-                        </div>
-                    </div>
 
-                    <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
-                        <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-bold text-black flex items-center gap-2">
-                                <i className="pi pi-file-excel text-green-600 text-xl"></i>
-                                Upload Excel Mapping
-                            </h4>
-                            <Button
-                                type="button"
-                                label="Template"
-                                icon="pi pi-download"
-                                className="p-button-outlined p-button-success p-button-sm font-bold border-green-600 text-green-700 hover:bg-green-50"
-                                onClick={handleDownloadTemplate}
-                            />
-                        </div>
-                        <p className="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200 border-l-4 border-l-orange-500">
-                            <strong>Note:</strong> Upload an Excel file matching the template exact headers. Rows populate S.NO & FCT sequentially. The PHS (Phase) is synced automatically via the RLRT database matching the chosen Module.
-                        </p>
-                        <FileUpload
-                            name="demo[]"
-                            customUpload={true}
-                            uploadHandler={handleExcelImportSubmit}
-                            accept=".xlsx, .xls"
-                            maxFileSize={1000000}
-                            emptyTemplate={<p className="m-0 text-center text-gray-500 py-6">Drag and drop Excel (.xlsx) file here to configure the Facets mapping instantly.</p>}
-                            chooseLabel="Select Excel File"
-                            uploadLabel="Process Layout"
-                            className="text-black bg-gray-50 border-dashed border-2 border-gray-300 rounded-xl"
-                        />
-                    </div>
-                </div>
-            </Dialog>
 
         </div>
     );

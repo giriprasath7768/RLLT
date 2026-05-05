@@ -34,7 +34,7 @@ const StudentLayout = () => {
 
                 {/* Main Content Pane */}
                 <main className="flex-grow bg-[#F3F4F6] min-w-0 flex flex-col items-center">
-                    <div className="w-full max-w-screen-2xl p-4 sm:p-8 h-full overflow-y-auto">
+                    <div className={`w-full max-w-[2000px] h-full overflow-y-auto ${location.pathname === '/dashboard/student' || location.pathname === '/dashboard/student/' ? 'p-0 bg-white' : 'p-4 sm:p-8'}`}>
                         <Outlet />
                     </div>
                 </main>

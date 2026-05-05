@@ -52,7 +52,7 @@ const TestPreview = ({ assessments, filterName, filterLocation }) => {
             doc.text(splitQuestion, marginX, startY);
             startY += (splitQuestion.length * 15) + 10;
             
-            [q.choice_1, q.choice_2, q.choice_3].forEach((choice, i) => {
+            [q.choice_1, q.choice_2, q.choice_3, q.choice_4, q.choice_5].forEach((choice, i) => {
                 if (choice) {
                     if (startY > 800) {
                         doc.addPage();
@@ -105,7 +105,7 @@ const TestPreview = ({ assessments, filterName, filterLocation }) => {
                                 <h3 className="text-lg font-medium text-gray-800 mb-4 print:text-black print:mb-3" dangerouslySetInnerHTML={{ __html: q.question_text }}></h3>
                                 
                                 <div className="space-y-3 print:space-y-2">
-                                    {[q.choice_1, q.choice_2, q.choice_3].map((choice, i) => (
+                                    {[q.choice_1, q.choice_2, q.choice_3, q.choice_4, q.choice_5].map((choice, i) => (
                                         choice ? (
                                             <div key={i} className="flex items-center gap-3">
                                                 <div className="w-4 h-4 border border-gray-400 rounded-full print:border-black print:w-4 print:h-4"></div>

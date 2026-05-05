@@ -64,3 +64,14 @@ async def delete_rllt(rllt_id: UUID, db: AsyncSession = Depends(get_db)):
     await db.delete(db_rllt)
     await db.commit()
     return None
+
+@router.delete("/bulk/all", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_all_rllt(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import delete
+    try:
+        await db.execute(delete(RlltLookup))
+        await db.commit()
+        return None
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))

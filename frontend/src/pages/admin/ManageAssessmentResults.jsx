@@ -10,9 +10,11 @@ import { Paginator } from 'primereact/paginator';
 import { StudentService } from '../../services/studentService';
 import { AssessmentService } from '../../services/assessmentService';
 import MobileDataCard from '../../components/common/MobileDataCard';
+import { useNavigate } from 'react-router-dom';
 import '../../assets/css/AdminManagement.css';
 
 export default function ManageAssessmentResults() {
+    const navigate = useNavigate();
     const [students, setStudents] = useState([]);
     const [globalFilter, setGlobalFilter] = useState('');
     const [loading, setLoading] = useState(true);
@@ -49,16 +51,7 @@ export default function ManageAssessmentResults() {
     };
 
     const openActivityModal = (student) => {
-        setSelectedStudent(student);
-        setResultsLoading(true);
-        setModalVisible(true);
-        AssessmentService.getAssessmentResults(student.id).then(res => {
-            setStudentResults(res);
-        }).catch(err => {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to load assessment results.', life: 3000 });
-        }).finally(() => {
-            setResultsLoading(false);
-        });
+        navigate(`/admin/assessment-dashboard/${student.id}`, { state: { student } });
     };
 
     const onApproveToggle = (e, rowData) => {

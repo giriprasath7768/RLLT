@@ -45,5 +45,21 @@ export const AssessmentService = {
 
     getAssessmentResults(userId) {
         return axios.get(`${API_URL}/results/${userId}`, { withCredentials: true }).then(res => res.data);
+    },
+
+    getSummarySettings(locationId) {
+        return axios.get(`${API_URL}/settings/summary?location_id=${locationId}`, { withCredentials: true }).then(res => res.data);
+    },
+
+    saveSummarySettings(locationId, settings) {
+        return axios.post(`${API_URL}/settings/summary`, { location_id: locationId, settings }, { withCredentials: true }).then(res => res.data);
+    },
+
+    getAllSummarySettings() {
+        return axios.get(`${API_URL}/settings/summary/all`, { withCredentials: true }).then(res => res.data);
+    },
+
+    deleteSummarySettings(settingId) {
+        return axios.delete(`${API_URL}/settings/summary/${settingId}`, { withCredentials: true }).then(res => res.data);
     }
 };

@@ -50,7 +50,11 @@ const ManageAssessment = () => {
         { field: 'choice_2', header: 'Choice 2' },
         { field: 'grade_2', header: 'Grade 2' },
         { field: 'choice_3', header: 'Choice 3' },
-        { field: 'grade_3', header: 'Grade 3' }
+        { field: 'grade_3', header: 'Grade 3' },
+        { field: 'choice_4', header: 'Choice 4' },
+        { field: 'grade_4', header: 'Grade 4' },
+        { field: 'choice_5', header: 'Choice 5' },
+        { field: 'grade_5', header: 'Grade 5' }
     ];
 
     const stripHtml = (html) => {
@@ -90,7 +94,7 @@ const ManageAssessment = () => {
                 let row = {};
                 activeColumns.forEach(col => {
                     const val = item[col.field] || '';
-                    if (['question_text', 'choice_1', 'choice_2', 'choice_3'].includes(col.field)) {
+                    if (['question_text', 'choice_1', 'choice_2', 'choice_3', 'choice_4', 'choice_5'].includes(col.field)) {
                         row[col.field] = stripHtml(val);
                     } else {
                         row[col.field] = val;
@@ -217,7 +221,9 @@ const ManageAssessment = () => {
             stage: '',
             choice_1: '', grade_1: '',
             choice_2: '', grade_2: '',
-            choice_3: '', grade_3: ''
+            choice_3: '', grade_3: '',
+            choice_4: '', grade_4: '',
+            choice_5: '', grade_5: ''
         };
     }
 
@@ -252,6 +258,10 @@ const ManageAssessment = () => {
     };
 
     const handleExcelImportSubmit = (e) => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+
         if (!importFlowName.trim() || !importLocation.trim()) {
             toast.current.show({ severity: 'error', summary: 'Validation Error', detail: 'Flow Name and Location are mandatory fields.' });
             e.options.clear();
@@ -283,7 +293,9 @@ const ManageAssessment = () => {
                     stage: String(row['Stage'] || ''),
                     choice_1: row['Choice 1'] || '', grade_1: String(row['Grade'] || row['Grade 1'] || ''),
                     choice_2: row['Choice 2'] || '', grade_2: String(row['Grade_1'] || row['Grade 2'] || ''),
-                    choice_3: row['Choice 3'] || '', grade_3: String(row['Grade_2'] || row['Grade 3'] || '')
+                    choice_3: row['Choice 3'] || '', grade_3: String(row['Grade_2'] || row['Grade 3'] || ''),
+                    choice_4: row['Choice 4'] || '', grade_4: String(row['Grade_3'] || row['Grade 4'] || ''),
+                    choice_5: row['Choice 5'] || '', grade_5: String(row['Grade_4'] || row['Grade 5'] || '')
                 })).filter(a => a.question_text !== '');
 
                 if (parsedAssessments.length === 0) {
@@ -511,6 +523,10 @@ const ManageAssessment = () => {
                         <Column field="grade_2" header="Grade" headerStyle={{ backgroundColor: '#2F5597', color: 'white' }} style={{ minWidth: '80px' }}></Column>
                         <Column field="choice_3" header="Choice 3" headerStyle={{ backgroundColor: '#00B050', color: 'white' }} style={{ minWidth: '120px' }} body={(rowData) => renderHTMLContent(rowData.choice_3)}></Column>
                         <Column field="grade_3" header="Grade" headerStyle={{ backgroundColor: '#2F5597', color: 'white' }} style={{ minWidth: '80px' }}></Column>
+                        <Column field="choice_4" header="Choice 4" headerStyle={{ backgroundColor: '#00B050', color: 'white' }} style={{ minWidth: '120px' }} body={(rowData) => renderHTMLContent(rowData.choice_4)}></Column>
+                        <Column field="grade_4" header="Grade" headerStyle={{ backgroundColor: '#2F5597', color: 'white' }} style={{ minWidth: '80px' }}></Column>
+                        <Column field="choice_5" header="Choice 5" headerStyle={{ backgroundColor: '#00B050', color: 'white' }} style={{ minWidth: '120px' }} body={(rowData) => renderHTMLContent(rowData.choice_5)}></Column>
+                        <Column field="grade_5" header="Grade" headerStyle={{ backgroundColor: '#2F5597', color: 'white' }} style={{ minWidth: '80px' }}></Column>
 
                         <Column body={actionBodyTemplate} exportable={false} style={{ width: '8rem' }} headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
                     </DataTable>
@@ -590,7 +606,7 @@ const ManageAssessment = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
                             <div className="field">
                                 <label htmlFor="choice_3" className="font-semibold block mb-1 text-sm text-gray-700">Choice 3</label>
                                 <InputText id="choice_3" value={assessment.choice_3} onChange={(e) => setAssessment({ ...assessment, choice_3: e.target.value })} />
@@ -598,6 +614,28 @@ const ManageAssessment = () => {
                             <div className="field">
                                 <label htmlFor="grade_3" className="font-semibold block mb-1 text-sm text-gray-700">Grade 3</label>
                                 <InputText id="grade_3" value={assessment.grade_3} onChange={(e) => setAssessment({ ...assessment, grade_3: e.target.value })} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
+                            <div className="field">
+                                <label htmlFor="choice_4" className="font-semibold block mb-1 text-sm text-gray-700">Choice 4</label>
+                                <InputText id="choice_4" value={assessment.choice_4} onChange={(e) => setAssessment({ ...assessment, choice_4: e.target.value })} />
+                            </div>
+                            <div className="field">
+                                <label htmlFor="grade_4" className="font-semibold block mb-1 text-sm text-gray-700">Grade 4</label>
+                                <InputText id="grade_4" value={assessment.grade_4} onChange={(e) => setAssessment({ ...assessment, grade_4: e.target.value })} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                            <div className="field">
+                                <label htmlFor="choice_5" className="font-semibold block mb-1 text-sm text-gray-700">Choice 5</label>
+                                <InputText id="choice_5" value={assessment.choice_5} onChange={(e) => setAssessment({ ...assessment, choice_5: e.target.value })} />
+                            </div>
+                            <div className="field">
+                                <label htmlFor="grade_5" className="font-semibold block mb-1 text-sm text-gray-700">Grade 5</label>
+                                <InputText id="grade_5" value={assessment.grade_5} onChange={(e) => setAssessment({ ...assessment, grade_5: e.target.value })} />
                             </div>
                         </div>
 
@@ -682,7 +720,7 @@ const ManageAssessment = () => {
                                                 const val = item[col.field] || '';
                                                 return (
                                                     <td key={col.field}>
-                                                        {['question_text', 'choice_1', 'choice_2', 'choice_3'].includes(col.field) ? stripHtml(val) : val}
+                                                        {['question_text', 'choice_1', 'choice_2', 'choice_3', 'choice_4', 'choice_5'].includes(col.field) ? stripHtml(val) : val}
                                                     </td>
                                                 );
                                             })}

@@ -11,6 +11,8 @@ import ManageLeader from './pages/admin/ManageLeader';
 import ManageStudents from './pages/admin/ManageStudents';
 import ManageAssessment from './pages/admin/ManageAssessment';
 import ManageAssessmentResults from './pages/admin/ManageAssessmentResults';
+import AssessmentSummary from './pages/admin/AssessmentSummary';
+import AssessmentDashboard from './pages/admin/AssessmentDashboard';
 import BookMaster from './pages/admin/BookMaster';
 import ChapterMaster from './pages/admin/ChapterMaster';
 import MainChart from './pages/admin/MainChart';
@@ -128,22 +130,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 const EnhancedStudentDashboardWrapper = ({ children }) => {
-    const [status, setStatus] = useState(null);
-
-    useEffect(() => {
-        axios.get('http://' + window.location.hostname + ':8000/api/me', { withCredentials: true })
-            .then(res => setStatus(res.data.assessment_status || 'pending'))
-            .catch(() => setStatus('error'));
-    }, []);
-
-    if (!status) return <div className="p-10 bg-gray-900 text-white min-h-screen flex items-center justify-center font-bold text-xl">Loading Student Portal...</div>;
-
-    if (status === 'pending') {
-        return <Navigate to="/dashboard/assessment" replace />;
-    } else if (status === 'under_review') {
-        return <Navigate to="/dashboard/under-review" replace />;
-    }
-
     return children ? <>{children}</> : <Outlet />;
 };
 
@@ -180,6 +166,8 @@ const AppRoutes = () => {
                 <Route path="/admin/manage-students" element={<ManageStudents />} />
                 <Route path="/admin/manage-assessment" element={<ManageAssessment />} />
                 <Route path="/admin/assessment-results" element={<ManageAssessmentResults />} />
+                <Route path="/admin/assessment-summary" element={<AssessmentSummary />} />
+                <Route path="/admin/assessment-dashboard/:studentId" element={<AssessmentDashboard />} />
 
                 <Route path="/admin/chart-listing/twenty-four-seven-chart" element={<TwentyFourSevenChartView />} />
                 <Route path="/admin/chart-listing/twenty-four-seven-morning-evening-chart" element={<TwentyFourSevenMorningEveningChart />} />
@@ -210,7 +198,7 @@ const AppRoutes = () => {
                     <Route path="/admin/chart-creation/357-chart" element={<DynamicCycleChart />} />
                     <Route path="/admin/chart-creation/7tnt-main-chart" element={<SevenTNTMainChart />} />
                     <Route path="/admin/chart-creation/7tnt-day-cycle" element={<SevenTNTDayCycleChart />} />
-                    <Route path="/admin/chart-creation/light-chart" element={<LightChart />} />
+                    <Route path="/admin/chart-listing/light-chart" element={<LightChart />} />
                     <Route path="/admin/reports/student-report" element={<StudentReport />} />
                     <Route path="/admin/shanaz-357" element={<Shanaz357 />} />
                     <Route path="/admin/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />

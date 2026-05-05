@@ -17,6 +17,10 @@ class AssessmentBase(BaseModel):
     grade_2: Optional[str] = None
     choice_3: Optional[str] = None
     grade_3: Optional[str] = None
+    choice_4: Optional[str] = None
+    grade_4: Optional[str] = None
+    choice_5: Optional[str] = None
+    grade_5: Optional[str] = None
 
 class AssessmentCreate(AssessmentBase):
     pass
@@ -35,6 +39,10 @@ class AssessmentUpdate(BaseModel):
     grade_2: Optional[str] = None
     choice_3: Optional[str] = None
     grade_3: Optional[str] = None
+    choice_4: Optional[str] = None
+    grade_4: Optional[str] = None
+    choice_5: Optional[str] = None
+    grade_5: Optional[str] = None
 
 class AssessmentResponse(AssessmentBase):
     id: uuid.UUID
@@ -43,3 +51,19 @@ class AssessmentResponse(AssessmentBase):
 
 class AssessmentBulkCreate(BaseModel):
     assessments: List[AssessmentCreate]
+
+class AssessmentSummarySettingBase(BaseModel):
+    location_id: uuid.UUID
+    settings: dict
+
+class AssessmentSummarySettingCreate(AssessmentSummarySettingBase):
+    pass
+
+class AssessmentSummarySettingUpdate(BaseModel):
+    settings: dict
+
+class AssessmentSummarySettingResponse(AssessmentSummarySettingBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)

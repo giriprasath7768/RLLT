@@ -18,6 +18,9 @@ class UserInfo(BaseModel):
     is_active: bool
     assessment_status: Optional[str] = "pending"
     assessment_marks: Optional[float] = None
+    category: Optional[str] = None
+    stage: Optional[str] = None
+    dob: Optional[date] = None
 
     class Config:
         from_attributes = True

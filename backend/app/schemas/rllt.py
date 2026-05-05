@@ -9,6 +9,14 @@ class RlltLookupBase(BaseModel):
     day: int
     art: str
     scheduled_value_days: int
+    ot_bks: Optional[str] = None
+    nt_bks: Optional[str] = None
+    we5: Optional[str] = None
+    pro: Optional[str] = None
+    psa: Optional[str] = None
+    chp: Optional[int] = None
+    ver: Optional[int] = None
+    ppl: Optional[str] = None
 
 class RlltLookupCreate(RlltLookupBase):
     pass
@@ -20,6 +28,14 @@ class RlltLookupUpdate(BaseModel):
     day: Optional[int] = None
     art: Optional[str] = None
     scheduled_value_days: Optional[int] = None
+    ot_bks: Optional[str] = None
+    nt_bks: Optional[str] = None
+    we5: Optional[str] = None
+    pro: Optional[str] = None
+    psa: Optional[str] = None
+    chp: Optional[int] = None
+    ver: Optional[int] = None
+    ppl: Optional[str] = None
 
 class RlltLookupResponse(RlltLookupBase):
     id: UUID

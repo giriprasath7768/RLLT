@@ -148,6 +148,12 @@ class Assessment(Base):
     choice_3 = Column(String, nullable=True)
     grade_3 = Column(String, nullable=True)
     
+    choice_4 = Column(String, nullable=True)
+    grade_4 = Column(String, nullable=True)
+    
+    choice_5 = Column(String, nullable=True)
+    grade_5 = Column(String, nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Book(Base):
@@ -186,6 +192,14 @@ class RlltLookup(Base):
     day = Column(Integer, nullable=False)
     art = Column(String, nullable=False)
     scheduled_value_days = Column(Integer, nullable=False)
+    ot_bks = Column(String, nullable=True)
+    nt_bks = Column(String, nullable=True)
+    we5 = Column(String, nullable=True)
+    pro = Column(String, nullable=True)
+    psa = Column(String, nullable=True)
+    chp = Column(Integer, nullable=True)
+    ver = Column(Integer, nullable=True)
+    ppl = Column(String, nullable=True)
 
 class ChartMapping(Base):
     __tablename__ = "chart_mappings"
@@ -491,6 +505,17 @@ class ClassroomQnA(Base):
     # Optional/deprecated
     answer_text = Column(String, nullable=True)
 
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    location = relationship("Location")
+
+class AssessmentSummarySetting(Base):
+    __tablename__ = "assessment_summary_settings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id"), nullable=False, unique=True)
+    settings = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

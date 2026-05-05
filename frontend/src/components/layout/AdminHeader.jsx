@@ -11,6 +11,16 @@ const AdminHeader = ({ onMenuToggle }) => {
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [profileViewMode, setProfileViewMode] = useState('profile');
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    React.useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const formatTime = (date) => date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const formatDate = (date) => date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formatDay = (date) => date.toLocaleDateString('en-US', { weekday: 'long' });
 
     const [userProfile, setUserProfile] = useState({
         name: 'Loading...',
@@ -34,7 +44,8 @@ const AdminHeader = ({ onMenuToggle }) => {
                     companyName: 'Real Life Leadership Training',
                     avatarUrl: data.profile_image_url || 'https://primefaces.org/cdn/primereact/images/avatar/amyelsner.png',
                     mobile_number: data.mobile_number || '',
-                    address: data.address || ''
+                    address: data.address || '',
+                    stage: data.stage || ''
                 });
             } catch (err) {
                 console.error('Failed to fetch profile', err);
@@ -126,23 +137,58 @@ const AdminHeader = ({ onMenuToggle }) => {
 
             {/* Right: Profile & Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
-                <div className="flex flex-col items-end hidden sm:flex">
-                    <span className="text-[13px] font-bold text-[#051220]">{userProfile.role}</span>
-                    <span className="text-[11px] text-gray-400">{userProfile.email}</span>
-                </div>
+                
+                {/* Clock and Calendar (Student Only) */}
+                {userProfile.role === 'student' && (
+                    <div className="hidden lg:flex items-center gap-6 mr-2 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                        <div className="flex items-center gap-3">
+                            <div className="text-indigo-500 p-1.5 rounded-full border border-indigo-100 bg-white shadow-sm flex items-center justify-center w-8 h-8">
+                                <i className="pi pi-clock text-sm"></i>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[13px] font-bold text-gray-800 leading-none mb-1">{formatTime(currentTime)}</span>
+                                <span className="text-[11px] text-gray-500 leading-none">{formatDay(currentTime)}</span>
+                            </div>
+                        </div>
+                        <div className="w-px h-6 bg-gray-200"></div>
+                        <div className="flex items-center gap-3">
+                            <div className="text-indigo-500 p-1.5 rounded-full border border-indigo-100 bg-white shadow-sm flex items-center justify-center w-8 h-8">
+                                <i className="pi pi-calendar text-sm"></i>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[13px] font-bold text-gray-800 leading-none mb-1">{formatDate(currentTime)}</span>
+                                <span className="text-[11px] text-gray-500 leading-none">{formatDay(currentTime)}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <Menu model={menuItems} popup ref={menu} id="popup_menu" className="w-56 shadow-xl border-none rounded-xl mt-2 overflow-hidden" />
 
                 <button
                     onClick={(e) => menu.current.toggle(e)}
-                    className="flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-[#cca673]/50 rounded-full p-0.5 border-2 border-transparent hover:border-[#cca673] transition-all"
+                    className="flex items-center gap-3 focus:outline-none focus:ring-4 focus:ring-[#cca673]/50 rounded-xl p-1.5 border-2 border-transparent hover:border-[#cca673] hover:bg-gray-50 transition-all text-left"
                 >
                     <Avatar
                         image={userProfile.avatarUrl}
                         shape="circle"
                         size="large"
-                        className="bg-gray-100 cursor-pointer shadow-md hover:shadow-lg transition-shadow"
+                        className="bg-indigo-100 text-indigo-600 font-bold shadow-md"
                     />
+                    
+                    <div className="flex flex-col items-start hidden sm:flex">
+                        {userProfile.role === 'student' ? (
+                            <>
+                                <span className="text-[14px] font-bold text-gray-800 leading-none mb-1">Hello, {userProfile.name?.split(' ')[0] || 'Student'} 👋</span>
+                                <span className="text-[12px] font-medium text-indigo-500 leading-none">{userProfile.stage || 'Explorer'} Stage</span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="text-[13px] font-bold text-[#051220] leading-none mb-1">{userProfile.name || userProfile.role}</span>
+                                <span className="text-[11px] text-gray-400 leading-none">{userProfile.email}</span>
+                            </>
+                        )}
+                    </div>
                 </button>
             </div>
 

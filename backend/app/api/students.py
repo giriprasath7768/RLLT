@@ -164,6 +164,18 @@ async def delete_student(student_id: UUID, db: AsyncSession = Depends(get_db), c
     if not user:
          raise HTTPException(status_code=404, detail="Student not found")
     
+    from app.db.models import AssessmentResult, Media, PasswordReset, Assignment, WordDocument, ClassroomAssignment, ClassroomSubmission, ClassroomProgress
+    
+    # Delete related records to avoid ForeignKeyViolation
+    await db.execute(delete(AssessmentResult).where(AssessmentResult.user_id == student_id))
+    await db.execute(delete(Media).where(Media.owner_id == student_id))
+    await db.execute(delete(PasswordReset).where(PasswordReset.user_id == student_id))
+    await db.execute(delete(Assignment).where(Assignment.user_id == student_id))
+    await db.execute(delete(WordDocument).where(WordDocument.user_id == student_id))
+    await db.execute(delete(ClassroomAssignment).where(ClassroomAssignment.student_id == student_id))
+    await db.execute(delete(ClassroomSubmission).where(ClassroomSubmission.student_id == student_id))
+    await db.execute(delete(ClassroomProgress).where(ClassroomProgress.student_id == student_id))
+    
     await db.delete(user)
     await db.commit()
     return None

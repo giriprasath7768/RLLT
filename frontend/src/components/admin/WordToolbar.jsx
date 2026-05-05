@@ -4,7 +4,8 @@ import pptxgen from "pptxgenjs";
 import ScriptViewerModal from './ScriptViewerModal';
 import DocumentNotesModal from './DocumentNotesModal';
 import CChartModal from './CChartModal';
-import LionChartModal from './LionChartModal';
+import ImageGalleryModal from './ImageGalleryModal';
+import ScrollMenuModal from './ScrollMenuModal';
 import { ANTI_GRAVITY_SCRIPTS } from '../../data/antiGravityScripts';
 
 const EMOJIS = [
@@ -17,6 +18,77 @@ const EMOJIS = [
 const UN_CODES = "AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF BI CV KH CM CA CF TD CL CN CO KM CG CD CR CI HR CU CY CZ DK DJ DM DO EC EG SV GQ ER EE SZ ET FJ FI FR GA GM GE DE GH GR GD GT GN GW GY HT HN HU IS IN ID IR IQ IE IL IT JM JP JO KZ KE KI KP KR KW KG LA LV LB LS LR LY LI LT LU MG MW MY MV ML MT MH MR MU MX FM MD MC MN ME MA MZ MM NA NR NP NL NZ NI NE NG MK NO OM PK PW PA PG PY PE PH PL PT QA RO RU RW KN LC VC WS SM ST SA SN RS SC SL SG SK SI SB SO ZA SS ES LK SD SR SE CH SY TJ TZ TH TG TO TT TN TR TM TV UG UA AE GB US UY UZ VU VE VN YE ZM ZW".split(' ');
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
 const COUNTRIES = UN_CODES.map(code => regionNames.of(code)).sort();
+
+export const SHAPES = {
+    "Lines": [
+        { name: "Line", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><line x1="10" y1="90" x2="90" y2="10" stroke="currentColor" stroke-width="4"/></svg>` },
+        { name: "Arrow", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="currentColor"/></marker></defs><line x1="10" y1="90" x2="90" y2="10" stroke="currentColor" stroke-width="4" marker-end="url(#arrowhead)"/></svg>` },
+        { name: "Double Arrow", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="currentColor"/></marker><marker id="arrowtail2" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto"><polygon points="10 0, 0 3.5, 10 7" fill="currentColor"/></marker></defs><line x1="15" y1="85" x2="85" y2="15" stroke="currentColor" stroke-width="4" marker-end="url(#arrowhead2)" marker-start="url(#arrowtail2)"/></svg>` },
+        { name: "Curved Line", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 10 50 Q 50 10 90 50" fill="none" stroke="currentColor" stroke-width="4"/></svg>` },
+        { name: "Elbow Connector", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 10 10 L 50 10 L 50 90 L 90 90" fill="none" stroke="currentColor" stroke-width="4"/></svg>` }
+    ],
+    "Rectangles": [
+        { name: "Rectangle", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="20" width="80" height="60" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Rounded Rectangle", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="20" width="80" height="60" rx="15" ry="15" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Snip Single Corner", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="10,20 70,20 90,40 90,80 10,80" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Cut Rectangle", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="20,20 80,20 90,30 90,70 80,80 20,80 10,70 10,30" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` }
+    ],
+    "Basic Shapes": [
+        { name: "Oval", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="40" ry="30" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Triangle", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Right Triangle", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="10,10 10,90 90,90" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Parallelogram", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="30,20 90,20 70,80 10,80" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Trapezoid", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="30,20 70,20 90,80 10,80" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Diamond", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 90,50 50,90 10,50" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Pentagon", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,10 95,45 75,90 25,90 5,45" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Hexagon", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 95,25 95,75 50,95 5,75 5,25" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Octagon", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="30,10 70,10 90,30 90,70 70,90 30,90 10,70 10,30" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Cross", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="40,10 60,10 60,40 90,40 90,60 60,60 60,90 40,90 40,60 10,60 10,40 40,40" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Cylinder", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 20 25 C 20 15 80 15 80 25 L 80 75 C 80 85 20 85 20 75 Z" fill="currentColor" stroke="currentColor" stroke-width="2"/><ellipse cx="50" cy="25" rx="30" ry="10" fill="none" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Heart", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 50 85 C 50 85 10 55 10 30 C 10 15 25 5 40 15 C 50 25 50 25 50 25 C 50 25 50 25 60 15 C 75 5 90 15 90 30 C 90 55 50 85 50 85 Z" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Lightning", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="60,5 20,55 50,55 40,95 80,45 50,45" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` }
+    ],
+    "Basic Arrows": [
+        { name: "Right Arrow", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="10,35 60,35 60,15 95,50 60,85 60,65 10,65" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Left Arrow", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="90,35 40,35 40,15 5,50 40,85 40,65 90,65" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Up Arrow", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="35,90 35,40 15,40 50,5 85,40 65,40 65,90" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Down Arrow", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="35,10 35,60 15,60 50,95 85,60 65,60 65,10" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Left-Right Arrow", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="30,35 70,35 70,15 95,50 70,85 70,65 30,65 30,85 5,50 30,15" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Up-Down Arrow", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="35,30 35,70 15,70 50,95 85,70 65,70 65,30 85,30 50,5 15,30" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Notched Right Arrow", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="10,35 60,35 60,15 95,50 60,85 60,65 10,65 25,50" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` }
+    ],
+    "Equation Shapes": [
+        { name: "Plus", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="35,15 65,15 65,35 85,35 85,65 65,65 65,85 35,85 35,65 15,65 15,35 35,35" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Minus", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="15" y="40" width="70" height="20" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Multiply", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 20 20 L 80 80 M 80 20 L 20 80" stroke="currentColor" stroke-width="15" stroke-linecap="square"/></svg>` },
+        { name: "Divide", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="20" r="12" fill="currentColor"/><rect x="15" y="42" width="70" height="16" fill="currentColor"/><circle cx="50" cy="80" r="12" fill="currentColor"/></svg>` },
+        { name: "Equal", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="15" fill="currentColor"/><rect x="15" y="60" width="70" height="15" fill="currentColor"/></svg>` },
+        { name: "Not Equal", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="15" fill="currentColor"/><rect x="15" y="60" width="70" height="15" fill="currentColor"/><line x1="25" y1="90" x2="75" y2="10" stroke="currentColor" stroke-width="10"/></svg>` }
+    ],
+    "Flowchart Shapes": [
+        { name: "Process", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="30" width="80" height="40" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Alternate Process", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="30" width="80" height="40" rx="10" ry="10" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Decision", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,20 90,50 50,80 10,50" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Data", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="25,20 95,20 75,80 5,80" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Document", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 15 15 L 85 15 L 85 70 C 85 70 70 85 50 75 C 30 65 15 85 15 85 Z" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Terminator", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="25" width="80" height="50" rx="25" ry="25" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Preparation", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="30,25 70,25 90,50 70,75 30,75 10,50" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` }
+    ],
+    "Stars and Banners": [
+        { name: "4-Point Star", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 60,40 95,50 60,60 50,95 40,60 5,50 40,40" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "5-Point Star", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 61,35 95,35 68,55 79,85 50,65 21,85 32,55 5,35 39,35" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "6-Point Star", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 65,30 95,30 75,50 95,70 65,70 50,95 35,70 5,70 25,50 5,30 35,30" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "8-Point Star", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 60,30 85,15 70,40 95,50 70,60 85,85 60,70 50,95 40,70 15,85 30,60 5,50 30,40 15,15 40,30" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Up Ribbon", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 10 80 L 10 30 L 50 10 L 90 30 L 90 80 L 50 60 Z" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Down Ribbon", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 10 20 L 10 70 L 50 90 L 90 70 L 90 20 L 50 40 Z" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` }
+    ],
+    "Callouts": [
+        { name: "Rectangular Callout", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="10,10 90,10 90,60 60,60 30,90 40,60 10,60" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Rounded Callout", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 20 10 C 10 10 10 20 10 20 L 10 50 C 10 60 20 60 20 60 L 40 60 L 30 90 L 60 60 L 80 60 C 90 60 90 50 90 50 L 90 20 C 90 10 80 10 80 10 Z" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Oval Callout", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 50 10 C 10 10 10 40 10 40 C 10 60 30 70 30 70 L 20 90 L 50 70 C 90 70 90 40 90 40 C 90 10 50 10 50 10 Z" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` },
+        { name: "Cloud Callout", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 30 40 C 30 20 60 20 60 35 C 80 30 90 50 80 65 C 90 80 60 90 55 75 C 50 90 20 80 30 65 C 10 65 10 45 30 40 Z M 35 75 L 20 95 L 30 85 M 20 95 L 15 85 L 25 75" fill="none" stroke="currentColor" stroke-width="2"/><path d="M 30 40 C 30 20 60 20 60 35 C 80 30 90 50 80 65 C 90 80 60 90 55 75 C 50 90 20 80 30 65 C 10 65 10 45 30 40 Z" fill="currentColor" stroke="currentColor" stroke-width="2"/></svg>` }
+    ]
+};
 
 const DropdownPortal = ({ isOpen, anchorRef, children }) => {
     if (!isOpen || !anchorRef.current) return null;
@@ -38,10 +110,33 @@ const DropdownPortal = ({ isOpen, anchorRef, children }) => {
     );
 };
 
-const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes, PAGE_SIZES, pageSize, setPageSize, setIsSidebarOpen, handleOpenMap, UN_COUNTRIES, regionNames, zoomLevel, setZoomLevel, isSaving, fetchSavedDocuments }) => {
+const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes, PAGE_SIZES, pageSize, setPageSize, setIsSidebarOpen, handleOpenMap, UN_COUNTRIES, regionNames, zoomLevel, setZoomLevel, isSaving, fetchSavedDocuments, spellCheckEnabled, setSpellCheckEnabled, setIsChartEditing, setChartProxy }) => {
     const fileInputRef = useRef(null);
     const puzzleInputRef = useRef(null);
     const watermarkInputRef = useRef(null);
+    const customSizeRangeRef = useRef(null);
+    const fontSizeDropdownRef = useRef(null);
+    const [fontSizeDropdownOpen, setFontSizeDropdownOpen] = useState(false);
+    const [currentSize, setCurrentSize] = useState('16');
+
+    useEffect(() => {
+        if (!quillRef.current) return;
+        const editor = quillRef.current.getEditor();
+        const handleSelectionChange = () => {
+            const format = editor.getFormat();
+            if (format.size) {
+                setCurrentSize(format.size.replace('px', ''));
+            } else {
+                setCurrentSize('16');
+            }
+        };
+        editor.on('selection-change', handleSelectionChange);
+        editor.on('editor-change', handleSelectionChange);
+        return () => {
+            editor.off('selection-change', handleSelectionChange);
+            editor.off('editor-change', handleSelectionChange);
+        };
+    }, [quillRef]);
 
     const [isListening, setIsListening] = useState(false);
     const recognitionRef = useRef(null);
@@ -56,8 +151,12 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     const graphsDropdownRef = useRef(null);
     const [graphsDropdownOpen, setGraphsDropdownOpen] = useState(false);
 
+    const shapesDropdownRef = useRef(null);
+    const [shapesDropdownOpen, setShapesDropdownOpen] = useState(false);
+
     const countryDropdownRef = useRef(null);
     const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
+    const [countrySearchTerm, setCountrySearchTerm] = useState('');
 
     const imageDropdownRef = useRef(null);
     const [imageDropdownOpen, setImageDropdownOpen] = useState(false);
@@ -68,9 +167,76 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
 
     const [notesModalOpen, setNotesModalOpen] = useState(false);
     const [cChartModalOpen, setCChartModalOpen] = useState(false);
-    const [lionChartModalOpen, setLionChartModalOpen] = useState(false);
+    
+    // Keep track of modal states globally to prevent ReactQuill focus stealing
+    useEffect(() => {
+        const isEditing = cChartModalOpen;
+        window.isChartEditing = isEditing;
+        if (setIsChartEditing) setIsChartEditing(isEditing);
+        
+        if (!isEditing) {
+            if (quillRef.current) {
+                // When closing modals, ensure React state syncs up with final Quill DOM
+                const editor = quillRef.current.getEditor();
+                if (window.forceWordEditorSync) {
+                    window.forceWordEditorSync(editor.root.innerHTML);
+                }
+            }
+        }
+    }, [cChartModalOpen, quillRef, setIsChartEditing]);
+
     const cChartCursorRef = useRef(null);
-    const lionChartInsertedRef = useRef(false);
+
+    const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+    const [scrollMenuOpen, setScrollMenuOpen] = useState(false);
+
+    const handleScrollFormatSelect = (category, format, styleOption) => {
+        if (!quillRef.current) return;
+        const editor = quillRef.current.getEditor();
+        const value = `${format}|${category.color}|${styleOption || ''}`;
+        
+        const range = editor.getSelection(true); // getSelection(true) focuses if needed
+        if (range && range.length > 0) {
+            editor.format('wisdom', value);
+        }
+        setScrollMenuOpen(false);
+    };
+
+    const insertGalleryImage = (url) => {
+        if (!quillRef.current) return;
+        const editor = quillRef.current.getEditor();
+        editor.focus();
+        let cursorPosition = editor.getSelection()?.index;
+        if (cursorPosition === undefined) cursorPosition = editor.getLength();
+        editor.insertEmbed(cursorPosition, 'image', url);
+        editor.setSelection(cursorPosition + 1);
+        setGalleryModalOpen(false);
+    };
+
+    const insertTextBox = () => {
+        if (!quillRef.current) return;
+        const editor = quillRef.current.getEditor();
+        editor.focus();
+        let cursorPosition = editor.getSelection()?.index;
+        if (cursorPosition === undefined) cursorPosition = editor.getLength();
+        
+        // Insert custom textbox embed
+        editor.insertEmbed(cursorPosition, 'textbox', { text: '' });
+        editor.setSelection(cursorPosition + 1);
+        setImageDropdownOpen(false);
+    };
+
+    const insertShape = (svg) => {
+        if (!quillRef.current) return;
+        const editor = quillRef.current.getEditor();
+        editor.focus();
+        let cursorPosition = editor.getSelection()?.index;
+        if (cursorPosition === undefined) cursorPosition = editor.getLength();
+        
+        editor.insertEmbed(cursorPosition, 'shape', { svg: svg });
+        editor.setSelection(cursorPosition + 1);
+        setShapesDropdownOpen(false);
+    };
 
     const handleCChartInsert = (selectedText) => {
         if (!quillRef.current) return;
@@ -97,6 +263,32 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
         { id: 'highlight', icon: 'pi pi-pencil', label: 'Highlight' }
     ];
 
+    const textEffectDropdownRef = useRef(null);
+    const [textEffectOpen, setTextEffectOpen] = useState(false);
+    const [textEffectMode, setTextEffectMode] = useState('3d');
+
+    const TEXT_EFFECT_MODES = [
+        { id: '3d', icon: 'pi pi-box', label: '3D Text' },
+        { id: '4d', icon: 'pi pi-clone', label: '4D Text' },
+        { id: '5d', icon: 'pi pi-globe', label: '5D Text' }
+    ];
+
+    const applyTextEffect = (color) => {
+        if (!quillRef.current) return;
+        const editor = quillRef.current.getEditor();
+        editor.focus();
+        editor.format('texteffect', `${textEffectMode}|${color}`);
+        setTextEffectOpen(false);
+    };
+
+    const clearTextEffect = () => {
+        if (!quillRef.current) return;
+        const editor = quillRef.current.getEditor();
+        editor.focus();
+        editor.format('texteffect', false);
+        setTextEffectOpen(false);
+    };
+
     const applyWisdom = (color) => {
         if (!quillRef.current) return;
         const editor = quillRef.current.getEditor();
@@ -119,8 +311,8 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
 
     const [puzzleModalOpen, setPuzzleModalOpen] = useState(false);
     const [pendingPuzzleFile, setPendingPuzzleFile] = useState(null);
-    const [puzzleRows, setPuzzleRows] = useState(4);
-    const [puzzleCols, setPuzzleCols] = useState(5);
+    const [puzzlePieces, setPuzzlePieces] = useState(10);
+    const [lionChartSelectedText, setLionChartSelectedText] = useState("");
 
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -216,6 +408,9 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
             }
             if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target)) {
                 setCountryDropdownOpen(false);
+            }
+            if (shapesDropdownRef.current && !shapesDropdownRef.current.contains(event.target)) {
+                setShapesDropdownOpen(false);
             }
             if (imageDropdownRef.current && !imageDropdownRef.current.contains(event.target)) {
                 setImageDropdownOpen(false);
@@ -439,8 +634,7 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
         if (!file || !quillRef.current) return;
 
         setPendingPuzzleFile(file);
-        setPuzzleRows(4); // default
-        setPuzzleCols(5); // default
+        setPuzzlePieces(10); // default
         setPuzzleModalOpen(true);
         e.target.value = null; // reset file input
     };
@@ -448,8 +642,7 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     const processPuzzleImage = () => {
         if (!pendingPuzzleFile || !quillRef.current) return;
 
-        const rows = parseInt(puzzleRows, 10) || 4;
-        const cols = parseInt(puzzleCols, 10) || 5;
+        const pieces = parseInt(puzzlePieces, 10) || 10;
 
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -457,6 +650,10 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
+
+                const imgRatio = img.width / img.height;
+                let rows = Math.max(1, Math.round(Math.sqrt(pieces / imgRatio)));
+                let cols = Math.max(1, Math.round(pieces / rows));
 
                 // Calculate precise usable document area to mirror "covering the page"
                 const widthStr = PAGE_SIZES[pageSize].width;
@@ -474,7 +671,6 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
 
                 // Draw original image with object-fit: cover matching the aspect ratio
                 const pageRatio = canvas.width / canvas.height;
-                const imgRatio = img.width / img.height;
                 let sWidth = img.width;
                 let sHeight = img.height;
                 let sx = 0;
@@ -556,18 +752,19 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     };
 
     const handleLionChartLiveUpdate = (base64Img) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        let cursorPosition = cChartCursorRef.current !== null ? cChartCursorRef.current : editor.getLength();
-
-        if (lionChartInsertedRef.current) {
-            // Re-targeting stable sequence to overwrite previous generated layout block dynamically!
-            editor.deleteText(cursorPosition, 1);
+        setLastLionChartData(base64Img);
+        // PHANTOM PROXY PATH: Only update decoupled preview layer in WordToolbar
+        if (activeLionChartNodeRef.current && quillRef.current) {
+            const editor = quillRef.current.getEditor();
+            if (editor.root.contains(activeLionChartNodeRef.current)) {
+                // Ensure placeholder has a reasonable size
+                activeLionChartNodeRef.current.style.width = '100%';
+                activeLionChartNodeRef.current.style.height = 'auto';
+                activeLionChartNodeRef.current.style.minHeight = '300px';
+                const rect = activeLionChartNodeRef.current.getBoundingClientRect();
+                setLocalChartProxy({ src: base64Img, rect });
+            }
         }
-
-        // Project new state right into cursor
-        editor.insertEmbed(cursorPosition, 'image', base64Img);
-        lionChartInsertedRef.current = true;
     };
 
     const handleGraphInsert = (type) => {
@@ -730,24 +927,66 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                             <option value="rubik">Rubik Black (Block)</option>
                             <option value="anton">Anton (Tall Block)</option>
                         </select>
-                        <select className="ql-size" defaultValue="16px" title="Font Size">
-                            <option value="8px">8px</option>
-                            <option value="9px">9px</option>
-                            <option value="10px">10px</option>
-                            <option value="11px">11px</option>
-                            <option value="12px">12px</option>
-                            <option value="14px">14px</option>
-                            <option value="16px">16px</option>
-                            <option value="18px">18px</option>
-                            <option value="20px">20px</option>
-                            <option value="22px">22px</option>
-                            <option value="24px">24px</option>
-                            <option value="26px">26px</option>
-                            <option value="28px">28px</option>
-                            <option value="36px">36px</option>
-                            <option value="48px">48px</option>
-                            <option value="72px">72px</option>
-                        </select>
+                        <div className="relative border border-gray-200 rounded flex items-center h-[24px] mx-1 bg-white hover:border-gray-300 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-400 transition-colors" ref={fontSizeDropdownRef}>
+                            <input 
+                                type="text" 
+                                value={currentSize}
+                                onChange={(e) => setCurrentSize(e.target.value)}
+                                onKeyDown={(e) => {
+                                    e.stopPropagation();
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        if (quillRef.current && currentSize) {
+                                            const editor = quillRef.current.getEditor();
+                                            if (customSizeRangeRef.current) editor.setSelection(customSizeRangeRef.current);
+                                            editor.format('size', `${currentSize}px`);
+                                            customSizeRangeRef.current = null;
+                                        }
+                                        setFontSizeDropdownOpen(false);
+                                    }
+                                }}
+                                onFocus={() => {
+                                    if (quillRef.current) customSizeRangeRef.current = quillRef.current.getEditor().getSelection();
+                                    setFontSizeDropdownOpen(true);
+                                }}
+                                className="w-8 px-1 text-xs outline-none bg-transparent text-center m-0"
+                                title="Font Size (px)"
+                            />
+                            <button 
+                                className="w-5 h-full flex items-center justify-center hover:bg-gray-100 border-l border-gray-100"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setFontSizeDropdownOpen(!fontSizeDropdownOpen);
+                                }}
+                                title="Select Font Size"
+                            >
+                                <i className="pi pi-chevron-down text-[8px] text-gray-500"></i>
+                            </button>
+                            
+                            <DropdownPortal isOpen={fontSizeDropdownOpen} anchorRef={fontSizeDropdownRef}>
+                                <div className="w-16 max-h-48 overflow-y-auto bg-white border border-gray-200 shadow-xl rounded py-1 custom-scrollbar">
+                                    {['8', '9', '10', '11', '12', '14', '16', '18', '20', '22', '24', '26', '28', '36', '48', '72', '80', '96', '120', '144', '200', '250', '300', '350', '400', '450'].map(sz => (
+                                        <div 
+                                            key={sz} 
+                                            className={`px-3 py-1 text-xs cursor-pointer hover:bg-blue-50 ${currentSize === sz ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-700'}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (quillRef.current) {
+                                                    const editor = quillRef.current.getEditor();
+                                                    if (customSizeRangeRef.current) editor.setSelection(customSizeRangeRef.current);
+                                                    editor.format('size', `${sz}px`);
+                                                    customSizeRangeRef.current = null;
+                                                }
+                                                setCurrentSize(sz);
+                                                setFontSizeDropdownOpen(false);
+                                            }}
+                                        >
+                                            {sz}
+                                        </div>
+                                    ))}
+                                </div>
+                            </DropdownPortal>
+                        </div>
                     </span>
                 </div>
 
@@ -770,6 +1009,50 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                             <i className="pi pi-clone text-gray-500 text-xs"></i>
                             <input type="color" defaultValue="#aaaaaa" className="w-5 h-5 rounded cursor-pointer border-0 p-0" onChange={handleShadowColor} />
                         </label>
+                    </div>
+
+                    {/* Text Effect Tool (3D, 4D, 5D) */}
+                    <div className="flex items-center relative pl-2" ref={textEffectDropdownRef}>
+                        <button
+                            onClick={() => setTextEffectOpen(!textEffectOpen)}
+                            className={`flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors ${textEffectOpen ? 'bg-purple-100 text-purple-700' : 'hover:bg-gray-100 text-gray-500'}`}
+                            title="Text Effects (3D/4D/5D)"
+                        >
+                            <i className="pi pi-box"></i>
+                        </button>
+                        <DropdownPortal isOpen={textEffectOpen} anchorRef={textEffectDropdownRef}>
+                            <div className="bg-white border border-gray-200 rounded-lg shadow-xl z-50 w-52 p-3 animate-fadein">
+                                <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Dimension</div>
+                                <div className="grid grid-cols-3 gap-2 mb-3">
+                                    {TEXT_EFFECT_MODES.map(m => (
+                                        <button
+                                            key={m.id}
+                                            onMouseDown={(e) => { e.preventDefault(); setTextEffectMode(m.id); }}
+                                            className={`py-2 px-1 border rounded flex flex-col justify-center items-center transition-all ${textEffectMode === m.id ? 'bg-purple-50 border-purple-300 text-purple-600 ring-1 ring-purple-300 shadow-inner' : 'hover:bg-gray-50 text-gray-400 border-gray-200'}`}
+                                            title={m.label}
+                                        >
+                                            <i className={m.icon}></i>
+                                            <span className="text-[8px] font-bold mt-1">{m.id.toUpperCase()}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Shadow Color</div>
+                                <div className="grid grid-cols-7 gap-1">
+                                    {WISDOM_COLORS.map(color => (
+                                        <button
+                                            key={color}
+                                            className="w-full aspect-square rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)] hover:scale-110 hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-400"
+                                            style={{ backgroundColor: color }}
+                                            onMouseDown={(e) => { e.preventDefault(); applyTextEffect(color); }}
+                                            title={`Apply Color`}
+                                        />
+                                    ))}
+                                </div>
+                                <button onMouseDown={(e) => { e.preventDefault(); clearTextEffect(); }} className="w-full mt-4 py-1.5 text-xs text-red-600 font-medium hover:bg-red-50 rounded border border-red-100 transition-colors flex justify-center items-center gap-1">
+                                    <i className="pi pi-eraser text-[10px]"></i> Clear Effect
+                                </button>
+                            </div>
+                        </DropdownPortal>
                     </div>
 
                     {/* Wisdom Overlay Tool */}
@@ -884,6 +1167,20 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                                 Upload Puzzle
                             </button>
                             <button
+                                onMouseDown={(e) => { e.preventDefault(); insertTextBox(); }}
+                                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-gray-700 transition-colors w-full text-left"
+                            >
+                                <i className="pi pi-file-edit text-orange-500"></i>
+                                Add Text Box
+                            </button>
+                            <button
+                                onMouseDown={(e) => { e.preventDefault(); setImageDropdownOpen(false); setGalleryModalOpen(true); }}
+                                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-gray-700 transition-colors w-full text-left"
+                            >
+                                <i className="pi pi-images text-indigo-500"></i>
+                                7 Transformation Image
+                            </button>
+                            <button
                                 onMouseDown={(e) => { e.preventDefault(); setImageDropdownOpen(false); fileInputRef.current?.click(); }}
                                 className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-gray-700 transition-colors w-full text-left"
                             >
@@ -956,7 +1253,10 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
 
                 <div className="relative border-r border-gray-200 pr-1 mr-1 shrink-0" ref={countryDropdownRef}>
                     <button
-                        onClick={() => setCountryDropdownOpen(!countryDropdownOpen)}
+                        onClick={() => {
+                            setCountryDropdownOpen(!countryDropdownOpen);
+                            if (!countryDropdownOpen) setCountrySearchTerm('');
+                        }}
                         className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${countryDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
                         title="Insert Country"
                     >
@@ -964,8 +1264,28 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                         <span className="hidden xl:inline font-medium">Country</span>
                     </button>
                     <DropdownPortal isOpen={countryDropdownOpen} anchorRef={countryDropdownRef}>
-                        <div className="w-64 max-h-64 overflow-y-auto bg-white border border-gray-200 shadow-2xl rounded-lg py-1 flex flex-col custom-scrollbar">
-                            {(UN_COUNTRIES || []).map(code => {
+                        <div className="w-64 max-h-64 overflow-y-auto bg-white border border-gray-200 shadow-2xl rounded-lg py-1 flex flex-col custom-scrollbar relative">
+                            <div className="px-2 pb-1 sticky top-0 bg-white z-10 border-b border-gray-100">
+                                <div className="relative">
+                                    <i className="pi pi-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                    <input
+                                        type="text"
+                                        className="w-full text-sm pl-7 pr-2 py-1.5 border border-gray-200 rounded focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 bg-gray-50 focus:bg-white transition-colors"
+                                        placeholder="Search country..."
+                                        value={countrySearchTerm}
+                                        onChange={(e) => setCountrySearchTerm(e.target.value)}
+                                        onKeyDown={(e) => e.stopPropagation()}
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+                            {(UN_COUNTRIES || [])
+                                .filter(code => {
+                                    if (!countrySearchTerm) return true;
+                                    const countryName = regionNames ? regionNames.of(code) : code;
+                                    return countryName.toLowerCase().includes(countrySearchTerm.toLowerCase());
+                                })
+                                .map(code => {
                                 const countryName = regionNames ? regionNames.of(code) : code;
                                 return (
                                     <div key={code} className="flex items-center hover:bg-gray-100 transition-colors border-b border-gray-50 last:border-0 w-full group">
@@ -1031,19 +1351,45 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                                 <i className="pi pi-chart-pie text-blue-500"></i>
                                 C Chart
                             </button>
-                            <button
-                                onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    setChartsDropdownOpen(false);
-                                    cChartCursorRef.current = quillRef.current?.getEditor()?.getSelection()?.index || quillRef.current?.getEditor()?.getLength() || 0;
-                                    lionChartInsertedRef.current = false;
-                                    setLionChartModalOpen(true);
-                                }}
-                                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-gray-700 transition-colors w-full text-left"
-                            >
-                                <i className="pi pi-chart-line text-orange-500"></i>
-                                Lion Chart
-                            </button>
+                        </div>
+                    </DropdownPortal>
+                </div>
+
+                <div className="relative" ref={shapesDropdownRef}>
+                    <button
+                        onClick={() => setShapesDropdownOpen(!shapesDropdownOpen)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${shapesDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'} hidden xl:flex`}
+                        title="Shapes"
+                    >
+                        <i className="pi pi-clone text-purple-500"></i>
+                        <span className="hidden xl:inline font-medium">Shapes</span>
+                    </button>
+                    <button
+                        onClick={() => setShapesDropdownOpen(!shapesDropdownOpen)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${shapesDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'} xl:hidden`}
+                        title="Shapes"
+                    >
+                        <i className="pi pi-clone text-purple-500"></i>
+                    </button>
+
+                    <DropdownPortal isOpen={shapesDropdownOpen} anchorRef={shapesDropdownRef}>
+                        <div className="w-80 bg-white border border-gray-200 shadow-2xl rounded-lg p-3 max-h-96 overflow-y-auto custom-scrollbar">
+                            {Object.entries(SHAPES).map(([category, shapesList]) => (
+                                <div key={category} className="mb-4 last:mb-0">
+                                    <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">{category}</div>
+                                    <div className="grid grid-cols-5 gap-2">
+                                        {shapesList.map(shape => (
+                                            <button
+                                                key={shape.name}
+                                                onMouseDown={(e) => { e.preventDefault(); insertShape(shape.svg); }}
+                                                className="w-10 h-10 border border-gray-200 rounded flex items-center justify-center hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 text-gray-600 transition-colors bg-white focus:outline-none"
+                                                title={shape.name}
+                                                dangerouslySetInnerHTML={{ __html: shape.svg }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </DropdownPortal>
                 </div>
@@ -1099,7 +1445,24 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                     </DropdownPortal>
                 </div>
 
+                <button
+                    onClick={() => setScrollMenuOpen(true)}
+                    className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-orange-50 text-[#8b5a2b] shrink-0"
+                    title="Scroll Formats"
+                >
+                    <span className="text-lg leading-none">📜</span>
+                    <span className="hidden xl:inline font-medium">Scroll</span>
+                </button>
+
                 <div className="border-l border-gray-300 mx-1 h-5 hidden sm:block"></div>
+                <button
+                    onClick={() => setSpellCheckEnabled(!spellCheckEnabled)}
+                    className={`flex items-center gap-1 px-2 py-1 rounded transition-colors hidden lg:flex ${spellCheckEnabled ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-700'}`}
+                    title={spellCheckEnabled ? 'Spell Check Enabled' : 'Enable Spell Check'}
+                >
+                    <i className={`pi ${spellCheckEnabled ? 'pi-check-square' : 'pi-stop'}`}></i>
+                    <span className="hidden xl:inline">Spellcheck</span>
+                </button>
                 <button
                     onClick={toggleDictation}
                     className={`flex items-center gap-1 px-2 py-1 rounded transition-colors hidden xl:flex ${isListening ? 'bg-red-50 text-red-600' : 'hover:bg-gray-100 text-gray-700'}`}
@@ -1196,7 +1559,7 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                         className="flex items-center justify-center min-w-[36px] px-1 text-[11px] font-bold text-gray-700 hover:text-blue-600 cursor-pointer focus:outline-none"
                         title="Reset Zoom"
                     >
-                        {Math.round(zoomLevel * 100)}%
+                        {Math.round((zoomLevel || 1) * 100)}%
                     </button>
                     <button
                         onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.1))}
@@ -1240,8 +1603,8 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                     <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-sm flex flex-col transform transition-all scale-100 opacity-100">
                         <div className="px-5 py-4 bg-gray-100 border-b flex justify-between items-center bg-gradient-to-r from-gray-100 to-gray-50">
                             <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                                <i className="pi pi-table text-blue-500 text-lg"></i>
-                                Enter the dimension of splits
+                                <i className="pi pi-th-large text-blue-500 text-lg"></i>
+                                Enter Puzzle Configuration
                             </h3>
                             <button onClick={() => { setPuzzleModalOpen(false); setPendingPuzzleFile(null); }} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-colors focus:outline-none">
                                 <i className="pi pi-times"></i>
@@ -1249,12 +1612,8 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                         </div>
                         <div className="p-6 flex flex-col gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Number of rows</label>
-                                <input type="number" min="1" value={puzzleRows} onChange={e => setPuzzleRows(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Number of columns</label>
-                                <input type="number" min="1" value={puzzleCols} onChange={e => setPuzzleCols(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Number of Pieces</label>
+                                <input type="number" min="1" value={puzzlePieces} onChange={e => setPuzzlePieces(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                             </div>
                         </div>
                         <div className="p-4 bg-gray-50 border-t flex justify-end gap-3">
@@ -1316,20 +1675,19 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 onInsert={handleCChartInsert}
             />
 
-            <LionChartModal
-                visible={lionChartModalOpen}
-                onHide={() => {
-                    setLionChartModalOpen(false);
-                    if (quillRef.current) {
-                        const editor = quillRef.current.getEditor();
-                        // Anchor safety shifting ensures typing works without erasing injected elements
-                        let newPos = (cChartCursorRef.current !== null ? cChartCursorRef.current : editor.getLength()) + 1;
-                        editor.setSelection(newPos);
-                    }
-                    cChartCursorRef.current = null;
-                }}
-                onUpdate={handleLionChartLiveUpdate}
+
+            <ImageGalleryModal
+                isOpen={galleryModalOpen}
+                onClose={() => setGalleryModalOpen(false)}
+                onInsert={insertGalleryImage}
             />
+
+            {scrollMenuOpen && (
+                <ScrollMenuModal 
+                    onSelect={handleScrollFormatSelect} 
+                    onClose={() => setScrollMenuOpen(false)} 
+                />
+            )}
 
             <style>{`
                 #${toolbarId} .ql-formats { margin-right: 0; }
@@ -1373,6 +1731,10 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 .ql-picker.ql-font .ql-picker-label[data-value="anton"]::before { content: 'Anton'; font-family: 'Anton', sans-serif; }
 
                 /* Style Numerical Size overrides to render labels instead of generic sizes natively if requested */
+                #${toolbarId} .ql-picker.ql-size .ql-picker-options {
+                    max-height: 250px;
+                    overflow-y: auto;
+                }
                 .ql-picker.ql-size .ql-picker-item[data-value]::before {
                     content: attr(data-value) !important;
                 }

@@ -7,13 +7,15 @@ from sqlalchemy.orm import selectinload
 from typing import List, Optional
 
 from app.db.database import get_db
-from app.db.models import Assessment, User, Admin, Leader, UserRole, Location, AssessmentResult
+from app.db.models import Assessment, User, Admin, Leader, UserRole, Location, AssessmentResult, AssessmentSummarySetting
 from app.api.auth import get_current_user
 from app.schemas.assessment import (
     AssessmentResponse,
     AssessmentCreate,
     AssessmentUpdate,
-    AssessmentBulkCreate
+    AssessmentBulkCreate,
+    AssessmentSummarySettingCreate,
+    AssessmentSummarySettingResponse
 )
 
 router = APIRouter()
@@ -22,6 +24,20 @@ async def verify_admin_or_higher(current_user: User = Depends(get_current_user))
     if current_user.role not in [UserRole.super_admin, UserRole.admin, UserRole.leader]:
         raise HTTPException(status_code=403, detail="Not enough permissions. Admin, Super Admin, or Leader required.")
     return current_user
+
+@router.get("/migrate")
+async def migrate_database(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import text
+    try:
+        await db.execute(text("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS choice_4 VARCHAR;"))
+        await db.execute(text("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS grade_4 VARCHAR;"))
+        await db.execute(text("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS choice_5 VARCHAR;"))
+        await db.execute(text("ALTER TABLE assessments ADD COLUMN IF NOT EXISTS grade_5 VARCHAR;"))
+        await db.commit()
+        return {"message": "Migration completed successfully!"}
+    except Exception as e:
+        await db.rollback()
+        return {"error": str(e)}
 
 @router.get("/results/{user_id}", response_model=List[dict])
 async def get_user_assessment_results(user_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
@@ -33,9 +49,22 @@ async def get_user_assessment_results(user_id: uuid.UUID, db: AsyncSession = Dep
     for r in rows:
         choice_text = getattr(r.assessment, f"choice_{r.selected_choice}", "")
         response.append({
+            "assessment_id": str(r.assessment.id),
             "question_text": r.assessment.question_text,
+            "seven_tnt": r.assessment.seven_tnt,
+            "selected_choice": r.selected_choice,
             "selected_choice_text": choice_text,
-            "awarded_grade": r.awarded_grade
+            "awarded_grade": r.awarded_grade,
+            "choice_1": r.assessment.choice_1,
+            "grade_1": r.assessment.grade_1,
+            "choice_2": r.assessment.choice_2,
+            "grade_2": r.assessment.grade_2,
+            "choice_3": r.assessment.choice_3,
+            "grade_3": r.assessment.grade_3,
+            "choice_4": r.assessment.choice_4,
+            "grade_4": r.assessment.grade_4,
+            "choice_5": r.assessment.choice_5,
+            "grade_5": r.assessment.grade_5,
         })
     return response
 
@@ -87,7 +116,7 @@ async def get_student_assessment(db: AsyncSession = Depends(get_db), current_use
     result = await db.execute(query)
     return result.scalars().all()
 
-@router.get("/", response_model=List[AssessmentResponse])
+@router.get("", response_model=List[AssessmentResponse])
 async def read_assessments(
     name: Optional[str] = None,
     location_module: Optional[str] = None,
@@ -154,7 +183,7 @@ async def get_assessment_options(db: AsyncSession = Depends(get_db), current_use
         "locations": locations_result.scalars().all()
     }
 
-@router.post("/", response_model=AssessmentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=AssessmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_assessment(assessment: AssessmentCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
     assigned_location_id = None
     if current_user.role == UserRole.admin:
@@ -217,6 +246,7 @@ async def update_assessment(assessment_id: uuid.UUID, assessment: AssessmentUpda
 async def bulk_delete_assessments(assessment_ids: List[uuid.UUID], db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
     if not assessment_ids:
         return {"message": "No assessments selected for deletion"}
+    await db.execute(delete(AssessmentResult).where(AssessmentResult.assessment_id.in_(assessment_ids)))
     await db.execute(delete(Assessment).where(Assessment.id.in_(assessment_ids)))
     await db.commit()
     return {"message": "Successfully deleted selected assessments"}
@@ -224,12 +254,17 @@ async def bulk_delete_assessments(assessment_ids: List[uuid.UUID], db: AsyncSess
 @router.delete("/purge", response_model=dict)
 async def purge_assessments(name: str, location_module: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
     from sqlalchemy import func
-    await db.execute(
-        delete(Assessment)
-        .where(Assessment.name == name)
-        .where(func.lower(Assessment.location_module) == location_module.lower())
-    )
-    await db.commit()
+    
+    # Identify which assessments to delete
+    query = select(Assessment.id).where(Assessment.name == name).where(func.lower(Assessment.location_module) == location_module.lower())
+    result = await db.execute(query)
+    ids_to_delete = result.scalars().all()
+    
+    if ids_to_delete:
+        await db.execute(delete(AssessmentResult).where(AssessmentResult.assessment_id.in_(ids_to_delete)))
+        await db.execute(delete(Assessment).where(Assessment.id.in_(ids_to_delete)))
+        await db.commit()
+        
     return {"message": f"Successfully purged assessments for {name} - {location_module}"}
 
 @router.delete("/{assessment_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -238,6 +273,70 @@ async def delete_assessment(assessment_id: uuid.UUID, db: AsyncSession = Depends
     if db_assessment is None:
         raise HTTPException(status_code=404, detail="Assessment not found")
     
+    await db.execute(delete(AssessmentResult).where(AssessmentResult.assessment_id == assessment_id))
     await db.delete(db_assessment)
+    await db.commit()
+    return None
+
+@router.get("/settings/summary", response_model=AssessmentSummarySettingResponse)
+async def get_summary_settings(location_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    query = select(AssessmentSummarySetting).where(AssessmentSummarySetting.location_id == location_id)
+    result = await db.execute(query)
+    setting = result.scalar_one_or_none()
+    if setting is None:
+        # Return an empty default to avoid 404 complexity on frontend
+        return {
+            "id": uuid.uuid4(),
+            "location_id": location_id,
+            "settings": {},
+            "created_at": "1970-01-01T00:00:00Z"
+        }
+    return setting
+
+@router.get("/settings/summary/all", response_model=List[dict])
+async def get_all_summary_settings(db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    query = select(AssessmentSummarySetting).options(selectinload(AssessmentSummarySetting.location))
+    result = await db.execute(query)
+    settings = result.scalars().all()
+    
+    response = []
+    for s in settings:
+        loc_name = "Unknown Location"
+        if s.location:
+            loc_name = f"{s.location.city}, {s.location.country}"
+        response.append({
+            "id": str(s.id),
+            "location_id": str(s.location_id),
+            "location_name": loc_name,
+            "settings": s.settings,
+            "created_at": s.created_at.isoformat() if s.created_at else None
+        })
+    return response
+
+@router.post("/settings/summary", response_model=AssessmentSummarySettingResponse)
+async def save_summary_settings(data: AssessmentSummarySettingCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    query = select(AssessmentSummarySetting).where(AssessmentSummarySetting.location_id == data.location_id)
+    result = await db.execute(query)
+    setting = result.scalar_one_or_none()
+    
+    if setting:
+        setting.settings = data.settings
+        await db.commit()
+        await db.refresh(setting)
+        return setting
+    else:
+        new_setting = AssessmentSummarySetting(location_id=data.location_id, settings=data.settings)
+        db.add(new_setting)
+        await db.commit()
+        await db.refresh(new_setting)
+        return new_setting
+
+@router.delete("/settings/summary/{setting_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_summary_settings(setting_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    db_setting = await db.get(AssessmentSummarySetting, setting_id)
+    if db_setting is None:
+        raise HTTPException(status_code=404, detail="Summary setting not found")
+    
+    await db.delete(db_setting)
     await db.commit()
     return None
