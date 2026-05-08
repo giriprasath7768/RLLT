@@ -40,7 +40,9 @@ async def migrate_database(db: AsyncSession = Depends(get_db)):
         return {"error": str(e)}
 
 @router.get("/results/{user_id}", response_model=List[dict])
-async def get_user_assessment_results(user_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+async def get_user_assessment_results(user_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role == UserRole.student and str(current_user.id) != str(user_id):
+        raise HTTPException(status_code=403, detail="Not authorized")
     query = select(AssessmentResult).options(selectinload(AssessmentResult.assessment)).where(AssessmentResult.user_id == user_id)
     result = await db.execute(query)
     rows = result.scalars().all()

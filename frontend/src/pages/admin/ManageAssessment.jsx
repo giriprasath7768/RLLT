@@ -17,6 +17,7 @@ import * as XLSX from 'xlsx';
 import { AssessmentService } from '../../services/assessmentService';
 import { LocationService } from '../../services/locations';
 import TestPreview from '../../components/admin/TestPreview';
+import { useAppSync } from '../../hooks/useAppSync';
 
 const ManageAssessment = () => {
     const [assessments, setAssessments] = useState([]);
@@ -209,6 +210,13 @@ const ManageAssessment = () => {
             .catch(err => toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to load assessments' }))
             .finally(() => setLoading(false));
     };
+
+    useAppSync((data) => {
+        if (data.path && data.path.includes('/api/assessments')) {
+            loadData();
+            fetchOptions();
+        }
+    });
 
     function getEmptyAssessment() {
         return {

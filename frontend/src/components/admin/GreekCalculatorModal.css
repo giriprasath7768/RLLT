@@ -1,0 +1,121 @@
+.greek-calculator-modal {
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.greek-calculator-modal .greek-alphabet-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+}
+
+.greek-calculator-modal .greek-alphabet-card {
+    position: relative;
+    border-radius: 6px;
+    padding: 12px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.1s transform, 0.1s box-shadow;
+    box-shadow: 
+        0 4px 0px rgba(0,0,0,0.5), 
+        0 6px 8px rgba(0,0,0,0.3), 
+        inset 0 1px 1px rgba(255,255,255,0.4), 
+        inset 0 -2px 4px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.6);
+    width: calc(16.66% - 4px); /* 6 items per row with 4px gap */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.greek-calculator-modal .greek-alphabet-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+        0 5px 0px rgba(0,0,0,0.5), 
+        0 8px 12px rgba(0,0,0,0.3), 
+        inset 0 1px 1px rgba(255,255,255,0.5), 
+        inset 0 -2px 4px rgba(0,0,0,0.3);
+}
+
+.greek-calculator-modal .greek-alphabet-card:active {
+    transform: translateY(2px) !important;
+    box-shadow: 
+        0 2px 0px rgba(0,0,0,0.5), 
+        0 3px 5px rgba(0,0,0,0.3), 
+        inset 0 1px 1px rgba(255,255,255,0.3), 
+        inset 0 -1px 2px rgba(0,0,0,0.3) !important;
+}
+
+.greek-calculator-modal .btn-3d {
+    position: relative;
+    transition: 0.1s transform, 0.1s box-shadow;
+    box-shadow: 
+        0 4px 0px rgba(0,0,0,0.5), 
+        0 6px 10px rgba(0,0,0,0.3), 
+        inset 0 1px 1px rgba(255,255,255,0.4), 
+        inset 0 -2px 4px rgba(0,0,0,0.3) !important;
+    border: 1px solid rgba(0,0,0,0.7) !important;
+}
+
+.greek-calculator-modal .btn-3d:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+        0 5px 0px rgba(0,0,0,0.5), 
+        0 8px 12px rgba(0,0,0,0.3), 
+        inset 0 1px 1px rgba(255,255,255,0.5), 
+        inset 0 -2px 4px rgba(0,0,0,0.3) !important;
+}
+
+.greek-calculator-modal .btn-3d:active {
+    transform: translateY(2px) !important;
+    box-shadow: 
+        0 2px 0px rgba(0,0,0,0.5), 
+        0 3px 5px rgba(0,0,0,0.3), 
+        inset 0 1px 1px rgba(255,255,255,0.3), 
+        inset 0 -1px 2px rgba(0,0,0,0.3) !important;
+}
+
+.greek-calculator-modal .greek-symbol {
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.greek-calculator-modal .greek-name {
+    margin-top: 2px;
+    font-size: 10px;
+    opacity: 0.9;
+}
+
+.greek-calculator-modal .greek-value {
+    margin-top: 0px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.greek-calculator-modal .greek-blue { background: linear-gradient(145deg, #004b8d, #008cff); }
+.greek-calculator-modal .greek-teal { background: linear-gradient(145deg, #006d77, #00d4ff); }
+.greek-calculator-modal .greek-green { background: linear-gradient(145deg, #006400, #00cc66); }
+.greek-calculator-modal .greek-gold { background: linear-gradient(145deg, #7a5c00, #ffc300); }
+.greek-calculator-modal .greek-orange { background: linear-gradient(145deg, #9b3d00, #ff7b00); }
+.greek-calculator-modal .greek-red { background: linear-gradient(145deg, #7a0000, #ff4d4d); }
+.greek-calculator-modal .greek-pink { background: linear-gradient(145deg, #7b0058, #ff1493); }
+.greek-calculator-modal .greek-purple { background: linear-gradient(145deg, #4b0082, #b266ff); }
+.greek-calculator-modal .greek-indigo { background: linear-gradient(145deg, #240046, #7b2cbf); }
+
+@media (max-width: 1200px) {
+    .greek-calculator-modal .container {
+        flex-direction: column;
+    }
+
+    .greek-calculator-modal .left-panel,
+    .greek-calculator-modal .right-panel {
+        width: 100% !important;
+    }
+
+    .greek-calculator-modal .greek-alphabet-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}

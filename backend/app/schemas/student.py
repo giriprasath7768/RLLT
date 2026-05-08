@@ -34,6 +34,14 @@ class StudentUpdate(BaseModel):
     enrollment_number: Optional[str] = None
     is_active: Optional[bool] = None
 
+class TouchCountSchema(BaseModel):
+    transformation: int = 0
+    team_transformation: int = 0
+    klt_reading_plan: int = 0
+
+    class Config:
+        from_attributes = True
+
 class StudentResponse(StudentBase):
     id: UUID
     email: str
@@ -42,10 +50,12 @@ class StudentResponse(StudentBase):
     assessment_status: Optional[str] = "pending"
     activation_email_sent: Optional[bool] = False
     location_name: Optional[str] = None
+    country: Optional[str] = None
     admin_name: Optional[str] = None
     assessment_marks: Optional[float] = None
     created_at: Optional[datetime] = None
     group_name: Optional[str] = None
+    touch_counts: Optional[TouchCountSchema] = None
 
     class Config:
         from_attributes = True

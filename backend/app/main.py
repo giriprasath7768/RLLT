@@ -12,7 +12,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Media Platform API", lifespan=lifespan)
 
-# Configure CORS for frontend access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost", "http://127.0.0.1"],
@@ -21,6 +20,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from app.api.websockets import manager
+import json
+
+class BroadcastUpdateMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+            if response.status_code >= 200 and response.status_code < 300:
+                # Do not broadcast auth events to prevent too much noise
+                if not request.url.path.startswith("/api/auth"):
+                    try:
+                        await manager.broadcast(json.dumps({
+                            "type": "data_updated",
+                            "method": request.method,
+                            "path": request.url.path
+                        }))
+                    except Exception as e:
+                        pass
+        return response
+
+app.add_middleware(BroadcastUpdateMiddleware)
 
 from app.api.auth import router as auth_router
 from app.api.locations import router as locations_router
@@ -44,6 +66,7 @@ from app.api.seven_tnt_daycycle_charts import router as seven_tnt_daycycle_chart
 from app.api.screen_recorder import router as screen_recorder_router
 from app.api.images import router as images_router
 from app.api.classroom import router as classroom_router
+from app.api.websockets import router as websockets_router
 
 app.include_router(auth_router, prefix="/api", tags=["auth"])
 app.include_router(profile_router, prefix="/api/profile", tags=["profile"])
@@ -67,6 +90,7 @@ app.include_router(seven_tnt_daycycle_charts_router, prefix="/api/seven_tnt_dayc
 app.include_router(screen_recorder_router, prefix="/api/screen-recorder", tags=["screen_recorder"])
 app.include_router(images_router, prefix="/api/images", tags=["images"])
 app.include_router(classroom_router, prefix="/api/classroom", tags=["classroom"])
+app.include_router(websockets_router, prefix="/api", tags=["websockets"])
 
 import os
 from fastapi.staticfiles import StaticFiles

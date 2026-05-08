@@ -63,6 +63,18 @@ class PasswordReset(Base):
 
     user = relationship("User")
 
+class StudentTouchCount(Base):
+    __tablename__ = "student_touch_counts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True)
+    transformation_touches = Column(Integer, default=0)
+    team_transformation_touches = Column(Integer, default=0)
+    klt_reading_plan_touches = Column(Integer, default=0)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User", backref="touch_counts")
+
 class Location(Base):
     __tablename__ = "locations"
 

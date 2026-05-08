@@ -1,11 +1,16 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import pptxgen from "pptxgenjs";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import ScriptViewerModal from './ScriptViewerModal';
 import DocumentNotesModal from './DocumentNotesModal';
 import CChartModal from './CChartModal';
+import LionChartModal from './LionChartModal';
 import ImageGalleryModal from './ImageGalleryModal';
 import ScrollMenuModal from './ScrollMenuModal';
+import HebrewCalculatorModal from './HebrewCalculatorModal';
+import GreekCalculatorModal from './GreekCalculatorModal';
 import { ANTI_GRAVITY_SCRIPTS } from '../../data/antiGravityScripts';
 
 const EMOJIS = [
@@ -110,7 +115,7 @@ const DropdownPortal = ({ isOpen, anchorRef, children }) => {
     );
 };
 
-const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes, PAGE_SIZES, pageSize, setPageSize, setIsSidebarOpen, handleOpenMap, UN_COUNTRIES, regionNames, zoomLevel, setZoomLevel, isSaving, fetchSavedDocuments, spellCheckEnabled, setSpellCheckEnabled, setIsChartEditing, setChartProxy }) => {
+const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes, PAGE_SIZES, pageSize, setPageSize, setIsSidebarOpen, handleOpenMap, UN_COUNTRIES, regionNames, zoomLevel, setZoomLevel, isSaving, fetchSavedDocuments, spellCheckEnabled, setSpellCheckEnabled, setIsChartEditing, setChartProxy }) => {
     const fileInputRef = useRef(null);
     const puzzleInputRef = useRef(null);
     const watermarkInputRef = useRef(null);
@@ -120,23 +125,18 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     const [currentSize, setCurrentSize] = useState('16');
 
     useEffect(() => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
+        if (!tiptapEditor) return;
         const handleSelectionChange = () => {
-            const format = editor.getFormat();
-            if (format.size) {
-                setCurrentSize(format.size.replace('px', ''));
-            } else {
-                setCurrentSize('16');
-            }
+            // Fallback for Phase 2, font size requires a custom extension in Tiptap
+            // We will set this up in Phase 3
         };
-        editor.on('selection-change', handleSelectionChange);
-        editor.on('editor-change', handleSelectionChange);
+        tiptapEditor.on('selectionUpdate', handleSelectionChange);
+        tiptapEditor.on('update', handleSelectionChange);
         return () => {
-            editor.off('selection-change', handleSelectionChange);
-            editor.off('editor-change', handleSelectionChange);
+            tiptapEditor.off('selectionUpdate', handleSelectionChange);
+            tiptapEditor.off('update', handleSelectionChange);
         };
-    }, [quillRef]);
+    }, [tiptapEditor]);
 
     const [isListening, setIsListening] = useState(false);
     const recognitionRef = useRef(null);
@@ -167,23 +167,24 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
 
     const [notesModalOpen, setNotesModalOpen] = useState(false);
     const [cChartModalOpen, setCChartModalOpen] = useState(false);
+    const [lionChartModalOpen, setLionChartModalOpen] = useState(false);
+    const [hebrewCalculatorOpen, setHebrewCalculatorOpen] = useState(false);
+    const [greekCalculatorOpen, setGreekCalculatorOpen] = useState(false);
     
     // Keep track of modal states globally to prevent ReactQuill focus stealing
     useEffect(() => {
-        const isEditing = cChartModalOpen;
+        const isEditing = cChartModalOpen || lionChartModalOpen;
         window.isChartEditing = isEditing;
         if (setIsChartEditing) setIsChartEditing(isEditing);
         
         if (!isEditing) {
-            if (quillRef.current) {
-                // When closing modals, ensure React state syncs up with final Quill DOM
-                const editor = quillRef.current.getEditor();
+            if (tiptapEditor) {
                 if (window.forceWordEditorSync) {
-                    window.forceWordEditorSync(editor.root.innerHTML);
+                    window.forceWordEditorSync(tiptapEditor.getHTML());
                 }
             }
         }
-    }, [cChartModalOpen, quillRef, setIsChartEditing]);
+    }, [cChartModalOpen, lionChartModalOpen, tiptapEditor, setIsChartEditing]);
 
     const cChartCursorRef = useRef(null);
 
@@ -191,64 +192,37 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     const [scrollMenuOpen, setScrollMenuOpen] = useState(false);
 
     const handleScrollFormatSelect = (category, format, styleOption) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        const value = `${format}|${category.color}|${styleOption || ''}`;
-        
-        const range = editor.getSelection(true); // getSelection(true) focuses if needed
-        if (range && range.length > 0) {
-            editor.format('wisdom', value);
-        }
+        alert("Scroll formats disabled in Phase 2. They will return in Phase 3.");
         setScrollMenuOpen(false);
     };
 
     const insertGalleryImage = (url) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        let cursorPosition = editor.getSelection()?.index;
-        if (cursorPosition === undefined) cursorPosition = editor.getLength();
-        editor.insertEmbed(cursorPosition, 'image', url);
-        editor.setSelection(cursorPosition + 1);
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().setImage({ src: url }).run();
         setGalleryModalOpen(false);
     };
 
     const insertTextBox = () => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        let cursorPosition = editor.getSelection()?.index;
-        if (cursorPosition === undefined) cursorPosition = editor.getLength();
-        
-        // Insert custom textbox embed
-        editor.insertEmbed(cursorPosition, 'textbox', { text: '' });
-        editor.setSelection(cursorPosition + 1);
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().insertContent({ type: 'textbox', attrs: { text: '' } }).run();
         setImageDropdownOpen(false);
     };
 
     const insertShape = (svg) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        let cursorPosition = editor.getSelection()?.index;
-        if (cursorPosition === undefined) cursorPosition = editor.getLength();
-        
-        editor.insertEmbed(cursorPosition, 'shape', { svg: svg });
-        editor.setSelection(cursorPosition + 1);
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().insertContent({ type: 'shape', attrs: { svg: svg } }).run();
         setShapesDropdownOpen(false);
     };
 
     const handleCChartInsert = (selectedText) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        let cursorPosition = cChartCursorRef.current !== null ? cChartCursorRef.current : editor.getLength();
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().insertContent(selectedText + "<br>").run();
+    };
 
-        // Append selected text with a trailing newline for cleaner formatting when doing multi-inserts
-        editor.insertText(cursorPosition, selectedText + "\n");
-
-        // Automatically shift the internal cursor ref down to match the new text boundary exactly
-        cChartCursorRef.current = cursorPosition + selectedText.length + 1;
-        // Do NOT close the modal, allowing sequential insertions until user clicks outside
+    const handleLionChartInsert = (base64Img) => {
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().setImage({ src: base64Img }).run();
+        setLionChartModalOpen(false);
     };
 
     const wisdomDropdownRef = useRef(null);
@@ -274,34 +248,26 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     ];
 
     const applyTextEffect = (color) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        editor.format('texteffect', `${textEffectMode}|${color}`);
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().setTextEffect({ color, mode: textEffectMode }).run();
         setTextEffectOpen(false);
     };
 
     const clearTextEffect = () => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        editor.format('texteffect', false);
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().unsetTextEffect().run();
         setTextEffectOpen(false);
     };
 
     const applyWisdom = (color) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        editor.format('wisdom', `${wisdomMode}|${color}`);
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().setWisdom({ color, mode: wisdomMode }).run();
         setWisdomOpen(false);
     };
 
     const clearWisdom = () => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        editor.format('wisdom', false);
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().unsetWisdom().run();
         setWisdomOpen(false);
     };
 
@@ -330,8 +296,7 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
         };
 
         recognition.onresult = (event) => {
-            if (!quillRef.current) return;
-            const editor = quillRef.current.getEditor();
+            if (!tiptapEditor) return;
 
             let interimTranscript = '';
             let finalTranscript = '';
@@ -344,29 +309,12 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 }
             }
 
-            if (interimRangeRef.current) {
-                editor.deleteText(interimRangeRef.current.index, interimRangeRef.current.length);
-                interimRangeRef.current = null;
-            }
-
-            let cursorPosition = editor.getSelection()?.index;
-            if (cursorPosition === undefined) cursorPosition = editor.getLength();
-
             if (finalTranscript !== '') {
                 const textToInsert = finalTranscript.trim() + ' ';
-                editor.insertText(cursorPosition, textToInsert);
-                editor.setSelection(cursorPosition + textToInsert.length);
+                tiptapEditor.chain().focus().insertContent(textToInsert).run();
             }
 
-            if (interimTranscript !== '') {
-                cursorPosition = editor.getSelection()?.index;
-                if (cursorPosition === undefined) cursorPosition = editor.getLength();
-                editor.insertText(cursorPosition, interimTranscript);
-                interimRangeRef.current = {
-                    index: cursorPosition,
-                    length: interimTranscript.length
-                };
-            }
+            // Simplified interim transcript for Phase 2 since cursor positions differ in Tiptap
         };
 
         recognition.onerror = (event) => {
@@ -386,7 +334,7 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 recognitionRef.current.stop();
             }
         };
-    }, [language, quillRef]);
+    }, [language, tiptapEditor]);
 
     const wordCount = React.useMemo(() => {
         if (!content) return 0;
@@ -429,13 +377,8 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     }, []);
 
     const insertEmoji = (emoji) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        let cursorPosition = editor.getSelection()?.index;
-        if (cursorPosition === undefined) cursorPosition = editor.getLength();
-        editor.insertText(cursorPosition, emoji);
-        editor.setSelection(cursorPosition + emoji.length);
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().insertContent(emoji).run();
         setEmojiDropdownOpen(false);
     };
 
@@ -451,13 +394,8 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     };
 
     const insertCountry = (countryName) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        let cursorPosition = editor.getSelection()?.index;
-        if (cursorPosition === undefined) cursorPosition = editor.getLength();
-        editor.insertText(cursorPosition, countryName);
-        editor.setSelection(cursorPosition + countryName.length);
+        if (!tiptapEditor) return;
+        tiptapEditor.chain().focus().insertContent(countryName).run();
         setCountryDropdownOpen(false);
     };
 
@@ -470,8 +408,8 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
             recognitionRef.current.stop();
         } else {
             try {
-                if (quillRef.current) {
-                    quillRef.current.getEditor().focus();
+                if (tiptapEditor) {
+                    tiptapEditor.commands.focus();
                 }
                 recognitionRef.current.start();
             } catch (e) {
@@ -485,13 +423,11 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
     };
 
     const handleOutlineColor = (e) => {
-        if (!quillRef.current) return;
-        quillRef.current.getEditor().format('outline', `1.5px ${e.target.value}`);
+        // Disabled in Phase 2
     };
 
     const handleShadowColor = (e) => {
-        if (!quillRef.current) return;
-        quillRef.current.getEditor().format('shadow', `4px 4px 0px ${e.target.value}`);
+        // Disabled in Phase 2
     };
 
     const handleExportPPT = () => {
@@ -617,6 +553,45 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
         }
     };
 
+    const handleExportPDF = async () => {
+        if (!tiptapEditor) return;
+        
+        try {
+            const editorEl = document.querySelector('.ProseMirror');
+            if (!editorEl) return;
+            
+            const originalBg = editorEl.style.backgroundColor;
+            editorEl.style.backgroundColor = '#ffffff';
+            
+            const canvas = await html2canvas(editorEl, { scale: 2, useCORS: true });
+            editorEl.style.backgroundColor = originalBg;
+            
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            let heightLeft = pdfHeight;
+            let position = 0;
+            
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
+            
+            while (heightLeft >= 0) {
+                position = heightLeft - pdfHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                heightLeft -= pageHeight;
+            }
+            
+            pdf.save(`${title || 'Document'}.pdf`);
+            
+        } catch (error) {
+            console.error("Failed to generate PDF", error);
+        }
+    };
+
     // Helper for downloading
     const triggerDownload = (blob, filename) => {
         const downloadLink = document.createElement("a");
@@ -736,12 +711,11 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                     }
                 }
 
-                // Insert into Quill
-                const editor = quillRef.current.getEditor();
-                const range = editor.getSelection(true);
-                const base64Data = canvas.toDataURL('image/png');
-                editor.insertEmbed(range ? range.index : 0, 'image', base64Data);
-                editor.setSelection((range ? range.index : 0) + 1);
+                // Insert into Tiptap
+                if (tiptapEditor) {
+                    const base64Data = canvas.toDataURL('image/png');
+                    tiptapEditor.chain().focus().setImage({ src: base64Data }).run();
+                }
 
                 setPuzzleModalOpen(false);
                 setPendingPuzzleFile(null);
@@ -889,11 +863,9 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
         const safeSvg = encodeURIComponent(svgContent).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1));
         const base64Data = `data:image/svg+xml;base64,${btoa(safeSvg)}`;
 
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        const cursorPosition = editor.getSelection()?.index || editor.getLength();
-        editor.insertEmbed(cursorPosition, 'image', base64Data);
-        editor.setSelection(cursorPosition + 1);
+        if (tiptapEditor) {
+            tiptapEditor.chain().focus().setImage({ src: base64Data }).run();
+        }
 
         setGraphModal({ isOpen: false, type: null });
         setXData("");
@@ -914,7 +886,11 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 {/* Typography Group */}
                 <div className="flex items-center gap-0 border-r pr-2">
                     <span className="ql-formats m-0 mr-1 flex items-center gap-0">
-                        <select className="ql-font" defaultValue="sans-serif">
+                        <select 
+                            className="text-xs border rounded p-1" 
+                            defaultValue="sans-serif"
+                            onChange={(e) => tiptapEditor?.chain().focus().setFontFamily(e.target.value).run()}
+                        >
                             <option value="sans-serif">Sans Serif</option>
                             <option value="serif">Serif</option>
                             <option value="monospace">Monospace</option>
@@ -936,17 +912,10 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                                     e.stopPropagation();
                                     if (e.key === 'Enter') {
                                         e.preventDefault();
-                                        if (quillRef.current && currentSize) {
-                                            const editor = quillRef.current.getEditor();
-                                            if (customSizeRangeRef.current) editor.setSelection(customSizeRangeRef.current);
-                                            editor.format('size', `${currentSize}px`);
-                                            customSizeRangeRef.current = null;
-                                        }
                                         setFontSizeDropdownOpen(false);
                                     }
                                 }}
                                 onFocus={() => {
-                                    if (quillRef.current) customSizeRangeRef.current = quillRef.current.getEditor().getSelection();
                                     setFontSizeDropdownOpen(true);
                                 }}
                                 className="w-8 px-1 text-xs outline-none bg-transparent text-center m-0"
@@ -971,12 +940,6 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                                             className={`px-3 py-1 text-xs cursor-pointer hover:bg-blue-50 ${currentSize === sz ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-700'}`}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (quillRef.current) {
-                                                    const editor = quillRef.current.getEditor();
-                                                    if (customSizeRangeRef.current) editor.setSelection(customSizeRangeRef.current);
-                                                    editor.format('size', `${sz}px`);
-                                                    customSizeRangeRef.current = null;
-                                                }
                                                 setCurrentSize(sz);
                                                 setFontSizeDropdownOpen(false);
                                             }}
@@ -991,12 +954,26 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 </div>
 
                 <div className="flex items-center gap-1 border-r pr-2">
-                    <span className="ql-formats m-0 flex items-center gap-0">
-                        <button className="ql-bold"></button>
-                        <button className="ql-italic"></button>
-                        <button className="ql-underline"></button>
-                        <select className="ql-color" title="Fill Color"></select>
-                        <select className="ql-background" title="Highlight Color"></select>
+                    <span className="ql-formats m-0 flex items-center gap-1">
+                        <button 
+                            onClick={() => tiptapEditor?.chain().focus().toggleBold().run()} 
+                            className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${tiptapEditor?.isActive('bold') ? 'bg-gray-200 text-black font-bold' : 'hover:bg-gray-100 text-gray-600'}`}
+                            title="Bold"
+                        ><i className="pi pi-bold"></i></button>
+                        <button 
+                            onClick={() => tiptapEditor?.chain().focus().toggleItalic().run()} 
+                            className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${tiptapEditor?.isActive('italic') ? 'bg-gray-200 text-black font-bold' : 'hover:bg-gray-100 text-gray-600'}`}
+                            title="Italic"
+                        ><i className="pi pi-italic"></i></button>
+                        
+                        <div className="flex items-center ml-1 bg-white border border-gray-200 rounded overflow-hidden" title="Text Color">
+                            <i className="pi pi-palette text-xs text-gray-400 px-1"></i>
+                            <input 
+                                type="color" 
+                                className="w-5 h-6 p-0 border-0 bg-transparent cursor-pointer" 
+                                onChange={(e) => tiptapEditor?.chain().focus().setColor(e.target.value).run()}
+                            />
+                        </div>
                     </span>
 
                     {/* Custom Layering Controls using standard inputs hooked into Quill formats */}
@@ -1127,12 +1104,22 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 </div>
 
                 <div className="flex items-center gap-1 border-r pr-2">
-                    <span className="ql-formats m-0 flex items-center gap-0">
-                        <button className="ql-list" value="ordered"></button>
-                        <button className="ql-list" value="bullet"></button>
-                        <select className="ql-align" title="Text Alignment"></select>
-                        <button className="ql-link"></button>
-                        <button className="ql-image"></button>
+                    <span className="ql-formats m-0 flex items-center gap-1">
+                        <button 
+                            onClick={() => tiptapEditor?.chain().focus().setTextAlign('left').run()}
+                            className={`w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 ${tiptapEditor?.isActive({ textAlign: 'left' }) ? 'bg-gray-200' : 'text-gray-600'}`}
+                            title="Align Left"
+                        ><i className="pi pi-align-left"></i></button>
+                        <button 
+                            onClick={() => tiptapEditor?.chain().focus().setTextAlign('center').run()}
+                            className={`w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 ${tiptapEditor?.isActive({ textAlign: 'center' }) ? 'bg-gray-200' : 'text-gray-600'}`}
+                            title="Align Center"
+                        ><i className="pi pi-align-center"></i></button>
+                        <button 
+                            onClick={() => tiptapEditor?.chain().focus().setTextAlign('right').run()}
+                            className={`w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 ${tiptapEditor?.isActive({ textAlign: 'right' }) ? 'bg-gray-200' : 'text-gray-600'}`}
+                            title="Align Right"
+                        ><i className="pi pi-align-right"></i></button>
                     </span>
                 </div>
 
@@ -1207,18 +1194,18 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 />
 
                 <button
-                    onClick={() => setViewerScript(ANTI_GRAVITY_SCRIPTS.hebrew)}
+                    onClick={() => setHebrewCalculatorOpen(true)}
                     className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700 shrink-0"
-                    title={ANTI_GRAVITY_SCRIPTS.hebrew.name}
+                    title="Hebrew Calculator"
                 >
                     <i className="pi pi-compass text-emerald-500"></i>
                     <span className="hidden xl:inline font-medium">Hebrew</span>
                 </button>
 
                 <button
-                    onClick={() => setViewerScript(ANTI_GRAVITY_SCRIPTS.greek)}
+                    onClick={() => setGreekCalculatorOpen(true)}
                     className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700 shrink-0"
-                    title={ANTI_GRAVITY_SCRIPTS.greek.name}
+                    title="Greek Calculator"
                 >
                     <i className="pi pi-compass text-emerald-500"></i>
                     <span className="hidden xl:inline font-medium">Greek</span>
@@ -1350,6 +1337,17 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                             >
                                 <i className="pi pi-chart-pie text-blue-500"></i>
                                 C Chart
+                            </button>
+                            <button
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    setChartsDropdownOpen(false);
+                                    setLionChartModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-gray-700 transition-colors w-full text-left"
+                            >
+                                <i className="pi pi-chart-line text-orange-500"></i>
+                                Lion Chart
                             </button>
                         </div>
                     </DropdownPortal>
@@ -1545,6 +1543,14 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                     <i className="pi pi-file-export"></i>
                     <span className="hidden md:inline">PPT</span>
                 </button>
+                <button
+                    onClick={handleExportPDF}
+                    className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded font-semibold transition-colors border border-red-200 ml-1"
+                    title="Download as PDF"
+                >
+                    <i className="pi pi-file-pdf"></i>
+                    <span className="hidden md:inline">PDF</span>
+                </button>
 
                 <div className="flex items-center bg-gray-100 rounded-md p-0.5 mx-1">
                     <button
@@ -1675,6 +1681,12 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                 onInsert={handleCChartInsert}
             />
 
+            <LionChartModal
+                visible={lionChartModalOpen}
+                onHide={() => setLionChartModalOpen(false)}
+                onInsert={handleLionChartInsert}
+            />
+
 
             <ImageGalleryModal
                 isOpen={galleryModalOpen}
@@ -1688,6 +1700,18 @@ const WordToolbar = ({ toolbarId, quillRef, content, title, watermark, setWaterm
                     onClose={() => setScrollMenuOpen(false)} 
                 />
             )}
+
+            <HebrewCalculatorModal
+                isOpen={hebrewCalculatorOpen}
+                onClose={() => setHebrewCalculatorOpen(false)}
+            />
+
+            <GreekCalculatorModal
+                isOpen={greekCalculatorOpen}
+                onClose={() => setGreekCalculatorOpen(false)}
+                onInsert={handleCChartInsert}
+            />
+
 
             <style>{`
                 #${toolbarId} .ql-formats { margin-right: 0; }

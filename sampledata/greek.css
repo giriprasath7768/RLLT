@@ -1,0 +1,389 @@
+/* App.css */
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #020817;
+    color: white;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.app {
+    padding: 20px;
+}
+
+.header {
+    background: linear-gradient(145deg,
+            #081124,
+            #0f1e3b);
+
+    padding: 20px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+
+    border: 1px solid #1d3c6b;
+
+    box-shadow: 0 0 25px rgba(0, 140, 255, 0.2);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 38px;
+    color: #ffd166;
+}
+
+.header p {
+    margin-top: 5px;
+    color: #cdd6f4;
+}
+
+.main-layout {
+    display: flex;
+    gap: 20px;
+}
+
+.left-panel {
+    width: 42%;
+}
+
+.right-panel {
+    width: 58%;
+}
+
+.panel-card {
+    background: linear-gradient(145deg,
+            #071221,
+            #0d1830);
+
+    border-radius: 20px;
+
+    padding: 20px;
+
+    border: 1px solid #19345c;
+
+    box-shadow: 0 0 15px rgba(0, 128, 255, 0.2);
+
+    margin-bottom: 20px;
+}
+
+.panel-card h2 {
+    margin-top: 0;
+    color: #5be7ff;
+}
+
+.alphabet-grid {
+    display: grid;
+
+    grid-template-columns: repeat(6, 1fr);
+
+    gap: 12px;
+}
+
+.alphabet-card {
+    padding: 15px;
+
+    border-radius: 16px;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.alphabet-card:hover {
+    transform: scale(1.05);
+}
+
+.symbol {
+    font-size: 34px;
+    font-weight: bold;
+}
+
+.name {
+    margin-top: 10px;
+}
+
+.value {
+    margin-top: 10px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.blue {
+    background: linear-gradient(145deg,
+            #004b8d,
+            #008cff);
+}
+
+.teal {
+    background: linear-gradient(145deg,
+            #006d77,
+            #00d4ff);
+}
+
+.green {
+    background: linear-gradient(145deg,
+            #006400,
+            #00cc66);
+}
+
+.gold {
+    background: linear-gradient(145deg,
+            #7a5c00,
+            #ffc300);
+}
+
+.orange {
+    background: linear-gradient(145deg,
+            #9b3d00,
+            #ff7b00);
+}
+
+.red {
+    background: linear-gradient(145deg,
+            #7a0000,
+            #ff4d4d);
+}
+
+.pink {
+    background: linear-gradient(145deg,
+            #7b0058,
+            #ff1493);
+}
+
+.purple {
+    background: linear-gradient(145deg,
+            #4b0082,
+            #b266ff);
+}
+
+.indigo {
+    background: linear-gradient(145deg,
+            #240046,
+            #7b2cbf);
+}
+
+.input-row {
+    display: flex;
+    gap: 12px;
+}
+
+.input-row input {
+    flex: 1;
+
+    padding: 18px;
+
+    border-radius: 14px;
+
+    background: black;
+
+    border: none;
+
+    color: white;
+
+    font-size: 42px;
+
+    text-align: center;
+}
+
+.calculate-btn {
+    width: 180px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: linear-gradient(145deg,
+            #6a00ff,
+            #a855f7);
+
+    color: white;
+
+    font-size: 20px;
+
+    cursor: pointer;
+}
+
+.action-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.action-row button,
+.action-row select {
+    flex: 1;
+
+    padding: 12px;
+
+    border-radius: 12px;
+
+    border: none;
+
+    background: #14213d;
+
+    color: white;
+}
+
+.breakdown-grid {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.breakdown-card {
+    min-width: 120px;
+
+    padding: 15px;
+
+    border-radius: 16px;
+
+    text-align: center;
+}
+
+.plus {
+    font-size: 34px;
+    font-weight: bold;
+}
+
+.result-layout {
+    display: flex;
+    gap: 20px;
+}
+
+.result-card {
+    flex: 1;
+    text-align: center;
+}
+
+.main-total {
+    font-size: 110px;
+
+    font-weight: bold;
+
+    color: #bb86fc;
+
+    text-shadow: 0 0 25px #9333ea;
+}
+
+.formula {
+    font-size: 34px;
+    margin-top: 20px;
+}
+
+.formula-total {
+    font-size: 52px;
+
+    color: #00ff99;
+
+    margin-top: 15px;
+
+    font-weight: bold;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.action-buttons button {
+    flex: 1;
+
+    padding: 16px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+    background: linear-gradient(145deg,
+            #1f4068,
+            #3a86ff);
+}
+
+.bottom-layout {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.bottom-layout .panel-card {
+    flex: 1;
+}
+
+.history-item {
+    display: flex;
+
+    justify-content: space-between;
+
+    padding: 12px 0;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.about-card p {
+    line-height: 1.8;
+}
+
+.bottom-info {
+    display: flex;
+    gap: 20px;
+}
+
+.small-card {
+    flex: 1;
+}
+
+.reduced-value {
+    font-size: 70px;
+
+    font-weight: bold;
+
+    color: #38bdf8;
+
+    text-align: center;
+}
+
+@media (max-width: 1200px) {
+    .main-layout {
+        flex-direction: column;
+    }
+
+    .left-panel,
+    .right-panel {
+        width: 100%;
+    }
+
+    .alphabet-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .result-layout,
+    .bottom-layout,
+    .bottom-info,
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .input-row {
+        flex-direction: column;
+    }
+
+    .calculate-btn {
+        width: 100%;
+        height: 60px;
+    }
+}

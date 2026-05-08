@@ -33,10 +33,12 @@ async def verify_admin_or_higher(current_user: User = Depends(get_current_user))
 
 @router.get("/", response_model=List[StudentResponse])
 async def get_students(db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
-    query = select(User, Location.city.label("location_name"), Admin.name.label("admin_name"), StudentGroup.name.label("group_name")) \
+    from app.db.models import StudentTouchCount
+    query = select(User, Location.city.label("location_name"), Location.country.label("location_country"), Admin.name.label("admin_name"), StudentGroup.name.label("group_name"), StudentTouchCount) \
         .outerjoin(Location, User.location_id == Location.id) \
         .outerjoin(Admin, Admin.location_id == Location.id) \
         .outerjoin(StudentGroup, User.group_id == StudentGroup.id) \
+        .outerjoin(StudentTouchCount, User.id == StudentTouchCount.user_id) \
         .where(User.role == UserRole.student)
     
     if current_user.role == UserRole.admin:
@@ -57,7 +59,7 @@ async def get_students(db: AsyncSession = Depends(get_db), current_user: User = 
     
     rows = result.all()
     response_list = []
-    for user_obj, loc_name, adm_name, grp_name in rows:
+    for user_obj, loc_name, loc_country, adm_name, grp_name, touch_count_obj in rows:
         user_dict = {
             "id": user_obj.id,
             "email": user_obj.email,
@@ -76,8 +78,14 @@ async def get_students(db: AsyncSession = Depends(get_db), current_user: User = 
             "activation_email_sent": user_obj.activation_email_sent,
             "created_at": user_obj.created_at,
             "location_name": loc_name,
+            "country": loc_country,
             "admin_name": adm_name,
-            "group_name": grp_name
+            "group_name": grp_name,
+            "touch_counts": {
+                "transformation": touch_count_obj.transformation_touches if touch_count_obj else 0,
+                "team_transformation": touch_count_obj.team_transformation_touches if touch_count_obj else 0,
+                "klt_reading_plan": touch_count_obj.klt_reading_plan_touches if touch_count_obj else 0
+            } if touch_count_obj else None
         }
         response_list.append(user_dict)
     

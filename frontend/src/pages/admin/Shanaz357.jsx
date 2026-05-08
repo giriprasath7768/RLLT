@@ -153,6 +153,25 @@ const Shanaz357 = () => {
     const toast = React.useRef(null);
 
     useEffect(() => {
+        const days = parseInt(enteredDays);
+        if (!days || isNaN(days)) return;
+
+        const mod4Match = rlltDB.find(d => Number(d.module) === 4 && Number(d.day) === days);
+        if (mod4Match) {
+            setMdl(4);
+            setFct(Number(mod4Match.facet));
+            return;
+        }
+
+        const mod5Match = rlltDB.find(d => Number(d.module) === 5 && Number(d.day) === days);
+        if (mod5Match) {
+            setMdl(5);
+            setFct(Number(mod5Match.facet));
+            return;
+        }
+    }, [enteredDays, rlltDB]);
+
+    useEffect(() => {
         axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => setBooksDB(res.data))
             .catch(err => console.error(err));
@@ -189,18 +208,24 @@ const Shanaz357 = () => {
         return `${book.name} - ${count} Chapters - ${formatSum(totalArt)}`;
     };
 
-    const uniqueModules = [...new Set(rlltDB.map(d => d.module))].sort((a, b) => a - b);
+    const uniqueModules = (() => {
+        const unique = [...new Set(rlltDB.map(d => Number(d.module)))];
+        if (!unique.includes(Number(mdl))) unique.push(Number(mdl));
+        return unique.sort((a, b) => a - b);
+    })();
     
     // Derived available options based on selections (1 up to the highest recorded value)
     const availableFacets = (() => {
+        let max = 1;
         const unique = [...new Set(rlltDB.filter(d => Number(d.module) === Number(mdl)).map(d => Number(d.facet)))];
-        const max = unique.length > 0 ? Math.max(...unique) : 1;
+        if (unique.length > 0) max = Math.max(max, ...unique);
         return Array.from({ length: max }, (_, i) => i + 1);
     })();
 
     const availablePhases = (() => {
+        let max = 1;
         const unique = [...new Set(rlltDB.filter(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct)).map(d => Number(d.phase)))];
-        const max = unique.length > 0 ? Math.max(...unique) : 1;
+        if (unique.length > 0) max = Math.max(max, ...unique);
         return Array.from({ length: max }, (_, i) => i + 1);
     })();
 
@@ -223,7 +248,12 @@ const Shanaz357 = () => {
         // Fallback: if exact phase is not found, use any phase's data within the same facet to grab the scheduled days
         currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
     }
-    const eachPhsDays = currentPhaseData ? currentPhaseData.scheduled_value_days : 0;
+    let eachPhsDays = currentPhaseData ? currentPhaseData.scheduled_value_days : 0;
+    if (!eachPhsDays) {
+        const days = parseInt(enteredDays);
+        if (Number(mdl) === 4 && days && days % 40 === 0) eachPhsDays = 40;
+        if (Number(mdl) === 5 && days && days % 30 === 0) eachPhsDays = 30;
+    }
 
     const stats = React.useMemo(() => {
         let bks = selectedBooks.length;
@@ -327,15 +357,24 @@ const Shanaz357 = () => {
         let targetFct = fct;
         let targetPhs = phs;
 
-        const exactMatch = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct) && Number(d.phase) === Number(phs)) 
-            || rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
+        const dVal = parseInt(enteredDays);
+        const mod4Match = rlltDB.find(d => Number(d.module) === 4 && Number(d.day) === dVal);
+        const mod5Match = rlltDB.find(d => Number(d.module) === 5 && Number(d.day) === dVal);
 
-        const chartLength = exactMatch ? parseInt(exactMatch.scheduled_value_days) : parseInt(enteredDays || 0);
+        let chartLength = dVal || 0;
+        let isMainChart = false;
 
-        if (chartLength !== 30 && chartLength !== 40) {
-            toast.current?.show({ severity: 'error', summary: 'Invalid Days', detail: `The scheduled period (${chartLength} days) is not supported. Only 30-day (6 teams) and 40-day (8 teams) charts are supported.` });
-            return;
+        if (mod4Match) {
+            isMainChart = true;
+            chartLength = parseInt(mod4Match.scheduled_value_days) || 40;
+            targetMdl = 4;
+        } else if (mod5Match) {
+            isMainChart = true;
+            chartLength = parseInt(mod5Match.scheduled_value_days) || 30;
+            targetMdl = 5;
         }
+
+        const bannerText = isMainChart ? `MAIN CHART - ${chartLength} DAYS` : `3-5-7 CHART - ${chartLength} DAY CYCLE`;
 
 
 
@@ -446,35 +485,62 @@ const Shanaz357 = () => {
                     else totArtStr = `${m}m`;
                 }
 
-                chunkDays.push({
-                    id: dayCounter,
-                    day: dayCounter,
-                    m1b: bd1.portion,
-                    m1t: bd1.timeStr,
-                    m2b: bd2.portion,
-                    m2t: bd2.timeStr,
-                    m3b: bd3.portion,
-                    m3t: bd3.timeStr,
-                    chap: totChap,
-                    verse: totVerse,
-                    art: totArtStr,
-                    yes: false
-                });
+                if (isMainChart) {
+                    chunkDays.push({
+                        id: dayCounter,
+                        day: dayCounter,
+                        m1b: bd1.portion,
+                        m1t: bd1.timeStr,
+                        m2b: bd2.portion,
+                        m2t: bd2.timeStr,
+                        m3b: bd3.portion,
+                        m3t: bd3.timeStr,
+                        chap: totChap,
+                        verse: totVerse,
+                        art: totArtStr,
+                        yes: false
+                    });
+                } else {
+                    chunkDays.push({
+                        id: `day_${dayCounter}`,
+                        day: dayCounter,
+                        booksData: [bd1, bd2, bd3],
+                        chap: totChap,
+                        verse: totVerse,
+                        art: totArtStr,
+                        artFloat: totArtFloat,
+                        yes: false
+                    });
+                }
                 dayCounter++;
             }
             if (chunkDays.length > 0) {
-                newChunks.push({
-                    id: `chunk_${c + 1}`,
-                    team: `TEAM -${c + 1}`,
-                    phase: `PHASE - 1/1`,
-                    promiseLabel: "GOD'S PROMISES :",
-                    promises: "ENTER GOD'S PROMISSES HERE",
-                    promiseInput: "",
-                    h1: "",
-                    h2: "",
-                    h3: "",
-                    days: chunkDays
-                });
+                if (isMainChart) {
+                    newChunks.push({
+                        id: `chunk_${c + 1}`,
+                        team: `TEAM -${c + 1}`,
+                        phase: `PHASE - 1/1`,
+                        promiseLabel: "GOD'S PROMISES :",
+                        promises: "ENTER GOD'S PROMISSES HERE",
+                        promiseInput: "",
+                        h1: "",
+                        h2: "",
+                        h3: "",
+                        days: chunkDays
+                    });
+                } else {
+                    const maxPhases = availablePhases.length;
+                    newChunks.push({
+                        id: `chunk_${c + 1}`,
+                        team: `TEAM -${c + 1}`,
+                        phase: `MDL ${targetMdl}: FCT ${targetFct}: PHS - ${targetPhs}/${maxPhases}`,
+                        h_books: Array(3).fill(''),
+                        promiseLabel: "GOD'S PROMISES :",
+                        promises: "ENTER GOD'S PROMISSES HERE",
+                        promiseInput: "",
+                        days: chunkDays
+                    });
+                }
             }
         }
 
@@ -482,7 +548,7 @@ const Shanaz357 = () => {
         formData.append("module", targetMdl);
         formData.append("facet", targetFct);
         formData.append("phase", targetPhs);
-        formData.append("banner_text", `MAIN CHART - ${chartLength} DAYS`);
+        formData.append("banner_text", bannerText);
         formData.append("t_label", "T");
         formData.append("state_payload", JSON.stringify(newChunks));
 
@@ -493,7 +559,11 @@ const Shanaz357 = () => {
             });
             toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Chart Automated Successfully!', life: 2000 });
             setTimeout(() => {
-                navigate(`/admin/charts?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
+                if (isMainChart) {
+                    navigate(`/admin/charts?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
+                } else {
+                    navigate(`/admin/chart-creation/357-chart?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
+                }
             }, 1000);
         } catch (err) {
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to generate chart', life: 3000 });

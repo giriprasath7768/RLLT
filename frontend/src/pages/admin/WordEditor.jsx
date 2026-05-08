@@ -1,395 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ReactQuill, { Quill } from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
-import WordToolbar from '../../components/admin/WordToolbar';
-import WordContextBar from '../../components/admin/WordContextBar';
-import SavedDocumentsModal from '../../components/admin/SavedDocumentsModal';
 import axios from 'axios';
+import WordToolbar from '../../components/admin/WordToolbar';
+import SavedDocumentsModal from '../../components/admin/SavedDocumentsModal';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import TextStyle from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import TextAlign from '@tiptap/extension-text-align';
+import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
+import FontFamily from '@tiptap/extension-font-family';
+import { ResizableImage, ShapeNode, TextBoxNode, WisdomMark, TextEffectMark } from '../../components/admin/tiptap-extensions/extensions';
 
-import ImageResizerOverlay from '../../components/admin/ImageResizerOverlay';
-
-/* Custom Resize Overlay replaces blotFormatter
-if (window.QuillBlotFormatter && window.QuillBlotFormatter.default) {
-    Quill.register('modules/blotFormatter', window.QuillBlotFormatter.default);
-}
-*/
-
-const Font = Quill.import('formats/font');
-Font.whitelist = ['sans-serif', 'serif', 'monospace', 'bungee-shade', 'nabla', 'rampart-one', 'bungee', 'londrina', 'alfa-slab-one', 'rubik', 'anton'];
-Quill.register(Font, true);
-
-const Parchment = Quill.import('parchment');
-const StyleAttributor = Parchment.StyleAttributor || Parchment.Attributor?.Style;
-
-// Custom Size Attributor to support numerical px values
-const SizeStyle = new StyleAttributor('size', 'font-size', {
-    scope: Parchment.Scope.INLINE
-});
-Quill.register(SizeStyle, true);
-
-const OutlineStyle = new StyleAttributor('outline', '-webkit-text-stroke', {
-    scope: Parchment.Scope.INLINE,
-});
-const ShadowStyle = new StyleAttributor('shadow', 'text-shadow', {
-    scope: Parchment.Scope.INLINE,
-});
-
-const PositionStyle = new StyleAttributor('position', 'position', { scope: Parchment.Scope.INLINE });
-const LeftStyle = new StyleAttributor('left', 'left', { scope: Parchment.Scope.INLINE });
-const TopStyle = new StyleAttributor('top', 'top', { scope: Parchment.Scope.INLINE });
-const ZIndexStyle = new StyleAttributor('zIndex', 'z-index', { scope: Parchment.Scope.INLINE });
-
-Quill.register(OutlineStyle, true);
-Quill.register(ShadowStyle, true);
-Quill.register(PositionStyle, true);
-Quill.register(LeftStyle, true);
-Quill.register(TopStyle, true);
-Quill.register(ZIndexStyle, true);
-
-// Custom format for Wisdom Highlights
-const Inline = Quill.import('blots/inline');
-class WisdomFormat extends Inline {
-    static create(value) {
-        let node = super.create();
-        if (value === false) return node;
-
-        const [mode, color, styleOption] = value.split('|');
-
-        let bStyle = 'solid';
-        let bWidth = '2px';
-        if (styleOption === 'double-3px') { bStyle = 'double'; bWidth = '4px'; }
-        else if (styleOption === 'solid-3px') { bStyle = 'solid'; bWidth = '4px'; }
-        else if (styleOption === 'solid-1px') { bStyle = 'solid'; bWidth = '2px'; }
-        else if (styleOption === 'dotted-2px') { bStyle = 'dotted'; bWidth = '3px'; }
-        else if (styleOption === 'dashed-2px') { bStyle = 'dashed'; bWidth = '3px'; }
-        else if (styleOption?.startsWith('line-')) { bWidth = `${styleOption.split('-')[1]}`; }
-
-        if (mode === 'square' || mode === 'round' || mode === 'circle') {
-            node.style.padding = mode === 'square' ? '1px 3px' : '1px 4px';
-            if (mode === 'round') node.style.borderRadius = '8px';
-            if (mode === 'circle') node.style.borderRadius = '9999px';
-            
-            if (styleOption === 'inner-shadow') {
-                node.style.boxShadow = `inset 0 0 12px ${color}`;
-            } else if (styleOption === 'outer-shadow') {
-                node.style.boxShadow = `0 0 12px ${color}`;
-            } else {
-                node.style.borderStyle = bStyle;
-                node.style.borderWidth = bWidth;
-                node.style.borderColor = color;
-            }
-        } else if (mode === 'underline') {
-            node.style.borderBottomStyle = bStyle;
-            node.style.borderBottomWidth = bWidth;
-            node.style.borderBottomColor = color;
-            node.style.paddingBottom = '2px';
-        } else if (mode === 'highlight') {
-            let thicknessRatio = 1;
-            if (styleOption && styleOption.startsWith('hl-')) {
-                const level = parseInt(styleOption.split('-')[1]);
-                thicknessRatio = level / 5;
-            }
-            
-            const hexToRgba = (hex, a) => {
-                const r = parseInt(hex.slice(1,3), 16);
-                const g = parseInt(hex.slice(3,5), 16);
-                const b = parseInt(hex.slice(5,7), 16);
-                return `rgba(${r},${g},${b},${a})`;
-            };
-            
-            if (thicknessRatio < 1) {
-                const percent = (1 - thicknessRatio) * 100;
-                node.style.background = `linear-gradient(to bottom, transparent ${percent}%, ${hexToRgba(color, 0.35)} ${percent}%, ${hexToRgba(color, 0.35)} 100%)`;
-            } else {
-                node.style.backgroundColor = hexToRgba(color, 0.35);
-            }
-            // node.style.mixBlendMode = 'multiply'; // Might not work well for inline text printing
-        }
-
-        node.setAttribute('data-wisdom', value);
-        return node;
-    }
-
-    format(name, value) {
-        if (name === this.statics.blotName && value) {
-            const [mode, color, styleOption] = value.split('|');
-
-            // Reset previous styles just in case
-            this.domNode.style.padding = '';
-            this.domNode.style.borderRadius = '';
-            this.domNode.style.boxShadow = '';
-            this.domNode.style.borderStyle = '';
-            this.domNode.style.borderWidth = '';
-            this.domNode.style.borderColor = '';
-            this.domNode.style.borderBottomStyle = '';
-            this.domNode.style.borderBottomWidth = '';
-            this.domNode.style.borderBottomColor = '';
-            this.domNode.style.paddingBottom = '';
-            this.domNode.style.background = '';
-            this.domNode.style.backgroundColor = '';
-
-            let bStyle = 'solid';
-            let bWidth = '2px';
-            if (styleOption === 'double-3px') { bStyle = 'double'; bWidth = '4px'; }
-            else if (styleOption === 'solid-3px') { bStyle = 'solid'; bWidth = '4px'; }
-            else if (styleOption === 'solid-1px') { bStyle = 'solid'; bWidth = '2px'; }
-            else if (styleOption === 'dotted-2px') { bStyle = 'dotted'; bWidth = '3px'; }
-            else if (styleOption === 'dashed-2px') { bStyle = 'dashed'; bWidth = '3px'; }
-            else if (styleOption?.startsWith('line-')) { bWidth = `${styleOption.split('-')[1]}`; }
-
-            if (mode === 'square' || mode === 'round' || mode === 'circle') {
-                this.domNode.style.padding = mode === 'square' ? '1px 3px' : '1px 4px';
-                if (mode === 'round') this.domNode.style.borderRadius = '8px';
-                if (mode === 'circle') this.domNode.style.borderRadius = '9999px';
-                
-                if (styleOption === 'inner-shadow') {
-                    this.domNode.style.boxShadow = `inset 0 0 12px ${color}`;
-                } else if (styleOption === 'outer-shadow') {
-                    this.domNode.style.boxShadow = `0 0 12px ${color}`;
-                } else {
-                    this.domNode.style.borderStyle = bStyle;
-                    this.domNode.style.borderWidth = bWidth;
-                    this.domNode.style.borderColor = color;
-                }
-            } else if (mode === 'underline') {
-                this.domNode.style.borderBottomStyle = bStyle;
-                this.domNode.style.borderBottomWidth = bWidth;
-                this.domNode.style.borderBottomColor = color;
-                this.domNode.style.paddingBottom = '2px';
-            } else if (mode === 'highlight') {
-                let thicknessRatio = 1;
-                if (styleOption && styleOption.startsWith('hl-')) {
-                    const level = parseInt(styleOption.split('-')[1]);
-                    thicknessRatio = level / 5;
-                }
-                
-                const hexToRgba = (hex, a) => {
-                    const r = parseInt(hex.slice(1,3), 16);
-                    const g = parseInt(hex.slice(3,5), 16);
-                    const b = parseInt(hex.slice(5,7), 16);
-                    return `rgba(${r},${g},${b},${a})`;
-                };
-                
-                if (thicknessRatio < 1) {
-                    const percent = (1 - thicknessRatio) * 100;
-                    this.domNode.style.background = `linear-gradient(to bottom, transparent ${percent}%, ${hexToRgba(color, 0.35)} ${percent}%, ${hexToRgba(color, 0.35)} 100%)`;
-                } else {
-                    this.domNode.style.backgroundColor = hexToRgba(color, 0.35);
-                }
-            }
-
-            this.domNode.setAttribute('data-wisdom', value);
-        } else {
-            super.format(name, value);
-        }
-    }
-
-    static formats(node) {
-        return node.getAttribute('data-wisdom');
-    }
-}
-WisdomFormat.blotName = 'wisdom';
-WisdomFormat.tagName = 'span';
-Quill.register(WisdomFormat, true);
-
-// Custom format for 3D/4D/5D Text Effects
-class TextEffectFormat extends Inline {
-    static create(value) {
-        let node = super.create();
-        if (value === false) return node;
-
-        const [mode, color] = value.split('|');
-        let c = color || '#3b82f6'; // default blue
-        
-        if (mode === '3d') {
-            node.style.textShadow = `1px 1px 0px ${c}, 2px 2px 0px ${c}, 3px 3px 0px ${c}, 4px 4px 3px rgba(0,0,0,0.3)`;
-        } else if (mode === '4d') {
-            node.style.textShadow = `1px 1px 0px ${c}, 2px 2px 0px ${c}, 3px 3px 0px ${c}, 4px 4px 0px ${c}, 5px 5px 0px ${c}, 6px 6px 4px rgba(0,0,0,0.4)`;
-        } else if (mode === '5d') {
-            node.style.textShadow = `1px 1px 0px ${c}, 2px 2px 0px ${c}, 3px 3px 0px ${c}, 4px 4px 0px ${c}, 5px 5px 0px ${c}, 6px 6px 0px ${c}, 7px 7px 0px ${c}, 8px 8px 0px ${c}, 9px 9px 5px rgba(0,0,0,0.5)`;
-        }
-        
-        node.style.fontWeight = '900';
-        node.setAttribute('data-texteffect', value);
-        return node;
-    }
-
-    format(name, value) {
-        if (name === this.statics.blotName && value) {
-            const [mode, color] = value.split('|');
-            let c = color || '#3b82f6';
-            if (mode === '3d') {
-                this.domNode.style.textShadow = `1px 1px 0px ${c}, 2px 2px 0px ${c}, 3px 3px 0px ${c}, 4px 4px 3px rgba(0,0,0,0.3)`;
-            } else if (mode === '4d') {
-                this.domNode.style.textShadow = `1px 1px 0px ${c}, 2px 2px 0px ${c}, 3px 3px 0px ${c}, 4px 4px 0px ${c}, 5px 5px 0px ${c}, 6px 6px 4px rgba(0,0,0,0.4)`;
-            } else if (mode === '5d') {
-                this.domNode.style.textShadow = `1px 1px 0px ${c}, 2px 2px 0px ${c}, 3px 3px 0px ${c}, 4px 4px 0px ${c}, 5px 5px 0px ${c}, 6px 6px 0px ${c}, 7px 7px 0px ${c}, 8px 8px 0px ${c}, 9px 9px 5px rgba(0,0,0,0.5)`;
-            }
-            this.domNode.setAttribute('data-texteffect', value);
-        } else {
-            super.format(name, value);
-        }
-    }
-
-    static formats(node) {
-        return node.getAttribute('data-texteffect');
-    }
-}
-TextEffectFormat.blotName = 'texteffect';
-TextEffectFormat.tagName = 'span';
-TextEffectFormat.className = 'custom-text-effect';
-Quill.register(TextEffectFormat, true);
-
-// Custom format for watermark (CSS background)
-const CustomToolbarId = 'tnt7-word-toolbar';
-
-// Custom format for Draggable Text Boxes
-const BlockEmbed = Quill.import('blots/block/embed');
-class TextBoxBlot extends BlockEmbed {
-    static create(value) {
-        let node = super.create();
-        node.classList.add('custom-textbox');
-        node.setAttribute('contenteditable', 'false');
-        
-        let textarea = document.createElement('textarea');
-        textarea.value = value.text || '';
-        textarea.placeholder = 'Type text here...';
-        textarea.classList.add('ql-ui'); // Crucial: prevents Quill from observing DOM mutations here
-        
-        textarea.style.width = '100%';
-        textarea.style.height = '100%';
-        textarea.style.resize = 'none';
-        textarea.style.background = 'transparent';
-        textarea.style.border = 'none';
-        textarea.style.outline = 'none';
-        textarea.style.padding = '8px';
-        textarea.style.boxSizing = 'border-box';
-        textarea.style.fontFamily = 'inherit';
-        textarea.style.overflow = 'hidden';
-        textarea.textContent = value.text || ''; // Ensure innerHTML captures it
-        
-        textarea.addEventListener('keydown', (e) => {
-            e.stopPropagation();
-        });
-        
-        textarea.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-            // Force focus asynchronously to beat Quill's selection restoration
-            setTimeout(() => {
-                textarea.focus();
-            }, 0);
-        });
-        
-        textarea.addEventListener('click', (e) => {
-            e.stopPropagation();
-            textarea.focus();
-        });
-        
-        // Do not update DOM on 'input' to prevent cursor jumping
-        textarea.addEventListener('input', (e) => {
-            // just let native textarea handle it
-        });
-        
-        textarea.addEventListener('blur', (e) => {
-            textarea.textContent = e.target.value;
-        });
-        
-        node.appendChild(textarea);
-        
-        if (value.style) node.setAttribute('style', value.style);
-        if (value.textareaStyle) textarea.setAttribute('style', value.textareaStyle);
-        
-        // Default positioning if none provided
-        if (!value.style && !node.getAttribute('style')) {
-            node.style.position = 'absolute';
-            node.style.left = '100px';
-            node.style.top = '100px';
-            node.style.width = '200px';
-            node.style.height = '100px';
-            node.style.zIndex = '50';
-            node.style.backgroundColor = 'transparent'; // default transparent background
-        }
-        
-        if (value.puzzle) {
-            node.setAttribute('data-puzzle', value.puzzle);
-            let overlay = document.createElement('div');
-            overlay.classList.add('puzzle-overlay');
-            overlay.style.position = 'absolute';
-            overlay.style.inset = '0';
-            overlay.style.pointerEvents = 'none';
-            overlay.style.backgroundImage = `url(${value.puzzle})`;
-            overlay.style.backgroundSize = '100% 100%';
-            overlay.style.zIndex = '10'; // Ensure it's over the textarea
-            node.appendChild(overlay);
-        }
-
-        return node;
-    }
-    
-    static value(node) {
-        const textarea = node.querySelector('textarea');
-        return {
-            text: textarea ? textarea.value : '',
-            style: node.getAttribute('style') || '',
-            textareaStyle: textarea ? textarea.getAttribute('style') : '',
-            puzzle: node.getAttribute('data-puzzle') || ''
-        };
-    }
-}
-TextBoxBlot.blotName = 'textbox';
-TextBoxBlot.tagName = 'div';
-Quill.register(TextBoxBlot, true);
-
-// Custom format for Draggable Shapes
-class ShapeBlot extends BlockEmbed {
-    static create(value) {
-        let node = super.create();
-        node.classList.add('custom-shape');
-        node.setAttribute('contenteditable', 'false');
-        
-        let svgWrapper = document.createElement('div');
-        svgWrapper.style.width = '100%';
-        svgWrapper.style.height = '100%';
-        svgWrapper.style.pointerEvents = 'none'; // Let the parent node handle events
-        svgWrapper.innerHTML = value.svg || '';
-        
-        const svgElement = svgWrapper.querySelector('svg');
-        if (svgElement) {
-            svgElement.style.width = '100%';
-            svgElement.style.height = '100%';
-            svgElement.setAttribute('preserveAspectRatio', 'none');
-            // Remove hardcoded width/height so it fills
-            svgElement.removeAttribute('width');
-            svgElement.removeAttribute('height');
-        }
-        
-        node.appendChild(svgWrapper);
-        
-        if (value.style) node.setAttribute('style', value.style);
-        
-        if (!value.style && !node.getAttribute('style')) {
-            node.style.position = 'absolute';
-            node.style.left = '100px';
-            node.style.top = '100px';
-            node.style.width = '100px';
-            node.style.height = '100px';
-            node.style.zIndex = '50';
-        }
-
-        return node;
-    }
-    
-    static value(node) {
-        const svgWrapper = node.querySelector('div');
-        return {
-            svg: svgWrapper ? svgWrapper.innerHTML : '',
-            style: node.getAttribute('style') || ''
-        };
-    }
-}
-ShapeBlot.blotName = 'shape';
-ShapeBlot.tagName = 'div';
-Quill.register(ShapeBlot, true);
+// Phase 3 Migration: Tiptap NodeViews
+// Custom Quill Blots have been completely replaced with React-driven Tiptap NodeViews.
 
 const PAGE_SIZES = {
     'A4': { name: 'A4', width: '210mm', height: '297mm', padding: '20mm', linePx: 1122 },
@@ -439,39 +63,80 @@ const WordEditor = () => {
             .catch(console.error);
     }, []);
 
-    useEffect(() => {
-        if (quillRef.current) {
-            const editor = quillRef.current.getEditor();
-            editor.root.setAttribute('spellcheck', spellCheckEnabled.toString());
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            TextStyle,
+            Color,
+            TextAlign.configure({ types: ['heading', 'paragraph'] }),
+            ResizableImage,
+            ShapeNode,
+            TextBoxNode,
+            WisdomMark,
+            TextEffectMark,
+            Link.configure({ openOnClick: false }),
+            FontFamily
+        ],
+        content: content,
+        onUpdate: ({ editor }) => {
+            handleContentChange(editor.getHTML());
         }
-    }, [spellCheckEnabled]);
+    });
+
+    // We keep a fake quillRef to not crash WordToolbar during Phase 2 migration
+    useEffect(() => {
+        if (!quillRef.current) {
+            quillRef.current = {
+                getEditor: () => ({
+                    on: () => {},
+                    off: () => {},
+                    format: () => {},
+                    getFormat: () => ({}),
+                    getSelection: () => ({ index: 0, length: 0 }),
+                    getLength: () => 0,
+                    insertText: () => {},
+                    insertEmbed: () => {},
+                    deleteText: () => {},
+                    setSelection: () => {},
+                    root: {
+                        addEventListener: () => {},
+                        removeEventListener: () => {},
+                        setAttribute: () => {},
+                        blur: () => {},
+                        innerHTML: ''
+                    }
+                })
+            };
+        }
+    }, []);
+
+    // Update Tiptap if external content changes
+    useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            // we don't want to replace content continuously
+            // editor.commands.setContent(content, false)
+        }
+    }, [content, editor]);
 
     useEffect(() => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        
-        // IRON SHIELD: Capture-phase focus trap to prevent focus-theft
-        const handleFocusCapture = (e) => {
-            if (window.isChartEditing || isChartEditing) {
-                // Check if the focus attempt came from a child element we want to allow (none currently)
-                // Otherwise, immediately kill the event and force focus away
-                e.stopPropagation();
-                editor.root.blur();
-            }
-        };
+        // Tiptap doesn't natively use spellcheck attribute at root quite the same way, but we can set it.
+        if (editor) {
+            editor.view.dom.setAttribute('spellcheck', spellCheckEnabled.toString());
+        }
+    }, [spellCheckEnabled, editor]);
 
-        editor.root.addEventListener('focus', handleFocusCapture, true);
-        
+    useEffect(() => {
+        // Mock window.forceWordEditorSync
         window.forceWordEditorSync = (newContent) => {
             setContent(newContent);
+            if (editor) editor.commands.setContent(newContent, false);
             if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
             debounceTimeout.current = setTimeout(() => triggerAutoSave({ title, content: newContent, watermark_url: watermark, country_code: selectedCountry?.code, category, language, notes }, documentId), 1000);
         };
         return () => {
-            editor.root.removeEventListener('focus', handleFocusCapture, true);
             window.forceWordEditorSync = null;
         };
-    }, [isChartEditing, title, watermark, selectedCountry, category, language, notes, documentId]);
+    }, [isChartEditing, title, watermark, selectedCountry, category, language, notes, documentId, editor]);
 
     const groupedBooks = React.useMemo(() => {
         const groups = {};
@@ -491,15 +156,9 @@ const WordEditor = () => {
     }, [expandedBookId, chaptersDB]);
 
     const handleVerseInsert = (book, chapter, verseNum) => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        editor.focus();
-        let cursorPosition = editor.getSelection()?.index;
-        if (cursorPosition === undefined) cursorPosition = editor.getLength();
-
+        if (!editor) return;
         const citation = `${book.name} ${chapter.chapter_number}:${verseNum} `;
-        editor.insertText(cursorPosition, citation);
-        editor.setSelection(cursorPosition + citation.length);
+        editor.chain().focus().insertContent(citation).run();
         setIsSidebarOpen(false);
     };
 
@@ -550,12 +209,6 @@ const WordEditor = () => {
         }
     };
 
-    // Quill inner modules config
-    const modules = {
-        toolbar: {
-            container: `#${CustomToolbarId}`
-        }
-    };
 
     const triggerAutoSave = async (payload, currentDocId) => {
         setIsSaving(true);
@@ -618,34 +271,8 @@ const WordEditor = () => {
     }, [language]);
 
     const insertMapIntoDocument = () => {
-        if (!quillRef.current || !mapUrl) return;
-        const editor = quillRef.current.getEditor();
-        const delta = editor.getContents();
-
-        let existingMapIndex = -1;
-        let currentIndex = 0;
-
-        // Traverse exactly where the old SVG Map is sitting
-        for (let op of delta.ops) {
-            if (op.insert && typeof op.insert === 'object' && op.insert.image && op.insert.image.startsWith('data:image/svg+xml')) {
-                existingMapIndex = currentIndex;
-                break;
-            }
-            currentIndex += typeof op.insert === 'string' ? op.insert.length : 1;
-        }
-
-        if (existingMapIndex !== -1) {
-            // Delete exactly 1 block of image memory and overwrite it inline
-            editor.deleteText(existingMapIndex, 1);
-            editor.insertEmbed(existingMapIndex, 'image', mapUrl);
-            editor.setSelection(existingMapIndex + 1);
-        } else {
-            // Drop normally if document doesn't already contain a map
-            const cursorPosition = editor.getSelection()?.index || editor.getLength();
-            editor.insertEmbed(cursorPosition, 'image', mapUrl);
-            editor.setSelection(cursorPosition + 1);
-        }
-
+        if (!editor || !mapUrl) return;
+        editor.chain().focus().setImage({ src: mapUrl }).run();
         setMapModalOpen(false);
     };
 
@@ -678,102 +305,31 @@ const WordEditor = () => {
         };
     }, []);
 
-    // Custom Element Selection handling for our Drag/Resize Overlay
+    // Element Selection handling for Drag/Resize Overlay (Simplified for Phase 1)
     useEffect(() => {
         const handleElementSelection = (e) => {
-            const textBoxNode = e.target.closest('.custom-textbox');
-            const shapeNode = e.target.closest('.custom-shape');
             if (e.target.tagName === 'IMG') {
                 setSelectedImage(e.target);
-            } else if (textBoxNode) {
-                setSelectedImage(textBoxNode);
-            } else if (shapeNode) {
-                setSelectedImage(shapeNode);
             } else {
                 setSelectedImage(null);
             }
         };
 
-        if (quillRef.current) {
-            const editor = quillRef.current.getEditor();
-            editor.root.addEventListener('click', handleElementSelection);
-            editor.root.addEventListener('touchstart', handleElementSelection);
+        if (editor) {
+            editor.view.dom.addEventListener('click', handleElementSelection);
+            editor.view.dom.addEventListener('touchstart', handleElementSelection);
         }
 
         return () => {
-            if (quillRef.current) {
-                const editor = quillRef.current.getEditor();
-                editor.root.removeEventListener('click', handleElementSelection);
-                editor.root.removeEventListener('touchstart', handleElementSelection);
+            if (editor) {
+                editor.view.dom.removeEventListener('click', handleElementSelection);
+                editor.view.dom.removeEventListener('touchstart', handleElementSelection);
             }
         };
-    }, []);
+    }, [editor]);
 
-    // Intercept Quill Toolbar Formats to apply them to the selected TextBox instead!
-    useEffect(() => {
-        if (!quillRef.current) return;
-        const editor = quillRef.current.getEditor();
-        const originalFormat = editor.format.bind(editor);
-
-        editor.format = (name, value, source) => {
-            if (selectedImage && selectedImage.classList.contains('custom-textbox')) {
-                const textarea = selectedImage.querySelector('textarea');
-                if (textarea) {
-                    if (name === 'font') textarea.style.fontFamily = value;
-                    else if (name === 'size') textarea.style.fontSize = value;
-                    else if (name === 'color') textarea.style.color = value;
-                    else if (name === 'background') selectedImage.style.backgroundColor = value;
-                    else if (name === 'bold') textarea.style.fontWeight = value ? 'bold' : 'normal';
-                    else if (name === 'italic') textarea.style.fontStyle = value ? 'italic' : 'normal';
-                    else if (name === 'underline') textarea.style.textDecoration = value ? 'underline' : 'none';
-                    else if (name === 'align') textarea.style.textAlign = value;
-                    
-                    // Save to inline style so it persists
-                    selectedImage.setAttribute('style', selectedImage.getAttribute('style') || '');
-                    
-                    // Trigger save
-                    const index = editor.getLength();
-                    editor.insertText(index, '\n');
-                    editor.deleteText(index, 1);
-                    return; 
-                }
-            } else if (selectedImage && selectedImage.classList.contains('custom-shape')) {
-                const svg = selectedImage.querySelector('svg');
-                if (svg) {
-                    if (name === 'color') {
-                        const newColor = value || 'currentColor';
-                        svg.setAttribute('stroke', newColor);
-                        svg.querySelectorAll('path, rect, circle, polygon, ellipse, line, polyline').forEach(el => {
-                            if (el.hasAttribute('stroke') && el.getAttribute('stroke') !== 'none') {
-                                el.setAttribute('stroke', newColor);
-                            }
-                        });
-                    }
-                    else if (name === 'background') {
-                        const newFill = value || 'none';
-                        svg.setAttribute('fill', newFill);
-                        svg.querySelectorAll('path, rect, circle, polygon, ellipse, line, polyline').forEach(el => {
-                            if (el.hasAttribute('fill') && el.getAttribute('fill') !== 'none') {
-                                el.setAttribute('fill', newFill);
-                            }
-                        });
-                    }
-                    
-                    selectedImage.setAttribute('style', selectedImage.getAttribute('style') || '');
-                    
-                    const index = editor.getLength();
-                    editor.insertText(index, '\n');
-                    editor.deleteText(index, 1);
-                    return;
-                }
-            }
-            return originalFormat(name, value, source);
-        };
-
-        return () => {
-            editor.format = originalFormat;
-        };
-    }, [selectedImage]);
+    // Tiptap format interceptor disabled for now.
+    // In Phase 3, NodeViews will handle their own internal styling instead of toolbar interception.
 
     const UN_COUNTRIES = "AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF BI CV KH CM CA CF TD CL CN CO KM CG CD CR CI HR CU CY CZ DK DJ DM DO EC EG SV GQ ER EE SZ ET FJ FI FR GA GM GE DE GH GR GD GT GN GW GY HT HN HU IS IN ID IR IQ IE IL IT JM JP JO KZ KE KI KP KR KW KG LA LV LB LS LR LY LI LT LU MG MW MY MV ML MT MH MR MU MX FM MD MC MN ME MA MZ MM NA NR NP NL NZ NI NE NG MK NO OM PK PW PA PG PY PE PH PL PT QA RO RU RW KN LC VC WS SM ST SA SN RS SC SL SG SK SI SB SO ZA SS ES LK SD SR SE CH SY TJ TZ TH TG TO TT TN TR TM TV UG UA AE GB US UY UZ VU VE VN YE ZM ZW".split(' ');
     const getFlagEmoji = (cc) => cc.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
@@ -828,8 +384,9 @@ const WordEditor = () => {
                     handleOpenMap={handleOpenMap}
                     UN_COUNTRIES={UN_COUNTRIES}
                     regionNames={regionNames}
-                    toolbarId={CustomToolbarId}
+                    toolbarId="tnt7-word-toolbar"
                     quillRef={quillRef}
+                    tiptapEditor={editor}
                     content={content}
                     title={title}
                     setWatermark={setWatermark}
@@ -877,15 +434,11 @@ const WordEditor = () => {
                             }}
                         />
                     )}
-                    <div className="relative w-full flex-grow flex flex-col cursor-text" onClick={(e) => { if (e.target === e.currentTarget && quillRef.current) quillRef.current.getEditor().focus(); }}>
-                        <ReactQuill
-                            ref={quillRef}
-                            theme="snow"
-                            value={content}
-                            onChange={handleContentChange}
-                            modules={modules}
+                    <div className="relative w-full flex-grow flex flex-col cursor-text" onClick={(e) => { if (e.target === e.currentTarget && editor) editor.commands.focus(); }}>
+                        <EditorContent 
+                            editor={editor} 
                             readOnly={isChartEditing}
-                            className="border-none relative z-10 bg-transparent flex-grow flex flex-col"
+                            className="border-none relative z-10 bg-transparent flex-grow flex flex-col min-h-full tiptap-editor-container"
                         />
 
                         {/* IRON SHIELD: Physical interaction blocker */}
@@ -896,13 +449,6 @@ const WordEditor = () => {
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                             />
                         )}
-                        
-                        <ImageResizerOverlay 
-                            selectedElement={selectedImage}
-                            setSelectedImage={setSelectedImage}
-                            quillRef={quillRef}
-                            zoomLevel={zoomLevel}
-                        />
                     </div>
                 </div>
             </div>
@@ -949,9 +495,9 @@ const WordEditor = () => {
                 </div>
             )}
 
-            {/* Hidden styles to override Quill border within our "page" & strict A4 printing overrides */}
+            {/* Hidden styles to override Tiptap border within our "page" & strict A4 printing overrides */}
             <style>{`
-                .ql-container.ql-snow { 
+                .tiptap-editor-container { 
                     border: none !important; 
                     height: auto !important; 
                     overflow: visible !important; 
@@ -959,7 +505,7 @@ const WordEditor = () => {
                     flex-direction: column !important;
                     flex-grow: 1 !important;
                 }
-                .ql-editor { 
+                .tiptap { 
                     padding: 0 !important; 
                     min-height: 100%;
                     flex-grow: 1;
@@ -967,6 +513,9 @@ const WordEditor = () => {
                     font-size: 16px;
                     overflow-y: visible !important;
                     height: auto !important;
+                }
+                .tiptap:focus {
+                    outline: none !important;
                 }
                 
                 @media print {

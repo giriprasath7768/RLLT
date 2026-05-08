@@ -53,6 +53,8 @@ import DashboardStudent from './pages/student/DashboardStudent';
 import StudentAssessmentResult from './pages/student/StudentAssessmentResult';
 import StudentChartListing from './pages/student/StudentChartListing';
 import StudentPlayers from './pages/student/StudentPlayers';
+import StudentSummaryPrintView from './pages/student/StudentSummaryPrintView';
+import AdminSummaryPrintView from './pages/admin/AdminSummaryPrintView';
 import Recordings from './pages/Recordings';
 import WordEditor from './pages/admin/WordEditor';
 import BookIndex from './pages/admin/BookIndex';
@@ -67,6 +69,7 @@ import ClassroomQnA from './pages/admin/ClassroomQnA';
 import ClassroomAssignments from './pages/admin/ClassroomAssignments';
 import EvaluateAssignments from './pages/admin/EvaluateAssignments';
 import Shanaz357 from './pages/admin/Shanaz357';
+import Settings from './pages/admin/Settings';
 
 // Dashboard Components
 const DashboardSuperAdmin = () => (
@@ -183,7 +186,7 @@ const AppRoutes = () => {
                 {/* Admin/SuperAdmin Restricted Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} />}>
                     <Route path="/admin/manage-leaders" element={<ManageLeader />} />
-                    <Route path="/admin/settings" element={<div className="p-10"><h1 className="text-2xl font-bold">Settings</h1></div>} />
+                    <Route path="/admin/settings" element={<Settings />} />
                     <Route path="/admin/ttom-users" element={<TTOMRegisteredUsers />} />
                 </Route>
 
@@ -223,6 +226,14 @@ const AppRoutes = () => {
                     <Route path="/admin/recordings" element={<Recordings />} />
                     <Route path="/admin/screen-recorder" element={<ScreenRecorder />} />
                 </Route>
+            </Route>
+            
+            {/* Standalone PDF Print Views (No Layout) */}
+            <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'leader']} />}>
+                <Route path="/admin/assessment-dashboard/:studentId/summary-print" element={<AdminSummaryPrintView />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+                <Route path="/dashboard/student/summary-print" element={<StudentSummaryPrintView />} />
             </Route>
 
             {/* Student Dashboard Layout mapped for 'student' role */}

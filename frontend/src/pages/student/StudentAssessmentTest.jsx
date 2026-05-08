@@ -4,6 +4,7 @@ import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { StudentService } from '../../services/studentService';
 import { AssessmentService } from '../../services/assessmentService';
+import { useAppSync } from '../../hooks/useAppSync';
 
 const StudentAssessmentTest = () => {
     const [assessments, setAssessments] = useState([]);
@@ -12,13 +13,23 @@ const StudentAssessmentTest = () => {
     const toast = useRef(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        // Fetch assessments targeted specifically to this student's location, category, and stage
+    const fetchAssessments = () => {
+        setLoading(true);
         AssessmentService.getStudentAssessments()
             .then(data => setAssessments(data))
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchAssessments();
     }, []);
+
+    useAppSync((data) => {
+        if (data.path && data.path.includes('/api/assessments')) {
+            fetchAssessments();
+        }
+    });
 
     const handleChoice = (assessmentId, choice) => {
         setResponses(prev => ({

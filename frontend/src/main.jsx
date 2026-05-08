@@ -30,10 +30,14 @@ Object.defineProperty(window, 'html2canvas', {
     }
 });
 
+import { WebSocketProvider } from './context/WebSocketContext.jsx'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <PrimeReactProvider>
-      <App />
+      <WebSocketProvider>
+        <App />
+      </WebSocketProvider>
     </PrimeReactProvider>
   </StrictMode>,
 )

@@ -184,6 +184,13 @@ const AdminSidebar = ({ visible, onHide }) => {
             ]
         },
         {
+            label: 'System',
+            icon: 'pi pi-cog',
+            items: [
+                ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Settings', icon: 'pi pi-cog', to: '/admin/settings' }] : [])
+            ]
+        },
+        {
             label: 'Audio',
             icon: 'pi pi-volume-up',
             items: [
