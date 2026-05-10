@@ -16,25 +16,26 @@ const hebrewLetters = [
     { letter: "י", name: "Yod", value: 10, color: "magenta" },
 
     { letter: "כ", name: "Kaf", value: 20, color: "gold" },
-    { letter: "ך", name: "Final Kaf", value: 20, color: "gold" },
     { letter: "ל", name: "Lamed", value: 30, color: "green" },
     { letter: "מ", name: "Mem", value: 40, color: "cyan" },
-    { letter: "ם", name: "Final Mem", value: 40, color: "cyan" },
-
     { letter: "נ", name: "Nun", value: 50, color: "blue" },
-    { letter: "ן", name: "Final Nun", value: 50, color: "blue" },
     { letter: "ס", name: "Samekh", value: 60, color: "purple" },
+
     { letter: "ע", name: "Ayin", value: 70, color: "pink" },
     { letter: "פ", name: "Pe", value: 80, color: "orange" },
-
-    { letter: "ף", name: "Final Pe", value: 80, color: "orange" },
     { letter: "צ", name: "Tsadi", value: 90, color: "gold" },
-    { letter: "ץ", name: "Final Tsadi", value: 90, color: "gold" },
     { letter: "ק", name: "Qof", value: 100, color: "green" },
-
     { letter: "ר", name: "Resh", value: 200, color: "teal" },
+
     { letter: "ש", name: "Shin", value: 300, color: "purple" },
     { letter: "ת", name: "Tav", value: 400, color: "indigo" },
+
+    // Final forms at the end, marked to hide their index
+    { letter: "ך", name: "Final Kaf", value: 20, color: "gold", isFinal: true },
+    { letter: "ם", name: "Final Mem", value: 40, color: "cyan", isFinal: true },
+    { letter: "ן", name: "Final Nun", value: 50, color: "blue", isFinal: true },
+    { letter: "ף", name: "Final Pe", value: 80, color: "orange", isFinal: true },
+    { letter: "ץ", name: "Final Tsadi", value: 90, color: "gold", isFinal: true },
 ];
 
 const meanings = {
@@ -54,6 +55,8 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
     const [calculatedResult, setCalculatedResult] = useState(null);
     const [showLetterValues, setShowLetterValues] = useState(true);
     const [activeTab, setActiveTab] = useState("Calculator");
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef(null);
     const modalRef = useRef(null);
 
     useEffect(() => {
@@ -152,10 +155,16 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
         alert("Saved to History");
     };
 
-    const handleVoiceInput = () => {
-        const SpeechRecognition =
-            window.SpeechRecognition || window.webkitSpeechRecognition;
+    const toggleVoiceInput = () => {
+        if (isListening) {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            setIsListening(false);
+            return;
+        }
 
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             alert("Speech Recognition not supported");
             return;
@@ -163,13 +172,78 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
 
         const recognition = new SpeechRecognition();
         recognition.lang = "he-IL";
+        recognition.continuous = true;
 
-        recognition.start();
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
 
         recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            setInput(transcript);
+            const transcript = event.results[event.results.length - 1][0].transcript;
+            
+            const voiceMap = {
+                "1": "א", "2": "ב", "3": "ג", "4": "ד", "5": "ה",
+                "6": "ו", "7": "ז", "8": "ח", "9": "ט", "10": "י",
+                "11": "כ", "12": "ל", "13": "מ", "14": "נ", "15": "ס",
+                "16": "ע", "17": "פ", "18": "צ", "19": "ק", "20": "ר",
+                "21": "ש", "22": "ת",
+                "one": "א", "two": "ב", "three": "ג", "four": "ד", "five": "ה",
+                "six": "ו", "seven": "ז", "eight": "ח", "nine": "ט", "ten": "י",
+                "eleven": "כ", "twelve": "ל", "thirteen": "מ", "fourteen": "נ", "fifteen": "ס",
+                "sixteen": "ע", "seventeen": "פ", "eighteen": "צ", "nineteen": "ק", "twenty": "ר",
+                "twenty-one": "ש", "twenty-two": "ת",
+                "aleph": "א", "bet": "ב", "gimel": "ג", "dalet": "ד", "he": "ה",
+                "vav": "ו", "zayin": "ז", "chet": "ח", "tet": "ט", "yod": "י",
+                "kaf": "כ", "lamed": "ל", "mem": "מ", "nun": "נ", "samekh": "ס",
+                "ayin": "ע", "pe": "פ", "tsadi": "צ", "qof": "ק", "resh": "ר",
+                "shin": "ש", "tav": "ת",
+                "אחת": "א", "שתיים": "ב", "שלוש": "ג", "ארבע": "ד", "חמש": "ה",
+                "שש": "ו", "שבע": "ז", "שמונה": "ח", "תשע": "ט", "עשר": "י",
+                "אחת עשרה": "כ", "שתים עשרה": "ל", "שלוש עשרה": "מ", "ארבע עשרה": "נ", "חמש עשרה": "ס",
+                "שש עשרה": "ע", "שבע עשרה": "פ", "שמונה עשרה": "צ", "תשע עשרה": "ק", "עשרים": "ר",
+                "עשרים ואחת": "ש", "עשרים ושתיים": "ת"
+            };
+
+            let lowerTranscript = transcript.toLowerCase().replace(/[.,;·]/g, '');
+            lowerTranscript = lowerTranscript.replace(/twenty one/g, "twenty-one");
+            lowerTranscript = lowerTranscript.replace(/twenty two/g, "twenty-two");
+            lowerTranscript = lowerTranscript.replace(/אחת עשרה/g, "אחת_עשרה");
+            lowerTranscript = lowerTranscript.replace(/שתים עשרה/g, "שתים_עשרה");
+            lowerTranscript = lowerTranscript.replace(/שלוש עשרה/g, "שלוש_עשרה");
+            lowerTranscript = lowerTranscript.replace(/ארבע עשרה/g, "ארבע_עשרה");
+            lowerTranscript = lowerTranscript.replace(/חמש עשרה/g, "חמש_עשרה");
+            lowerTranscript = lowerTranscript.replace(/שש עשרה/g, "שש_עשרה");
+            lowerTranscript = lowerTranscript.replace(/שבע עשרה/g, "שבע_עשרה");
+            lowerTranscript = lowerTranscript.replace(/שמונה עשרה/g, "שמונה_עשרה");
+            lowerTranscript = lowerTranscript.replace(/תשע עשרה/g, "תשע_עשרה");
+            lowerTranscript = lowerTranscript.replace(/עשרים ואחת/g, "עשרים_ואחת");
+            lowerTranscript = lowerTranscript.replace(/עשרים ושתיים/g, "עשרים_ושתיים");
+            
+            // Re-map the combined Hebrew phrases correctly in the dictionary map
+            voiceMap["אחת_עשרה"] = "כ";
+            voiceMap["שתים_עשרה"] = "ל";
+            voiceMap["שלוש_עשרה"] = "מ";
+            voiceMap["ארבע_עשרה"] = "נ";
+            voiceMap["חמש_עשרה"] = "ס";
+            voiceMap["שש_עשרה"] = "ע";
+            voiceMap["שבע_עשרה"] = "פ";
+            voiceMap["שמונה_עשרה"] = "צ";
+            voiceMap["תשע_עשרה"] = "ק";
+            voiceMap["עשרים_ואחת"] = "ש";
+            voiceMap["עשרים_ושתיים"] = "ת";
+
+            const processed = lowerTranscript.split(/\s+/).map(word => {
+                if (voiceMap[word]) return voiceMap[word];
+                if (/^\d+$/.test(word)) {
+                    return word.split('').map(digit => voiceMap[digit] || digit).join('');
+                }
+                return word;
+            }).join("");
+
+            setInput((prev) => prev + processed);
         };
+
+        recognitionRef.current = recognition;
+        recognition.start();
     };
 
     const handleHistoryClick = (item) => {
@@ -191,6 +265,8 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
         };
         reader.readAsDataURL(file);
     };
+
+    const res = calculatedResult || { breakdown: [], total: 0, reduced: 0 };
 
     return createPortal(
         <div 
@@ -274,16 +350,19 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
                             </div>
                             <div className="letters-grid flex-1">
                                 {hebrewLetters.map((item, index) => (
-                                    <div
-                                        key={index}
-                                        className={`letter-card btn-3d ${item.color}`}
-                                        onClick={() => handleLetterClick(item.letter)}
-                                    >
-                                        <div className="absolute top-1 left-2 text-[10px] text-white font-bold opacity-80">{index + 1}</div>
-                                        <div className="letter">{item.letter}</div>
-                                        <div className="name">{item.name}</div>
-                                        <div className={`value ${showLetterValues ? '' : 'invisible'}`}>{item.value}</div>
-                                    </div>
+                                    <React.Fragment key={item.letter}>
+                                        <div
+                                            className={`letter-card btn-3d ${item.color}`}
+                                            onClick={() => handleLetterClick(item.letter)}
+                                        >
+                                            {!item.isFinal && <div className="absolute top-1 left-2 text-[10px] text-white font-bold opacity-80">{index + 1}</div>}
+                                            <div className="letter">{item.letter}</div>
+                                            <div className="name">{item.name}</div>
+                                            <div className={`value ${showLetterValues ? '' : 'invisible'}`}>{item.value}</div>
+                                        </div>
+                                        {/* Force line break after the 22nd standard letter (Tav) */}
+                                        {item.letter === "ת" && <div className="w-full h-0 m-0 p-0 border-0"></div>}
+                                    </React.Fragment>
                                 ))}
                             </div>
                         </div>
@@ -333,23 +412,25 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
                                     </div>
                                 </div>
 
-                                {calculatedResult && (
-                                    <>
                                         {/* LETTER BREAKDOWN */}
                                         <div className="bg-[#0f142b] border border-[#1e293b] rounded-[12px] p-2 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
                                             <div className="text-center text-[10px] font-bold tracking-wider uppercase text-[#94a3b8] mb-1 drop-shadow-md">Letter Breakdown</div>
                                             <div className="flex flex-wrap justify-center gap-2">
-                                                {calculatedResult.breakdown.map((item, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className={`letter-card btn-3d ${item.color} flex flex-col items-center justify-center`}
-                                                        style={{minWidth: '50px', padding: '2px', borderRadius: '6px', boxShadow: '0 2px 5px rgba(0,0,0,0.5)'}}
-                                                    >
-                                                        <div className="text-xl font-bold">{item.letter}</div>
-                                                        <div className="text-[8px] mt-0.5 opacity-90">{item.name}</div>
-                                                        <div className="text-xs font-bold mt-0">{item.value}</div>
-                                                    </div>
-                                                ))}
+                                                {res.breakdown.length === 0 ? (
+                                                    <span className="text-gray-600 text-xs py-2 italic font-medium tracking-wide">Enter a word to see its breakdown</span>
+                                                ) : (
+                                                    res.breakdown.map((item, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className={`letter-card btn-3d ${item.color} flex flex-col items-center justify-center`}
+                                                            style={{minWidth: '50px', padding: '2px', borderRadius: '6px', boxShadow: '0 2px 5px rgba(0,0,0,0.5)'}}
+                                                        >
+                                                            <div className="text-xl font-bold">{item.letter}</div>
+                                                            <div className="text-[8px] mt-0.5 opacity-90">{item.name}</div>
+                                                            <div className="text-xs font-bold mt-0">{item.value}</div>
+                                                        </div>
+                                                    ))
+                                                )}
                                             </div>
                                         </div>
 
@@ -360,7 +441,7 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
                                                 <div className="text-center text-[10px] font-bold tracking-wider uppercase text-[#94a3b8] mb-1 drop-shadow-md">Total Gematria Value</div>
                                                 <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] flex items-center justify-center py-2 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)]">
                                                     <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00ffcc', textShadow: '0 0 20px rgba(0, 255, 204, 0.5)' }}>
-                                                        {calculatedResult.total}
+                                                        {res.total}
                                                     </div>
                                                 </div>
                                             </div>
@@ -370,10 +451,10 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
                                                 <div className="text-center text-[10px] font-bold tracking-wider uppercase text-[#94a3b8] mb-1 drop-shadow-md">Calculation Breakdown</div>
                                                 <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] flex items-center justify-center p-2 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)] gap-2">
                                                     <div style={{ fontSize: '16px', color: '#fbbf24', fontWeight: 'bold' }}>
-                                                        {calculatedResult.breakdown.map((b) => b.value).join(" + ") || "0"}
+                                                        {res.breakdown.map((b) => b.value).join(" + ") || "0"}
                                                     </div>
                                                     <div style={{ fontSize: '18px', color: '#00d65a', fontWeight: 'bold' }}>
-                                                        = {calculatedResult.total}
+                                                        = {res.total}
                                                     </div>
                                                 </div>
                                             </div>
@@ -384,14 +465,14 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
                                             <button onClick={handleCopy} className="btn-3d flex-1 flex items-center justify-center gap-2 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #42007d, #b400ff)'}}>
                                                 <i className="pi pi-copy text-xs"></i> COPY RESULT
                                             </button>
-                                            <button onClick={handleClear} className="btn-3d flex-1 flex items-center justify-center gap-2 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #7a0000, #ff2d2d)'}}>
-                                                <i className="pi pi-trash text-xs"></i> CLEAR
-                                            </button>
-                                            <button onClick={handleVoiceInput} className="btn-3d flex-1 flex items-center justify-center gap-2 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #003a7a, #0077ff)'}}>
-                                                <i className="pi pi-microphone text-xs"></i> VOICE INPUT
-                                            </button>
                                             <button onClick={handleSave} className="btn-3d flex-1 flex items-center justify-center gap-2 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #005c28, #00d65a)'}}>
                                                 <i className="pi pi-save text-xs"></i> SAVE TO HISTORY
+                                            </button>
+                                            <button onClick={toggleVoiceInput} className="btn-3d flex-1 flex items-center justify-center gap-2 py-1.5 rounded-[8px] text-[10px] font-bold text-white transition-all duration-300" style={{background: isListening ? 'linear-gradient(145deg, #ef4444, #991b1b)' : 'linear-gradient(145deg, #003a7a, #0077ff)', boxShadow: isListening ? '0 0 15px rgba(239, 68, 68, 0.6)' : ''}}>
+                                                <i className={`pi ${isListening ? 'pi-stop-circle animate-pulse' : 'pi-microphone'} text-xs`}></i> {isListening ? 'STOP VOICE' : 'VOICE INPUT'}
+                                            </button>
+                                            <button onClick={handleClear} className="btn-3d flex-1 flex items-center justify-center gap-2 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #7a0000, #ff2d2d)'}}>
+                                                <i className="pi pi-trash text-xs"></i> CLEAR
                                             </button>
                                         </div>
 
@@ -401,8 +482,8 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
                                                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] mb-2">Reduced Value (Digital Root)</div>
                                                 <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] flex items-center justify-center p-2 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)]">
                                                     <div className="text-white font-bold text-sm tracking-widest flex items-center gap-2">
-                                                        <span>{calculatedResult.total.toString().split("").join("+")} = {calculatedResult.total.toString().split("").reduce((a, b) => a + Number(b), 0)} &rarr;</span>
-                                                        <span className="text-cyan-400 text-xl">{calculatedResult.reduced}</span>
+                                                        <span>{res.total.toString().split("").join("+")} = {res.total.toString().split("").reduce((a, b) => a + Number(b), 0)} &rarr;</span>
+                                                        <span className="text-cyan-400 text-xl">{res.reduced}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -410,9 +491,9 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
                                             <div className="flex-1 bg-[#0f142b] border border-[#1e293b] rounded-[12px] p-3 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] flex flex-col">
                                                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] mb-2">Hebrew Word Information</div>
                                                 <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] p-3 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)] flex flex-col justify-center gap-1">
-                                                    <div className="flex justify-between text-[11px] text-gray-300"><span>Letters:</span> <span className="font-bold">{calculatedResult.breakdown.length}</span></div>
-                                                    <div className="flex justify-between text-[11px] text-gray-300"><span>Total Value:</span> <span className="text-[#00ffcc] font-bold">{calculatedResult.total}</span></div>
-                                                    <div className="flex justify-between text-[11px] text-gray-300"><span>Reduced Value:</span> <span className="text-white font-bold">{calculatedResult.reduced}</span></div>
+                                                    <div className="flex justify-between text-[11px] text-gray-300"><span>Letters:</span> <span className="font-bold">{res.breakdown.length}</span></div>
+                                                    <div className="flex justify-between text-[11px] text-gray-300"><span>Total Value:</span> <span className="text-[#00ffcc] font-bold">{res.total}</span></div>
+                                                    <div className="flex justify-between text-[11px] text-gray-300"><span>Reduced Value:</span> <span className="text-white font-bold">{res.reduced}</span></div>
                                                 </div>
                                             </div>
 
@@ -420,15 +501,13 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
                                                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] mb-2">Meaning (Optional)</div>
                                                 <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] flex items-center justify-between p-3 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)]">
                                                     <div className="flex flex-col">
-                                                        <span className="text-white font-bold text-sm">{meanings[calculatedResult.total] || "Unknown"}</span>
-                                                        {meanings[calculatedResult.total] && <span className="text-[#00ffcc] text-[10px]">(Chokmah)</span>}
+                                                        <span className="text-white font-bold text-sm">{meanings[res.total] || "Unknown"}</span>
+                                                        {meanings[res.total] && <span className="text-[#00ffcc] text-[10px]">(Chokmah)</span>}
                                                     </div>
                                                     <i className="pi pi-lightbulb text-yellow-500 text-2xl" style={{ filter: 'drop-shadow(0 0 10px rgba(234, 179, 8, 0.5))' }}></i>
                                                 </div>
                                             </div>
                                         </div>
-                                    </>
-                                )}
                             </>
                         )}
                         {activeTab === "History" && (

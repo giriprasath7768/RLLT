@@ -96,7 +96,7 @@ const SevenTNTDayCycleChartView = () => {
 
     // Aesthetic & UX Scaling
     const [tableFontSize, setTableFontSize] = useState(8);
-    const getFS = (base) => (base + (tableFontSize - 12)) + 'px';
+    const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
 
     const fetchChartList = () => {
         axios.get('http://' + window.location.hostname + ':8000/api/seven_tnt_daycycle_charts/list', { withCredentials: true })
@@ -546,19 +546,19 @@ const SevenTNTDayCycleChartView = () => {
                         <div className="w-full mt-2 mb-2 relative">
                             <table className="w-full bg-white table-fixed border-collapse" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                 <colgroup>
-                                    <col className="w-[28px]" />   {/* TEA Side */}
-                                    <col className="w-[35px]" />   {/* DAY */}
-                                    <col className="w-[16%]" />      {/* WIDE 1 */}
-                                    <col className="w-[45px]" />   {/* TIME 1 */}
-                                    <col className="w-[16%]" />      {/* WIDE 2 */}
-                                    <col className="w-[45px]" />   {/* TIME 2 */}
+                                    <col className="w-[30px]" />   {/* TEA Side */}
+                                    <col className="w-[45px]" />   {/* DAY */}
+                                    <col className="w-[14%]" />      {/* WIDE 1 */}
+                                    <col className="w-[50px]" />   {/* TIME 1 */}
+                                    <col className="w-[14%]" />      {/* WIDE 2 */}
+                                    <col className="w-[50px]" />   {/* TIME 2 */}
                                     <col className="w-auto" />      {/* WIDE 3 */}
-                                    <col className="w-[45px]" />   {/* TIME 3 */}
-                                    <col className="w-[35px]" />   {/* CHAP */}
-                                    <col className="w-[40px]" />   {/* VERSE */}
-                                    <col className="w-[35px]" />   {/* ART */}
-                                    <col className="w-[35px]" />   {/* YES */}
-                                    <col className="w-[28px]" />  {/* MODULE Side */}
+                                    <col className="w-[50px]" />   {/* TIME 3 */}
+                                    <col className="w-[55px]" />   {/* CHAP */}
+                                    <col className="w-[65px]" />   {/* VERSE */}
+                                    <col className="w-[45px]" />   {/* ART */}
+                                    <col className="w-[40px]" />   {/* YES */}
+                                    <col className="w-[30px]" />  {/* MODULE Side */}
                                 </colgroup>
                                 <tbody>
                                     <tr className="bg-white border-2 border-black h-[35px]">
@@ -625,7 +625,7 @@ const SevenTNTDayCycleChartView = () => {
                                             <td className="border-2 border-black p-0 font-extrabold bg-white text-black" style={{ fontSize: getFS(15) }}>{d.day}</td>
 
                                             <td className="border-2 border-black p-0 bg-white">
-                                                <input className="w-[95%] text-left ml-[5%] outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m1b} onChange={(e) => {
+                                                <input className="w-full text-center px-1 outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m1b} onChange={(e) => {
                                                     const newData = [...rowsData];
                                                     if (newData[dIdx]) newData[dIdx].m1b = e.target.value;
                                                     setRowsData(newData);
@@ -640,7 +640,7 @@ const SevenTNTDayCycleChartView = () => {
                                             </td>
 
                                             <td className="border-2 border-black p-0 bg-white">
-                                                <input className="w-[95%] text-left ml-[5%] outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m2b} onChange={(e) => {
+                                                <input className="w-full text-center px-1 outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m2b} onChange={(e) => {
                                                     const newData = [...rowsData];
                                                     if (newData[dIdx]) newData[dIdx].m2b = e.target.value;
                                                     setRowsData(newData);
@@ -655,7 +655,7 @@ const SevenTNTDayCycleChartView = () => {
                                             </td>
 
                                             <td className="border-2 border-black p-0 bg-white">
-                                                <input className="w-[95%] text-left ml-[5%] outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m3b} onChange={(e) => {
+                                                <input className="w-full text-center px-1 outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m3b} onChange={(e) => {
                                                     const newData = [...rowsData];
                                                     if (newData[dIdx]) newData[dIdx].m3b = e.target.value;
                                                     setRowsData(newData);

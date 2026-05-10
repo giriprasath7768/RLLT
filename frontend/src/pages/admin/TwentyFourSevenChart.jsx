@@ -890,21 +890,21 @@ const TwentyFourSevenChart = () => {
                             <div className="editor-table-container">
                                 <table className="w-full bg-white table-fixed border-collapse" style={{ borderSpacing: 0 }}>
                                     <colgroup>
-                                        <col style={{ width: '2%' }} />
-                                        <col style={{ width: '2%' }} />
+                                        <col style={{ width: '2.5%' }} />
+                                        <col style={{ width: '3.5%' }} />
                                         <col style={{ width: '12%' }} />
                                         <col style={{ width: '4%' }} />
                                         <col style={{ width: '12%' }} />
                                         <col style={{ width: '4%' }} />
                                         <col style={{ width: '12%' }} />
                                         <col style={{ width: '4%' }} />
-                                        <col style={{ width: '24%' }} />
+                                        <col style={{ width: '22.5%' }} />
                                         <col style={{ width: '4%' }} />
+                                        <col style={{ width: '4.5%' }} />
+                                        <col style={{ width: '5.5%' }} />
                                         <col style={{ width: '4%' }} />
-                                        <col style={{ width: '4%' }} />
-                                        <col style={{ width: '5%' }} />
                                         <col style={{ width: '3%' }} />
-                                        <col style={{ width: '4%' }} />
+                                        <col style={{ width: '2.5%' }} />
                                     </colgroup>
 
                                     {chunks.map((chunk, cIdx) => {

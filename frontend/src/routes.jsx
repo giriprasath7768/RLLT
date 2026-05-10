@@ -43,6 +43,7 @@ import SevenTNTPlayers from './pages/admin/SevenTNTPlayers';
 import SevenTNTPlayer from './pages/admin/SevenTNTPlayer';
 import TTomTPlayer from './pages/admin/TTomTPlayer';
 import SMTPlayer from './pages/admin/SMTPlayer';
+import SMTPage from './pages/admin/SMTPage';
 import Players from './pages/admin/Players';
 import DashboardAdmin from './pages/admin/DashboardAdmin';
 import DashboardLeader from './pages/admin/DashboardLeader';
@@ -213,6 +214,7 @@ const AppRoutes = () => {
                     <Route path="/admin/rllt-data" element={<RLLTTableData />} />
                     <Route path="/admin/image-gallery" element={<ImageGallery />} />
                     <Route path="/admin/smt-player" element={<SMTPlayer />} />
+                    <Route path="/admin/smt-page" element={<SMTPage />} />
                     <Route path="/admin/book-index" element={<BookIndex />} />
                     <Route path="/admin/players" element={<Players />} />
                     <Route path="/admin/7tnt-players" element={<SevenTNTPlayers />} />
@@ -243,6 +245,7 @@ const AppRoutes = () => {
                 <Route path="/dashboard/student/charts" element={<StudentChartListing />} />
                 <Route path="/dashboard/student/players" element={<StudentPlayers />} />
                 <Route path="/dashboard/student/smt-player" element={<SMTPlayer />} />
+                <Route path="/dashboard/student/smt-page" element={<SMTPage />} />
                 <Route path="/dashboard/student/book-index" element={<BookIndex />} />
                 <Route path="/dashboard/student/recordings" element={<Recordings />} />
                 <Route path="/dashboard/student/classroom" element={<StudentClassroom />} />

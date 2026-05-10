@@ -6,6 +6,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { splitS3Data, splitS4Data } from '../../utils/chartDataSplitter';
+import { StudentService } from '../../services/studentService';
 
 // Suppress harmless pdf.js WebAssembly decode warnings for JPEG2000 formats
 const originalWarn = console.warn;
@@ -841,6 +842,16 @@ const SMTPlayer = () => {
     const [showWisdomOverlay, setShowWisdomOverlay] = useState(false);
     const [playerBgColor, setPlayerBgColor] = useState('#547395');
     const [playerBorderColor, setPlayerBorderColor] = useState('#080b12');
+    const lastTouchRef = useRef(0);
+
+    // Centralized touch count incrementer — called on every meaningful user interaction
+    const incrementKltTouch = () => {
+        const now = Date.now();
+        if (now - lastTouchRef.current < 500) return; // Debounce rapid clicks
+        lastTouchRef.current = now;
+        StudentService.updateMyTouchCounts({ transformation: 0, team_transformation: 0, klt_reading_plan: 1 })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+    };
 
     const parsedPayload = React.useMemo(() => {
         const filter = location.state?.filter || 'main';
@@ -1003,7 +1014,10 @@ const SMTPlayer = () => {
         if (!activeTrackName) return;
 
         if (audioRef.current.paused) {
-            audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
+            audioRef.current.play().then(() => {
+                setIsPlaying(true);
+                incrementKltTouch();
+            }).catch(e => console.error(e));
         } else {
             audioRef.current.pause();
             setIsPlaying(false);
@@ -1332,7 +1346,7 @@ const SMTPlayer = () => {
                         return (
                             <div
                                 key={idx}
-                                onClick={() => { setActiveTrackName(bookStr); setShowSidebar(false); }}
+                                onClick={() => { setActiveTrackName(bookStr); setShowSidebar(false); incrementKltTouch(); }}
                                 className={`flex items-center justify-between p-4 transition-all border-l-4 cursor-pointer ${activeTrackName === bookStr ? 'bg-[#0f172a] border-blue-500 shadow-inner' : 'bg-[#1a2234] border-transparent hover:bg-[#1f2937]'} ${finalColor}`}
                             >
                                 <div className="flex items-center gap-4">
@@ -1353,7 +1367,7 @@ const SMTPlayer = () => {
                             return (
                                 <div
                                     key={num}
-                                    onClick={() => setSelectedDay(num)}
+                                    onClick={() => { setSelectedDay(num); incrementKltTouch(); }}
                                     className={`text-center font-bold text-sm py-1.5 rounded-md cursor-pointer transition-all ${isSelected ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.6)] border border-blue-400' : isCompleted ? 'bg-blue-600/80 text-white shadow-[0_0_5px_rgba(37,99,235,0.3)]' : 'bg-[#131b2e] text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                                 >
                                     {num}

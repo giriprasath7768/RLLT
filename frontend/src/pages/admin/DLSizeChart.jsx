@@ -82,7 +82,7 @@ const DLSizeChart = () => {
 
     // Aesthetic & UX Scaling
     const [tableFontSize, setTableFontSize] = useState(8); 
-    const getFS = (base) => (base + (tableFontSize - 10)) + 'px';
+    const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
 
     const fetchChartList = () => {
                 axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
@@ -464,12 +464,12 @@ const DLSizeChart = () => {
                                     <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(25) }}>{d.day}</td>
                                     
                                     {/* M1 TEXT (Green) */}
-                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight" style={{ color: greenColor, fontSize: getFS(23) }}>
+                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight truncate" style={{ color: greenColor, fontSize: getFS(23) }}>
                                         {d.m1b}
                                     </td>
                                     
                                     {/* M2 TEXT (Green) */}
-                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight" style={{ color: greenColor, fontSize: getFS(23) }}>
+                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight truncate" style={{ color: greenColor, fontSize: getFS(23) }}>
                                         {d.m2b}
                                     </td>
                                     

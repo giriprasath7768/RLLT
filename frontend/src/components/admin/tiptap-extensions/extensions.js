@@ -1,6 +1,8 @@
 import { Node, Mark, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
+import Document from '@tiptap/extension-document';
 import InteractiveNodeView from './InteractiveNodeView';
+import PageNodeView from './PageNodeView';
 
 const sharedAttributes = {
     width: { default: 200 },
@@ -15,7 +17,7 @@ const sharedAttributes = {
     textConfig: { 
         default: {
             fontSize: 16, fontFamily: 'Inter, sans-serif', fontWeight: 'normal',
-            fontStyle: 'normal', textAlign: 'left', letterSpacing: 0, color: '#000000'
+            fontStyle: 'normal', textAlign: 'left', verticalAlign: 'top', letterSpacing: 0, color: '#000000', textEffect: 'none', effectColor: '#cccccc'
         },
         parseHTML: element => {
             const configStr = element.getAttribute('data-text-config');
@@ -29,6 +31,50 @@ const sharedAttributes = {
     }
 };
 
+export const PageNode = Node.create({
+    name: 'page',
+    group: 'block',
+    content: 'block+',
+    isolating: true,
+
+    parseHTML() {
+        return [{ tag: 'div[data-type="page"]' }, { tag: 'div.a4-page-node' }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'page', class: 'a4-page-node' }), 0];
+    },
+
+    addKeyboardShortcuts() {
+        return {
+            'Enter': ({ editor }) => {
+                const { state } = editor;
+                const { selection } = state;
+                const { $from, empty } = selection;
+                
+                if (!empty) return false;
+                
+                // Prevent splitting the page node if we're at the end of it
+                if ($from.parent.type.name === 'paragraph' && $from.parent.textContent === '') {
+                    if ($from.depth >= 2 && $from.node($from.depth - 1).type.name === 'page') {
+                        editor.commands.setHardBreak();
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(PageNodeView);
+    },
+});
+
+export const CustomDocument = Document.extend({
+    content: 'page+',
+});
+
 export const ResizableImage = Node.create({
     name: 'resizableImage',
     group: 'block',
@@ -39,6 +85,9 @@ export const ResizableImage = Node.create({
         return {
             src: { default: null },
             alt: { default: null },
+            isPuzzleImage: { default: false },
+            originalSrc: { default: null },
+            puzzlePieces: { default: 10 },
             ...sharedAttributes,
         };
     },
@@ -211,6 +260,51 @@ export const TextEffectMark = Mark.create({
             setTextEffect: attributes => ({ commands }) => commands.setMark(this.name, attributes),
             toggleTextEffect: attributes => ({ commands }) => commands.toggleMark(this.name, attributes),
             unsetTextEffect: () => ({ commands }) => commands.unsetMark(this.name),
+        };
+    },
+});
+
+export const FontSizeMark = Mark.create({
+    name: 'fontSize',
+    addOptions() {
+        return {
+            types: ['textStyle'],
+        };
+    },
+    addGlobalAttributes() {
+        return [
+            {
+                types: this.options.types,
+                attributes: {
+                    fontSize: {
+                        default: null,
+                        parseHTML: element => element.style.fontSize.replace(/['"]+/g, ''),
+                        renderHTML: attributes => {
+                            if (!attributes.fontSize) {
+                                return {};
+                            }
+                            return {
+                                style: `font-size: ${attributes.fontSize}`,
+                            };
+                        },
+                    },
+                },
+            },
+        ];
+    },
+    addCommands() {
+        return {
+            setFontSize: fontSize => ({ chain }) => {
+                return chain()
+                    .setMark('textStyle', { fontSize: fontSize + 'px' })
+                    .run();
+            },
+            unsetFontSize: () => ({ chain }) => {
+                return chain()
+                    .setMark('textStyle', { fontSize: null })
+                    .removeEmptyTextStyle()
+                    .run();
+            },
         };
     },
 });

@@ -659,19 +659,19 @@ const MorningEveningChart = () => {
                                     return (
                                         <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                             <colgroup>
-                                                <col style={{ width: '2%' }} />
-                                                <col style={{ width: '2%' }} />
+                                                <col style={{ width: '2.5%' }} />
+                                                <col style={{ width: '3.5%' }} />
                                                 <col style={{ width: '12%' }} />
                                                 <col style={{ width: '4%' }} />
                                                 <col style={{ width: '15%' }} />
                                                 <col style={{ width: '4%' }} />
-                                                <col style={{ width: '36%' }} />
-                                                <col style={{ width: '5%' }} />
+                                                <col style={{ width: '34.5%' }} />
                                                 <col style={{ width: '4%' }} />
+                                                <col style={{ width: '4.5%' }} />
+                                                <col style={{ width: '5.5%' }} />
                                                 <col style={{ width: '4%' }} />
-                                                <col style={{ width: '5%' }} />
+                                                <col style={{ width: '3.5%' }} />
                                                 <col style={{ width: '3%' }} />
-                                                <col style={{ width: '4%' }} />
                                             </colgroup>
                                             {chunks.map((chunk, cIdx) => {
                                                 const m1Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m1t), 0);
@@ -733,11 +733,11 @@ const MorningEveningChart = () => {
                                                                 <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(25) }}>{d.day}</td>
 
                                                                 {/* M1 TEXT (Light Green) */}
-                                                                <td className="border-2 border-black p-0 bg-white uppercase font-bold leading-tight align-middle text-[#2ed573]" style={{ fontSize: getFS(25) }}>{d.m1b}</td>
+                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate text-[#2ed573]" style={{ fontSize: getFS(25) }}>{d.m1b}</td>
                                                                 <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m1t}</td>
 
                                                                 {/* M2 TEXT (Light Green) */}
-                                                                <td className="border-2 border-black p-0 bg-white uppercase font-bold leading-tight align-middle text-[#2ed573]" style={{ fontSize: getFS(25) }}>{d.m2b}</td>
+                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate text-[#2ed573]" style={{ fontSize: getFS(25) }}>{d.m2b}</td>
                                                                 <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m2t}</td>
 
                                                                 {/* COMBINED M3 TEXT (Light Green + Deep Blue in 50/50 grid) */}

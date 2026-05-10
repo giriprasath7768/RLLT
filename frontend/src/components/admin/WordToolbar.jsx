@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import pptxgen from "pptxgenjs";
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
+import { toPng } from 'html-to-image';
 import ScriptViewerModal from './ScriptViewerModal';
 import DocumentNotesModal from './DocumentNotesModal';
 import CChartModal from './CChartModal';
@@ -127,8 +127,14 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
     useEffect(() => {
         if (!tiptapEditor) return;
         const handleSelectionChange = () => {
-            // Fallback for Phase 2, font size requires a custom extension in Tiptap
-            // We will set this up in Phase 3
+            const attrs = tiptapEditor.getAttributes('textStyle');
+            if (attrs && attrs.fontSize) {
+                // Parse "16px" into "16"
+                const sizeMatch = attrs.fontSize.match(/\d+/);
+                if (sizeMatch) {
+                    setCurrentSize(sizeMatch[0]);
+                }
+            }
         };
         tiptapEditor.on('selectionUpdate', handleSelectionChange);
         tiptapEditor.on('update', handleSelectionChange);
@@ -196,33 +202,52 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
         setScrollMenuOpen(false);
     };
 
-    const insertGalleryImage = (url) => {
+    const safeInsert = (callback) => {
         if (!tiptapEditor) return;
-        tiptapEditor.chain().focus().setImage({ src: url }).run();
-        setGalleryModalOpen(false);
+        const { selection } = tiptapEditor.state;
+        if (
+            tiptapEditor.isActive('resizableImage') || 
+            tiptapEditor.isActive('shape') || 
+            tiptapEditor.isActive('textbox') ||
+            (selection && selection.node)
+        ) {
+            tiptapEditor.commands.setTextSelection(selection.to);
+        }
+        callback();
+    };
+
+    const insertGalleryImage = (url) => {
+        safeInsert(() => {
+            tiptapEditor.chain().focus().setImage({ src: url }).run();
+            setGalleryModalOpen(false);
+        });
     };
 
     const insertTextBox = () => {
-        if (!tiptapEditor) return;
-        tiptapEditor.chain().focus().insertContent({ type: 'textbox', attrs: { text: '' } }).run();
-        setImageDropdownOpen(false);
+        safeInsert(() => {
+            tiptapEditor.chain().focus().insertContent({ type: 'textbox', attrs: { text: '' } }).run();
+            setImageDropdownOpen(false);
+        });
     };
 
     const insertShape = (svg) => {
-        if (!tiptapEditor) return;
-        tiptapEditor.chain().focus().insertContent({ type: 'shape', attrs: { svg: svg } }).run();
-        setShapesDropdownOpen(false);
+        safeInsert(() => {
+            tiptapEditor.chain().focus().insertContent({ type: 'shape', attrs: { svg: svg } }).run();
+            setShapesDropdownOpen(false);
+        });
     };
 
     const handleCChartInsert = (selectedText) => {
-        if (!tiptapEditor) return;
-        tiptapEditor.chain().focus().insertContent(selectedText + "<br>").run();
+        safeInsert(() => {
+            tiptapEditor.chain().focus().insertContent(selectedText + "<br>").run();
+        });
     };
 
     const handleLionChartInsert = (base64Img) => {
-        if (!tiptapEditor) return;
-        tiptapEditor.chain().focus().setImage({ src: base64Img }).run();
-        setLionChartModalOpen(false);
+        safeInsert(() => {
+            tiptapEditor.chain().focus().setImage({ src: base64Img }).run();
+            setLionChartModalOpen(false);
+        });
     };
 
     const wisdomDropdownRef = useRef(null);
@@ -557,33 +582,137 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
         if (!tiptapEditor) return;
         
         try {
-            const editorEl = document.querySelector('.ProseMirror');
+            const editorEl = document.getElementById('pdf-export-container');
             if (!editorEl) return;
             
             const originalBg = editorEl.style.backgroundColor;
+            const originalShadow = editorEl.style.boxShadow;
+            const originalBorder = editorEl.style.border;
+            const originalTransform = editorEl.style.transform;
+            const originalMargin = editorEl.style.margin;
+            
             editorEl.style.backgroundColor = '#ffffff';
+            editorEl.style.boxShadow = 'none';
+            editorEl.style.border = 'none';
+            editorEl.style.transform = 'none'; // Ensure 1:1 scale for capture
+            editorEl.style.margin = '0'; // Fix html-to-image alignment issue with mx-auto
             
-            const canvas = await html2canvas(editorEl, { scale: 2, useCORS: true });
-            editorEl.style.backgroundColor = originalBg;
+            // Wait for document fonts to load
+            if (document.fonts && document.fonts.ready) {
+                await document.fonts.ready;
+            }
+
+            // Convert all images to Base64 using fetch -> blob -> FileReader
+            const images = Array.from(editorEl.querySelectorAll('img'));
+            const originalSrcs = new Map();
+            const originalLoadings = new Map();
+            const originalCrossOrigins = new Map();
+
+            await Promise.all(images.map((img) => {
+                return new Promise(async (resolve) => {
+                    // Disable lazy loading during export
+                    originalLoadings.set(img, img.getAttribute('loading'));
+                    originalCrossOrigins.set(img, img.getAttribute('crossOrigin'));
+                    img.setAttribute('loading', 'eager');
+                    
+                    if (img.src.startsWith('data:')) {
+                        return resolve();
+                    }
+                    
+                    const origSrc = img.src;
+                    
+                    try {
+                        const fetchUrl = origSrc + (origSrc.includes('?') ? '&' : '?') + 'cacheBust=' + Date.now();
+                        const response = await fetch(fetchUrl, { mode: 'cors' });
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        const blob = await response.blob();
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            originalSrcs.set(img, origSrc);
+                            img.src = reader.result;
+                            img.crossOrigin = 'anonymous';
+                            resolve();
+                        };
+                        reader.onerror = () => resolve();
+                        reader.readAsDataURL(blob);
+                    } catch (err) {
+                        console.warn("Failed to convert image to base64 via fetch:", origSrc, err);
+                        resolve(); // Continue even if one image fails
+                    }
+                });
+            }));
             
-            const imgData = canvas.toDataURL('image/png');
+            const pageNodes = Array.from(editorEl.querySelectorAll('.pdf-page-container'));
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             const pageHeight = pdf.internal.pageSize.getHeight();
-            
-            let heightLeft = pdfHeight;
-            let position = 0;
-            
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= pageHeight;
-            
-            while (heightLeft >= 0) {
-                position = heightLeft - pdfHeight;
-                pdf.addPage();
+
+            if (pageNodes.length > 0) {
+                // Multi-page export
+                for (let i = 0; i < pageNodes.length; i++) {
+                    const node = pageNodes[i];
+                    const imgData = await toPng(node, { pixelRatio: 2, cacheBust: true, useCORS: true });
+                    if (!imgData || imgData === 'data:,') {
+                        console.error('Generated empty image data for node', node);
+                        continue;
+                    }
+                    const nodeHeightMm = (node.offsetHeight * pdfWidth) / node.offsetWidth;
+                    
+                    if (i > 0) pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, nodeHeightMm);
+                    
+                    // If a single page node exceeds A4, still add pages to prevent clipping
+                    let heightLeft = nodeHeightMm - pageHeight;
+                    let position = -pageHeight;
+                    while (heightLeft >= 0) {
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, nodeHeightMm);
+                        heightLeft -= pageHeight;
+                        position -= pageHeight;
+                    }
+                }
+            } else {
+                // Legacy Single-page export
+                const imgData = await toPng(editorEl, { 
+                    pixelRatio: 2, 
+                    cacheBust: true,
+                    useCORS: true
+                });
+                
+                if (!imgData || imgData === 'data:,') throw new Error("Generated empty image data for legacy document");
+
+                const pdfHeight = (editorEl.offsetHeight * pdfWidth) / editorEl.offsetWidth;
+                let heightLeft = pdfHeight;
+                let position = 0;
+                
                 pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
                 heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position -= pageHeight; // Update: ensure position tracks correctly like original: position = heightLeft - pdfHeight
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                    heightLeft -= pageHeight;
+                }
             }
+
+            // Restore images and editor state
+            originalSrcs.forEach((src, img) => {
+                img.src = src;
+            });
+            originalLoadings.forEach((loading, img) => {
+                if (loading === null) img.removeAttribute('loading');
+                else img.setAttribute('loading', loading);
+            });
+            originalCrossOrigins.forEach((co, img) => {
+                if (co === null) img.removeAttribute('crossOrigin');
+                else img.setAttribute('crossOrigin', co);
+            });
+            editorEl.style.backgroundColor = originalBg;
+            editorEl.style.boxShadow = originalShadow;
+            editorEl.style.border = originalBorder;
+            editorEl.style.transform = originalTransform;
+            editorEl.style.margin = originalMargin;
             
             pdf.save(`${title || 'Document'}.pdf`);
             
@@ -714,7 +843,9 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                 // Insert into Tiptap
                 if (tiptapEditor) {
                     const base64Data = canvas.toDataURL('image/png');
-                    tiptapEditor.chain().focus().setImage({ src: base64Data }).run();
+                    safeInsert(() => {
+                        tiptapEditor.chain().focus().setImage({ src: base64Data, isPuzzleImage: true, originalSrc: event.target.result, puzzlePieces: pieces }).run();
+                    });
                 }
 
                 setPuzzleModalOpen(false);
@@ -864,7 +995,9 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
         const base64Data = `data:image/svg+xml;base64,${btoa(safeSvg)}`;
 
         if (tiptapEditor) {
-            tiptapEditor.chain().focus().setImage({ src: base64Data }).run();
+            safeInsert(() => {
+                tiptapEditor.chain().focus().setImage({ src: base64Data }).run();
+            });
         }
 
         setGraphModal({ isOpen: false, type: null });
@@ -874,15 +1007,18 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
 
     return (
         <div
-            className="bg-white border-b px-2 py-1 flex flex-wrap items-center gap-2 z-10 sticky top-0 shadow-sm text-sm"
+            className="bg-white border-b z-10 sticky top-0 shadow-sm text-sm flex flex-col"
             style={{ width: '100%' }}
         >
             <style>{`
                 .word-toolbar-wrapper::-webkit-scrollbar { display: none; }
                 .word-toolbar-wrapper { overflow: visible !important; }
             `}</style>
+            
+            {/* FIRST ROW */}
+            <div className="px-2 py-1 flex flex-nowrap items-center gap-2 overflow-x-auto custom-scrollbar w-full">
             {/* Quill's Internal Toolbar Container - restricted to only native Quill formats! */}
-            <div id={toolbarId} className="flex flex-wrap items-center gap-1 border-none border-0 m-0 p-0 shadow-none bg-transparent word-toolbar-wrapper w-full">
+            <div id={toolbarId} className="flex flex-nowrap items-center gap-1 border-none border-0 m-0 p-0 shadow-none bg-transparent word-toolbar-wrapper shrink-0">
                 {/* Typography Group */}
                 <div className="flex items-center gap-0 border-r pr-2">
                     <span className="ql-formats m-0 mr-1 flex items-center gap-0">
@@ -903,52 +1039,22 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                             <option value="rubik">Rubik Black (Block)</option>
                             <option value="anton">Anton (Tall Block)</option>
                         </select>
-                        <div className="relative border border-gray-200 rounded flex items-center h-[24px] mx-1 bg-white hover:border-gray-300 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-400 transition-colors" ref={fontSizeDropdownRef}>
+                        <div className="relative border border-gray-200 rounded flex items-center h-[24px] mx-1 bg-white hover:border-gray-300 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-400 transition-colors">
                             <input 
-                                type="text" 
+                                type="number" 
                                 value={currentSize}
-                                onChange={(e) => setCurrentSize(e.target.value)}
-                                onKeyDown={(e) => {
-                                    e.stopPropagation();
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        setFontSizeDropdownOpen(false);
+                                onChange={(e) => {
+                                    const sz = parseInt(e.target.value);
+                                    setCurrentSize(e.target.value);
+                                    if (sz && tiptapEditor) {
+                                        tiptapEditor.chain().setFontSize(sz).run();
                                     }
                                 }}
-                                onFocus={() => {
-                                    setFontSizeDropdownOpen(true);
-                                }}
-                                className="w-8 px-1 text-xs outline-none bg-transparent text-center m-0"
+                                min="1"
+                                max="999"
+                                className="w-16 px-1 text-xs outline-none bg-transparent text-center m-0"
                                 title="Font Size (px)"
                             />
-                            <button 
-                                className="w-5 h-full flex items-center justify-center hover:bg-gray-100 border-l border-gray-100"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    setFontSizeDropdownOpen(!fontSizeDropdownOpen);
-                                }}
-                                title="Select Font Size"
-                            >
-                                <i className="pi pi-chevron-down text-[8px] text-gray-500"></i>
-                            </button>
-                            
-                            <DropdownPortal isOpen={fontSizeDropdownOpen} anchorRef={fontSizeDropdownRef}>
-                                <div className="w-16 max-h-48 overflow-y-auto bg-white border border-gray-200 shadow-xl rounded py-1 custom-scrollbar">
-                                    {['8', '9', '10', '11', '12', '14', '16', '18', '20', '22', '24', '26', '28', '36', '48', '72', '80', '96', '120', '144', '200', '250', '300', '350', '400', '450'].map(sz => (
-                                        <div 
-                                            key={sz} 
-                                            className={`px-3 py-1 text-xs cursor-pointer hover:bg-blue-50 ${currentSize === sz ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-700'}`}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setCurrentSize(sz);
-                                                setFontSizeDropdownOpen(false);
-                                            }}
-                                        >
-                                            {sz}
-                                        </div>
-                                    ))}
-                                </div>
-                            </DropdownPortal>
                         </div>
                     </span>
                 </div>
@@ -1193,119 +1299,9 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                     className="hidden"
                 />
 
-                <button
-                    onClick={() => setHebrewCalculatorOpen(true)}
-                    className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700 shrink-0"
-                    title="Hebrew Calculator"
-                >
-                    <i className="pi pi-compass text-emerald-500"></i>
-                    <span className="hidden xl:inline font-medium">Hebrew</span>
-                </button>
 
-                <button
-                    onClick={() => setGreekCalculatorOpen(true)}
-                    className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700 shrink-0"
-                    title="Greek Calculator"
-                >
-                    <i className="pi pi-compass text-emerald-500"></i>
-                    <span className="hidden xl:inline font-medium">Greek</span>
-                </button>
 
-                <div className="relative border-r border-gray-200 pr-1 mr-1 shrink-0" ref={agScriptDropdownRef}>
-                    <button
-                        onClick={() => setAgScriptDropdownOpen(!agScriptDropdownOpen)}
-                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${agScriptDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
-                        title="Other Scripts"
-                    >
-                        <i className="pi pi-moon text-indigo-500"></i>
-                        <span className="hidden xl:inline font-medium">Scripts</span>
-                    </button>
-                    <DropdownPortal isOpen={agScriptDropdownOpen} anchorRef={agScriptDropdownRef}>
-                        <div className="w-48 bg-gray-900 border border-gray-700 shadow-2xl rounded-lg p-1 flex flex-col gap-1 text-gray-200 pointer-events-auto">
-                            {Object.values(ANTI_GRAVITY_SCRIPTS)
-                                .filter(script => script.id !== 'hebrew' && script.id !== 'greek')
-                                .map(script => (
-                                    <button
-                                        key={script.id}
-                                        onMouseDown={(e) => { e.preventDefault(); setAgScriptDropdownOpen(false); setViewerScript(script); }}
-                                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 rounded text-gray-300 transition-colors w-full text-left"
-                                    >
-                                        <i className="pi pi-compass text-emerald-500"></i>
-                                        {script.name}
-                                    </button>
-                                ))}
-                        </div>
-                    </DropdownPortal>
-                </div>
 
-                <div className="relative border-r border-gray-200 pr-1 mr-1 shrink-0" ref={countryDropdownRef}>
-                    <button
-                        onClick={() => {
-                            setCountryDropdownOpen(!countryDropdownOpen);
-                            if (!countryDropdownOpen) setCountrySearchTerm('');
-                        }}
-                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${countryDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
-                        title="Insert Country"
-                    >
-                        <i className="pi pi-globe text-emerald-600"></i>
-                        <span className="hidden xl:inline font-medium">Country</span>
-                    </button>
-                    <DropdownPortal isOpen={countryDropdownOpen} anchorRef={countryDropdownRef}>
-                        <div className="w-64 max-h-64 overflow-y-auto bg-white border border-gray-200 shadow-2xl rounded-lg py-1 flex flex-col custom-scrollbar relative">
-                            <div className="px-2 pb-1 sticky top-0 bg-white z-10 border-b border-gray-100">
-                                <div className="relative">
-                                    <i className="pi pi-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                                    <input
-                                        type="text"
-                                        className="w-full text-sm pl-7 pr-2 py-1.5 border border-gray-200 rounded focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 bg-gray-50 focus:bg-white transition-colors"
-                                        placeholder="Search country..."
-                                        value={countrySearchTerm}
-                                        onChange={(e) => setCountrySearchTerm(e.target.value)}
-                                        onKeyDown={(e) => e.stopPropagation()}
-                                        autoFocus
-                                    />
-                                </div>
-                            </div>
-                            {(UN_COUNTRIES || [])
-                                .filter(code => {
-                                    if (!countrySearchTerm) return true;
-                                    const countryName = regionNames ? regionNames.of(code) : code;
-                                    return countryName.toLowerCase().includes(countrySearchTerm.toLowerCase());
-                                })
-                                .map(code => {
-                                const countryName = regionNames ? regionNames.of(code) : code;
-                                return (
-                                    <div key={code} className="flex items-center hover:bg-gray-100 transition-colors border-b border-gray-50 last:border-0 w-full group">
-                                        <button
-                                            onMouseDown={(e) => { e.preventDefault(); insertCountry(countryName); }}
-                                            className="px-4 py-2 text-left text-gray-700 text-sm flex-1 truncate focus:outline-none"
-                                            title={`Insert ${countryName}`}
-                                        >
-                                            {countryName}
-                                        </button>
-                                        <button
-                                            onMouseDown={(e) => {
-                                                e.preventDefault();
-                                                setCountryDropdownOpen(false);
-                                                if (handleOpenMap) handleOpenMap(code, countryName);
-                                            }}
-                                            className="px-3 py-2 flex items-center justify-center border-l border-transparent group-hover:border-gray-200 focus:outline-none"
-                                            title={`Open Map for ${countryName}`}
-                                        >
-                                            <img
-                                                src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
-                                                srcSet={`https://flagcdn.com/w80/${code.toLowerCase()}.png 2x`}
-                                                width="20"
-                                                alt={code}
-                                                className="block rounded-sm drop-shadow-sm hover:scale-125 transition-transform"
-                                            />
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </DropdownPortal>
-                </div>
 
                 <div className="relative" ref={chartsDropdownRef}>
                     <button
@@ -1353,44 +1349,6 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                     </DropdownPortal>
                 </div>
 
-                <div className="relative" ref={shapesDropdownRef}>
-                    <button
-                        onClick={() => setShapesDropdownOpen(!shapesDropdownOpen)}
-                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${shapesDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'} hidden xl:flex`}
-                        title="Shapes"
-                    >
-                        <i className="pi pi-clone text-purple-500"></i>
-                        <span className="hidden xl:inline font-medium">Shapes</span>
-                    </button>
-                    <button
-                        onClick={() => setShapesDropdownOpen(!shapesDropdownOpen)}
-                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${shapesDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'} xl:hidden`}
-                        title="Shapes"
-                    >
-                        <i className="pi pi-clone text-purple-500"></i>
-                    </button>
-
-                    <DropdownPortal isOpen={shapesDropdownOpen} anchorRef={shapesDropdownRef}>
-                        <div className="w-80 bg-white border border-gray-200 shadow-2xl rounded-lg p-3 max-h-96 overflow-y-auto custom-scrollbar">
-                            {Object.entries(SHAPES).map(([category, shapesList]) => (
-                                <div key={category} className="mb-4 last:mb-0">
-                                    <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">{category}</div>
-                                    <div className="grid grid-cols-5 gap-2">
-                                        {shapesList.map(shape => (
-                                            <button
-                                                key={shape.name}
-                                                onMouseDown={(e) => { e.preventDefault(); insertShape(shape.svg); }}
-                                                className="w-10 h-10 border border-gray-200 rounded flex items-center justify-center hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 text-gray-600 transition-colors bg-white focus:outline-none"
-                                                title={shape.name}
-                                                dangerouslySetInnerHTML={{ __html: shape.svg }}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </DropdownPortal>
-                </div>
 
                 <div className="relative" ref={graphsDropdownRef}>
                     <button
@@ -1443,14 +1401,6 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                     </DropdownPortal>
                 </div>
 
-                <button
-                    onClick={() => setScrollMenuOpen(true)}
-                    className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-orange-50 text-[#8b5a2b] shrink-0"
-                    title="Scroll Formats"
-                >
-                    <span className="text-lg leading-none">📜</span>
-                    <span className="hidden xl:inline font-medium">Scroll</span>
-                </button>
 
                 <div className="border-l border-gray-300 mx-1 h-5 hidden sm:block"></div>
                 <button
@@ -1479,15 +1429,7 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
             </div>
 
             {/* Layout and Addons */}
-            <div className="flex items-center gap-2 border-l border-gray-200 pl-3 ml-1 h-5 hidden lg:flex">
-                <button
-                    onClick={() => setIsSidebarOpen(true)}
-                    className="flex items-center gap-1 px-2 py-1 rounded transition-colors text-gray-600 hover:bg-blue-50 hover:text-blue-600 font-medium text-sm"
-                    title="Open Bible Index"
-                >
-                    <i className="pi pi-book text-blue-500"></i>
-                    Books
-                </button>
+            <div className="flex items-center gap-2 border-l border-gray-200 pl-3 ml-1 h-5 hidden lg:flex shrink-0">
                 <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
                     <i className="pi pi-file text-gray-400 text-sm"></i>
                     <select
@@ -1504,106 +1446,301 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
             </div>
 
             {/* Advanced Actions */}
-            <div className="flex items-center gap-1 ml-auto">
+            <div className="flex items-center gap-1 ml-auto shrink-0">
                 <div className="flex items-center gap-1 px-3 py-1 mr-1 border-r border-gray-200 text-gray-600 hidden md:flex" title="Word Count">
                     <i className="pi pi-comment text-gray-400"></i>
                     <span className="font-bold">{wordCount}</span>
                     <span className="text-xs font-medium uppercase tracking-wider text-gray-400">words</span>
                 </div>
 
-                <div className="relative border-r border-gray-200 pr-1 mr-1" ref={emojiDropdownRef}>
+
+
+            </div>
+            </div>
+            
+            {/* SECOND ROW */}
+            <div className="flex flex-nowrap items-center gap-2 px-2 py-1 w-full overflow-x-auto custom-scrollbar border-t border-gray-100 bg-gray-50/50">
+                <div className="flex items-center gap-1 shrink-0">
                     <button
-                        onClick={() => setEmojiDropdownOpen(!emojiDropdownOpen)}
-                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${emojiDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
-                        title="Insert Emoji"
+                        onClick={() => setHebrewCalculatorOpen(true)}
+                        className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700 shrink-0"
+                        title="Hebrew Calculator"
                     >
-                        <i className="pi pi-face-smile text-lg text-yellow-500"></i>
-                        <span className="hidden lg:inline font-medium">Emoji</span>
+                        <i className="pi pi-compass text-emerald-500"></i>
+                        <span className="hidden xl:inline font-medium">Hebrew</span>
                     </button>
-                    <DropdownPortal isOpen={emojiDropdownOpen} anchorRef={emojiDropdownRef}>
-                        <div className="w-72 max-h-64 overflow-y-auto bg-white border border-gray-200 shadow-2xl rounded-lg p-2 grid grid-cols-8 gap-1 custom-scrollbar">
-                            {EMOJIS.map((emoji, idx) => (
-                                <button
-                                    key={idx}
-                                    onMouseDown={(e) => { e.preventDefault(); insertEmoji(emoji); }}
-                                    className="text-xl hover:bg-gray-100 rounded p-1 transition-transform hover:scale-125 focus:outline-none flex justify-center items-center"
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
-                        </div>
-                    </DropdownPortal>
+
+                    <button
+                        onClick={() => setGreekCalculatorOpen(true)}
+                        className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700 shrink-0"
+                        title="Greek Calculator"
+                    >
+                        <i className="pi pi-compass text-emerald-500"></i>
+                        <span className="hidden xl:inline font-medium">Greek</span>
+                    </button>
+
+                    <div className="relative shrink-0" ref={agScriptDropdownRef}>
+                        <button
+                            onClick={() => setAgScriptDropdownOpen(!agScriptDropdownOpen)}
+                            className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${agScriptDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
+                            title="Other Scripts"
+                        >
+                            <i className="pi pi-moon text-indigo-500"></i>
+                            <span className="hidden xl:inline font-medium">Scripts</span>
+                        </button>
+                        <DropdownPortal isOpen={agScriptDropdownOpen} anchorRef={agScriptDropdownRef}>
+                            <div className="w-48 bg-gray-900 border border-gray-700 shadow-2xl rounded-lg p-1 flex flex-col gap-1 text-gray-200 pointer-events-auto">
+                                {Object.values(ANTI_GRAVITY_SCRIPTS)
+                                    .filter(script => script.id !== 'hebrew' && script.id !== 'greek')
+                                    .map(script => (
+                                        <button
+                                            key={script.id}
+                                            onMouseDown={(e) => { e.preventDefault(); setAgScriptDropdownOpen(false); setViewerScript(script); }}
+                                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 rounded text-gray-300 transition-colors w-full text-left"
+                                        >
+                                            <i className="pi pi-compass text-emerald-500"></i>
+                                            {script.name}
+                                        </button>
+                                    ))}
+                            </div>
+                        </DropdownPortal>
+                    </div>
+
+                    <div className="border-l border-gray-300 h-4 mx-1"></div>
+
+                    <div className="relative shrink-0" ref={countryDropdownRef}>
+                        <button
+                            onClick={() => {
+                                setCountryDropdownOpen(!countryDropdownOpen);
+                                if (!countryDropdownOpen) setCountrySearchTerm('');
+                            }}
+                            className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${countryDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
+                            title="Insert Country"
+                        >
+                            <i className="pi pi-globe text-emerald-600"></i>
+                            <span className="hidden xl:inline font-medium">Country</span>
+                        </button>
+                        <DropdownPortal isOpen={countryDropdownOpen} anchorRef={countryDropdownRef}>
+                            <div className="w-64 max-h-64 overflow-y-auto bg-white border border-gray-200 shadow-2xl rounded-lg py-1 flex flex-col custom-scrollbar relative">
+                                <div className="px-2 pb-1 sticky top-0 bg-white z-10 border-b border-gray-100">
+                                    <div className="relative">
+                                        <i className="pi pi-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                        <input
+                                            type="text"
+                                            className="w-full text-sm pl-7 pr-2 py-1.5 border border-gray-200 rounded focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 bg-gray-50 focus:bg-white transition-colors"
+                                            placeholder="Search country..."
+                                            value={countrySearchTerm}
+                                            onChange={(e) => setCountrySearchTerm(e.target.value)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+                                {(UN_COUNTRIES || [])
+                                    .filter(code => {
+                                        if (!countrySearchTerm) return true;
+                                        const countryName = regionNames ? regionNames.of(code) : code;
+                                        return countryName.toLowerCase().includes(countrySearchTerm.toLowerCase());
+                                    })
+                                    .map(code => {
+                                    const countryName = regionNames ? regionNames.of(code) : code;
+                                    return (
+                                        <div key={code} className="flex items-center hover:bg-gray-100 transition-colors border-b border-gray-50 last:border-0 w-full group">
+                                            <button
+                                                onMouseDown={(e) => { e.preventDefault(); insertCountry(countryName); }}
+                                                className="px-4 py-2 text-left text-gray-700 text-sm flex-1 truncate focus:outline-none"
+                                                title={`Insert ${countryName}`}
+                                            >
+                                                {countryName}
+                                            </button>
+                                            <button
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    setCountryDropdownOpen(false);
+                                                    if (handleOpenMap) handleOpenMap(code, countryName);
+                                                }}
+                                                className="px-3 py-2 flex items-center justify-center border-l border-transparent group-hover:border-gray-200 focus:outline-none"
+                                                title={`Open Map for ${countryName}`}
+                                            >
+                                                <img
+                                                    src={`https://flagcdn.com/w40/${code.toLowerCase()}.png`}
+                                                    srcSet={`https://flagcdn.com/w80/${code.toLowerCase()}.png 2x`}
+                                                    width="20"
+                                                    alt={code}
+                                                    className="block rounded-sm drop-shadow-sm hover:scale-125 transition-transform"
+                                                />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </DropdownPortal>
+                    </div>
+
+                    <div className="relative shrink-0" ref={shapesDropdownRef}>
+                        <button
+                            onClick={() => setShapesDropdownOpen(!shapesDropdownOpen)}
+                            className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${shapesDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
+                            title="Shapes"
+                        >
+                            <i className="pi pi-clone text-purple-500"></i>
+                            <span className="hidden xl:inline font-medium">Shapes</span>
+                        </button>
+                        <DropdownPortal isOpen={shapesDropdownOpen} anchorRef={shapesDropdownRef}>
+                            <div className="w-80 bg-white border border-gray-200 shadow-2xl rounded-lg p-3 max-h-96 overflow-y-auto custom-scrollbar">
+                                {Object.entries(SHAPES).map(([category, shapesList]) => (
+                                    <div key={category} className="mb-4 last:mb-0">
+                                        <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">{category}</div>
+                                        <div className="grid grid-cols-5 gap-2">
+                                            {shapesList.map(shape => (
+                                                <button
+                                                    key={shape.name}
+                                                    onMouseDown={(e) => { e.preventDefault(); insertShape(shape.svg); }}
+                                                    className="w-10 h-10 border border-gray-200 rounded flex items-center justify-center hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 text-gray-600 transition-colors bg-white focus:outline-none"
+                                                    title={shape.name}
+                                                    dangerouslySetInnerHTML={{ __html: shape.svg }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </DropdownPortal>
+                    </div>
+
+                    <div className="border-l border-gray-300 h-4 mx-1"></div>
+
+                    <button
+                        onClick={() => setScrollMenuOpen(true)}
+                        className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-orange-50 text-[#8b5a2b] shrink-0"
+                        title="Scroll Formats"
+                    >
+                        <span className="text-lg leading-none">📜</span>
+                        <span className="hidden xl:inline font-medium">Scroll</span>
+                    </button>
+
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="flex items-center gap-1 px-2 py-1 rounded transition-colors text-gray-600 hover:bg-blue-50 hover:text-blue-600 font-medium text-sm shrink-0"
+                        title="Open Bible Index"
+                    >
+                        <i className="pi pi-book text-blue-500"></i>
+                        <span className="hidden xl:inline font-medium">Books</span>
+                    </button>
+
+                    <div className="border-l border-gray-300 h-4 mx-1"></div>
+
+                    <div className="relative shrink-0" ref={emojiDropdownRef}>
+                        <button
+                            onClick={() => setEmojiDropdownOpen(!emojiDropdownOpen)}
+                            className={`flex items-center gap-1 px-2 py-1 rounded transition-colors ${emojiDropdownOpen ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 text-gray-700'}`}
+                            title="Insert Emoji"
+                        >
+                            <i className="pi pi-face-smile text-lg text-yellow-500"></i>
+                            <span className="hidden lg:inline font-medium">Emoji</span>
+                        </button>
+                        <DropdownPortal isOpen={emojiDropdownOpen} anchorRef={emojiDropdownRef}>
+                            <div className="w-72 max-h-64 overflow-y-auto bg-white border border-gray-200 shadow-2xl rounded-lg p-2 grid grid-cols-8 gap-1 custom-scrollbar">
+                                {EMOJIS.map((emoji, idx) => (
+                                    <button
+                                        key={idx}
+                                        onMouseDown={(e) => { e.preventDefault(); insertEmoji(emoji); }}
+                                        className="text-xl hover:bg-gray-100 rounded p-1 transition-transform hover:scale-125 focus:outline-none flex justify-center items-center"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        </DropdownPortal>
+                    </div>
                 </div>
-
-                <button
-                    onClick={handleExportPPT}
-                    className="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 hover:bg-orange-100 rounded font-semibold transition-colors border border-orange-200"
-                    title="Export as PowerPoint"
-                >
-                    <i className="pi pi-file-export"></i>
-                    <span className="hidden md:inline">PPT</span>
-                </button>
-                <button
-                    onClick={handleExportPDF}
-                    className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded font-semibold transition-colors border border-red-200 ml-1"
-                    title="Download as PDF"
-                >
-                    <i className="pi pi-file-pdf"></i>
-                    <span className="hidden md:inline">PDF</span>
-                </button>
-
-                <div className="flex items-center bg-gray-100 rounded-md p-0.5 mx-1">
+                
+                {/* Advanced Document Tools moved to Second Row */}
+                <div className="flex items-center gap-1 ml-auto shrink-0">
                     <button
-                        onClick={() => setZoomLevel(prev => Math.max(0.3, prev - 0.1))}
-                        className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
-                        title="Zoom Out"
+                        onClick={() => {
+                            if (tiptapEditor) {
+                                tiptapEditor.chain().focus().insertContentAt(tiptapEditor.state.doc.content.size, { type: 'page', content: [{ type: 'paragraph' }] }).run();
+                            }
+                        }}
+                        className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-600 hover:bg-green-100 rounded font-semibold transition-colors border border-green-200 mr-1"
+                        title="Add another page"
                     >
-                        <i className="pi pi-minus text-[10px]"></i>
+                        <i className="pi pi-file-plus"></i>
+                        <span className="hidden md:inline">Add Page</span>
+                    </button>
+
+                    <button
+                        onClick={handleExportPPT}
+                        className="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 hover:bg-orange-100 rounded font-semibold transition-colors border border-orange-200"
+                        title="Export as PowerPoint"
+                    >
+                        <i className="pi pi-file-export"></i>
+                        <span className="hidden md:inline">PPT</span>
                     </button>
                     <button
-                        onClick={() => setZoomLevel(1)}
-                        className="flex items-center justify-center min-w-[36px] px-1 text-[11px] font-bold text-gray-700 hover:text-blue-600 cursor-pointer focus:outline-none"
-                        title="Reset Zoom"
+                        onClick={handleExportPDF}
+                        className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded font-semibold transition-colors border border-red-200 ml-1"
+                        title="Download as PDF"
                     >
-                        {Math.round((zoomLevel || 1) * 100)}%
+                        <i className="pi pi-file-pdf"></i>
+                        <span className="hidden md:inline">PDF</span>
+                    </button>
+
+                    <div className="flex items-center bg-gray-100 rounded-md p-0.5 mx-1">
+                        <button
+                            onClick={() => setZoomLevel(prev => Math.max(0.3, prev - 0.1))}
+                            className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
+                            title="Zoom Out"
+                        >
+                            <i className="pi pi-minus text-[10px]"></i>
+                        </button>
+                        <button
+                            onClick={() => setZoomLevel(1)}
+                            className="flex items-center justify-center min-w-[36px] px-1 text-[11px] font-bold text-gray-700 hover:text-blue-600 cursor-pointer focus:outline-none"
+                            title="Reset Zoom"
+                        >
+                            {Math.round((zoomLevel || 1) * 100)}%
+                        </button>
+                        <button
+                            onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.1))}
+                            className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
+                            title="Zoom In"
+                        >
+                            <i className="pi pi-plus text-[10px]"></i>
+                        </button>
+                    </div>
+
+                    <div className="border-l border-gray-200 h-5 mx-1 hidden md:block"></div>
+
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-gray-700 transition-colors"
+                        title="Print Document"
+                    >
+                        <i className="pi pi-print"></i>
+                    </button>
+
+                    <button
+                        onClick={handleShare}
+                        className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-gray-700 transition-colors border-r border-gray-200 pr-3 mr-1"
+                        title="Download"
+                    >
+                        <i className="pi pi-download"></i>
                     </button>
                     <button
-                        onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.1))}
-                        className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
-                        title="Zoom In"
+                        onClick={() => setNotesModalOpen(true)}
+                        className="flex items-center gap-1 px-2 py-1 hover:bg-amber-100 rounded text-amber-700 transition-colors ml-1 font-medium"
+                        title="Document Notes"
                     >
-                        <i className="pi pi-plus text-[10px]"></i>
+                        <i className="pi pi-clipboard"></i>
+                        <span className="hidden sm:inline">Notes</span>
                     </button>
                 </div>
-
-                <div className="border-l border-gray-200 h-5 mx-1 hidden md:block"></div>
-
-                <button
-                    onClick={handlePrint}
-                    className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-gray-700 transition-colors"
-                    title="Print Document"
-                >
-                    <i className="pi pi-print"></i>
-                </button>
-
-                <button
-                    onClick={handleShare}
-                    className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-gray-700 transition-colors border-r border-gray-200 pr-3 mr-1"
-                    title="Download"
-                >
-                    <i className="pi pi-download"></i>
-                </button>
-                <button
-                    onClick={() => setNotesModalOpen(true)}
-                    className="flex items-center gap-1 px-2 py-1 hover:bg-amber-100 rounded text-amber-700 transition-colors ml-1 font-medium"
-                    title="Document Notes"
-                >
-                    <i className="pi pi-clipboard"></i>
-                    <span className="hidden sm:inline">Notes</span>
-                </button>
             </div>
 
-            {/* Puzzle Configuration Modal */}
+
+        {/* Puzzle Configuration Modal */}
             {puzzleModalOpen && (
                 <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm print:hidden">
                     <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-sm flex flex-col transform transition-all scale-100 opacity-100">

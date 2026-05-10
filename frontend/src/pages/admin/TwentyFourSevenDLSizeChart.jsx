@@ -83,7 +83,7 @@ const TwentyFourSevenDLSizeChart = () => {
 
     // Aesthetic & UX Scaling
     const [tableFontSize, setTableFontSize] = useState(8); 
-    const getFS = (base) => (base + (tableFontSize - 10)) + 'px';
+    const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
 
     const fetchChartList = () => {
                 axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })

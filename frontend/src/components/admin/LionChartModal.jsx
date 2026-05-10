@@ -30,18 +30,36 @@ const DEFAULT_ABBR = [
 
 const LionChartModal = ({ visible, onHide, onInsert }) => {
     const [acronym, setAcronym] = useState('LIONS');
+    const [subtitleText, setSubtitleText] = useState('EXCUSES STOP YOU FROM GROWING');
+    
+    // Acronym Styling
     const [topBgColor, setTopBgColor] = useState('#8b0000'); // dark red
-    const [bottomBgColor, setBottomBgColor] = useState('#eab308'); // yellow
     const [topTextColor, setTopTextColor] = useState('#3b82f6'); // blue
+    const [acronymFontFamily, setAcronymFontFamily] = useState(FONTS[2].value); // Impact
+    const [acronymIsBold, setAcronymIsBold] = useState(true);
+    const [acronymIsItalic, setAcronymIsItalic] = useState(false);
+    const [acronymIsUnderline, setAcronymIsUnderline] = useState(false);
+
+    // Subtitle Styling
+    const [bottomBgColor, setBottomBgColor] = useState('#eab308'); // yellow
     const [bottomTextColor, setBottomTextColor] = useState('#a3e635'); // lime-400
+    const [subtitleFontFamily, setSubtitleFontFamily] = useState(FONTS[2].value);
+    const [subtitleIsBold, setSubtitleIsBold] = useState(true);
+    const [subtitleIsItalic, setSubtitleIsItalic] = useState(false);
+    const [subtitleIsUnderline, setSubtitleIsUnderline] = useState(false);
+
+    // Abbreviation Styling
     const [abbrTextColor, setAbbrTextColor] = useState('#dc2626'); // red-600
-    const [fontFamily, setFontFamily] = useState(FONTS[2].value); // Impact
-    const [isBold, setIsBold] = useState(true);
-    const [isItalic, setIsItalic] = useState(false);
-    const [isUnderline, setIsUnderline] = useState(false);
+    const [abbrFontFamily, setAbbrFontFamily] = useState(FONTS[2].value);
+    const [abbrIsBold, setAbbrIsBold] = useState(true);
+    const [abbrIsItalic, setAbbrIsItalic] = useState(false);
+    const [abbrIsUnderline, setAbbrIsUnderline] = useState(false);
+    const [abbrFontSize, setAbbrFontSize] = useState(30);
+
     const [letterGap, setLetterGap] = useState(50); // pixels
     const [lineSpacing, setLineSpacing] = useState(24); // pixels
     const [borderRadius, setBorderRadius] = useState(0); // pixels
+    const [borderColor, setBorderColor] = useState('#6b7280'); // gray-500
     const [abbreviations, setAbbreviations] = useState(DEFAULT_ABBR);
     const [showVertical, setShowVertical] = useState(true);
 
@@ -67,11 +85,11 @@ const LionChartModal = ({ visible, onHide, onInsert }) => {
 
     const renderPreview = () => {
         return (
-            <div ref={chartRef} className="bg-white p-4 inline-block w-full" style={{ fontFamily }}>
+            <div ref={chartRef} className="bg-white p-4 inline-block w-full">
                 {/* Top Banner Box */}
                 <div 
-                    className="border-8 border-gray-500 overflow-hidden"
-                    style={{ borderRadius: `${borderRadius}px` }}
+                    className="border-8 overflow-hidden"
+                    style={{ borderRadius: `${borderRadius}px`, borderColor: borderColor }}
                 >
                     {/* Top Section - Acronym */}
                     <div 
@@ -81,8 +99,9 @@ const LionChartModal = ({ visible, onHide, onInsert }) => {
                         {acronym.split('').map((letter, i) => (
                             <span 
                                 key={i} 
-                                className={`text-7xl tracking-wider ${isBold ? 'font-bold' : ''} ${isItalic ? 'italic' : ''} ${isUnderline ? 'underline' : ''}`}
+                                className={`text-7xl tracking-wider ${acronymIsBold ? 'font-bold' : ''} ${acronymIsItalic ? 'italic' : ''} ${acronymIsUnderline ? 'underline' : ''}`}
                                 style={{ 
+                                    fontFamily: acronymFontFamily,
                                     color: topTextColor, 
                                     textShadow: '-2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff' 
                                 }}
@@ -92,16 +111,19 @@ const LionChartModal = ({ visible, onHide, onInsert }) => {
                         ))}
                     </div>
 
-                    {/* Bottom Section - EXCUSES... */}
+                    {/* Bottom Section - Subtitle */}
                     <div 
                         className="py-3 px-4 text-center"
                         style={{ backgroundColor: bottomBgColor }}
                     >
                         <span 
-                            className={`text-4xl tracking-widest ${isBold ? 'font-bold' : ''} ${isItalic ? 'italic' : ''} ${isUnderline ? 'underline' : ''}`}
-                            style={{ color: bottomTextColor }}
+                            className={`text-4xl tracking-widest ${subtitleIsBold ? 'font-bold' : ''} ${subtitleIsItalic ? 'italic' : ''} ${subtitleIsUnderline ? 'underline' : ''}`}
+                            style={{ 
+                                fontFamily: subtitleFontFamily,
+                                color: bottomTextColor 
+                            }}
                         >
-                            EXCUSES STOP YOU FROM GROWING
+                            {subtitleText}
                         </span>
                     </div>
                 </div>
@@ -112,8 +134,9 @@ const LionChartModal = ({ visible, onHide, onInsert }) => {
                         {acronym.split('').map((letter, i) => (
                             <div key={i} className="flex items-center gap-2">
                                 <span 
-                                    className={`text-6xl ${isBold ? 'font-bold' : ''} ${isItalic ? 'italic' : ''} ${isUnderline ? 'underline' : ''}`}
+                                    className={`text-6xl ${acronymIsBold ? 'font-bold' : ''} ${acronymIsItalic ? 'italic' : ''} ${acronymIsUnderline ? 'underline' : ''}`}
                                     style={{ 
+                                        fontFamily: acronymFontFamily,
                                         color: topTextColor, 
                                         textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0px 0px 4px rgba(0,0,0,0.2)'
                                     }}
@@ -121,8 +144,12 @@ const LionChartModal = ({ visible, onHide, onInsert }) => {
                                     {letter}
                                 </span>
                                 <span 
-                                    className={`text-3xl mt-3 uppercase ${isBold ? 'font-bold' : ''} ${isItalic ? 'italic' : ''} ${isUnderline ? 'underline' : ''}`}
-                                    style={{ color: abbrTextColor }}
+                                    className={`mt-3 uppercase ${abbrIsBold ? 'font-bold' : ''} ${abbrIsItalic ? 'italic' : ''} ${abbrIsUnderline ? 'underline' : ''}`}
+                                    style={{ 
+                                        fontFamily: abbrFontFamily,
+                                        color: abbrTextColor,
+                                        fontSize: `${abbrFontSize}px`
+                                    }}
                                 >
                                     {abbreviations[i] || ''}
                                 </span>
@@ -149,113 +176,172 @@ const LionChartModal = ({ visible, onHide, onInsert }) => {
                     <h3 className="font-bold text-lg text-gray-800 border-b pb-2">Customization Options</h3>
                     
                     <div className="flex flex-col gap-4">
-                        {/* Acronym Text */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Acronym Text</label>
-                            <InputText 
-                                value={acronym} 
-                                onChange={(e) => setAcronym(e.target.value.toUpperCase())} 
-                                className="w-full" 
-                                placeholder="E.g., LIONS, ANT"
-                            />
-                        </div>
-
-                        {/* Font Style */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Font Style</label>
-                            <div className="flex gap-2">
-                                <Dropdown 
-                                    value={fontFamily} 
-                                    options={FONTS} 
-                                    onChange={(e) => setFontFamily(e.value)} 
-                                    className="w-full" 
-                                />
-                                <Button icon="pi pi-bold" tooltip="Bold" className={`p-button-sm shrink-0 ${isBold ? '' : 'p-button-outlined'}`} onClick={() => setIsBold(!isBold)} />
-                                <Button icon="pi pi-italic" tooltip="Italic" className={`p-button-sm shrink-0 ${isItalic ? '' : 'p-button-outlined'}`} onClick={() => setIsItalic(!isItalic)} />
-                                <Button icon="pi pi-underline" tooltip="Underline" className={`p-button-sm shrink-0 ${isUnderline ? '' : 'p-button-outlined'}`} onClick={() => setIsUnderline(!isUnderline)} />
-                            </div>
-                        </div>
-
-                        {/* Colors */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Top Banner BG</label>
-                                <div className="flex items-center gap-2">
-                                    <input type="color" value={topBgColor} onChange={(e) => setTopBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer" />
-                                    <span className="text-xs text-gray-500 uppercase">{topBgColor}</span>
+                        {/* ACRONYM SECTION */}
+                        <div className="border border-gray-200 rounded p-3 bg-white shadow-sm">
+                            <h4 className="font-bold text-gray-800 mb-2 border-b pb-1 text-sm">Acronym Header Settings</h4>
+                            <div className="flex flex-col gap-3 mt-2">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Acronym Text</label>
+                                    <InputText 
+                                        value={acronym} 
+                                        onChange={(e) => setAcronym(e.target.value.toUpperCase())} 
+                                        className="w-full p-inputtext-sm" 
+                                        placeholder="E.g., LIONS, ANT"
+                                    />
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Bottom Banner BG</label>
-                                <div className="flex items-center gap-2">
-                                    <input type="color" value={bottomBgColor} onChange={(e) => setBottomBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer" />
-                                    <span className="text-xs text-gray-500 uppercase">{bottomBgColor}</span>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Font Style</label>
+                                    <div className="flex gap-2">
+                                        <Dropdown 
+                                            value={acronymFontFamily} 
+                                            options={FONTS} 
+                                            onChange={(e) => setAcronymFontFamily(e.value)} 
+                                            className="w-full p-dropdown-sm" 
+                                        />
+                                        <Button icon="pi pi-bold" className={`p-button-sm shrink-0 ${acronymIsBold ? '' : 'p-button-outlined'}`} onClick={() => setAcronymIsBold(!acronymIsBold)} />
+                                        <Button icon="pi pi-italic" className={`p-button-sm shrink-0 ${acronymIsItalic ? '' : 'p-button-outlined'}`} onClick={() => setAcronymIsItalic(!acronymIsItalic)} />
+                                        <Button icon="pi pi-underline" className={`p-button-sm shrink-0 ${acronymIsUnderline ? '' : 'p-button-outlined'}`} onClick={() => setAcronymIsUnderline(!acronymIsUnderline)} />
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Top Text Color</label>
-                                <div className="flex items-center gap-2">
-                                    <input type="color" value={topTextColor} onChange={(e) => setTopTextColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer" />
-                                    <span className="text-xs text-gray-500 uppercase">{topTextColor}</span>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Background Color</label>
+                                        <div className="flex items-center gap-2">
+                                            <input type="color" value={topBgColor} onChange={(e) => setTopBgColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
+                                            <span className="text-xs text-gray-500 uppercase">{topBgColor}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Text Color</label>
+                                        <div className="flex items-center gap-2">
+                                            <input type="color" value={topTextColor} onChange={(e) => setTopTextColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
+                                            <span className="text-xs text-gray-500 uppercase">{topTextColor}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Bottom Text Color</label>
-                                <div className="flex items-center gap-2">
-                                    <input type="color" value={bottomTextColor} onChange={(e) => setBottomTextColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer" />
-                                    <span className="text-xs text-gray-500 uppercase">{bottomTextColor}</span>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Abbr Text Color</label>
-                                <div className="flex items-center gap-2">
-                                    <input type="color" value={abbrTextColor} onChange={(e) => setAbbrTextColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer" />
-                                    <span className="text-xs text-gray-500 uppercase">{abbrTextColor}</span>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Letter Gap: {letterGap}px</label>
+                                    <Slider value={letterGap} onChange={(e) => setLetterGap(e.value)} min={0} max={200} />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Sliders */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Letter Gap: {letterGap}px
-                            </label>
-                            <Slider value={letterGap} onChange={(e) => setLetterGap(e.value)} min={0} max={200} />
+                        {/* SUBTITLE SECTION */}
+                        <div className="border border-gray-200 rounded p-3 bg-white shadow-sm">
+                            <h4 className="font-bold text-gray-800 mb-2 border-b pb-1 text-sm">Subtitle Settings</h4>
+                            <div className="flex flex-col gap-3 mt-2">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Subtitle Text</label>
+                                    <InputText 
+                                        value={subtitleText} 
+                                        onChange={(e) => setSubtitleText(e.target.value)} 
+                                        className="w-full p-inputtext-sm" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Font Style</label>
+                                    <div className="flex gap-2">
+                                        <Dropdown 
+                                            value={subtitleFontFamily} 
+                                            options={FONTS} 
+                                            onChange={(e) => setSubtitleFontFamily(e.value)} 
+                                            className="w-full p-dropdown-sm" 
+                                        />
+                                        <Button icon="pi pi-bold" className={`p-button-sm shrink-0 ${subtitleIsBold ? '' : 'p-button-outlined'}`} onClick={() => setSubtitleIsBold(!subtitleIsBold)} />
+                                        <Button icon="pi pi-italic" className={`p-button-sm shrink-0 ${subtitleIsItalic ? '' : 'p-button-outlined'}`} onClick={() => setSubtitleIsItalic(!subtitleIsItalic)} />
+                                        <Button icon="pi pi-underline" className={`p-button-sm shrink-0 ${subtitleIsUnderline ? '' : 'p-button-outlined'}`} onClick={() => setSubtitleIsUnderline(!subtitleIsUnderline)} />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Background Color</label>
+                                        <div className="flex items-center gap-2">
+                                            <input type="color" value={bottomBgColor} onChange={(e) => setBottomBgColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
+                                            <span className="text-xs text-gray-500 uppercase">{bottomBgColor}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Text Color</label>
+                                        <div className="flex items-center gap-2">
+                                            <input type="color" value={bottomTextColor} onChange={(e) => setBottomTextColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
+                                            <span className="text-xs text-gray-500 uppercase">{bottomTextColor}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Vertical Line Spacing: {lineSpacing}px
-                            </label>
-                            <Slider value={lineSpacing} onChange={(e) => setLineSpacing(e.value)} min={0} max={100} />
+                        {/* GENERAL SETTINGS */}
+                        <div className="border border-gray-200 rounded p-3 bg-white shadow-sm">
+                            <h4 className="font-bold text-gray-800 mb-2 border-b pb-1 text-sm">Container Shape Settings</h4>
+                            <div className="grid grid-cols-2 gap-4 mt-2">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Border Color</label>
+                                    <div className="flex items-center gap-2">
+                                        <input type="color" value={borderColor} onChange={(e) => setBorderColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
+                                        <span className="text-xs text-gray-500 uppercase">{borderColor}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-700 mb-1">Border Radius: {borderRadius}px</label>
+                                    <Slider value={borderRadius} onChange={(e) => setBorderRadius(e.value)} min={0} max={100} />
+                                </div>
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Shape Border Radius: {borderRadius}px
-                            </label>
-                            <Slider value={borderRadius} onChange={(e) => setBorderRadius(e.value)} min={0} max={100} />
-                        </div>
-
-                        {/* Vertical Abbreviations */}
-                        <div className="pt-4 border-t">
-                            <div className="flex items-center justify-between mb-4">
-                                <label className="text-sm font-semibold text-gray-700">Show Vertical Abbreviations</label>
+                        {/* VERTICAL ABBREVIATIONS SECTION */}
+                        <div className="border border-gray-200 rounded p-3 bg-white shadow-sm">
+                            <div className="flex items-center justify-between mb-2 border-b pb-1">
+                                <h4 className="font-bold text-gray-800 text-sm">Vertical Abbreviations</h4>
                                 <InputSwitch checked={showVertical} onChange={(e) => setShowVertical(e.value)} />
                             </div>
 
                             {showVertical && (
-                                <div className="flex flex-col gap-3">
-                                    {acronym.split('').map((letter, i) => (
-                                        <div key={i} className="flex items-center gap-2">
-                                            <span className="font-bold text-lg w-6 text-center">{letter}</span>
-                                            <InputText 
-                                                value={abbreviations[i] || ''} 
-                                                onChange={(e) => handleAbbrChange(i, e.target.value)} 
-                                                className="w-full p-inputtext-sm"
+                                <div className="flex flex-col gap-3 mt-3">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Font Style</label>
+                                        <div className="flex gap-2">
+                                            <Dropdown 
+                                                value={abbrFontFamily} 
+                                                options={FONTS} 
+                                                onChange={(e) => setAbbrFontFamily(e.value)} 
+                                                className="w-full p-dropdown-sm" 
                                             />
+                                            <Button icon="pi pi-bold" className={`p-button-sm shrink-0 ${abbrIsBold ? '' : 'p-button-outlined'}`} onClick={() => setAbbrIsBold(!abbrIsBold)} />
+                                            <Button icon="pi pi-italic" className={`p-button-sm shrink-0 ${abbrIsItalic ? '' : 'p-button-outlined'}`} onClick={() => setAbbrIsItalic(!abbrIsItalic)} />
+                                            <Button icon="pi pi-underline" className={`p-button-sm shrink-0 ${abbrIsUnderline ? '' : 'p-button-outlined'}`} onClick={() => setAbbrIsUnderline(!abbrIsUnderline)} />
                                         </div>
-                                    ))}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-700 mb-1">Text Color</label>
+                                            <div className="flex items-center gap-2">
+                                                <input type="color" value={abbrTextColor} onChange={(e) => setAbbrTextColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
+                                                <span className="text-xs text-gray-500 uppercase">{abbrTextColor}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-700 mb-1">Font Size: {abbrFontSize}px</label>
+                                            <Slider value={abbrFontSize} onChange={(e) => setAbbrFontSize(e.value)} min={10} max={100} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Line Spacing: {lineSpacing}px</label>
+                                        <Slider value={lineSpacing} onChange={(e) => setLineSpacing(e.value)} min={0} max={100} />
+                                    </div>
+                                    <div className="flex flex-col gap-2 mt-2">
+                                        <label className="block text-xs font-semibold text-gray-700">Abbreviation Words</label>
+                                        {acronym.split('').map((letter, i) => (
+                                            <div key={i} className="flex items-center gap-2">
+                                                <span className="font-bold text-sm w-6 text-center text-gray-700">{letter}</span>
+                                                <InputText 
+                                                    value={abbreviations[i] || ''} 
+                                                    onChange={(e) => handleAbbrChange(i, e.target.value)} 
+                                                    className="w-full p-inputtext-sm"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>

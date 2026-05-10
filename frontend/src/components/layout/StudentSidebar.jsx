@@ -77,6 +77,7 @@ const StudentSidebar = ({ visible, onHide }) => {
             ]
         },
         { label: 'Book Index', icon: 'pi pi-book', to: '/dashboard/student/book-index' },
+        { label: 'SMT Page', icon: 'pi pi-file-word', to: '/dashboard/student/smt-page' },
         { label: 'Players', icon: 'pi pi-play', to: '/dashboard/student/players' },
         { label: '7 TNT Players', icon: 'pi pi-play', to: '/dashboard/student/7tnt-players' },
         { label: 'Recordings', icon: 'pi pi-microphone', to: '/dashboard/student/recordings' }

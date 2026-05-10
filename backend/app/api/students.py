@@ -24,7 +24,19 @@ class BulkApprovePayload(BaseModel):
     student_ids: List[UUID]
     approve: bool = True
 
+class TouchCountUpdatePayload(BaseModel):
+    transformation: int = 0
+    team_transformation: int = 0
+    klt_reading_plan: int = 0
+
 router = APIRouter()
+
+@router.get("/debug-touches")
+async def debug_touches(db: AsyncSession = Depends(get_db)):
+    from app.db.models import StudentTouchCount, User
+    result = await db.execute(select(User.email, StudentTouchCount.transformation_touches, StudentTouchCount.team_transformation_touches, StudentTouchCount.klt_reading_plan_touches).outerjoin(StudentTouchCount, User.id == StudentTouchCount.user_id))
+    rows = result.all()
+    return [{"email": r[0], "transformation": r[1], "team_transformation": r[2], "klt_reading_plan": r[3]} for r in rows]
 
 async def verify_admin_or_higher(current_user: User = Depends(get_current_user)):
     if current_user.role not in [UserRole.super_admin, UserRole.admin, UserRole.leader]:
@@ -82,9 +94,9 @@ async def get_students(db: AsyncSession = Depends(get_db), current_user: User = 
             "admin_name": adm_name,
             "group_name": grp_name,
             "touch_counts": {
-                "transformation": touch_count_obj.transformation_touches if touch_count_obj else 0,
-                "team_transformation": touch_count_obj.team_transformation_touches if touch_count_obj else 0,
-                "klt_reading_plan": touch_count_obj.klt_reading_plan_touches if touch_count_obj else 0
+                "transformation": touch_count_obj.transformation_touches or 0 if touch_count_obj else 0,
+                "team_transformation": touch_count_obj.team_transformation_touches or 0 if touch_count_obj else 0,
+                "klt_reading_plan": touch_count_obj.klt_reading_plan_touches or 0 if touch_count_obj else 0
             } if touch_count_obj else None
         }
         response_list.append(user_dict)
@@ -164,6 +176,132 @@ async def update_student(student_id: UUID, student_in: StudentUpdate, db: AsyncS
     await db.commit()
     await db.refresh(user)
     return user
+
+@router.put("/me/touch-counts")
+async def increment_my_touch_counts(payload: TouchCountUpdatePayload, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Self-service endpoint: any logged-in user can increment their OWN touch counts.
+    Used by the player pages (TTomTPlayer, SMTPlayer) — no admin role required.
+    MUST be defined BEFORE /{student_id}/touch-counts to avoid FastAPI route conflict."""
+    from app.db.models import StudentTouchCount
+
+    user_id = current_user.id
+
+    # Verify this user actually exists in the users table (ttom_users are in a separate table)
+    user_check = await db.execute(select(User).where(User.id == user_id))
+    if not user_check.scalars().first():
+        # Gracefully skip for ttom_users who don't have a row in the users table
+        return {"transformation": 0, "team_transformation": 0, "klt_reading_plan": 0, "skipped": True}
+
+    tc_result = await db.execute(select(StudentTouchCount).where(StudentTouchCount.user_id == user_id))
+    existing = tc_result.scalars().first()
+
+    if not existing:
+        try:
+            new_tc = StudentTouchCount(
+                user_id=user_id,
+                transformation_touches=payload.transformation,
+                team_transformation_touches=payload.team_transformation,
+                klt_reading_plan_touches=payload.klt_reading_plan
+            )
+            db.add(new_tc)
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            return {"transformation": 0, "team_transformation": 0, "klt_reading_plan": 0}
+    else:
+        await db.execute(
+            update(StudentTouchCount)
+            .where(StudentTouchCount.user_id == user_id)
+            .values(
+                transformation_touches=func.coalesce(StudentTouchCount.transformation_touches, 0) + payload.transformation,
+                team_transformation_touches=func.coalesce(StudentTouchCount.team_transformation_touches, 0) + payload.team_transformation,
+                klt_reading_plan_touches=func.coalesce(StudentTouchCount.klt_reading_plan_touches, 0) + payload.klt_reading_plan
+            )
+        )
+        await db.commit()
+
+    db.expire_all()
+    fresh_result = await db.execute(select(StudentTouchCount).where(StudentTouchCount.user_id == user_id))
+    fresh_tc = fresh_result.scalars().first()
+
+    return {
+        "transformation": fresh_tc.transformation_touches if fresh_tc and fresh_tc.transformation_touches else 0,
+        "team_transformation": fresh_tc.team_transformation_touches if fresh_tc and fresh_tc.team_transformation_touches else 0,
+        "klt_reading_plan": fresh_tc.klt_reading_plan_touches if fresh_tc and fresh_tc.klt_reading_plan_touches else 0
+    }
+
+@router.put("/{student_id}/touch-counts", response_model=StudentResponse)
+async def update_student_touch_counts(student_id: UUID, payload: TouchCountUpdatePayload, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):
+    from app.db.models import StudentTouchCount
+
+    # 1. Verify the student exists
+    result = await db.execute(select(User).where((User.id == student_id) & (User.role == UserRole.student)))
+    user = result.scalars().first()
+    if not user:
+         raise HTTPException(status_code=404, detail="Student not found")
+
+    # 2. Check if a touch count row exists
+    tc_result = await db.execute(select(StudentTouchCount).where(StudentTouchCount.user_id == student_id))
+    existing = tc_result.scalars().first()
+
+    if not existing:
+        # First time: INSERT a new row with the payload values
+        new_tc = StudentTouchCount(
+            user_id=student_id,
+            transformation_touches=payload.transformation,
+            team_transformation_touches=payload.team_transformation,
+            klt_reading_plan_touches=payload.klt_reading_plan
+        )
+        db.add(new_tc)
+    else:
+        # Subsequent times: atomic SQL UPDATE directly in the database
+        await db.execute(
+            update(StudentTouchCount)
+            .where(StudentTouchCount.user_id == student_id)
+            .values(
+                transformation_touches=func.coalesce(StudentTouchCount.transformation_touches, 0) + payload.transformation,
+                team_transformation_touches=func.coalesce(StudentTouchCount.team_transformation_touches, 0) + payload.team_transformation,
+                klt_reading_plan_touches=func.coalesce(StudentTouchCount.klt_reading_plan_touches, 0) + payload.klt_reading_plan
+            )
+        )
+
+    await db.commit()
+
+    # 3. CRITICAL FIX: Expire all cached ORM objects, then re-SELECT fresh from DB.
+    #    After a raw SQL UPDATE, the old ORM object is stale. db.refresh() on it
+    #    can return cached/old values. We must do a fresh SELECT instead.
+    db.expire_all()
+    fresh_result = await db.execute(select(StudentTouchCount).where(StudentTouchCount.user_id == student_id))
+    fresh_tc = fresh_result.scalars().first()
+
+    t_val = fresh_tc.transformation_touches if fresh_tc and fresh_tc.transformation_touches else 0
+    tt_val = fresh_tc.team_transformation_touches if fresh_tc and fresh_tc.team_transformation_touches else 0
+    klt_val = fresh_tc.klt_reading_plan_touches if fresh_tc and fresh_tc.klt_reading_plan_touches else 0
+
+    user_dict = {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "mobile_number": user.mobile_number,
+        "address": user.address,
+        "dob": user.dob,
+        "gender": user.gender,
+        "category": user.category,
+        "stage": user.stage,
+        "enrollment_number": user.enrollment_number,
+        "is_active": user.is_active,
+        "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
+        "assessment_status": user.assessment_status,
+        "assessment_marks": user.assessment_marks,
+        "activation_email_sent": user.activation_email_sent,
+        "created_at": user.created_at,
+        "touch_counts": {
+            "transformation": t_val,
+            "team_transformation": tt_val,
+            "klt_reading_plan": klt_val
+        }
+    }
+    return user_dict
 
 @router.delete("/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_student(student_id: UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(verify_admin_or_higher)):

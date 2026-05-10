@@ -3,12 +3,13 @@ import axios from 'axios';
 import { StudentService } from '../../services/studentService';
 import { Dropdown } from 'primereact/dropdown';
 
-const DividerBox = ({ letter, letterColor, num }) => {
+const DividerBox = ({ letter, letterColor, num, onClick }) => {
     const hexColor = letterColor.match(/\[(.*?)\]/)[1];
     return (
         <div
             className="flex flex-col items-center justify-start min-w-0 border-[2px] bg-white shadow-sm pt-1 pb-1 cursor-pointer hover:bg-gray-100 transition-colors"
             style={{ flex: 1.0, borderColor: hexColor }}
+            onClick={onClick}
         >
             <span className={`font-serif font-black text-xs sm:text-sm md:text-base leading-none drop-shadow-sm pb-1 ${letterColor}`}>
                 {letter}
@@ -20,11 +21,12 @@ const DividerBox = ({ letter, letterColor, num }) => {
     );
 };
 
-const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor }) => {
+const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onClick }) => {
     return (
         <div
             className="flex flex-col items-center min-w-0 bg-gray-500 border-[2px] border-black cursor-pointer hover:-translate-y-1 transition-transform relative h-full drop-shadow-md pb-0 group"
             style={{ flex: 1.0 }}
+            onClick={onClick}
         >
             {/* Wooden Tip (Top 20%) */}
             <div className={`w-full h-[20%] relative flex justify-center items-end ${tipColorClass}`}>
@@ -198,6 +200,9 @@ const StudentReport = () => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
+
+    // Touch count increments are handled by the player pages (TTomTPlayer, SMTPlayer),
+    // NOT from this report page. This page is display-only.
 
     useEffect(() => {
         StudentService.getStudents()
@@ -375,7 +380,7 @@ const StudentReport = () => {
                 {/* Middle Scrolls Section */}
                 <div className="flex px-4 py-5 gap-4 bg-white border-b-[6px] border-gray-200">
                     {/* Books Overview */}
-                    <div className="flex-1 border border-gray-300 rounded-[12px] overflow-hidden flex bg-white shadow-sm relative min-h-[160px]">
+                    <div className="flex-1 border border-gray-300 rounded-[12px] overflow-hidden flex bg-white shadow-sm relative min-h-[160px] cursor-pointer hover:shadow-md transition-shadow">
                         <div className="w-24 border-r border-gray-200 flex flex-col items-center justify-center p-2 bg-white z-0 pt-8 pb-2">
                             <i className="pi pi-book text-[#1d4ed8] text-[36px] mb-1"></i>
                             <div className="text-[10px] font-bold text-center leading-tight px-1 text-gray-800">BOOKS<br />OVERVIEW</div>
@@ -408,7 +413,7 @@ const StudentReport = () => {
                     </div>
 
                     {/* Authors Biography */}
-                    <div className="flex-[1.2] border border-gray-300 rounded-[12px] overflow-hidden flex bg-white shadow-sm relative">
+                    <div className="flex-[1.2] border border-gray-300 rounded-[12px] overflow-hidden flex bg-white shadow-sm relative cursor-pointer hover:shadow-md transition-shadow">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-[#c2410c] text-white text-[11px] font-black tracking-widest px-10 py-1.5 rounded-b-lg z-10 shadow-md">AUTHERS BIOGRAPHY</div>
                         <div className="w-32 border-r border-gray-200 flex flex-col items-center justify-center p-2 bg-white z-0 pt-10">
                             <i className="pi pi-user text-[#ea580c] text-[44px] mb-2"></i>
@@ -423,7 +428,7 @@ const StudentReport = () => {
                     </div>
 
                     {/* Right Stats Box */}
-                    <div className="w-40 border border-gray-300 rounded-[12px] flex flex-col bg-white shadow-sm overflow-hidden">
+                    <div className="w-40 border border-gray-300 rounded-[12px] flex flex-col bg-white shadow-sm overflow-hidden cursor-pointer">
                         <div className="flex-1 flex items-center justify-between px-5 border-b border-gray-200 hover:bg-purple-50 transition-colors">
                             <i className="pi pi-palette text-[#7e22ce] text-3xl"></i>
                             <span className="font-black text-[15px] text-gray-800">1189</span>
@@ -448,7 +453,7 @@ const StudentReport = () => {
                             <span className="tracking-widest">TRANSFORMATION</span>
                             <div className="flex gap-2 text-[10px] font-black items-center">
                                 <span className="bg-[#14532d] px-2 py-0.5 rounded border border-[#16a34a] shadow-inner" title="Total Touch Count (Pencils + Wisdom)">
-                                    TOUCH COUNT: {isAssigned && currentStudentData?.touch_counts ? currentStudentData.touch_counts.transformation?.toLocaleString() || 0 : 0}
+                                    TOUCH COUNT: {currentStudentData?.touch_counts ? currentStudentData.touch_counts.transformation?.toLocaleString() || 0 : 0}
                                 </span>
                             </div>
                         </div>
@@ -501,11 +506,11 @@ const StudentReport = () => {
                             <span className="tracking-widest">TEAM TRANSFORMATION</span>
                             <div className="flex gap-2 text-[10px] font-black items-center">
                                 <span className="bg-[#1e1b4b] px-2 py-0.5 rounded border border-[#312e81] shadow-inner" title="Team Transformation Touch Count">
-                                    TOUCH COUNT: {isAssigned && currentStudentData?.touch_counts ? currentStudentData.touch_counts.team_transformation?.toLocaleString() || 0 : 0}
+                                    TOUCH COUNT: {currentStudentData?.touch_counts ? currentStudentData.touch_counts.team_transformation?.toLocaleString() || 0 : 0}
                                 </span>
                             </div>
                         </div>
-                        <div className="flex-1 flex items-center justify-center p-2">
+                        <div className="flex-1 flex items-center justify-center p-2 cursor-pointer">
                             <div className="w-[95%] h-[95%] flex items-center justify-center relative bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/scrolltext.png')" }}>
                             </div>
                         </div>
@@ -519,7 +524,7 @@ const StudentReport = () => {
                             </div>
                             <div className="flex gap-2 text-[10px] font-black items-center">
                                 <span className="bg-[#172554] px-2 py-0.5 rounded border border-[#1e3a8a] shadow-inner" title="Reading Plan Touch Count">
-                                    TOUCH COUNT: {isAssigned && currentStudentData?.touch_counts ? currentStudentData.touch_counts.klt_reading_plan?.toLocaleString() || 0 : 0}
+                                    TOUCH COUNT: {currentStudentData?.touch_counts ? currentStudentData.touch_counts.klt_reading_plan?.toLocaleString() || 0 : 0}
                                 </span>
                             </div>
                         </div>
@@ -527,7 +532,7 @@ const StudentReport = () => {
                             DAY 01 | {formattedDate} {formattedTime}
                         </div>
 
-                        <div className="flex p-4 border-b-2 border-gray-200">
+                        <div className="flex p-4 border-b-2 border-gray-200 cursor-pointer">
                             <div className="flex-1 flex flex-col space-y-[8px] text-[11px] font-extrabold pl-2 pt-1 tracking-wider text-gray-800">
                                 <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-[#8b5cf6]"></div> PROVERBS 1</div>
                                 <div className="flex items-center gap-3"><div className="w-2 h-2 rounded-full bg-[#10b981]"></div> PSALMS 24</div>
@@ -544,7 +549,7 @@ const StudentReport = () => {
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="flex items-center px-5 py-2 bg-[#f8fafc] border-b-2 border-gray-200 text-[11px] font-bold text-[#1e3a8a]">
+                        <div className="flex items-center px-5 py-2 bg-[#f8fafc] border-b-2 border-gray-200 text-[11px] font-bold text-[#1e3a8a] cursor-pointer">
                             <i className="pi pi-caret-right mr-3 text-lg"></i>
                             <span className="text-blue-600 mr-auto text-sm">50%</span>
                             <span className="tracking-[0.2em] mr-auto">PROGRESS</span>

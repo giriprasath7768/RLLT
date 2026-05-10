@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { splitS3Data, splitS4Data } from '../../utils/chartDataSplitter';
+import { StudentService } from '../../services/studentService';
 
 const formatDateTime = (date) => {
     const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -395,6 +396,26 @@ const TTomTPlayer = () => {
     const [audioProgress, setAudioProgress] = useState(0);
     const audioRef = useRef(new Audio());
     const playerStateRef = useRef(null);
+    const lastTouchRef = useRef(0);
+    const lastReadingTouchRef = useRef(0);
+
+    // Pencils + Wisdom Letters → transformation count
+    const incrementTransformationTouch = () => {
+        const now = Date.now();
+        if (now - lastTouchRef.current < 500) return;
+        lastTouchRef.current = now;
+        StudentService.updateMyTouchCounts({ transformation: 1, team_transformation: 0, klt_reading_plan: 0 })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+    };
+
+    // Play, Playlist, Progress bar, Day selection → klt_reading_plan count
+    const incrementReadingPlanTouch = () => {
+        const now = Date.now();
+        if (now - lastReadingTouchRef.current < 500) return;
+        lastReadingTouchRef.current = now;
+        StudentService.updateMyTouchCounts({ transformation: 0, team_transformation: 0, klt_reading_plan: 1 })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+    };
 
     // Local Completion Tracking
     const [finishedDays, setFinishedDays] = useState(() => {
@@ -616,6 +637,9 @@ const TTomTPlayer = () => {
                 setActiveLanguage(track.language || '');
                 setActiveVideoIndex(0);
                 setIsPlaying(true);
+
+                // Increment RLLT reading plan touch count when audio plays
+                incrementReadingPlanTouch();
             }
             return;
         } else {
@@ -649,6 +673,7 @@ const TTomTPlayer = () => {
         if (audioRef.current.paused) {
             audioRef.current.play();
             setIsPlaying(true);
+            incrementReadingPlanTouch();
         } else {
             audioRef.current.pause();
             setIsPlaying(false);
@@ -959,7 +984,10 @@ const TTomTPlayer = () => {
                                             onClick={(e) => {
                                                 const bounds = e.currentTarget.getBoundingClientRect();
                                                 const perc = (e.clientX - bounds.left) / bounds.width;
-                                                if (audioDuration) audioRef.current.currentTime = perc * audioDuration;
+                                                if (audioDuration) {
+                                                    audioRef.current.currentTime = perc * audioDuration;
+                                                    incrementReadingPlanTouch();
+                                                }
                                             }}
                                         >
                                             <div className="w-full py-0">
@@ -1011,6 +1039,7 @@ const TTomTPlayer = () => {
                                                     <div
                                                         onClick={() => {
                                                             setSelectedDay(num);
+                                                            incrementReadingPlanTouch();
                                                         }}
                                                         className={`flex items-center justify-center font-black transition-all duration-300 select-none text-[13px] sm:text-[14px] rounded-lg ${trackingDays > 30 ? 'w-6 h-6 sm:w-7 sm:h-7' : 'w-7 h-7 sm:w-8 sm:h-8'} cursor-pointer opacity-100 ${selectedDay === num ? 'bg-blue-500 text-white scale-125 ring-2 ring-blue-300' : (isCompleted ? 'bg-blue-500 text-white opacity-90' : 'text-white hover:text-blue-200')}`}
                                                         title={`Day ${num}`}
@@ -1036,8 +1065,8 @@ const TTomTPlayer = () => {
                                 }}
                             >
                                 <WisdomOverlay
-                                    onPencilClick={(colorHex) => setPlayerBorderColor(colorHex)}
-                                    onLetterClick={(colorHex) => setPlayerBgColor(colorHex)}
+                                    onPencilClick={(colorHex) => { setPlayerBorderColor(colorHex); incrementTransformationTouch(); }}
+                                    onLetterClick={(colorHex) => { setPlayerBgColor(colorHex); incrementTransformationTouch(); }}
                                 />
                             </div>
                         </div>

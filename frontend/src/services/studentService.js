@@ -4,7 +4,7 @@ const API_URL = 'http://' + window.location.hostname + ':8000/api/students';
 
 export const StudentService = {
     getStudents() {
-        return axios.get(API_URL, { withCredentials: true }).then(res => res.data);
+        return axios.get(`${API_URL}?t=${new Date().getTime()}`, { withCredentials: true }).then(res => res.data);
     },
 
     createStudent(student) {
@@ -13,6 +13,14 @@ export const StudentService = {
 
     updateStudent(id, student) {
         return axios.put(`${API_URL}/${id}`, student, { withCredentials: true }).then(res => res.data);
+    },
+
+    updateStudentTouchCounts(id, payload) {
+        return axios.put(`${API_URL}/${id}/touch-counts`, payload, { withCredentials: true }).then(res => res.data);
+    },
+
+    updateMyTouchCounts(payload) {
+        return axios.put(`${API_URL}/me/touch-counts`, payload, { withCredentials: true }).then(res => res.data);
     },
 
     deleteStudent(id) {

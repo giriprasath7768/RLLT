@@ -41,6 +41,8 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
     const [calculatedResult, setCalculatedResult] = useState(null);
     const [showLetterValues, setShowLetterValues] = useState(true);
     const [activeTab, setActiveTab] = useState("Calculator");
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef(null);
     const modalRef = useRef(null);
     
     const [settings, setSettings] = useState({
@@ -145,16 +147,72 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
         }
     };
 
-    const handleVoiceInput = () => {
+    const toggleVoiceInput = () => {
+        if (isListening) {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            setIsListening(false);
+            return;
+        }
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             alert("Voice Recognition not supported");
             return;
         }
+
         const recognition = new SpeechRecognition();
         recognition.lang = "el-GR";
+        recognition.continuous = true;
+
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[event.results.length - 1][0].transcript;
+            const voiceMap = {
+                "1": "α", "2": "β", "3": "γ", "4": "δ", "5": "ε",
+                "6": "ζ", "7": "η", "8": "θ", "9": "ι", "10": "κ",
+                "11": "λ", "12": "μ", "13": "ν", "14": "ξ", "15": "ο",
+                "16": "π", "17": "ρ", "18": "σ", "19": "τ", "20": "υ",
+                "21": "φ", "22": "χ", "23": "ψ", "24": "ω",
+                "one": "α", "two": "β", "three": "γ", "four": "δ", "five": "ε",
+                "six": "ζ", "seven": "η", "eight": "θ", "nine": "ι", "ten": "κ",
+                "eleven": "λ", "twelve": "μ", "thirteen": "ν", "fourteen": "ξ", "fifteen": "ο",
+                "sixteen": "π", "seventeen": "ρ", "eighteen": "σ", "nineteen": "τ", "twenty": "υ",
+                "twenty-one": "φ", "twenty-two": "χ", "twenty-three": "ψ", "twenty-four": "ω",
+                "άλφα": "α", "βήτα": "β", "γάμμα": "γ", "δέλτα": "δ", "έψιλον": "ε",
+                "ζήτα": "ζ", "ήτα": "η", "θήτα": "θ", "γιώτα": "ι", "κάππα": "κ",
+                "λάμδα": "λ", "μι": "μ", "νι": "ν", "ξι": "ξ", "όμικρον": "ο",
+                "πι": "π", "ρο": "ρ", "σίγμα": "σ", "ταυ": "τ", "ύψιλον": "υ",
+                "φι": "φ", "χι": "χ", "ψι": "ψ", "ωμέγα": "ω",
+                "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ", "epsilon": "ε",
+                "zeta": "ζ", "eta": "η", "theta": "θ", "iota": "ι", "kappa": "κ",
+                "lambda": "λ", "mu": "μ", "nu": "ν", "xi": "ξ", "omicron": "ο",
+                "pi": "π", "rho": "ρ", "sigma": "σ", "tau": "τ", "upsilon": "υ",
+                "phi": "φ", "chi": "χ", "psi": "ψ", "omega": "ω"
+            };
+            
+            let lowerTranscript = transcript.toLowerCase().replace(/[.,;·]/g, '');
+            lowerTranscript = lowerTranscript.replace(/twenty one/g, "twenty-one");
+            lowerTranscript = lowerTranscript.replace(/twenty two/g, "twenty-two");
+            lowerTranscript = lowerTranscript.replace(/twenty three/g, "twenty-three");
+            lowerTranscript = lowerTranscript.replace(/twenty four/g, "twenty-four");
+            
+            const processed = lowerTranscript.split(/\s+/).map(word => {
+                if (voiceMap[word]) return voiceMap[word];
+                if (/^\d+$/.test(word)) {
+                    return word.split('').map(digit => voiceMap[digit] || digit).join('');
+                }
+                return word;
+            }).join("");
+            
+            setInput((prev) => prev + processed);
+        };
+
+        recognitionRef.current = recognition;
         recognition.start();
-        recognition.onresult = (event) => setInput(event.results[0][0].transcript);
     };
 
     const handleHistoryClick = (item) => {
@@ -186,6 +244,8 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
         };
         reader.readAsDataURL(file);
     };
+
+    const res = calculatedResult || { breakdown: [], total: 0, reduced: 0 };
 
     return createPortal(
         <div ref={modalRef} className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4 backdrop-blur-md print:hidden">
@@ -357,23 +417,25 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
                                     </div>
                                 </div>
 
-                                {calculatedResult && (
-                                    <>
                                         {/* LETTER BREAKDOWN */}
                                         <div className="bg-[#0f142b] border border-[#1e293b] rounded-[12px] p-2 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
                                             <div className="text-center text-[10px] font-bold tracking-wider uppercase text-[#94a3b8] mb-1 drop-shadow-md">Letter Breakdown</div>
                                             <div className="flex flex-wrap justify-center gap-2">
-                                                {calculatedResult.breakdown.map((item, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className={`letter-card btn-3d ${item.color} flex flex-col items-center justify-center`}
-                                                        style={{minWidth: '50px', padding: '2px', borderRadius: '6px', boxShadow: '0 2px 5px rgba(0,0,0,0.5)'}}
-                                                    >
-                                                        <div className="text-xl font-bold">{item.lower}</div>
-                                                        <div className="text-[8px] mt-0.5 opacity-90">{item.name}</div>
-                                                        <div className="text-xs font-bold mt-0">{item.value}</div>
-                                                    </div>
-                                                ))}
+                                                {res.breakdown.length === 0 ? (
+                                                    <span className="text-gray-600 text-xs py-2 italic font-medium tracking-wide">Enter a word to see its breakdown</span>
+                                                ) : (
+                                                    res.breakdown.map((item, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className={`letter-card btn-3d ${item.color} flex flex-col items-center justify-center`}
+                                                            style={{minWidth: '50px', padding: '2px', borderRadius: '6px', boxShadow: '0 2px 5px rgba(0,0,0,0.5)'}}
+                                                        >
+                                                            <div className="text-xl font-bold">{item.lower}</div>
+                                                            <div className="text-[8px] mt-0.5 opacity-90">{item.name}</div>
+                                                            <div className="text-xs font-bold mt-0">{item.value}</div>
+                                                        </div>
+                                                    ))
+                                                )}
                                             </div>
                                         </div>
 
@@ -384,7 +446,7 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
                                                 <div className="text-center text-[10px] font-bold tracking-wider uppercase text-[#94a3b8] mb-1 drop-shadow-md">Total Gematria Value</div>
                                                 <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] flex items-center justify-center py-2 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)]">
                                                     <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#5be7ff', textShadow: '0 0 20px rgba(91, 231, 255, 0.5)' }}>
-                                                        {calculatedResult.total}
+                                                        {res.total}
                                                     </div>
                                                 </div>
                                             </div>
@@ -394,10 +456,10 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
                                                 <div className="text-center text-[10px] font-bold tracking-wider uppercase text-[#94a3b8] mb-1 drop-shadow-md">Calculation Breakdown</div>
                                                 <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] flex items-center justify-center p-2 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)] gap-2">
                                                     <div style={{ fontSize: '16px', color: '#fbbf24', fontWeight: 'bold' }}>
-                                                        {calculatedResult.breakdown.map((b) => b.value).join(" + ") || "0"}
+                                                        {res.breakdown.map((b) => b.value).join(" + ") || "0"}
                                                     </div>
                                                     <div style={{ fontSize: '18px', color: '#00d65a', fontWeight: 'bold' }}>
-                                                        = {calculatedResult.total}
+                                                        = {res.total}
                                                     </div>
                                                 </div>
                                             </div>
@@ -408,14 +470,14 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
                                             <button onClick={handleCopy} className="btn-3d flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #1d4ed8, #3b82f6)'}}>
                                                 <i className="pi pi-copy text-xs"></i> COPY RESULT
                                             </button>
-                                            <button onClick={handleClear} className="btn-3d flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #7a0000, #ff2d2d)'}}>
-                                                <i className="pi pi-trash text-xs"></i> CLEAR
-                                            </button>
-                                            <button onClick={handleVoiceInput} className="btn-3d flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #0f766e, #14b8a6)'}}>
-                                                <i className="pi pi-microphone text-xs"></i> VOICE INPUT
-                                            </button>
                                             <button onClick={handleSave} className="btn-3d flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #005c28, #00d65a)'}}>
                                                 <i className="pi pi-save text-xs"></i> SAVE TO HISTORY
+                                            </button>
+                                            <button onClick={toggleVoiceInput} className="btn-3d flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-[8px] text-[10px] font-bold text-white transition-all duration-300" style={{background: isListening ? 'linear-gradient(145deg, #ef4444, #991b1b)' : 'linear-gradient(145deg, #0f766e, #14b8a6)', boxShadow: isListening ? '0 0 15px rgba(239, 68, 68, 0.6)' : ''}}>
+                                                <i className={`pi ${isListening ? 'pi-stop-circle animate-pulse' : 'pi-microphone'} text-xs`}></i> {isListening ? 'STOP VOICE' : 'VOICE INPUT'}
+                                            </button>
+                                            <button onClick={handleClear} className="btn-3d flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-[8px] text-[10px] font-bold text-white" style={{background: 'linear-gradient(145deg, #7a0000, #ff2d2d)'}}>
+                                                <i className="pi pi-trash text-xs"></i> CLEAR
                                             </button>
                                         </div>
 
@@ -424,37 +486,35 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
                                             <div className="flex-[1] bg-[#0f142b] border border-[#1e293b] rounded-[12px] p-3 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] flex flex-col">
                                                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] mb-2">Reduced Value</div>
                                                 <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] flex items-center justify-center p-2 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)]">
-                                                    <div className="text-white font-bold text-xs tracking-widest flex items-center gap-2">
-                                                        <span>{calculatedResult.total.toString().split("").join("+")} &rarr;</span>
-                                                        <span className="text-cyan-400 text-lg">{calculatedResult.reduced}</span>
+                                                    <div className="text-white font-bold text-sm tracking-widest flex items-center gap-2">
+                                                        <span>{res.total.toString().split("").join("+")} &rarr;</span>
+                                                        <span className="text-cyan-400 text-2xl">{res.reduced}</span>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div className="flex-[1] bg-[#0f142b] border border-[#1e293b] rounded-[12px] p-3 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] flex flex-col">
                                                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] mb-2">Word Information</div>
-                                                <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] p-3 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)] flex flex-col justify-center gap-1">
-                                                    <div className="flex justify-between text-[11px] text-gray-300"><span>Letters:</span> <span className="font-bold">{calculatedResult.breakdown.length}</span></div>
-                                                    <div className="flex justify-between text-[11px] text-gray-300"><span>Total:</span> <span className="text-[#5be7ff] font-bold">{calculatedResult.total}</span></div>
-                                                    <div className="flex justify-between text-[11px] text-gray-300"><span>Reduced:</span> <span className="text-white font-bold">{calculatedResult.reduced}</span></div>
+                                                <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] p-3 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)] flex flex-col justify-center gap-2">
+                                                    <div className="flex justify-between items-center text-[13px] text-gray-300"><span>Letters:</span> <span className="font-bold text-base">{res.breakdown.length}</span></div>
+                                                    <div className="flex justify-between items-center text-[13px] text-gray-300"><span>Total:</span> <span className="text-[#5be7ff] font-bold text-base">{res.total}</span></div>
+                                                    <div className="flex justify-between items-center text-[13px] text-gray-300"><span>Reduced:</span> <span className="text-white font-bold text-base">{res.reduced}</span></div>
                                                 </div>
                                             </div>
 
                                             <div className="flex-[1.2] bg-[#0f142b] border border-[#1e293b] rounded-[12px] p-3 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] flex flex-col">
                                                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] mb-2 text-center">Popular Examples</div>
-                                                <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] flex flex-col justify-center p-2 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)] overflow-y-auto">
+                                                <div className="flex-1 bg-[#020617] rounded-[10px] border border-[#1e293b] flex flex-col justify-center p-2 shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)] overflow-y-auto gap-1">
                                                     {popularExamples.map((ex, i) => (
-                                                        <div key={i} className="flex justify-between items-center text-[10px] cursor-pointer hover:bg-[#1e293b] p-1 rounded" onClick={() => { setInput(ex.word); }}>
-                                                            <span className="text-[#fbbf24] font-bold">{ex.word}</span>
+                                                        <div key={i} className="flex justify-between items-center text-[12px] cursor-pointer hover:bg-[#1e293b] p-1.5 rounded" onClick={() => { setInput(ex.word); }}>
+                                                            <span className="text-[#fbbf24] font-bold text-[13px]">{ex.word}</span>
                                                             <span className="text-gray-400">({ex.meaning})</span>
-                                                            <span className="text-[#00ffcc] font-bold">{ex.value}</span>
+                                                            <span className="text-[#00ffcc] font-bold text-[13px]">{ex.value}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         </div>
-                                    </>
-                                )}
                             </>
                         )}
                         {activeTab === "History" && (

@@ -10,7 +10,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import FontFamily from '@tiptap/extension-font-family';
-import { ResizableImage, ShapeNode, TextBoxNode, WisdomMark, TextEffectMark } from '../../components/admin/tiptap-extensions/extensions';
+import { ResizableImage, ShapeNode, TextBoxNode, WisdomMark, TextEffectMark, FontSizeMark, PageNode, CustomDocument } from '../../components/admin/tiptap-extensions/extensions';
 
 // Phase 3 Migration: Tiptap NodeViews
 // Custom Quill Blots have been completely replaced with React-driven Tiptap NodeViews.
@@ -19,6 +19,7 @@ const PAGE_SIZES = {
     'A4': { name: 'A4', width: '210mm', height: '297mm', padding: '20mm', linePx: 1122 },
     'A5': { name: 'A5', width: '148mm', height: '210mm', padding: '15mm', linePx: 793 },
     'A6': { name: 'A6', width: '105mm', height: '148mm', padding: '10mm', linePx: 559 },
+    'A8': { name: 'A8', width: '52mm', height: '74mm', padding: '5mm', linePx: 280 },
     'Letter': { name: 'Letter', width: '8.5in', height: '11in', padding: '1in', linePx: 1056 },
     'Legal': { name: 'Legal', width: '8.5in', height: '14in', padding: '1in', linePx: 1344 }
 };
@@ -65,7 +66,9 @@ const WordEditor = () => {
 
     const editor = useEditor({
         extensions: [
-            StarterKit,
+            CustomDocument,
+            PageNode,
+            StarterKit.configure({ document: false }),
             TextStyle,
             Color,
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
@@ -74,6 +77,7 @@ const WordEditor = () => {
             TextBoxNode,
             WisdomMark,
             TextEffectMark,
+            FontSizeMark,
             Link.configure({ openOnClick: false }),
             FontFamily
         ],
@@ -124,6 +128,15 @@ const WordEditor = () => {
             editor.view.dom.setAttribute('spellcheck', spellCheckEnabled.toString());
         }
     }, [spellCheckEnabled, editor]);
+
+    // Handle global CSS variable for Watermark without relying on React VDOM
+    useEffect(() => {
+        if (watermark) {
+            document.documentElement.style.setProperty('--global-watermark', `url("${watermark}")`);
+        } else {
+            document.documentElement.style.removeProperty('--global-watermark');
+        }
+    }, [watermark]);
 
     useEffect(() => {
         // Mock window.forceWordEditorSync
@@ -408,32 +421,18 @@ const WordEditor = () => {
             {/* Primary Editing Area */}
             <div className={`flex-grow overflow-y-auto p-4 sm:p-8 flex justify-center bg-gray-100 print:bg-white print:p-0 ${['ar', 'he', 'fa', 'ur'].includes(language) ? 'rtl' : 'ltr'}`} lang={language}>
                 <div
-                    className="shadow-lg border border-gray-300 relative overflow-hidden print:border-none duration-300 transition-all mx-auto flex flex-col"
+                    id="pdf-export-container"
+                    className="relative transition-all mx-auto flex flex-col duration-300"
                     style={{
                         width: PAGE_SIZES[pageSize].width,
-                        minHeight: PAGE_SIZES[pageSize].height,
-                        padding: PAGE_SIZES[pageSize].padding,
-                        backgroundColor: 'white',
+                        '--page-min-height': PAGE_SIZES[pageSize].height,
+                        '--page-padding': PAGE_SIZES[pageSize].padding,
+                        '--page-padding': PAGE_SIZES[pageSize].padding,
                         transform: `scale(${zoomLevel})`,
                         transformOrigin: 'top center',
                         marginBottom: `calc(${PAGE_SIZES[pageSize].height} * ${Math.max(0, zoomLevel - 1)})`,
-                        backgroundImage: `repeating-linear-gradient(to bottom, transparent 0px, transparent ${PAGE_SIZES[pageSize].linePx - 1}px, #cbd5e1 ${PAGE_SIZES[pageSize].linePx - 1}px, #cbd5e1 ${PAGE_SIZES[pageSize].linePx}px)`,
-                        backgroundSize: `100% ${PAGE_SIZES[pageSize].linePx}px`
                     }}
                 >
-                    {watermark && (
-                        <div
-                            className="absolute inset-0 pointer-events-none z-0 print:block"
-                            style={{
-                                backgroundImage: `url(${watermark})`,
-                                backgroundPosition: 'center',
-                                backgroundRepeat: 'no-repeat',
-                                backgroundSize: 'contain',
-                                opacity: 0.15,
-                                margin: '0.5in'
-                            }}
-                        />
-                    )}
                     <div className="relative w-full flex-grow flex flex-col cursor-text" onClick={(e) => { if (e.target === e.currentTarget && editor) editor.commands.focus(); }}>
                         <EditorContent 
                             editor={editor} 
@@ -544,12 +543,12 @@ const WordEditor = () => {
 
             {/* Sidebar Overlay */}
             <div
-                className={`fixed inset-0 bg-black/60 z-[250] transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-black/60 z-[350] transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setIsSidebarOpen(false)}
             ></div>
 
             {/* TIER 1: Book List (Sidebar) Drawer */}
-            <div className={`fixed top-0 left-0 h-full w-64 sm:w-72 md:w-80 bg-[#1e2433] text-gray-300 shadow-2xl z-[260] flex flex-col overflow-hidden transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`fixed top-0 left-0 h-full w-64 sm:w-72 md:w-80 bg-[#1e2433] text-gray-300 shadow-2xl z-[360] flex flex-col overflow-hidden transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="px-6 py-5 border-b border-[#2a3045] bg-[#151a26] flex justify-between items-start">
                     <div>
                         <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
@@ -589,37 +588,45 @@ const WordEditor = () => {
                                         {/* Expandable Chapter Grid */}
                                         {expandedBookId === book.id && (
                                             <div className="flex flex-col gap-1.5 mt-2 p-1.5 bg-[#0f131c] rounded-md shadow-inner mb-2 mx-2">
-                                                <div className="grid grid-cols-5 gap-1.5">
-                                                    {expandedBookChapters.length > 0 ? (
-                                                        expandedBookChapters.map(chapter => (
-                                                            <div key={chapter.id} className="relative">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setExpandedChapterId(prev => prev === chapter.id ? null : chapter.id);
-                                                                    }}
-                                                                    className={`flex items-center justify-center w-full aspect-square rounded font-bold text-sm transition-all duration-200 ${expandedChapterId === chapter.id
-                                                                        ? 'bg-[#3b82f6] text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]'
-                                                                        : 'bg-[#1e2433] text-gray-400 hover:bg-[#2d3748] hover:text-white'
-                                                                        }`}
-                                                                    title={`Chapter ${chapter.chapter_number} (${chapter.verse_count || 0} Verses)`}
-                                                                >
-                                                                    {chapter.chapter_number}
-                                                                </button>
+                                                {!expandedChapterId ? (
+                                                    <div className="grid grid-cols-5 gap-1.5">
+                                                        {expandedBookChapters.length > 0 ? (
+                                                            expandedBookChapters.map(chapter => (
+                                                                <div key={chapter.id} className="relative">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setExpandedChapterId(chapter.id);
+                                                                        }}
+                                                                        className={`flex items-center justify-center w-full aspect-square rounded font-bold text-sm transition-all duration-200 bg-[#1e2433] text-gray-400 hover:bg-[#2d3748] hover:text-white`}
+                                                                        title={`Chapter ${chapter.chapter_number} (${chapter.verse_count || 0} Verses)`}
+                                                                    >
+                                                                        {chapter.chapter_number}
+                                                                    </button>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span className="col-span-5 text-[#8b9bb4] text-xs text-center italic py-2">No chapters</span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div className="mt-1 p-2 animate-fadein">
+                                                        <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-800">
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setExpandedChapterId(null);
+                                                                }}
+                                                                className="text-[#3b82f6] hover:text-[#60a5fa] text-xs font-bold flex items-center gap-1 transition-colors"
+                                                            >
+                                                                <i className="pi pi-arrow-left text-[10px]"></i>
+                                                                Back to Chapters
+                                                            </button>
+                                                            <div className="text-[10px] font-bold text-[#8b9bb4] uppercase tracking-widest">
+                                                                Ch {expandedBookChapters.find(c => c.id === expandedChapterId)?.chapter_number} Verses
                                                             </div>
-                                                        ))
-                                                    ) : (
-                                                        <span className="col-span-5 text-[#8b9bb4] text-xs text-center italic py-2">No chapters</span>
-                                                    )}
-                                                </div>
-
-                                                {/* Verse Grid beneath Chapter list */}
-                                                {expandedChapterId && (
-                                                    <div className="mt-2 p-2 border-t border-gray-800 animate-fadein">
-                                                        <div className="text-[10px] font-bold text-[#8b9bb4] uppercase tracking-widest text-center mb-2">
-                                                            Verses (Chapter {expandedBookChapters.find(c => c.id === expandedChapterId)?.chapter_number})
                                                         </div>
-                                                        <div className="grid grid-cols-6 gap-1 max-h-[200px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                                                        <div className="grid grid-cols-6 gap-1 max-h-[250px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
                                                             {(() => {
                                                                 const chap = expandedBookChapters.find(c => c.id === expandedChapterId);
                                                                 const count = chap?.verse_count || 0;
