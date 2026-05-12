@@ -12,28 +12,71 @@ export const ScreenRecordingProvider = ({ children }) => {
     const [mediaStream, setMediaStream] = useState(null);
     const mediaRecorderRef = useRef(null);
     const recordedChunksRef = useRef([]);
-    const startTimeRef = useRef(null);
+    const tracksToStopRef = useRef([]);
+    const audioContextRef = useRef(null);
 
     const startRecording = async () => {
         try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({
+            const displayStream = await navigator.mediaDevices.getDisplayMedia({
                 video: true,
                 audio: true,
             });
 
-            setMediaStream(stream);
+            let voiceStream = null;
+            try {
+                voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } catch (err) {
+                console.warn("Could not get microphone access:", err);
+            }
+
+            const allTracks = [...displayStream.getTracks()];
+            if (voiceStream) {
+                allTracks.push(...voiceStream.getTracks());
+            }
+            tracksToStopRef.current = allTracks;
+
+            let finalStream = new MediaStream([...displayStream.getVideoTracks()]);
+            const hasDisplayAudio = displayStream.getAudioTracks().length > 0;
+            const hasVoiceAudio = voiceStream && voiceStream.getAudioTracks().length > 0;
+
+            if (hasDisplayAudio || hasVoiceAudio) {
+                const audioContext = new AudioContext();
+                audioContextRef.current = audioContext;
+                const audioDestination = audioContext.createMediaStreamDestination();
+
+                if (hasDisplayAudio) {
+                    const displayAudioSource = audioContext.createMediaStreamSource(new MediaStream([displayStream.getAudioTracks()[0]]));
+                    displayAudioSource.connect(audioDestination);
+                }
+
+                if (hasVoiceAudio) {
+                    const voiceAudioSource = audioContext.createMediaStreamSource(new MediaStream([voiceStream.getAudioTracks()[0]]));
+                    voiceAudioSource.connect(audioDestination);
+                }
+
+                audioDestination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+                
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().catch(console.error);
+                }
+            }
+
+            setMediaStream(finalStream);
 
             // Determine the most compatible format supported by the browser
             const supportedFormats = [
+                { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+                { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
                 { mime: 'video/mp4', ext: 'mp4' },
                 { mime: 'video/x-matroska;codecs=avc1', ext: 'mkv' },
                 { mime: 'video/webm;codecs=h264', ext: 'mkv' },
-                { mime: 'video/webm', ext: 'webm' }
+                { mime: 'video/webm', ext: 'webm' },
+                { mime: '', ext: 'webm' } // fallback to let browser decide entirely
             ];
 
-            const formatInfo = supportedFormats.find(f => MediaRecorder.isTypeSupported(f.mime)) || supportedFormats[3];
+            const formatInfo = supportedFormats.find(f => f.mime === '' || MediaRecorder.isTypeSupported(f.mime));
 
-            const mediaRecorder = new MediaRecorder(stream, { mimeType: formatInfo.mime });
+            const mediaRecorder = new MediaRecorder(finalStream, { mimeType: formatInfo.mime });
             mediaRecorderRef.current = mediaRecorder;
             mediaRecorderRef.current._extension = formatInfo.ext;
             recordedChunksRef.current = [];
@@ -99,7 +142,7 @@ export const ScreenRecordingProvider = ({ children }) => {
                 }
             };
 
-            stream.getVideoTracks()[0].onended = () => {
+            finalStream.getVideoTracks()[0].onended = () => {
                 stopRecording();
             };
 
@@ -117,10 +160,22 @@ export const ScreenRecordingProvider = ({ children }) => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             mediaRecorderRef.current.stop();
         }
+        
+        if (tracksToStopRef.current && tracksToStopRef.current.length > 0) {
+            tracksToStopRef.current.forEach(track => track.stop());
+            tracksToStopRef.current = [];
+        }
+
         if (mediaStream) {
             mediaStream.getTracks().forEach(track => track.stop());
             setMediaStream(null);
         }
+
+        if (audioContextRef.current) {
+            audioContextRef.current.close().catch(console.error);
+            audioContextRef.current = null;
+        }
+
         setRecording(false);
     };
 
@@ -129,6 +184,12 @@ export const ScreenRecordingProvider = ({ children }) => {
         return () => {
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
                 mediaRecorderRef.current.stop();
+            }
+            if (tracksToStopRef.current && tracksToStopRef.current.length > 0) {
+                tracksToStopRef.current.forEach(track => track.stop());
+            }
+            if (audioContextRef.current) {
+                audioContextRef.current.close().catch(console.error);
             }
         };
     }, []);
@@ -139,3 +200,4 @@ export const ScreenRecordingProvider = ({ children }) => {
         </ScreenRecordingContext.Provider>
     );
 };
+

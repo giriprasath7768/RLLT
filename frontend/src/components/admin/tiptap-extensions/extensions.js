@@ -308,3 +308,28 @@ export const FontSizeMark = Mark.create({
         };
     },
 });
+
+export const UnderlineMark = Mark.create({
+    name: 'underline',
+    parseHTML() {
+        return [
+            { tag: 'u' },
+            { style: 'text-decoration', getAttrs: value => value === 'underline' && null },
+        ]
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['u', mergeAttributes(HTMLAttributes), 0]
+    },
+    addCommands() {
+        return {
+            setUnderline: () => ({ commands }) => commands.setMark('underline'),
+            toggleUnderline: () => ({ commands }) => commands.toggleMark('underline'),
+            unsetUnderline: () => ({ commands }) => commands.unsetMark('underline'),
+        }
+    },
+    addKeyboardShortcuts() {
+        return {
+            'Mod-u': () => this.editor.commands.toggleUnderline(),
+        }
+    },
+});

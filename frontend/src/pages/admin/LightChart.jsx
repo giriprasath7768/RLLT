@@ -6,6 +6,7 @@ import { FileUpload } from 'primereact/fileupload';
 import { Toast } from 'primereact/toast';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
+import { extractBooksAndAuthors } from '../../utils/bookUtils';
 
 const ImageUploadPlaceholder = ({ state, setState, label }) => {
     const imageUrl = typeof state === 'object' && state !== null ? state.url : state;
@@ -414,6 +415,18 @@ const LightChart = () => {
                                             </span>
                                         </td>
 
+                                        {/* DATE & TIME BLOCK */}
+                                        <td className="w-[100px] border-l-[1.5px] border-black p-0 align-middle bg-white">
+                                            <div className="flex flex-col h-[55px] w-full">
+                                                <div className="flex-1 flex items-center justify-start border-b-[1.5px] border-black px-2">
+                                                    <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</span>
+                                                </div>
+                                                <div className="flex-1 flex items-center justify-start px-2">
+                                                    <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+
                                         {/* PH BLOCK */}
                                         <td className="w-[45px] bg-[#00b050] border-l-[1.5px] border-black p-0 h-[35px]">
                                             <div className="flex flex-col h-[35px] w-full">
@@ -465,13 +478,13 @@ const LightChart = () => {
                                         </td>
 
                                         {/* BK-AR BLOCK */}
-                                        <td className="w-[100px] bg-[#ffff00] p-0 h-[45px] align-middle">
+                                        <td className="w-[145px] bg-[#ffff00] p-0 h-[45px] align-middle">
                                             <div className="flex flex-col h-[45px] w-full">
                                                 <div className="flex-1 flex items-center justify-center border-b-[1.5px] border-black pt-0.5">
                                                     <span className="text-black font-black tracking-widest text-[14px] sm:text-[16px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.1em' }}>B K - A R</span>
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-center pb-0.5">
-                                                    <span className="text-black font-black tracking-widest text-[13px] sm:text-[15px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.1em' }}>6 6 - 4 0 +</span>
+                                                    <span className="text-black font-black tracking-widest text-[13px] sm:text-[15px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.1em' }}>{extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).bks} - {extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).art}</span>
                                                 </div>
                                             </div>
                                         </td>

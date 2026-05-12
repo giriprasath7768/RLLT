@@ -15,23 +15,23 @@ const ClassroomAssignments = () => {
     const [locations, setLocations] = useState([]);
     const [groups, setGroups] = useState([]);
     const [students, setStudents] = useState([]);
-    
+
     const [loading, setLoading] = useState(false);
     const [dialogVisible, setDialogVisible] = useState(false);
     const [submissionsDialogVisible, setSubmissionsDialogVisible] = useState(false);
     const [selectedAssignment, setSelectedAssignment] = useState(null);
     const [submissions, setSubmissions] = useState([]);
     const [submissionsLoading, setSubmissionsLoading] = useState(false);
-    
+
     // Admin style table states
     const [globalFilter, setGlobalFilter] = useState('');
     const [first, setFirst] = useState(0);
     const [rows, setRows] = useState(10);
-    
+
     const [answersDialogVisible, setAnswersDialogVisible] = useState(false);
     const [selectedAnswers, setSelectedAnswers] = useState(null);
     const [qnaMap, setQnaMap] = useState({});
-    
+
     const toast = useRef(null);
 
     const [formData, setFormData] = useState({
@@ -68,7 +68,7 @@ const ClassroomAssignments = () => {
         try {
             const grpRes = await axios.get(`http://${window.location.hostname}:8000/api/students/grouping`, { withCredentials: true });
             setGroups(grpRes.data.filter(g => g.location_id === locId));
-            
+
             const stuRes = await axios.get(`http://${window.location.hostname}:8000/api/students`, { withCredentials: true });
             setStudents(stuRes.data.filter(s => s.location_name === locations.find(l => l.id === locId)?.city));
         } catch (error) {
@@ -133,14 +133,14 @@ const ClassroomAssignments = () => {
         try {
             const res = await axios.get(`http://${window.location.hostname}:8000/api/classroom/submissions?assignment_id=${assignment.id}`, { withCredentials: true });
             setSubmissions(res.data);
-            
+
             // Also fetch Q&A for this assignment's topic to map question IDs to text
             const qnaRes = await axios.get(`http://${window.location.hostname}:8000/api/classroom/qna`, { withCredentials: true });
             const relevant = qnaRes.data.filter(q => q.topic.toLowerCase() === assignment.title.toLowerCase());
             const map = {};
             relevant.forEach(q => { map[q.id] = q.question_text });
             setQnaMap(map);
-            
+
         } catch (error) {
             console.error("Failed to fetch submissions", error);
         } finally {
@@ -168,7 +168,7 @@ const ClassroomAssignments = () => {
         const loc = locations.find(l => l.id === rowData.location_id);
         return loc ? loc.city : 'Unknown';
     };
-    
+
     const targetTemplate = (rowData) => {
         if (rowData.student_id) return <span className="text-blue-500 font-bold">Individual</span>;
         if (rowData.group_id) return <span className="text-orange-500 font-bold">Group</span>;
@@ -178,10 +178,10 @@ const ClassroomAssignments = () => {
     const submissionActionTemplate = (rowData) => {
         return (
             <div className="flex gap-2">
-                <InputText 
-                    type="number" 
-                    placeholder="Grade" 
-                    defaultValue={rowData.grade || ''} 
+                <InputText
+                    type="number"
+                    placeholder="Grade"
+                    defaultValue={rowData.grade || ''}
                     onBlur={(e) => {
                         if (e.target.value !== '' && e.target.value !== String(rowData.grade)) {
                             gradeSubmission(rowData, e.target.value);
@@ -245,29 +245,29 @@ const ClassroomAssignments = () => {
                 <div className="grid grid-cols-1 gap-4 p-4">
                     <div className="field">
                         <label className="font-bold block mb-2">Title *</label>
-                        <InputText value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} required autoFocus />
+                        <InputText value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required autoFocus />
                     </div>
                     <div className="field">
                         <label className="font-bold block mb-2">Description</label>
-                        <InputTextarea rows={3} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
+                        <InputTextarea rows={3} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
                     </div>
                     <div className="field">
                         <label className="font-bold block mb-2">Due Date</label>
-                        <Calendar value={formData.due_date} onChange={(e) => setFormData({...formData, due_date: e.value})} showIcon />
+                        <Calendar value={formData.due_date} onChange={(e) => setFormData({ ...formData, due_date: e.value })} showIcon />
                     </div>
-                    
+
                     <div className="field">
                         <label className="font-bold block mb-2">Location *</label>
-                        <Dropdown options={locations} optionLabel="city" optionValue="id" value={formData.location_id} onChange={(e) => setFormData({...formData, location_id: e.value})} placeholder="Select Location" />
+                        <Dropdown options={locations} optionLabel="city" optionValue="id" value={formData.location_id} onChange={(e) => setFormData({ ...formData, location_id: e.value })} placeholder="Select Location" />
                     </div>
 
                     {formData.location_id && (
                         <div className="field">
                             <label className="font-bold block mb-2">Assign To Target</label>
-                            <Dropdown 
-                                options={[{label: 'All in Location', value: 'all'}, {label: 'Specific Group', value: 'group'}, {label: 'Individual Student', value: 'individual'}]}
+                            <Dropdown
+                                options={[{ label: 'All in Location', value: 'all' }, { label: 'Specific Group', value: 'group' }, { label: 'Individual Student', value: 'individual' }]}
                                 value={formData.targetType}
-                                onChange={(e) => setFormData({...formData, targetType: e.value})}
+                                onChange={(e) => setFormData({ ...formData, targetType: e.value })}
                             />
                         </div>
                     )}
@@ -275,14 +275,14 @@ const ClassroomAssignments = () => {
                     {formData.targetType === 'group' && (
                         <div className="field">
                             <label className="font-bold block mb-2">Select Group</label>
-                            <Dropdown options={groups} optionLabel="name" optionValue="id" value={formData.group_id} onChange={(e) => setFormData({...formData, group_id: e.value})} placeholder="Select Group" />
+                            <Dropdown options={groups} optionLabel="name" optionValue="id" value={formData.group_id} onChange={(e) => setFormData({ ...formData, group_id: e.value })} placeholder="Select Group" />
                         </div>
                     )}
 
                     {formData.targetType === 'individual' && (
                         <div className="field">
                             <label className="font-bold block mb-2">Select Student</label>
-                            <Dropdown options={students} optionLabel="name" optionValue="id" value={formData.student_id} onChange={(e) => setFormData({...formData, student_id: e.value})} placeholder="Select Student" filter />
+                            <Dropdown options={students} optionLabel="name" optionValue="id" value={formData.student_id} onChange={(e) => setFormData({ ...formData, student_id: e.value })} placeholder="Select Student" filter />
                         </div>
                     )}
 

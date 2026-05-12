@@ -16,6 +16,7 @@ const pdfOptions = {
     cMapPacked: true,
 };
 
+
 // --- Shared Constants & Utilities from SMTPlayer ---
 const formatDateTime = (date) => {
     const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -165,17 +166,19 @@ const DraggableWrapper = ({ children, initialX = 0, initialY = 0, className = ""
 const HTMLPageOverrides = () => (
     <style>{`
         .smt-html-page {
-            width: 210mm;
-            min-height: 297mm;
+            width: 100%;
+            max-width: 900px;
+            min-height: 500px;
             background: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             margin: 0 auto 20px auto;
             position: relative;
             box-sizing: border-box;
-            padding: 20mm;
+            padding: 40px;
             overflow: hidden;
             flex-shrink: 0;
             transition: transform 0.2s ease-out;
+            border-radius: 14px;
         }
         .smt-pdf-page {
             padding: 0 !important;
@@ -186,19 +189,34 @@ const HTMLPageOverrides = () => (
             width: 100%;
             height: 100%;
             position: relative;
-            font-family: serif;
-            line-height: 1.6;
-            color: #111;
+            font-family: Georgia, serif;
+            line-height: 1.8;
+            color: #222;
             z-index: 10;
         }
         .smt-html-page-content p {
             margin-bottom: 1em;
-            text-align: justify;
         }
-        .smt-html-page-content h1, .smt-html-page-content h2, .smt-html-page-content h3 {
-            margin-bottom: 0.5em;
-            color: #222;
+        .smt-html-page-content h1 {
+            text-align: center;
+            color: #6b3e12;
+            margin-bottom: 40px;
             font-weight: bold;
+        }
+        .smt-html-page-content h2 {
+            color: #8b4513;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+            margin-top: 40px;
+            margin-bottom: 0.5em;
+            font-weight: bold;
+        }
+        .smt-html-page-content .verse {
+            margin: 10px 0;
+        }
+        .smt-html-page-content .verse-number {
+            font-weight: bold;
+            color: #a0522d;
         }
         
         .html-annotation-layer {
@@ -611,6 +629,7 @@ const SMTPage = () => {
     const [numPages, setNumPages] = useState(null);
     const [activePdfUrl, setActivePdfUrl] = useState(null);
 
+
     // Highlighting State Memory
     const [highlights, setHighlights] = useState([]);
     const [selectionMenu, setSelectionMenu] = useState(null);
@@ -717,7 +736,44 @@ const SMTPage = () => {
             const selection = window.getSelection();
             if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
                 const range = selection.getRangeAt(0);
-                const rects = Array.from(range.getClientRects());
+                
+                // Collect specific text nodes to prevent block-element gaps from being highlighted
+                let textNodes = [];
+                if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
+                    textNodes.push(range.commonAncestorContainer);
+                } else {
+                    const treeWalker = document.createTreeWalker(
+                        range.commonAncestorContainer,
+                        NodeFilter.SHOW_TEXT,
+                        {
+                            acceptNode: function(node) {
+                                return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                            }
+                        }
+                    );
+                    while(treeWalker.nextNode()) textNodes.push(treeWalker.currentNode);
+                }
+
+                let rects = [];
+                if (textNodes.length > 0) {
+                    textNodes.forEach(node => {
+                        const subRange = document.createRange();
+                        subRange.selectNodeContents(node);
+                        
+                        if (node === range.startContainer) {
+                            subRange.setStart(node, range.startOffset);
+                        }
+                        if (node === range.endContainer) {
+                            subRange.setEnd(node, range.endOffset);
+                        }
+                        
+                        // Only add rects that have actual dimensions (ignores empty newlines)
+                        const nodeRects = Array.from(subRange.getClientRects()).filter(r => r.width > 2 && r.height > 2);
+                        rects.push(...nodeRects);
+                    });
+                } else {
+                    rects = Array.from(range.getClientRects()).filter(r => r.width > 2 && r.height > 2);
+                }
                 
                 if (rects.length === 0) {
                     setSelectionMenu(null);
@@ -871,7 +927,7 @@ const SMTPage = () => {
             </div>
 
             {/* Document Workspace */}
-            <div className="flex-1 overflow-y-auto w-full pt-24 pb-20 flex flex-col items-center bg-[#0b0f19]" ref={documentContainerRef}>
+            <div className="flex-1 overflow-y-auto w-full pt-24 pb-20 flex flex-col items-center bg-[#f5f3ee]" ref={documentContainerRef}>
                 <div className="flex flex-col items-center w-full max-w-[1400px] px-10 gap-10">
                     {activePdfUrl ? (
                         <Document

@@ -106,7 +106,7 @@ const LionChartModal = ({ visible, onHide, onInsert }) => {
                                     textShadow: '-2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff' 
                                 }}
                             >
-                                {letter}.
+                                {letter}
                             </span>
                         ))}
                     </div>

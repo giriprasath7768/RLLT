@@ -97,7 +97,18 @@ const BookMaster = () => {
                 setBook(emptyBook);
             } catch (error) {
                 console.error("Save error: ", error);
-                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to save book', life: 3000 });
+                let errorMsg = 'Failed to save book';
+                if (error.response && error.response.data && error.response.data.detail) {
+                    const detail = error.response.data.detail;
+                    if (typeof detail === 'string') {
+                        if (detail.includes('UniqueViolation') || detail.includes('duplicate key') || detail.includes('already exists')) {
+                            errorMsg = `A book with the name "${_book.name}" already exists.`;
+                        } else {
+                            errorMsg = detail.substring(0, 100);
+                        }
+                    }
+                }
+                toast.current.show({ severity: 'error', summary: 'Error', detail: errorMsg, life: 5000 });
             }
         }
     };

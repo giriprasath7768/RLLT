@@ -127,11 +127,11 @@ const AdminSidebar = ({ visible, onHide }) => {
                         { label: 'Image', icon: 'pi pi-image', to: '/admin/image-gallery' }
                     ]
                 }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'SMT Page', icon: 'pi pi-file-word', to: '/admin/smt-page' }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'Book Index', icon: 'pi pi-book', to: '/admin/book-index' }] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'SMT Page', icon: 'pi pi-book', to: '/admin/book-index' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Recordings', icon: 'pi pi-microphone', to: '/admin/recordings' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Screen Recorder', icon: 'pi pi-desktop', to: '/admin/screen-recorder' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Manage Training Contents', icon: 'pi pi-video', to: '/admin/manage-training' }] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: '7 TNT Content management', icon: 'pi pi-server', to: '/admin/7tnt-content' }] : []),
                 ...(userRole === 'super_admin' ? [{ label: 'Locations', icon: 'pi pi-map-marker', to: '/admin/locations' }] : [])
             ]
         },

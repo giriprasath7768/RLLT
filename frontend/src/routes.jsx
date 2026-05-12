@@ -41,9 +41,8 @@ import LightChart from './pages/admin/LightChart';
 import StudentReport from './pages/admin/StudentReport';
 import SevenTNTPlayers from './pages/admin/SevenTNTPlayers';
 import SevenTNTPlayer from './pages/admin/SevenTNTPlayer';
+import SevenTNTContentManagement from './pages/admin/SevenTNTContentManagement';
 import TTomTPlayer from './pages/admin/TTomTPlayer';
-import SMTPlayer from './pages/admin/SMTPlayer';
-import SMTPage from './pages/admin/SMTPage';
 import Players from './pages/admin/Players';
 import DashboardAdmin from './pages/admin/DashboardAdmin';
 import DashboardLeader from './pages/admin/DashboardLeader';
@@ -213,18 +212,16 @@ const AppRoutes = () => {
                     <Route path="/admin/chapters" element={<ChapterMaster />} />
                     <Route path="/admin/rllt-data" element={<RLLTTableData />} />
                     <Route path="/admin/image-gallery" element={<ImageGallery />} />
-                    <Route path="/admin/smt-player" element={<SMTPlayer />} />
-                    <Route path="/admin/smt-page" element={<SMTPage />} />
                     <Route path="/admin/book-index" element={<BookIndex />} />
                     <Route path="/admin/players" element={<Players />} />
                     <Route path="/admin/7tnt-players" element={<SevenTNTPlayers />} />
-                    <Route path="/admin/7tnt-player" element={<SevenTNTPlayer />} />
                 </Route>
 
                 {/* Restricted Routes (SuperAdmin, Admin only) for specific items removed from Leader */}
                 <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} />}>
                     <Route path="/admin/create-training" element={<CreateContent />} />
                     <Route path="/admin/manage-training" element={<CreateContent />} />
+                    <Route path="/admin/7tnt-content" element={<SevenTNTContentManagement />} />
                     <Route path="/admin/recordings" element={<Recordings />} />
                     <Route path="/admin/screen-recorder" element={<ScreenRecorder />} />
                 </Route>
@@ -244,8 +241,6 @@ const AppRoutes = () => {
                 <Route path="/dashboard/student/assessment-result" element={<StudentAssessmentResult />} />
                 <Route path="/dashboard/student/charts" element={<StudentChartListing />} />
                 <Route path="/dashboard/student/players" element={<StudentPlayers />} />
-                <Route path="/dashboard/student/smt-player" element={<SMTPlayer />} />
-                <Route path="/dashboard/student/smt-page" element={<SMTPage />} />
                 <Route path="/dashboard/student/book-index" element={<BookIndex />} />
                 <Route path="/dashboard/student/recordings" element={<Recordings />} />
                 <Route path="/dashboard/student/classroom" element={<StudentClassroom />} />
@@ -268,7 +263,6 @@ const AppRoutes = () => {
                 <Route path="/dashboard/student/weekly-chart" element={<WeeklyChart />} />
                 <Route path="/dashboard/student/7tnt-word" element={<WordEditor />} />
                 <Route path="/dashboard/student/7tnt-players" element={<SevenTNTPlayers />} />
-                <Route path="/dashboard/student/7tnt-player" element={<SevenTNTPlayer />} />
             </Route>
 
             {/* Other Dashboards */}
@@ -276,7 +270,9 @@ const AppRoutes = () => {
             <Route path="/dashboard/under-review" element={<ProtectedRoute allowedRoles={['student']}><AssessmentUnderReview /></ProtectedRoute>} />
             <Route path="/dashboard/ttom/player" element={<ProtectedRoute allowedRoles={['ttom_user']}><TTomTPlayer /></ProtectedRoute>} />
             <Route path="/admin/ttomt-player" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'leader']}><TTomTPlayer /></ProtectedRoute>} />
+            <Route path="/admin/7tnt-player" element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'leader']}><SevenTNTPlayer /></ProtectedRoute>} />
             <Route path="/dashboard/student/ttomt-player" element={<ProtectedRoute allowedRoles={['student']}><EnhancedStudentDashboardWrapper><TTomTPlayer /></EnhancedStudentDashboardWrapper></ProtectedRoute>} />
+            <Route path="/dashboard/student/7tnt-player" element={<ProtectedRoute allowedRoles={['student']}><EnhancedStudentDashboardWrapper><SevenTNTPlayer /></EnhancedStudentDashboardWrapper></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DefaultDashboard /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/login" replace />} />

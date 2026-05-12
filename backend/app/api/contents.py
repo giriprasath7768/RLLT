@@ -150,6 +150,10 @@ async def sync_content(
                     shutil.copyfileobj(pdf.file, buffer)
                 pdf_urls.append(f"/api/uploads/{filename}")
                 
+                if ext.lower() == ".pdf":
+                    import subprocess
+                    subprocess.Popen(["python", "/app/scripts/extract_pdf.py", file_path, UPLOAD_DIR])
+                
         pdf_url_json = json.dumps(pdf_urls) if pdf_urls else None
 
         upsert_stmt = insert(Content).values(
@@ -283,6 +287,10 @@ async def upload_files(file: List[UploadFile] = File(...)):
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(f.file, buffer)
                 urls.append(f"/api/uploads/{filename}")
+                
+                if ext.lower() == ".pdf":
+                    import subprocess
+                    subprocess.Popen(["python", "/app/scripts/extract_pdf.py", file_path, UPLOAD_DIR])
         return {"status": "success", "urls": urls}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

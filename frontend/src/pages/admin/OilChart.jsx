@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
@@ -524,7 +525,7 @@ const OilChart = () => {
                                             <input className="w-full bg-transparent text-center outline-none text-[14px] font-black tracking-widest pt-0.5" defaultValue="B K - A R" />
                                         </div>
                                         <div className="flex-1 flex items-center justify-center">
-                                            <input className="w-full bg-transparent text-center outline-none text-[14px] font-black tracking-widest pt-0.5" defaultValue="6 6 - 4 0 +" />
+                                            <input className="w-full bg-transparent text-center outline-none text-[14px] font-black tracking-widest pt-0.5" value={`${extractBooksAndAuthors(rows).bks} - ${extractBooksAndAuthors(rows).art}`} readOnly />
                                         </div>
                                     </div>
                                 </div>

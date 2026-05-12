@@ -4,8 +4,14 @@ const SavedDocumentsModal = ({ isOpen, onClose, documents, onSelectDocument, onD
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[250] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm animate-fadein print:hidden">
-            <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-2xl flex flex-col transform transition-all scale-100 opacity-100 h-[70vh]">
+        <div 
+            className="fixed inset-0 z-[250] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm animate-fadein print:hidden"
+            onClick={onClose}
+        >
+            <div 
+                className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-2xl flex flex-col transform transition-all scale-100 opacity-100 h-[70vh]"
+                onClick={(e) => e.stopPropagation()}
+            >
 
                 {/* Header */}
                 <div className="px-5 py-4 bg-gray-100 border-b flex justify-between items-center bg-gradient-to-r from-gray-100 to-gray-50 shrink-0">

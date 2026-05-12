@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Button } from 'primereact/button';
@@ -556,11 +557,21 @@ const TwentyFourSevenMorningEveningChart = () => {
                                                 <span className="text-white font-serif text-[32px] font-normal leading-none" style={{ transform: 'translateY(-2px)' }}>{tLabel}</span>
                                             </div>
                                         </td>
-
                                         <td className="p-0 align-middle text-center bg-white">
                                             <span className="text-[#ff0000] font-bold text-[20px] tracking-wide uppercase" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
                                                 REAL LIFE LEADERSHIP TRAINING - <span className="text-[16px] font-bold">{headerSubtitle}</span>
                                             </span>
+                                        </td>
+                                        {/* DATE & TIME BLOCK */}
+                                        <td className="w-[100px] border-l-2 border-black p-0 align-middle bg-white">
+                                            <div className="flex flex-col h-[55px] w-full">
+                                                <div className="flex-1 flex items-center justify-start border-b-2 border-black px-2">
+                                                    <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</span>
+                                                </div>
+                                                <div className="flex-1 flex items-center justify-start px-2">
+                                                    <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                            </div>
                                         </td>
 
                                         <td className="w-[60px] bg-[#00b050] border-l-2 border-black p-0 h-[55px]">
@@ -603,13 +614,13 @@ const TwentyFourSevenMorningEveningChart = () => {
                                             </div>
                                         </td>
 
-                                        <td className="w-[140px] bg-[#ffff00] p-0 h-[65px] align-middle">
+                                        <td className="w-[160px] bg-[#ffff00] p-0 h-[65px] align-middle">
                                             <div className="flex flex-col h-[65px] w-full">
                                                 <div className="flex-1 flex items-center justify-center border-b-2 border-black pt-1">
                                                     <span className="text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-center pb-1">
-                                                    <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>6 6 - 4 0 +</span>
+                                                    <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>{extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).bks} - {extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).art}</span>
                                                 </div>
                                             </div>
                                         </td>

@@ -300,9 +300,9 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
                                 <i className="pi pi-chart-bar text-xl mb-0.5"></i>
                                 <span className="text-[9px] font-medium tracking-wide">Chart</span>
                             </button>
-                            <button className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-[#0f172a] border border-[#334155] text-gray-300 transition-colors hover:bg-[#1e293b] hover:text-white">
-                                <i className="pi pi-book text-xl mb-0.5"></i>
-                                <span className="text-[9px] font-medium tracking-wide">Learn</span>
+                            <button onClick={() => setActiveTab("Information")} className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-transform hover:scale-105 ${activeTab === "Information" ? "bg-gradient-to-b from-[#1d4ed8] to-[#1e3a8a] border border-[#3b82f6] text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]" : "bg-[#0f172a] border border-[#334155] text-gray-300 hover:bg-[#1e293b] hover:text-white"}`}>
+                                <i className="pi pi-info-circle text-xl mb-0.5"></i>
+                                <span className="text-[9px] font-medium tracking-wide">Information</span>
                             </button>
                             <button onClick={() => setActiveTab("Settings")} className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-transform hover:scale-105 ${activeTab === "Settings" ? "bg-gradient-to-b from-[#1d4ed8] to-[#1e3a8a] border border-[#3b82f6] text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]" : "bg-[#0f172a] border border-[#334155] text-gray-300 hover:bg-[#1e293b] hover:text-white"}`}>
                                 <i className="pi pi-cog text-xl mb-0.5"></i>
@@ -547,6 +547,9 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
                                 </div>
                             </div>
                         )}
+                        {activeTab === "Information" && (
+                            <InformationTab storageKey="greek_calculator_info" />
+                        )}
                         {activeTab === "Settings" && (
                             <div className="bg-[#0f142b] border border-[#1e293b] rounded-[12px] p-4 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] flex flex-col h-full overflow-y-auto custom-scrollbar">
                                 <div className="text-center text-[13px] font-bold tracking-wider uppercase text-[#94a3b8] mb-4 drop-shadow-md">Calculator Settings</div>
@@ -641,6 +644,121 @@ const GreekCalculatorModal = ({ isOpen, onClose, onInsert }) => {
             </div>
         </div>,
         document.body
+    );
+};
+
+// Extracted Information Tab Component for Reuse
+const InformationTab = ({ storageKey }) => {
+    const [infoList, setInfoList] = useState([]);
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
+    const [editingId, setEditingId] = useState(null);
+
+    useEffect(() => {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+            try { setInfoList(JSON.parse(stored)); } catch(e){}
+        }
+    }, [storageKey]);
+
+    const saveToStorage = (list) => {
+        setInfoList(list);
+        localStorage.setItem(storageKey, JSON.stringify(list));
+    };
+
+    const handleSave = () => {
+        if (!title.trim() || !content.trim()) return;
+        
+        if (editingId) {
+            saveToStorage(infoList.map(info => 
+                info.id === editingId ? { ...info, title, content, updatedAt: new Date().toLocaleString() } : info
+            ));
+            setEditingId(null);
+        } else {
+            saveToStorage([...infoList, { 
+                id: Date.now().toString(), 
+                title, 
+                content, 
+                createdAt: new Date().toLocaleString() 
+            }]);
+        }
+        setTitle("");
+        setContent("");
+    };
+
+    const handleEdit = (info) => {
+        setEditingId(info.id);
+        setTitle(info.title);
+        setContent(info.content);
+    };
+
+    const handleDelete = (id) => {
+        if (window.confirm("Are you sure you want to delete this information?")) {
+            saveToStorage(infoList.filter(info => info.id !== id));
+            if (editingId === id) {
+                setEditingId(null);
+                setTitle("");
+                setContent("");
+            }
+        }
+    };
+
+    const handleCancel = () => {
+        setEditingId(null);
+        setTitle("");
+        setContent("");
+    };
+
+    return (
+        <div className="bg-[#0f142b] border border-[#1e293b] rounded-[12px] p-4 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] flex flex-col h-full overflow-hidden">
+            <div className="text-center text-[13px] font-bold tracking-wider uppercase text-[#94a3b8] mb-4 drop-shadow-md">Information Management</div>
+            
+            {/* Form Section */}
+            <div className="bg-[#020617] border border-[#1e293b] p-3 rounded-[10px] mb-4 flex flex-col gap-2 shrink-0">
+                <input 
+                    type="text" 
+                    placeholder="Title" 
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="bg-[#0f172a] border border-[#334155] rounded text-white px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 w-full"
+                />
+                <textarea 
+                    placeholder="Content details..." 
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    className="bg-[#0f172a] border border-[#334155] rounded text-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500 w-full resize-none h-[80px]"
+                ></textarea>
+                <div className="flex gap-2 justify-end mt-1">
+                    {editingId && (
+                        <button onClick={handleCancel} className="text-xs text-gray-400 hover:text-white px-3 py-1.5 transition-colors">Cancel</button>
+                    )}
+                    <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-1.5 rounded transition-colors shadow-lg">
+                        {editingId ? "Update Information" : "Add Information"}
+                    </button>
+                </div>
+            </div>
+
+            {/* List Section */}
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-2">
+                {infoList.length === 0 ? (
+                    <div className="text-center text-gray-500 mt-4 text-sm italic">No information available. Add some above.</div>
+                ) : (
+                    infoList.map(info => (
+                        <div key={info.id} className="bg-[#020617] border border-[#1e293b] rounded-[10px] p-3 flex flex-col gap-2 group relative">
+                            <div className="flex justify-between items-start">
+                                <h4 className="text-[#00ffcc] font-bold text-sm">{info.title}</h4>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => handleEdit(info)} className="text-blue-400 hover:text-blue-300 p-1" title="Edit"><i className="pi pi-pencil text-xs"></i></button>
+                                    <button onClick={() => handleDelete(info.id)} className="text-red-400 hover:text-red-300 p-1" title="Delete"><i className="pi pi-trash text-xs"></i></button>
+                                </div>
+                            </div>
+                            <p className="text-gray-300 text-xs whitespace-pre-wrap">{info.content}</p>
+                            <span className="text-[9px] text-gray-600 mt-1 self-end">{info.updatedAt || info.createdAt}</span>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
     );
 };
 

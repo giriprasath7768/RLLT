@@ -269,7 +269,8 @@ const GlobalPDFPageOverrides = () => (
             justify-content: center !important;
             align-items: center !important;
             z-index: 0;
-            overflow: hidden;
+            overflow: visible !important;
+            transform: scale(0.96) !important;
         }
         .smt-canvas-wrapper canvas {
             width: 100% !important;
@@ -1539,7 +1540,7 @@ const SMTPlayer = () => {
                                         maxHeight={9000}
                                         drawShadow={true}
                                         maxShadowOpacity={0.8}
-                                        showCover={true}
+                                        showCover={false}
                                         mobileScrollSupport={true}
                                         disableFlipByClick={true}
                                         useMouseEvents={false}
@@ -1551,17 +1552,38 @@ const SMTPlayer = () => {
                                         ref={flipBookRef}
                                     >
                                         {Array.from(new Array(totalPagesToRender), (_, index) => {
-                                            const isHardCover = index === 0 || index === totalPagesToRender - 1;
-                                            const isRightPage = (index + 1) % 2 !== 0;
+                                            const isHardCover = false;
+                                            const isRightPage = index % 2 !== 0;
 
-                                            if (index < numPages) {
+                                            let pageToRender = null;
+                                            let isBlank = false;
+
+                                            if (numPages % 2 !== 0) {
+                                                if (index < numPages - 1) {
+                                                    pageToRender = index + 1;
+                                                } else if (index === numPages - 1) {
+                                                    isBlank = true;
+                                                } else if (index === numPages) {
+                                                    pageToRender = numPages;
+                                                } else {
+                                                    isBlank = true;
+                                                }
+                                            } else {
+                                                if (index < numPages) {
+                                                    pageToRender = index + 1;
+                                                } else {
+                                                    isBlank = true;
+                                                }
+                                            }
+
+                                            if (!isBlank && pageToRender !== null) {
                                                 return (
                                                     <PDFPageRender
                                                         key={index}
-                                                        pageNumber={index + 1}
+                                                        pageNumber={pageToRender}
                                                         width={baseWidth}
                                                         isCover={isHardCover}
-                                                        pageHighlights={highlights.filter(h => h.pageNumber === index + 1)}
+                                                        pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
                                                     />
                                                 );
                                             } else {

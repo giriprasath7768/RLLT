@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
@@ -545,6 +546,17 @@ const SevenTNTMainChart = () => {
                                                 REAL LIFE LEADERSHIP TRAINING - <span className="text-[16px] font-bold">{headerSubtitle}</span>
                                             </span>
                                         </td>
+                                        {/* DATE & TIME BLOCK */}
+                                        <td className="w-[100px] border-l-2 border-black p-0 align-middle bg-white">
+                                            <div className="flex flex-col h-[55px] w-full">
+                                                <div className="flex-1 flex items-center justify-start border-b-2 border-black px-2">
+                                                    <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</span>
+                                                </div>
+                                                <div className="flex-1 flex items-center justify-start px-2">
+                                                    <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                            </div>
+                                        </td>
                                         <td className="w-[60px] bg-[#00b050] border-l-2 border-black p-0 h-[55px]">
                                             <div className="flex flex-col h-[55px] w-full">
                                                 <div className="flex-1 flex items-center justify-center border-b-2 border-black">
@@ -571,13 +583,13 @@ const SevenTNTMainChart = () => {
                                                 <input className="w-full flex-1 bg-transparent border-none text-black font-bold text-[22px] p-1 focus:outline-none uppercase placeholder-gray-400" value={bannerText} onChange={(e) => setBannerText(e.target.value)} placeholder="ENTER TEXT HERE" />
                                             </div>
                                         </td>
-                                        <td className="w-[140px] bg-[#ffff00] p-0 h-[65px] align-middle">
+                                        <td className="w-[160px] bg-[#ffff00] p-0 h-[65px] align-middle">
                                             <div className="flex flex-col h-[65px] w-full">
                                                 <div className="flex-1 flex items-center justify-center border-b-2 border-black pt-1">
                                                     <span className="text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-center pb-1">
-                                                    <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>6 6 - 4 0 +</span>
+                                                    <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>{extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).bks} - {extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).art}</span>
                                                 </div>
                                             </div>
                                         </td>

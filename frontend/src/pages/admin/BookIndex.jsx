@@ -1,17 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import HTMLFlipBook from 'react-pageflip';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+import { splitS3Data, splitS4Data } from '../../utils/chartDataSplitter';
+import { StudentService } from '../../services/studentService';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+const explodeBookString = (str, booksDB) => {
+    if (!str) return [];
 
-const pdfOptions = {
-    cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
-    standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
-    cMapPacked: true,
+    const parts = str.split(',').map(s => s.trim());
+    const exploded = [];
+
+    const toTitleCase = (str) => {
+        const spaced = str.replace(/^(\d+)([a-zA-Z]+)/, '$1 $2');
+        return spaced.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    };
+
+    const getFullName = (abbr) => {
+        let lookup = abbr.trim().toUpperCase();
+        if (lookup === 'PRO') lookup = 'PROVERBS';
+
+        if (!booksDB || !booksDB.length) return toTitleCase(lookup);
+        const book = booksDB.find(b =>
+            (b.short_form || '').trim().toUpperCase() === lookup ||
+            (b.name || '').trim().toUpperCase() === lookup ||
+            (b.short_form || '').trim().toUpperCase() === abbr.trim().toUpperCase() ||
+            (b.name || '').trim().toUpperCase() === abbr.trim().toUpperCase()
+        );
+        return book ? toTitleCase(book.name.trim()) : toTitleCase(lookup);
+    };
+
+    parts.forEach(part => {
+        const rangeMatch = part.match(/^(.+?)\s+(\d+)\s*-\s*(\d+)$/);
+        const singleMatch = part.match(/^(.+?)\s+(\d+)$/);
+
+        if (rangeMatch) {
+            const bookName = getFullName(rangeMatch[1].trim());
+            const from = parseInt(rangeMatch[2]);
+            const to = parseInt(rangeMatch[3]);
+            for (let i = from; i <= to; i++) {
+                exploded.push(`${bookName} ${i}`);
+            }
+        } else if (singleMatch) {
+            const bookName = getFullName(singleMatch[1].trim());
+            exploded.push(`${bookName} ${singleMatch[2]}`);
+        } else {
+            exploded.push(getFullName(part));
+        }
+    });
+
+    return exploded;
 };
 
 const GlobalPDFPageOverrides = () => (
@@ -34,18 +72,26 @@ const GlobalPDFPageOverrides = () => (
             justify-content: center !important;
             align-items: center !important;
             z-index: 0;
-            overflow: hidden;
+            overflow: visible !important;
+            transform: scale(0.96) !important;
         }
         .smt-canvas-wrapper canvas {
             width: 100% !important;
             height: 100% !important;
             object-fit: contain !important;
         }
-        .react-pdf__Page__textContent {
+        .pdf-page-content {
             user-select: text !important;
             cursor: text !important;
             z-index: 50 !important;
             line-height: 1 !important;
+        }
+        .react-pdf__Page__textContent span {
+            user-select: text !important;
+        }
+        .pdf-selectable-paragraph {
+            display: inline;
+            position: relative;
         }
         .tier1-scroll::-webkit-scrollbar {
             width: 6px;
@@ -71,20 +117,25 @@ const GlobalPDFPageOverrides = () => (
 );
 
 
-const DividerBox = ({ letter, letterColor, onClick }) => (
-    <div
-        onClick={() => {
-            const hexMatch = letterColor.match(/\[(.*?)\]/);
-            if (hexMatch && onClick) onClick(hexMatch[1]);
-        }}
-        className="flex flex-col items-center justify-between min-w-0 border-[1.5px] border-gray-400 bg-white shadow-sm pt-2 pb-2 cursor-pointer hover:bg-gray-100 transition-colors"
-        style={{ flex: 1.0 }}
-    >
-        <span className={`font-serif font-black text-xl leading-none drop-shadow-sm ${letterColor}`}>
-            {letter}
-        </span>
-    </div>
-);
+const DividerBox = ({ letter, letterColor, num, onClick }) => {
+    const hexColor = letterColor.match(/\[(.*?)\]/)[1];
+    return (
+        <div
+            onClick={() => {
+                if (onClick) onClick(hexColor);
+            }}
+            className="flex flex-col items-center justify-start min-w-0 border-[2px] bg-white shadow-sm pt-2 pb-2 cursor-pointer hover:bg-gray-100 transition-colors"
+            style={{ flex: 1.0, borderColor: hexColor }}
+        >
+            <span className={`font-serif font-black text-xl leading-none drop-shadow-sm pb-2 ${letterColor}`}>
+                {letter}
+            </span>
+            <span className={`font-black text-sm pt-2 pb-2 leading-none text-black`}>
+                {num}
+            </span>
+        </div>
+    );
+};
 
 const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onClick }) => {
     return (
@@ -93,96 +144,248 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
                 const hexMatch = bodyColorClass.match(/\[(.*?)\]/);
                 if (hexMatch && onClick) onClick(hexMatch[1]);
             }}
-            className="flex flex-col items-center min-w-0 bg-white shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
-            style={{
-                flex: 1.0,
-                clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 8px))',
-                WebkitClipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 8px))'
-            }}
+            className="flex flex-col items-center min-w-0 bg-gray-500 border-[1px] border-black cursor-pointer hover:-translate-y-1 transition-transform relative h-full drop-shadow-md pb-0"
+            style={{ flex: 1.0 }}
         >
-            <div className={`w-full h-12 sm:h-14 flex justify-center ${tipColorClass}`}>
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full drop-shadow-sm">
+            {/* Wooden Tip (Top 20%) */}
+            <div className={`w-full h-[20%] relative flex justify-center items-end ${tipColorClass}`}>
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-[97%] h-full">
                     <polygon points="50,0 0,100 100,100" fill="#f4d1a6" />
                     <polygon points="50,0 25,50 75,50" fill="currentColor" />
                 </svg>
             </div>
 
-            <div className={`w-full flex-grow ${bodyColorClass} bg-gradient-to-r from-black/10 via-transparent to-black/20 border-t border-black/20 flex flex-col justify-center items-center py-2 relative overflow-hidden min-h-[50px] h-14 sm:h-18`}>
-                <span className="transform -rotate-90 text-[0.55rem] sm:text-[0.65rem] font-black text-black tracking-tight uppercase origin-center whitespace-nowrap z-10">
-                    {label}
-                </span>
+            {/* Hexagonal Color Body (Middle 60%) */}
+            <div className={`w-[97%] h-[60%] flex relative ${bodyColorClass} overflow-hidden border-t-2 border-black/10`}>
+                {/* Left face shadow */}
+                <div className="w-[25%] h-full bg-black/20 border-r border-black/10"></div>
+
+                {/* Center face Label */}
+                <div className="w-[50%] h-full relative z-10">
+                    <span
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[13px] sm:text-[14px] font-black uppercase whitespace-nowrap"
+                        style={{
+                            color: textColor || '#ffffff',
+                            textShadow: '-0.5px 0.5px 0px #a39b8c, -1px 1px 0px #8b8374, -2px 2px 0px #635b4c, -3px 3px 0px #4a4336, -4px 4px 4px rgba(0,0,0,0.8)',
+                            letterSpacing: label.length > 8 ? '0px' : '2px'
+                        }}
+                    >
+                        {label}
+                    </span>
+                </div>
+
+                {/* Right face deep shadow */}
+                <div className="w-[25%] h-full bg-black/40 border-l border-white/10"></div>
             </div>
 
-            <div className={`w-full h-10 sm:h-12 ${bodyColorClass} bg-gradient-to-r from-black/20 via-transparent to-black/30 border-t border-black/30 flex items-center justify-center`}>
-                <span className={`font-black text-sm sm:text-base ${textColor}`}>{baseNum}</span>
+            {/* Metal Ferrule Base (Bottom 8%) */}
+            <div className="w-[100%] h-[8%] bg-gradient-to-r from-gray-500 via-gray-200 to-gray-600 flex flex-col justify-between py-[1px] sm:py-[2px] relative shadow-lg z-10 border-t-2 border-black/20 overflow-hidden">
+                <div className="w-full h-[1px] bg-black/20 shadow-sm"></div>
+                <div className="w-full h-[1px] bg-white/50"></div>
+                <div className="w-full h-[1px] bg-black/20 shadow-sm"></div>
+                <div className="w-full h-[1px] bg-white/50"></div>
+            </div>
+
+            {/* Colored Base Cap & Number (Bottom 12%) */}
+            <div className={`w-[97%] h-[12%] flex items-center justify-center relative rounded-b-md shadow-md z-10 overflow-hidden ${bodyColorClass} border-t border-black/50`}>
+                {/* Cylindrical shading to match 3D volume but not sharp hexagonal */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/30"></div>
+                <span className="font-extrabold text-[15px] sm:text-[18px] text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] z-10 relative">
+                    {baseNum}
+                </span>
             </div>
         </div>
     );
 };
 
 const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
+    const [texts, setTexts] = React.useState({
+        W: "ISDOM OF GOD",
+        I: "MAGINATION",
+        S: "CRIPTURES TO PRAYER",
+        D: "AILY GROWING IN GODLINESS",
+        O: "BEDIENCE TO GOD'S WILL",
+        M: "EDITATING ON GOD'S CHARACTER"
+    });
+    const [activeSquare, setActiveSquare] = React.useState(null);
+    const [pencilTextColor, setPencilTextColor] = React.useState('#ffffff');
+    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+    const [isSliderMode, setIsSliderMode] = React.useState(false);
+    const [currentSlideIndex, setCurrentSlideIndex] = React.useState(0);
+
+    React.useEffect(() => {
+        if (isSliderMode && activeSquare) {
+            const idx = wisdomItems.findIndex(i => i.key === activeSquare);
+            if (idx !== -1 && idx !== currentSlideIndex) {
+                setCurrentSlideIndex(idx);
+            }
+        }
+    }, [activeSquare, isSliderMode]);
+
+    React.useEffect(() => {
+        let interval;
+        if (isSliderMode && !activeSquare) {
+            interval = setInterval(() => {
+                setCurrentSlideIndex((prev) => (prev < wisdomItems.length - 1 ? prev + 1 : 0));
+            }, 3000);
+        }
+        return () => clearInterval(interval);
+    }, [isSliderMode, activeSquare, currentSlideIndex]);
+
+    const wisdomItems = [
+        { letter: 'W', color: '#8e2b8c', key: 'W' },
+        { letter: 'I', color: '#294291', key: 'I' },
+        { letter: 'S', color: '#86c5f7', key: 'S' },
+        { letter: 'D', color: '#38b948', key: 'D' },
+        { letter: 'O', color: '#e3242b', key: 'O' },
+        { letter: 'M', color: '#ed9b26', key: 'M' }
+    ];
+
     return (
-        <div className="bg-white flex-grow flex flex-col pt-4 pb-2 px-1 rounded-t-lg overflow-hidden border border-gray-400 w-full h-full">
+        <div className="bg-white flex-grow flex flex-col pt-2 pb-4 px-1 rounded-t-lg overflow-hidden border border-gray-400 w-full h-[400px]">
             {/* Pencils Row */}
-            <div className="flex px-1 gap-px h-[190px] sm:h-[210px] pb-2 w-full justify-between items-stretch">
-                <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#86c5f7]" tipColorClass="text-[#86c5f7]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" onClick={onLetterClick} />
+            <div className="flex px-1 gap-1 h-[210px] pb-2 w-full justify-between items-stretch">
+                <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00c0ff]" tipColorClass="text-[#00c0ff]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'W' ? null : 'W'); }} />
 
-                <Pencil label="FINANCE" baseNum="2" bodyColorClass="bg-[#38b948]" tipColorClass="text-[#38b948]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="I" letterColor="text-[#294291]" num="2" onClick={onLetterClick} />
+                <Pencil label="FINANCE" baseNum="2" bodyColorClass="bg-[#00a638]" tipColorClass="text-[#00a638]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="I" letterColor="text-[#294291]" num="2" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'I' ? null : 'I'); }} />
 
-                <Pencil label="GOVERNMENT" baseNum="3" bodyColorClass="bg-[#4579d4]" tipColorClass="text-[#4579d4]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="S" letterColor="text-[#86c5f7]" num="3" onClick={onLetterClick} />
+                <Pencil label="GOVERNMENT" baseNum="3" bodyColorClass="bg-[#3340cd]" tipColorClass="text-[#3340cd]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="S" letterColor="text-[#86c5f7]" num="3" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'S' ? null : 'S'); }} />
 
-                <Pencil label="SPIRITUALITY" baseNum="4" bodyColorClass="bg-[#ebe244]" tipColorClass="text-[#ebe244]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="D" letterColor="text-[#38b948]" num="4" onClick={onLetterClick} />
+                <Pencil label="SPIRITUALITY" baseNum="4" bodyColorClass="bg-[#fafa33]" tipColorClass="text-[#fafa33]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="D" letterColor="text-[#38b948]" num="4" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'D' ? null : 'D'); }} />
 
-                <Pencil label="TALENT" baseNum="5" bodyColorClass="bg-[#8b2671]" tipColorClass="text-[#8b2671]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="O" letterColor="text-[#e3242b]" num="5" onClick={onLetterClick} />
+                <Pencil label="TALENT" baseNum="5" bodyColorClass="bg-[#bb43b1]" tipColorClass="text-[#bb43b1]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="O" letterColor="text-[#e3242b]" num="5" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'O' ? null : 'O'); }} />
 
-                <Pencil label="TRAINING" baseNum="6" bodyColorClass="bg-[#f17a41]" tipColorClass="text-[#f17a41]" textColor="text-black" onClick={onPencilClick} />
-                <DividerBox letter="M" letterColor="text-[#ed9b26]" num="6" onClick={onLetterClick} />
+                <Pencil label="TRAINING" baseNum="6" bodyColorClass="bg-[#fe6d01]" tipColorClass="text-[#fe6d01]" textColor={pencilTextColor} onClick={onPencilClick} />
+                <DividerBox letter="M" letterColor="text-[#ed9b26]" num="6" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'M' ? null : 'M'); }} />
 
-                <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#e3242b]" tipColorClass="text-[#e3242b]" textColor="text-black" onClick={onPencilClick} />
+                <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#fe0005]" tipColorClass="text-[#fe0005]" textColor={pencilTextColor} onClick={onPencilClick} />
             </div>
 
             {/* TRANSFORMATION bar */}
-            <div className="bg-[#181a1f] text-white font-black text-center tracking-[0.4em] py-1.5 text-[0.75rem] border-[3px] border-gray-400 mt-1 uppercase w-full">
-                T R A N S F O R M A T I O N
+            <div className="w-full bg-black py-0 text-white flex justify-between items-center px-[12px] font-black text-[14px] sm:text-[16px] mx-0 drop-shadow-md z-10 shrink-0 mb-0">
+                {"TRANSFORMATION".split('').map((char, i) => (
+                    <span key={i}>{char}</span>
+                ))}
             </div>
 
-            {/* List */}
-            <div className="px-4 py-3 flex flex-col gap-1 font-bold font-serif whitespace-nowrap bg-white">
-                <div className="flex items-center gap-2">
-                    <span className="text-[#8e2b8c] text-sm">1.</span>
-                    <span className="text-[#8e2b8c] text-xl font-black leading-none drop-shadow-sm">W</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">ISDOM OF GOD</span>
+            {/* Content Area */}
+            <div className="px-3 pt-2 pb-2 flex flex-col justify-between font-bold font-serif whitespace-nowrap bg-white overflow-hidden w-full h-[150px] shrink gap-0 relative">
+
+                {/* List Header Options / Menu */}
+                <div className="absolute top-1 right-2 z-30">
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="flex items-center justify-center w-5 h-5 cursor-pointer focus:outline-none"
+                            title="Menu"
+                        >
+                            <i className={`pi ${isMenuOpen ? 'pi-times' : 'pi-bars'} text-black hover:text-gray-700 transition-colors`} style={{ fontSize: '15px' }}></i>
+                        </button>
+                        {isMenuOpen && (
+                            <div className="absolute right-0 top-6 bg-white border border-gray-200 shadow-xl rounded-md w-48 py-1 z-40 overflow-hidden transform origin-top-right transition-all">
+                                <label className="w-full text-left px-3 py-2 text-[11px] font-bold text-gray-700 hover:bg-gray-100 flex items-center gap-2 cursor-pointer transition-colors relative mb-0">
+                                    <i className="pi pi-palette" style={{ fontSize: '12px' }}></i>
+                                    <span>Change Color</span>
+                                    <input
+                                        type="color"
+                                        value={pencilTextColor}
+                                        onChange={(e) => setPencilTextColor(e.target.value)}
+                                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                    />
+                                </label>
+                                <button
+                                    onClick={() => {
+                                        setIsSliderMode(!isSliderMode);
+                                        setIsMenuOpen(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-[11px] font-bold text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors border-t border-gray-100"
+                                >
+                                    <i className={isSliderMode ? "pi pi-list" : "pi pi-images"} style={{ fontSize: '12px' }}></i>
+                                    <span>{isSliderMode ? "Change to List Mode" : "Change to Slider Mode"}</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#294291] text-sm">2.</span>
-                    <span className="text-[#294291] text-xl font-black leading-none drop-shadow-sm">I</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">MAGINATION</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#86c5f7] text-sm">3.</span>
-                    <span className="text-[#86c5f7] text-xl font-black leading-none drop-shadow-sm">S</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">CRIPTURES TO PRAYER</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#38b948] text-sm">4.</span>
-                    <span className="text-[#38b948] text-xl font-black leading-none drop-shadow-sm">D</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">AILY GROWING IN GODLINESS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#e3242b] text-sm">5.</span>
-                    <span className="text-[#e3242b] text-xl font-black leading-none drop-shadow-sm">O</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">BEDIENCE TO GOD'S WILL</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[#ed9b26] text-sm">6.</span>
-                    <span className="text-[#ed9b26] text-xl font-black leading-none drop-shadow-sm">M</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">EDITATING ON GOD'S CHARACTER</span>
-                </div>
+                {!isSliderMode ? (
+                    wisdomItems.map((item, idx) => (
+                        <div
+                            key={item.key}
+                            className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all`}
+                            style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
+                        >
+                            <span style={{ color: item.color }} className="text-[12px] sm:text-[14px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
+                            <span
+                                onClick={() => { setActiveSquare(item.key); onLetterClick(item.color); }}
+                                style={{ color: item.color }}
+                                className="text-[13px] sm:text-[14px] font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
+                            >
+                                {item.letter}
+                            </span>
+                            <input
+                                type="text"
+                                value={texts[item.key]}
+                                onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
+                                className="text-black text-[10px] sm:text-[12px] font-black uppercase tracking-wider bg-transparent outline-none flex-grow min-w-0 leading-none"
+                            />
+                        </div>
+                    ))
+                ) : (
+                    <div className="flex-grow flex items-center justify-center relative w-full h-full border-2 border-gray-100 rounded-lg overflow-hidden bg-white shadow-inner">
+                        {/* Slide Container */}
+                        <div className="w-full h-full relative" style={{ perspective: '1000px' }}>
+                            {wisdomItems.map((item, idx) => (
+                                <div
+                                    key={item.key}
+                                    className={`absolute inset-0 flex flex-col justify-center items-center transition-all duration-500 ease-in-out px-6`}
+                                    style={{
+                                        transform: `translateX(${(idx - currentSlideIndex) * 100}%)`,
+                                        opacity: idx === currentSlideIndex ? 1 : 0,
+                                        pointerEvents: idx === currentSlideIndex ? 'auto' : 'none'
+                                    }}
+                                >
+                                    <div className="flex items-center justify-center w-full max-w-full">
+                                        <div
+                                            className="flex items-center justify-center w-max max-w-full border-2 rounded py-1 px-3 transition-colors duration-300"
+                                            style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
+                                        >
+                                            <div
+                                                className="text-[40px] sm:text-[50px] font-black drop-shadow-md cursor-pointer transition-transform hover:scale-105 leading-none pr-[2px]"
+                                                style={{ color: item.color }}
+                                                onClick={() => { onLetterClick(item.color); setActiveSquare(prev => prev === item.key ? null : item.key); }}
+                                            >
+                                                {item.letter}
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={texts[item.key]}
+                                                onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
+                                                className={`text-black font-black uppercase bg-transparent outline-none leading-tight text-left transition-all ${['M', 'D'].includes(item.key) ? 'text-[8.5px] sm:text-[10px] tracking-normal' : 'text-[12px] sm:text-[14px] tracking-widest'}`}
+                                                style={{ width: `calc(${texts[item.key].length * 1.4}ch + 3rem)`, minWidth: '50px', maxWidth: '90%' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Dots Indicator */}
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+                            {wisdomItems.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setCurrentSlideIndex(idx)}
+                                    className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none ${idx === currentSlideIndex ? 'bg-gray-800 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`}
+                                ></button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -253,7 +456,8 @@ const GlobalPDFPageOverridesSMT = () => (
             justify-content: center !important;
             align-items: center !important;
             z-index: 0;
-            overflow: hidden;
+            overflow: visible !important;
+            transform: scale(0.96) !important;
         }
         .smt-canvas-wrapper canvas {
             width: 100% !important;
@@ -265,6 +469,13 @@ const GlobalPDFPageOverridesSMT = () => (
             cursor: text !important;
             z-index: 50 !important;
             line-height: 1 !important;
+        }
+        .react-pdf__Page__textContent span {
+            user-select: text !important;
+        }
+        .pdf-selectable-paragraph {
+            display: inline;
+            position: relative;
         }
 
         @keyframes unrollScroll {
@@ -289,6 +500,7 @@ const GlobalPDFPageOverridesSMT = () => (
 
 // Constants for PDF Highlighting Tool
 const HIGHLIGHT_CATEGORIES = [
+    { label: "Wisdom of God", color: "#FCA5A5" }, // Red/Pink
     { label: "Imagination", color: "#FCD34D" }, // Yellow
     { label: "Scriptures to prayer", color: "#93C5FD" }, // Blue
     { label: "Daily growing in Godliness", color: "#86EFAC" }, // Green
@@ -307,64 +519,258 @@ const SEVEN_MOUNTAIN_SPHERES = [
     { label: "Service", color: "#e3242b" }
 ];
 
-const ScrollMenuPopup = ({ position, onSelect }) => {
+const ScrollMenuPopup = ({ position, onSelect, onClose, activeContent }) => {
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [isFlipped, setIsFlipped] = useState(false);
+    const [flipMode, setFlipMode] = useState('format'); // 'format' or 'info'
+
+    useEffect(() => {
+        setIsFlipped(false);
+        setFlipMode('format');
+        setSelectedCategory(null);
+    }, [position]);
+
     // Dynamic collision detection to ensure the entire popup is always perfectly visible
-    const assumedMenuHeight = 420;
+    const assumedMenuHeight = 500;
     const spaceBelow = window.innerHeight - position.y;
     const isUpward = spaceBelow < assumedMenuHeight;
 
     const topPos = isUpward ? Math.max(10, position.y - assumedMenuHeight) : position.y + 10;
     const leftPos = Math.min(position.x + 10, window.innerWidth - 350);
 
+    const refLinks = React.useMemo(() => {
+        if (!activeContent?.ref_link) return [];
+        try { const arr = JSON.parse(activeContent.ref_link); return Array.isArray(arr) ? arr : [activeContent.ref_link]; }
+        catch (e) { return [activeContent.ref_link]; }
+    }, [activeContent]);
+
+    const refVideos = React.useMemo(() => {
+        if (!activeContent?.video_url) return [];
+        try { const arr = JSON.parse(activeContent.video_url); return Array.isArray(arr) ? arr : [activeContent.video_url]; }
+        catch (e) { return [activeContent.video_url]; }
+    }, [activeContent]);
+
+    const handleCategoryClick = (e, cat) => {
+        if (e) e.stopPropagation();
+        setSelectedCategory(cat);
+        setFlipMode('format');
+        setIsFlipped(true);
+    };
+
+    const handleFormatClick = (format, styleOption = null) => {
+        if (onSelect) onSelect(selectedCategory, format, styleOption);
+        if (onClose) onClose();
+    };
+
     return (
         <div
-            className="fixed z-[9999] flex flex-col items-center justify-start ancient-scroll-bg pointer-events-auto"
+            className="fixed z-[9999] pointer-events-auto ancient-scroll-bg"
             style={{
                 top: topPos,
                 left: leftPos,
-                width: '340px',
-                minHeight: '380px',
+                width: '350px',
+                height: '500px',
+                perspective: '1500px',
                 transformOrigin: isUpward ? 'bottom center' : 'top center'
             }}
             onMouseDown={(e) => e.stopPropagation()}
         >
-            <div className="w-[108%] h-6 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mb-1 relative z-10 border border-[#1f1209]" />
+            <div
+                className="relative w-full h-full flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]"
+                style={{ transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+            >
+                {/* FRONT FACE */}
+                <div
+                    className={`absolute inset-0 flex flex-col items-center justify-start overflow-hidden transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
+                >
+                    {/* Info toggle instead of Close button */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setFlipMode('info'); setIsFlipped(true); }}
+                        className="absolute top-[20px] right-[20px] text-[#8b5a2b] hover:text-red-700 hover:scale-110 transition-all z-[101]"
+                        title="Reference Info"
+                    >
+                        <i className="pi pi-info-circle text-[22px] font-bold"></i>
+                    </button>
+                    
+                    <div className="w-[108%] h-5 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mb-1 relative z-10 border border-[#1f1209] shrink-0" />
 
-            <div className="px-6 py-5 flex flex-col gap-[8px] items-center text-[#2d1a11] font-serif w-full">
-                <h2 className="text-[15px] font-black text-center mb-1 uppercase tracking-widest border-b-[1.5px] border-[#8b5a2b]/40 pb-2 w-full text-[#1f1209] drop-shadow-sm">
-                    The Power of God &<br />The Wisdom of God
-                </h2>
+                    <div className="relative z-10 px-6 py-3 flex flex-col gap-[7px] items-center text-[#2d1a11] font-serif w-full h-full justify-start">
+                        <h2 className="text-[15px] font-black uppercase tracking-widest text-[#2d1a11] drop-shadow-sm mb-1 text-center leading-tight w-full flex flex-col gap-[2px] border-b-[1.5px] border-[#8b5a2b]/40 pb-2">
+                            <button onClick={(e) => handleCategoryClick(e, { label: "The Power of God", color: "#FCD34D" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
+                                The Power of God &
+                            </button>
+                            <button onClick={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#FCA5A5" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
+                                The Wisdom of God
+                            </button>
+                        </h2>
 
-                <div className="flex flex-col w-full items-center gap-[6px] mt-2">
-                    {HIGHLIGHT_CATEGORIES.map(cat => (
-                        <button
-                            key={cat.label}
-                            onClick={() => onSelect(cat)}
-                            className="text-[16px] font-extrabold hover:text-[#8b5a2b] transition-all w-full text-center hover:scale-105 transform drop-shadow-sm"
-                        >
-                            {cat.label}
-                        </button>
-                    ))}
+                        <div className="flex flex-col w-full items-center gap-[5px] mt-2">
+                            {HIGHLIGHT_CATEGORIES.filter(cat => cat.label !== "Wisdom of God").map(cat => (
+                                <button
+                                    key={cat.label}
+                                    onClick={(e) => handleCategoryClick(e, cat)}
+                                    className="text-[16px] font-extrabold w-[85%] text-center transform drop-shadow-sm transition-all hover:text-[#8b5a2b] hover:scale-105 cursor-pointer leading-tight"
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="w-[90%] flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 text-[16px] font-black font-serif leading-tight">
+                            {SEVEN_MOUNTAIN_SPHERES.map(cat => (
+                                <button
+                                    key={cat.label}
+                                    onClick={(e) => handleCategoryClick(e, cat)}
+                                    className="hover:text-[#8b5a2b] transition-colors relative group hover:scale-110 transform drop-shadow-sm"
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="mt-3 flex flex-col items-center text-center text-[10px] leading-tight font-bold tracking-wider opacity-75 uppercase pointer-events-none text-[#1f1209]">
+                            <span>I am here to do God's will and do what is</span>
+                            <span>written about me in this scroll</span>
+                        </div>
+                    </div>
+                    
+                    <div className="w-[108%] h-5 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mt-auto relative z-10 border border-[#1f1209] shrink-0" />
                 </div>
 
-                <div className="w-[85%] flex flex-wrap justify-center gap-x-4 gap-y-2 mt-5 text-[15px] font-black font-serif leading-tight">
-                    {SEVEN_MOUNTAIN_SPHERES.map(cat => (
-                        <button
-                            key={cat.label}
-                            onClick={() => onSelect(cat)}
-                            className="hover:text-[#8b5a2b] transition-colors relative group hover:scale-110 transform drop-shadow-sm"
-                        >
-                            {cat.label}
-                        </button>
-                    ))}
-                </div>
+                {/* BACK FACE */}
+                <div
+                    className={`absolute inset-0 flex flex-col items-center justify-start transition-opacity duration-300 ${isFlipped ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                    style={{
+                        transform: 'rotateY(180deg)'
+                    }}
+                >
+                    <div className="w-[108%] h-5 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mb-1 relative z-10 border border-[#1f1209] shrink-0" />
 
-                <div className="text-[9px] text-center mt-6 font-bold uppercase tracking-widest opacity-80 px-2 leading-relaxed text-[#1f1209]">
-                    I am here to do God's will and do what is<br />written about me in this scroll
+                    {/* Top action row */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }}
+                        className="absolute top-[20px] right-[20px] text-[#8b5a2b] hover:text-red-700 hover:scale-110 transition-all z-[101]"
+                        title="Flip Back"
+                    >
+                        {flipMode === 'info' ? (
+                            <i className="pi pi-info-circle text-[22px] font-bold"></i>
+                        ) : (
+                            <i className="pi pi-arrow-left text-[18px] font-bold"></i>
+                        )}
+                    </button>
+
+                    <div className="px-6 py-6 flex flex-col items-center w-full h-full overflow-y-auto no-scrollbar relative z-10">
+
+                        {flipMode === 'format' && (
+                            <>
+                                <span className="font-serif font-black text-[14px] text-[#2d1a11] tracking-wider uppercase drop-shadow-sm text-center leading-tight w-full break-words mb-4 border-b pb-2 border-[#8b5a2b]/30">{selectedCategory?.label || ''}</span>
+
+                                <div className="flex flex-col gap-2 w-[95%] flex-shrink-0">
+                                    {['Underline', 'Oval', 'Square', 'Highlight'].map(fmt => {
+                                        let formatOptions = [];
+                                        if (fmt === 'Square' || fmt === 'Oval') {
+                                            formatOptions = [
+                                                { id: 'solid-1px', bWidth: '2px', bStyle: 'solid' },
+                                                { id: 'solid-3px', bWidth: '4px', bStyle: 'solid' },
+                                                { id: 'double-3px', bWidth: '4px', bStyle: 'double' },
+                                                { id: 'inner-shadow', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'outer-shadow', bWidth: '0px', bStyle: 'none' }
+                                            ];
+                                        } else if (fmt === 'Underline') {
+                                            formatOptions = [
+                                                { id: 'line-1px', bWidth: '1px', bStyle: 'solid' },
+                                                { id: 'line-2px', bWidth: '2px', bStyle: 'solid' },
+                                                { id: 'line-3px', bWidth: '3px', bStyle: 'solid' },
+                                                { id: 'line-4px', bWidth: '4px', bStyle: 'solid' },
+                                                { id: 'line-5px', bWidth: '5px', bStyle: 'solid' }
+                                            ];
+                                        } else if (fmt === 'Highlight') {
+                                            formatOptions = [
+                                                { id: 'hl-1', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'hl-2', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'hl-3', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'hl-4', bWidth: '0px', bStyle: 'none' },
+                                                { id: 'hl-5', bWidth: '0px', bStyle: 'none' }
+                                            ];
+                                        }
+
+                                        return (
+                                            <div key={fmt} className="relative group w-full flex flex-col items-center z-10 bg-white/50 border border-[#8b5a2b]/30 shadow-sm rounded-lg overflow-hidden">
+                                                <div className="w-full px-3 py-1 bg-[#8b5a2b]/10 font-bold font-serif text-[12px] text-[#2d1a11] text-center border-b border-[#8b5a2b]/20">
+                                                    {fmt}
+                                                </div>
+                                                <div className="grid grid-cols-5 gap-1 p-1.5 w-full bg-transparent">
+                                                    {formatOptions.map(opt => {
+                                                        let renderPreview;
+                                                        const activeColor = selectedCategory?.color || '#8b5a2b';
+                                                        const bProps = { borderStyle: opt.bStyle, borderWidth: opt.bWidth, borderColor: activeColor };
+
+                                                        if (fmt === 'Underline') {
+                                                            renderPreview = <div className="w-[90%]" style={{ borderBottomStyle: opt.bStyle, borderBottomWidth: opt.bWidth, borderBottomColor: activeColor }} />;
+                                                        } else if (fmt === 'Oval') {
+                                                            const isInner = opt.id === 'inner-shadow';
+                                                            const isOuter = opt.id === 'outer-shadow';
+                                                            const shadowStyle = isInner ? { boxShadow: `inset 0 0 4px ${activeColor}` } : isOuter ? { boxShadow: `0 0 6px ${activeColor}` } : bProps;
+                                                            renderPreview = <div className="w-[20px] h-[12px] rounded-full flex-shrink-0" style={shadowStyle} />;
+                                                        } else if (fmt === 'Square') {
+                                                            const isInner = opt.id === 'inner-shadow';
+                                                            const isOuter = opt.id === 'outer-shadow';
+                                                            const shadowStyle = isInner ? { boxShadow: `inset 0 0 4px ${activeColor}` } : isOuter ? { boxShadow: `0 0 6px ${activeColor}` } : bProps;
+                                                            renderPreview = <div className="w-[14px] h-[14px] rounded-[2px] flex-shrink-0" style={shadowStyle} />;
+                                                        } else {
+                                                            const hlLvl = parseInt(opt.id.split('-')[1]);
+                                                            renderPreview = <div className="w-[90%] rounded-[2px]" style={{ height: `${hlLvl * 2}px`, backgroundColor: activeColor, opacity: 0.35, alignSelf: 'flex-end', marginBottom: '2px' }} />;
+                                                        }
+
+                                                        return (
+                                                            <button
+                                                                key={opt.id}
+                                                                onClick={(e) => { e.stopPropagation(); handleFormatClick(fmt.toLowerCase(), opt.id); }}
+                                                                className="w-full h-6 flex items-end justify-center hover:bg-[#8b5a2b]/30 rounded transition-colors pb-1"
+                                                                title={opt.id}
+                                                            >
+                                                                {renderPreview}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+
+                        {flipMode === 'info' && (
+                            <div className="w-full flex-shrink-0 flex flex-col">
+                                <h4 className="font-serif font-black text-[15px] text-[#2d1a11] mb-4 text-center uppercase tracking-widest border-b border-[#8b5a2b]/30 pb-2 w-[90%] mx-auto drop-shadow-sm">Reference Media</h4>
+
+                                {refLinks.length === 0 && refVideos.length === 0 ? (
+                                    <div className="text-center text-gray-700 italic mt-10 text-sm">No references configured for this chapter.</div>
+                                ) : (
+                                    <div className="flex flex-col gap-3 w-full px-2">
+                                        {refVideos.map((v, i) => (
+                                            <a key={`v-${i}`} href={`http://${window.location.hostname}:8000${v}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50/80 hover:bg-red-100/90 border border-red-300 rounded-md transition-all text-red-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
+                                                <i className="pi pi-video text-red-600 text-[14px]"></i>
+                                                <span className="truncate">Chapter Video {i + 1}</span>
+                                            </a>
+                                        ))}
+                                        {refLinks.map((l, i) => (
+                                            <a key={`l-${i}`} href={l} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-50/80 hover:bg-blue-100/90 border border-blue-300 rounded-md transition-all text-blue-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
+                                                <i className="pi pi-external-link text-blue-600 text-[14px]"></i>
+                                                <span className="truncate max-w-[180px]">{l.replace(/^https?:\/\//, '')}</span>
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                    </div>
+                    
+                    <div className="w-[108%] h-5 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mt-auto relative z-10 border border-[#1f1209] shrink-0" />
                 </div>
             </div>
-
-            <div className="w-[108%] h-6 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mt-auto relative z-10 border border-[#1f1209]" />
         </div>
     );
 };
@@ -380,55 +786,148 @@ const PDFPageRender = React.forwardRef((props, ref) => {
     const lightingObj = { background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%)' };
 
     return (
-        <div className={`page ${props.isCover ? 'bg-[#1e2433]' : 'bg-[#e5e7eb]'} shadow-2xl`} ref={ref} data-density={props.isCover ? "hard" : "soft"}>
-            <div className={`page-content w-full h-full ${props.isCover ? 'bg-[#2a3045] border-[3px] border-[#151a26] p-[8px]' : 'bg-[#ffffff]'} flex flex-col justify-center items-center relative`}>
-                <Page
-                    pageNumber={props.pageNumber}
-                    width={props.width}
-                    renderTextLayer={true}
-                    renderAnnotationLayer={false}
-                    devicePixelRatio={Math.max(window.devicePixelRatio || 1, 2.0)}
-                    className="smt-canvas-wrapper"
-                    loading={
-                        <div className="flex items-center justify-center h-full w-full text-gray-400">
-                            <i className="pi pi-spinner pi-spin text-4xl opacity-50"></i>
-                        </div>
-                    }
-                >
-                    {/* Render Highlight Overlays bound permanently to identical grid geometry */}
-                    {props.pageHighlights && props.pageHighlights.map(h => (
-                        <React.Fragment key={h.id}>
-                            {h.rects.map((rect, i) => (
-                                <div
-                                    key={`${h.id}_${i}`}
-                                    style={{
-                                        position: 'absolute',
-                                        top: `${rect.top}%`,
-                                        left: `${rect.left}%`,
-                                        width: `${rect.width}%`,
-                                        height: `${rect.height}%`,
-                                        backgroundColor: h.isSquare ? 'transparent' : h.color,
-                                        border: h.isSquare ? `3px solid ${h.color}` : 'none',
-                                        borderRadius: h.isSquare ? '4px' : '0px',
-                                        opacity: h.isSquare ? 1 : 0.35,
-                                        mixBlendMode: h.isSquare ? 'normal' : 'multiply',
-                                        pointerEvents: 'none',
-                                        zIndex: 45
-                                    }}
-                                />
-                            ))}
-                        </React.Fragment>
+        <div className={`page bg-[#e5e7eb] shadow-2xl`} ref={ref} data-density="soft">
+            <div className={`page-content w-full h-full bg-[#ffffff] flex flex-col justify-center items-center relative overflow-hidden`}>
+                <div className="pdf-page-content absolute inset-0 p-[8%] pt-[10%] flex flex-col z-50 text-left" style={{ gap: `${props.width * 0.016}px` }} data-page-number={props.pageNumber}>
+                    {props.pageData && props.pageData.paragraphs.map((para, i) => (
+                        <span key={i} className="pdf-selectable-paragraph leading-relaxed font-serif text-[#1a1a1a]" style={{ fontSize: `${Math.max(12, props.width * 0.0185)}px` }} id={`para-${props.pageNumber}-${i}`}>
+                            {para}
+                        </span>
                     ))}
-                </Page>
+                </div>
+
+                {/* Render Highlight Overlays */}
+                {props.pageHighlights && props.pageHighlights.map(h => {
+                    const format = (h.format || 'highlight').toLowerCase();
+                    const opt = h.styleOption || 'hl-5';
+                    const color = h.color;
+
+                    if (format === 'square' || format === 'circle' || format === 'oval') {
+                        // Calculate unified bounding box for the shape
+                        let minTop = 100, minLeft = 100, maxBottom = 0, maxRight = 0;
+                        h.rects.forEach(r => {
+                            if (r.top < minTop) minTop = r.top;
+                            if (r.left < minLeft) minLeft = r.left;
+                            if (r.top + r.height > maxBottom) maxBottom = r.top + r.height;
+                            if (r.left + r.width > maxRight) maxRight = r.left + r.width;
+                        });
+
+                        // Asymmetrical vertical expansion: more on top for ascenders, less on bottom for descenders
+                        const expandTop = 0.7; 
+                        const expandBottom = 0.3; 
+                        const isOval = format === 'circle' || format === 'oval';
+                        const expandX = isOval ? 0.4 : 0.1;
+                        
+                        minTop = Math.max(0, minTop - expandTop);
+                        maxBottom = Math.min(100, maxBottom + expandBottom);
+                        minLeft = Math.max(0, minLeft - expandX);
+                        maxRight = Math.min(100, maxRight + expandX);
+
+                        let style = {
+                            position: 'absolute',
+                            top: `${minTop}%`,
+                            left: `${minLeft}%`,
+                            width: `${maxRight - minLeft}%`,
+                            height: `${maxBottom - minTop}%`,
+                            zIndex: 45,
+                            pointerEvents: 'none',
+                            boxSizing: 'content-box',
+                            padding: isOval ? '0px 2px' : '0px',
+                            margin: isOval ? '0px 0px 0px -2px' : '0px'
+                        };
+
+                        if (isOval) {
+                            style.borderRadius = '9999px';
+                        } else {
+                            style.borderRadius = '4px';
+                        }
+
+                        if (opt === 'inner-shadow') {
+                            style.boxShadow = `inset 0 0 6px ${color}`;
+                        } else if (opt === 'outer-shadow') {
+                            style.boxShadow = `0 0 8px ${color}`;
+                        } else {
+                            const parts = opt.split('-');
+                            const bStyle = parts[0] || 'solid';
+                            const bWidth = parts[0] === 'solid' && parts[1] === '1px' ? '2px' : '4px';
+                            style.border = `${bWidth} ${bStyle} ${color}`;
+                        }
+
+                        return <div key={h.id} style={style} />;
+                    }
+
+                    // For highlight and underline, render each line separately
+                    return (
+                        <React.Fragment key={h.id}>
+                            {h.rects.map((rect, i) => {
+                                const expandTop = 0.7;
+                                const expandBottom = 0.3;
+                                const expandX = 0.1;
+                                
+                                let style = {
+                                    position: 'absolute',
+                                    top: `${Math.max(0, rect.top - expandTop)}%`,
+                                    left: `${Math.max(0, rect.left - expandX)}%`,
+                                    width: `${rect.width + (expandX * 2)}%`,
+                                    height: `${rect.height + expandTop + expandBottom}%`,
+                                    zIndex: 45,
+                                    pointerEvents: 'none'
+                                };
+
+                                if (format === 'underline') {
+                                    const px = opt.split('-')[1] || '2px';
+                                    style.borderBottom = `${px} solid ${color}`;
+                                } else {
+                                    // highlight
+                                    const hlLvl = parseInt(opt.split('-')[1] || '5');
+                                    style.backgroundColor = color;
+                                    style.opacity = 0.35;
+                                    style.mixBlendMode = 'multiply';
+                                    
+                                    const pct = (hlLvl / 5) * 100;
+                                    const baseHeight = rect.height + expandTop + expandBottom;
+                                    style.height = `${(baseHeight * pct) / 100}%`;
+                                    style.top = `${Math.max(0, rect.top - expandTop) + (baseHeight * (100 - pct) / 100)}%`;
+                                }
+
+                                return <div key={`${h.id}_${i}`} style={style} />;
+                            })}
+                        </React.Fragment>
+                    );
+                })}
+
+                {/* Delete Buttons Layer */}
+                <div className="absolute inset-0 z-[60] pointer-events-none">
+                    {props.pageHighlights && props.pageHighlights.map(h => {
+                        let maxRight = 0;
+                        let minTop = 100;
+                        h.rects.forEach(r => {
+                            if (r.top < minTop) minTop = r.top;
+                            if (r.left + r.width > maxRight) maxRight = r.left + r.width;
+                        });
+                        return (
+                            <button
+                                key={`del-${h.id}`}
+                                onClick={(e) => { e.stopPropagation(); if (props.onDeleteHighlight) props.onDeleteHighlight(h.id); }}
+                                className="absolute w-5 h-5 bg-red-500/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center pointer-events-auto transition-all shadow-md hover:scale-110 backdrop-blur-sm"
+                                style={{ top: `calc(${Math.max(0, minTop - 1)}%)`, left: `calc(${Math.min(95, maxRight)}% + 4px)` }}
+                                title="Remove Highlight"
+                            >
+                                <i className="pi pi-times text-[10px]"></i>
+                            </button>
+                        );
+                    })}
+                </div>
+                
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-30" style={isRightPage ? rightEdgeObj : leftEdgeObj} />
 
-                {/* Explicit Corner Hover Zones */}
-                <div className="absolute top-0 left-0 w-[15%] h-[15%] cursor-pointer z-[60]" />
-                <div className="absolute top-0 right-0 w-[15%] h-[15%] cursor-pointer z-[60]" />
-                <div className="absolute bottom-0 left-0 w-[15%] h-[15%] cursor-pointer z-[60]" />
-                <div className="absolute bottom-0 right-0 w-[15%] h-[15%] cursor-pointer z-[60]" />
+                {/* Explicit Corner Hover Zones - reduced size to prevent blocking text selection */}
+                <div className="absolute top-0 left-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
+                <div className="absolute top-0 right-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
+                <div className="absolute bottom-0 left-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
+                <div className="absolute bottom-0 right-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
             </div>
         </div>
     );
@@ -465,6 +964,7 @@ const BookIndex = () => {
 
     // Audio Player State
     const audioRef = useRef(new Audio());
+    const pageFlipAudioRef = useRef(new Audio('/page-flip.mp3.mp3'));
     const [isPlaying, setIsPlaying] = useState(false);
     const [audioDuration, setAudioDuration] = useState(0);
     const [audioProgress, setAudioProgress] = useState(0);
@@ -473,6 +973,7 @@ const BookIndex = () => {
     const [showWisdomOverlay, setShowWisdomOverlay] = useState(false);
     const [playerBgColor, setPlayerBgColor] = useState('#547395');
     const [playerBorderColor, setPlayerBorderColor] = useState('#080b12');
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         const ad = audioRef.current;
@@ -498,8 +999,40 @@ const BookIndex = () => {
 
         if (audioLoadedTrackName !== trackIdentifier) {
             const content = contentDB.find(c => c.book_id === selectedBook.id && c.chapter_id === selectedChapter.id);
-            if (content && content.audio_url) {
-                audioRef.current.src = `http://${window.location.hostname}:8000${content.audio_url}`;
+            const mediaUrlStr = content?.audio_url || content?.video_url;
+            
+            if (mediaUrlStr) {
+                let parsedAudioUrl = '';
+                
+                let rawAudios = [];
+                if (Array.isArray(mediaUrlStr)) {
+                    rawAudios = mediaUrlStr;
+                } else if (typeof mediaUrlStr === 'string') {
+                    try {
+                        const parsed = JSON.parse(mediaUrlStr);
+                        if (Array.isArray(parsed)) rawAudios = parsed;
+                        else rawAudios = [parsed];
+                    } catch (e) {
+                        parsedAudioUrl = mediaUrlStr;
+                    }
+                }
+                
+                if (!parsedAudioUrl && rawAudios.length > 0) {
+                    const firstAudio = rawAudios[0];
+                    if (typeof firstAudio === 'string') {
+                        parsedAudioUrl = firstAudio;
+                    } else if (typeof firstAudio === 'object' && firstAudio !== null) {
+                        parsedAudioUrl = firstAudio.url || firstAudio.path || '';
+                    }
+                }
+                
+                if (typeof parsedAudioUrl !== 'string' || !parsedAudioUrl) {
+                    console.error("Invalid media URL format:", mediaUrlStr);
+                    return;
+                }
+                
+                const formattedUrl = parsedAudioUrl.startsWith('/') ? parsedAudioUrl : '/' + parsedAudioUrl;
+                audioRef.current.src = `http://${window.location.hostname}:8000${formattedUrl}`;
                 setAudioLoadedTrackName(trackIdentifier);
                 audioRef.current.play().catch(e => console.error(e));
                 setIsPlaying(true);
@@ -534,15 +1067,18 @@ const BookIndex = () => {
     };
 
     useEffect(() => {
+        let isSelecting = false;
+        let lastValidRange = null;
+
         const handleStopPropagation = (e) => {
-            if (e.target.closest('.react-pdf__Page__textContent')) {
+            if (e.target.closest('.pdf-page-content')) {
                 e.stopPropagation();
             }
         };
 
         const handleTextSelectionComplete = (e) => {
             if (e.target.closest('.ancient-scroll-bg')) return;
-            const textContentNode = e.target.closest('.react-pdf__Page__textContent');
+            const textContentNode = e.target.closest('.pdf-page-content');
             if (!textContentNode) {
                 setSelectionMenu(null);
                 return;
@@ -552,8 +1088,7 @@ const BookIndex = () => {
             if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
                 const range = selection.getRangeAt(0);
                 const rects = Array.from(range.getClientRects());
-                const pageNode = textContentNode.closest('.react-pdf__Page');
-                if (!pageNode) return;
+                const pageNode = textContentNode;
 
                 const pageRect = pageNode.getBoundingClientRect();
                 const pageNumberStr = pageNode.getAttribute('data-page-number');
@@ -578,53 +1113,182 @@ const BookIndex = () => {
             }
         };
 
+        const handleMouseDown = (e) => {
+            if (e.target.closest('.pdf-page-content')) {
+                isSelecting = true;
+                lastValidRange = null;
+            }
+        };
+
+        const handleMouseMove = (e) => {
+            if (!isSelecting) return;
+
+            const selection = window.getSelection();
+
+            if (!selection || selection.rangeCount === 0) return;
+
+            const range = selection.getRangeAt(0);
+
+            const elementUnderCursor = document.elementFromPoint(
+                e.clientX,
+                e.clientY
+            );
+
+            const isText =
+                elementUnderCursor &&
+                elementUnderCursor.closest('.pdf-page-content');
+
+            // Save last valid text selection
+            if (isText) {
+                lastValidRange = range.cloneRange();
+            } else {
+                // User dragged into blank space
+                if (lastValidRange) {
+                    selection.removeAllRanges();
+                    selection.addRange(lastValidRange);
+                }
+            }
+        };
+
+        const handleMouseUp = () => {
+            isSelecting = false;
+        };
+
         document.addEventListener('mousedown', handleStopPropagation, true);
         document.addEventListener('touchstart', handleStopPropagation, true);
         document.addEventListener('pointerdown', handleStopPropagation, true);
         document.addEventListener('mouseup', handleTextSelectionComplete);
+
+        document.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
 
         return () => {
             document.removeEventListener('mousedown', handleStopPropagation, true);
             document.removeEventListener('touchstart', handleStopPropagation, true);
             document.removeEventListener('pointerdown', handleStopPropagation, true);
             document.removeEventListener('mouseup', handleTextSelectionComplete);
+
+            document.removeEventListener('mousedown', handleMouseDown);
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
         };
     }, []);
 
-    const captureHighlight = (categoryObj) => {
-        if (!selectionMenu) return;
-        const isMountain = SEVEN_MOUNTAIN_SPHERES.some(m => m.label === categoryObj.label);
+    const undoHighlight = () => {
+        setHighlights(prev => {
+            if (prev.length === 0) return prev;
+            const last = prev[prev.length - 1];
+            if (last.id && typeof last.id === 'string' && last.id.length > 15) { // Assuming backend UUID is > 15 chars
+                axios.delete(`http://${window.location.hostname}:8000/api/highlights/${last.id}`, { withCredentials: true })
+                    .catch(err => console.error("Failed to delete highlight:", err));
+            }
+            return prev.slice(0, -1);
+        });
+    };
 
-        setHighlights(prev => [...prev, {
+    const deleteHighlight = (id) => {
+        setHighlights(prev => prev.filter(h => h.id !== id));
+        if (id && typeof id === 'string' && id.length > 15) {
+            axios.delete(`http://${window.location.hostname}:8000/api/highlights/${id}`, { withCredentials: true })
+                .catch(err => console.error("Failed to delete highlight:", err));
+        }
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                undoHighlight();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    const captureHighlight = (categoryObj, format, styleOption) => {
+        if (!selectionMenu) return;
+        
+        // Ensure format and styleOption are set, with fallbacks for legacy/direct calls
+        const isMountain = SEVEN_MOUNTAIN_SPHERES.some(m => m.label === categoryObj.label);
+        const finalFormat = format ? format : (isMountain ? 'square' : 'highlight');
+        const finalStyleOption = styleOption ? styleOption : (isMountain ? 'solid-3px' : 'hl-5');
+
+        const newHighlight = {
             id: Date.now() + Math.random().toString(36).substr(2, 9),
             color: categoryObj.color,
             label: categoryObj.label,
+            format: finalFormat,
+            styleOption: finalStyleOption,
             rects: selectionMenu.rects,
             pageNumber: selectionMenu.pageNumber,
-            isSquare: isMountain
-        }]);
+            isSquare: finalFormat === 'square' || finalFormat === 'circle',
+            text: selectionMenu.text
+        };
 
-        setSelectionMenu(prev => {
-            if (!prev) return null;
-            const nextState = { ...prev };
-            if (isMountain) { nextState.hasMountain = true; } else { nextState.hasCategory = true; }
-            if (nextState.hasMountain && nextState.hasCategory) {
-                setTimeout(() => window.getSelection().removeAllRanges(), 0);
-                return null;
-            }
-            return nextState;
+        // Save to backend
+        axios.post('http://' + window.location.hostname + ':8000/api/highlights', {
+            book_id: selectedBook.id,
+            chapter_id: selectedChapter.id,
+            page_number: newHighlight.pageNumber,
+            selected_text: newHighlight.text,
+            color: newHighlight.color,
+            label: newHighlight.label,
+            format: newHighlight.format,
+            style_option: newHighlight.styleOption,
+            rects: newHighlight.rects
+        }, { withCredentials: true }).then(res => {
+            newHighlight.id = res.data.id; // update with DB id
+            setHighlights(prev => [...prev, newHighlight]);
+        }).catch(err => {
+            console.error("Failed to save highlight:", err);
+            // Revert or show error (optimistic update optional, here we just don't add if failed)
         });
+        
+        // Touch count for transformation (pencil used)
+        StudentService.updateMyTouchCounts({ transformation: 1, team_transformation: 0, klt_reading_plan: 0 })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+
+        // Selection menu is closed by the onClose callback of ScrollMenuPopup,
+        // but we ensure the text selection is cleared here.
+        setTimeout(() => window.getSelection().removeAllRanges(), 0);
     };
 
     const groupedBooks = React.useMemo(() => {
         const groups = {};
+        const query = searchQuery.toLowerCase().trim();
         booksDB.forEach(book => {
+            if (query && !book.name.toLowerCase().includes(query)) return;
             const type = book.book_type || 'Uncategorized';
             if (!groups[type]) groups[type] = [];
             groups[type].push(book);
         });
         return groups;
-    }, [booksDB]);
+    }, [booksDB, searchQuery]);
+
+    const location = useLocation();
+    const payloadStr = location.state?.payload;
+    const filter = location.state?.filter || 'main';
+
+    const parsedPayload = React.useMemo(() => {
+        let p = [];
+        if (payloadStr) {
+            try {
+                p = typeof payloadStr === 'string' ? JSON.parse(payloadStr) : payloadStr;
+            } catch (e) { }
+        }
+        if (filter === 'morning_evening' && p && p.length > 0 && booksDB.length > 0 && chaptersDB.length > 0) {
+            const is24x7 = JSON.stringify(p).includes('"m4b"');
+            if (is24x7) {
+                const { morningEveningChunks } = splitS4Data(p, booksDB, chaptersDB);
+                p = morningEveningChunks;
+            } else {
+                const { morningEveningChunks } = splitS3Data(p, booksDB, chaptersDB);
+                p = morningEveningChunks;
+            }
+        }
+        return p;
+    }, [payloadStr, filter, booksDB, chaptersDB]);
 
     const expandedBookChapters = React.useMemo(() => {
         if (!expandedBookId) return [];
@@ -669,9 +1333,59 @@ const BookIndex = () => {
         return null;
     }, [selectedBook, selectedChapter, contentDB]);
 
-    useEffect(() => {
-        setAspectReady(false);
+    const activeJsonUrl = React.useMemo(() => {
+        if (!activePdfUrl) return null;
+        return activePdfUrl.replace('.pdf', '.json');
     }, [activePdfUrl]);
+
+    const activeContentDBItem = React.useMemo(() => {
+        if (!selectedBook || !selectedChapter) return null;
+        return contentDB.find(c => c.book_id === selectedBook.id && c.chapter_id === selectedChapter.id);
+    }, [selectedBook, selectedChapter, contentDB]);
+
+    const [bookData, setBookData] = useState(null);
+
+    useEffect(() => {
+        if (activeJsonUrl) {
+            setAspectReady(false);
+            axios.get(activeJsonUrl, { withCredentials: true })
+                .then(res => {
+                    setBookData(res.data);
+                    setNumPages(res.data.pages.length);
+                    setAspectRatio(1.4142);
+                    setAspectReady(true);
+                })
+                .catch(err => {
+                    console.error("Failed to load JSON scroll:", err);
+                    setBookData(null);
+                    setNumPages(null);
+                });
+                
+            // Fetch highlights for this book and chapter
+            if (selectedBook && selectedChapter) {
+                axios.get(`http://${window.location.hostname}:8000/api/highlights?book_id=${selectedBook.id}&chapter_id=${selectedChapter.id}&t=${Date.now()}`, { 
+                    withCredentials: true,
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                })
+                    .then(res => setHighlights(res.data))
+                    .catch(err => console.error("Failed to fetch highlights:", err));
+            }
+        } else {
+            setBookData(null);
+            setNumPages(null);
+            setHighlights([]);
+        }
+    }, [activeJsonUrl, selectedBook, selectedChapter]);
+
+    const incrementKltTouch = () => {
+        StudentService.updateMyTouchCounts({ transformation: 0, team_transformation: 0, klt_reading_plan: 1 })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+    };
+
+    const incrementTransformationTouch = () => {
+        StudentService.updateMyTouchCounts({ transformation: 1, team_transformation: 0, klt_reading_plan: 0 })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+    };
 
     const onDocumentLoadSuccess = (pdf) => {
         setNumPages(pdf.numPages);
@@ -691,6 +1405,10 @@ const BookIndex = () => {
 
     const onPageFlip = (e) => {
         setCurrentPage(e.data);
+        if (pageFlipAudioRef.current) {
+            pageFlipAudioRef.current.currentTime = 0;
+            pageFlipAudioRef.current.play().catch(e => console.log("Audio play blocked by browser:", e));
+        }
     };
 
     useEffect(() => {
@@ -738,7 +1456,7 @@ const BookIndex = () => {
                     <button onClick={() => navigate(-1)} className="bg-gray-800 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all border border-gray-600 shrink-0">
                         <i className="pi pi-arrow-left text-lg"></i>
                     </button>
-                    <button onClick={() => setIsSidebarOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all border border-blue-400 shrink-0">
+                    <button onClick={() => { setIsSidebarOpen(true); incrementKltTouch(); }} className="bg-blue-600 hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all border border-blue-400 shrink-0">
                         <i className="pi pi-bars text-lg"></i>
                     </button>
                 </div>
@@ -800,9 +1518,18 @@ const BookIndex = () => {
                     {/* The Player slides horizontally leftward out from behind the Wrench icon when it focuses! */}
                     <div className={`absolute right-12 flex items-center pr-2 gap-2 transition-all duration-300 ${showToolMenu ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
                         <button
+                            onClick={undoHighlight}
+                            className="bg-gray-800 hover:bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
+                            title="Undo Last Highlight"
+                        >
+                            <i className="pi pi-undo text-lg"></i>
+                            <span className="text-[11px] font-black tracking-widest uppercase">UNDO</span>
+                        </button>
+                        <button
                             onClick={() => {
                                 setShowAudioPlayer(!showAudioPlayer);
                                 setShowToolMenu(false);
+                                incrementTransformationTouch();
                             }}
                             className="bg-gray-800 hover:bg-blue-600 text-white px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
                         >
@@ -826,72 +1553,214 @@ const BookIndex = () => {
 
             {/* TIER 1: Book List (Sidebar) Drawer */}
             <div className={`fixed top-0 left-0 h-full w-64 sm:w-72 md:w-80 bg-[#1e2433] text-gray-300 shadow-2xl z-[60] flex flex-col overflow-hidden transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="px-6 py-5 border-b border-[#2a3045] bg-[#151a26] flex justify-between items-start">
-                    <div>
-                        <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
-                            <i className="pi pi-book text-[#c8a165]"></i>
-                            Book Index
-                        </h2>
-                        <p className="text-xs text-gray-400 mt-2 tracking-wider">Navigate Scriptures</p>
+                <div className="px-6 py-5 border-b border-[#2a3045] bg-[#151a26] flex flex-col justify-start">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
+                                <i className="pi pi-book text-[#c8a165]"></i>
+                                Book Index
+                            </h2>
+                            <p className="text-xs text-gray-400 mt-2 tracking-wider">Navigate Scriptures</p>
+                        </div>
+                        <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-white p-1">
+                            <i className="pi pi-times text-xl"></i>
+                        </button>
                     </div>
-                    <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-white p-1">
-                        <i className="pi pi-times text-xl"></i>
-                    </button>
+                    <div className="relative">
+                        <i className="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input
+                            type="text"
+                            placeholder="Search books..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-[#1e2433] text-white text-sm rounded-md py-2 pl-9 pr-3 border border-gray-600 focus:outline-none focus:border-[#3b82f6] transition-colors placeholder-gray-500"
+                        />
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto tier1-scroll px-3 py-4">
-                    {Object.keys(groupedBooks).map(type => (
-                        <div key={type} className="mb-6">
-                            <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">{type}</h3>
-                            <ul className="space-y-1">
-                                {groupedBooks[type].map(book => (
-                                    <li key={book.id}>
-                                        <button
-                                            onClick={() => {
-                                                setExpandedBookId(prev => prev === book.id ? null : book.id);
-                                            }}
-                                            className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-semibold tracking-wide flex justify-between items-center ${expandedBookId === book.id
-                                                ? 'bg-[#547395] text-white shadow-md border-l-4 border-[#c8a165]'
-                                                : 'hover:bg-[#2a3045] text-gray-400 hover:text-white border-l-4 border-transparent'
-                                                }`}
-                                        >
-                                            <span className="truncate pr-2">{book.name}</span>
-                                            <span className="text-[10px] opacity-60 bg-black/20 px-2 py-0.5 rounded-full">
-                                                {book.total_chapters || 0} Ch
-                                            </span>
-                                        </button>
+                    {parsedPayload.length > 0 ? (
+                        <div className="flex flex-col gap-4">
+                            {/* Tracks List (Now ABOVE the Day Grid) */}
+                            {(() => {
+                                if (!expandedBookId || !expandedBookId.startsWith('day-')) return null;
+                                const selectedDayNum = parseInt(expandedBookId.split('-')[1]);
+                                let selectedDayObj = null;
+                                parsedPayload.forEach(chunk => {
+                                    if (chunk.days) {
+                                        const match = chunk.days.find(d => d.day === selectedDayNum);
+                                        if (match) selectedDayObj = match;
+                                    }
+                                });
 
-                                        {/* Expandable Chapter Grid */}
-                                        {expandedBookId === book.id && (
-                                            <div className="grid grid-cols-5 gap-1.5 mt-2 p-1.5 bg-[#0f131c] rounded-md shadow-inner mb-2 mx-2">
-                                                {expandedBookChapters.length > 0 ? (
-                                                    expandedBookChapters.map(chapter => (
-                                                        <button
-                                                            key={chapter.id}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelectedBook(book);
-                                                                setSelectedChapter(chapter);
-                                                                setIsSidebarOpen(false); // Close sidebar for immersive reading
-                                                            }}
-                                                            className={`flex items-center justify-center w-full aspect-square rounded font-bold text-sm transition-all duration-200 ${selectedChapter?.id === chapter.id
-                                                                ? 'bg-[#3b82f6] text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]'
-                                                                : 'bg-[#1e2433] text-gray-400 hover:bg-[#2d3748] hover:text-white'
-                                                                }`}
-                                                        >
-                                                            {chapter.chapter_number}
-                                                        </button>
-                                                    ))
-                                                ) : (
-                                                    <span className="col-span-5 text-[#8b9bb4] text-xs text-center italic py-2">No chapters</span>
-                                                )}
-                                            </div>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
+                                if (!selectedDayObj) return null;
+
+                                return (
+                                    <div className="bg-[#1a2234] rounded-lg p-3 border border-[#2a3045]">
+                                        <div className="flex justify-between items-center border-b border-[#2a3045] mb-3 pb-2">
+                                            <h3 className="text-sm font-black text-white tracking-wide">DAY {selectedDayNum} TRACKS</h3>
+                                            <button 
+                                                onClick={() => setExpandedBookId(null)}
+                                                className="text-gray-400 hover:text-red-400 transition-colors"
+                                                title="Close Tracks"
+                                            >
+                                                <i className="pi pi-times"></i>
+                                            </button>
+                                        </div>
+                                        <ul className="space-y-1 max-h-60 overflow-y-auto tier1-scroll pr-1">
+                                            {(() => {
+                                                const dayNode = selectedDayObj;
+                                                let fullList = [];
+                                                
+                                                let is24x7 = false;
+                                                try { is24x7 = JSON.stringify(parsedPayload).includes('"m4b"'); } catch (e) { }
+
+                                                if (filter === 'morning_evening') {
+                                                    if (is24x7) {
+                                                        const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b_morning].filter(Boolean);
+                                                        morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
+                                                        const eveningRaw = [dayNode.m4b_evening].filter(Boolean);
+                                                        eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
+                                                    } else {
+                                                        const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b_morning].filter(Boolean);
+                                                        morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
+                                                        const eveningRaw = [dayNode.m3b_evening].filter(Boolean);
+                                                        eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
+                                                    }
+                                                } else {
+                                                    const defaultRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b].filter(Boolean);
+                                                    defaultRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'default' })));
+                                                }
+
+                                                if (fullList.length === 0) fullList.push({ name: "PROVERBS 1", type: "default" });
+
+                                                return fullList.map((bookObj, bIdx) => {
+                                                    const bookStr = bookObj.name;
+                                                    const parts = bookStr.trim().split(' ');
+                                                    const chapNum = parseInt(parts.pop());
+                                                    const bookName = parts.join(' ').toUpperCase();
+                                                    
+                                                    const dbBook = booksDB.find(b => b.name.toUpperCase() === bookName);
+                                                    const dbChapter = dbBook ? chaptersDB.find(c => c.book_id === dbBook.id && c.chapter_number == chapNum) : null;
+                                                    
+                                                    const isSelected = selectedChapter?.id === dbChapter?.id;
+                                                    
+                                                    let textColorClass = 'text-gray-400 hover:bg-[#2d3748] hover:text-white';
+                                                    if (isSelected) {
+                                                        textColorClass = 'bg-[#3b82f6] text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]';
+                                                    } else if (bookObj.type === 'morning') {
+                                                        textColorClass = 'text-green-400 hover:bg-[#2d3748] hover:text-green-300';
+                                                    } else if (bookObj.type === 'evening') {
+                                                        textColorClass = 'text-blue-400 hover:bg-[#2d3748] hover:text-blue-300';
+                                                    }
+                                                    
+                                                    return (
+                                                        <li key={bIdx}>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (dbBook && dbChapter) {
+                                                                        setSelectedBook(dbBook);
+                                                                        setSelectedChapter(dbChapter);
+                                                                        setIsSidebarOpen(false);
+                                                                    }
+                                                                }}
+                                                                className={`w-full text-left px-3 py-2 text-xs font-bold rounded transition-colors ${textColorClass}`}
+                                                            >
+                                                                {bookStr}
+                                                            </button>
+                                                        </li>
+                                                    );
+                                                });
+                                            })()}
+                                        </ul>
+                                    </div>
+                                );
+                            })()}
+
+                            <div className="bg-[#151a26] p-3 rounded-xl border border-[#2a3045]">
+                                <div className={`grid grid-cols-5 gap-y-[15px] gap-x-2`}>
+                                    {(() => {
+                                        const allDays = [];
+                                        parsedPayload.forEach(chunk => {
+                                            if (chunk.days) {
+                                                chunk.days.forEach(d => allDays.push(d));
+                                            }
+                                        });
+                                        const trackingDays = allDays.length;
+                                        return allDays.map((dayObj) => {
+                                            const num = dayObj.day;
+                                            const isExpanded = expandedBookId === `day-${num}`;
+                                            return (
+                                                <div key={num} className="flex justify-center">
+                                                    <div
+                                                        onClick={() => { setExpandedBookId(isExpanded ? null : `day-${num}`); incrementKltTouch(); }}
+                                                        className={`flex items-center justify-center font-black transition-all duration-300 select-none text-[13px] sm:text-[14px] rounded-lg ${trackingDays > 30 ? 'w-6 h-6 sm:w-7 sm:h-7' : 'w-7 h-7 sm:w-8 sm:h-8'} cursor-pointer ${isExpanded ? 'bg-blue-500 text-white scale-125 ring-2 ring-blue-300' : 'text-white hover:text-blue-200 bg-[#2a3045] hover:bg-[#3b4460]'}`}
+                                                        title={`Day ${num}`}
+                                                    >
+                                                        {num}
+                                                    </div>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+                            </div>
                         </div>
-                    ))}
+                    ) : (
+                        Object.keys(groupedBooks).map(type => (
+                            <div key={type} className="mb-6">
+                                <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">{type}</h3>
+                                <ul className="space-y-1">
+                                    {groupedBooks[type].map(book => (
+                                        <li key={book.id}>
+                                            <button
+                                                onClick={() => {
+                                                    setExpandedBookId(prev => prev === book.id ? null : book.id);
+                                                }}
+                                                className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-semibold tracking-wide flex justify-between items-center ${expandedBookId === book.id
+                                                    ? 'bg-[#547395] text-white shadow-md border-l-4 border-[#c8a165]'
+                                                    : 'hover:bg-[#2a3045] text-gray-400 hover:text-white border-l-4 border-transparent'
+                                                    }`}
+                                            >
+                                                <span className="truncate pr-2">{book.name}</span>
+                                                <span className="text-[10px] opacity-60 bg-black/20 px-2 py-0.5 rounded-full">
+                                                    {book.total_chapters || 0} Ch
+                                                </span>
+                                            </button>
+    
+                                            {/* Expandable Chapter Grid */}
+                                            {expandedBookId === book.id && (
+                                                <div className="grid grid-cols-5 gap-1.5 mt-2 p-1.5 bg-[#0f131c] rounded-md shadow-inner mb-2 mx-2">
+                                                    {expandedBookChapters.length > 0 ? (
+                                                        expandedBookChapters.map(chapter => (
+                                                            <button
+                                                                key={chapter.id}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedBook(book);
+                                                                    setSelectedChapter(chapter);
+                                                                    setIsSidebarOpen(false); // Close sidebar for immersive reading
+                                                                    incrementKltTouch();
+                                                                }}
+                                                                className={`flex items-center justify-center w-full aspect-square rounded font-bold text-sm transition-all duration-200 ${selectedChapter?.id === chapter.id
+                                                                    ? 'bg-[#3b82f6] text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]'
+                                                                    : 'bg-[#1e2433] text-gray-400 hover:bg-[#2d3748] hover:text-white'
+                                                                    }`}
+                                                            >
+                                                                {chapter.chapter_number}
+                                                            </button>
+                                                        ))
+                                                    ) : (
+                                                        <span className="col-span-5 text-[#8b9bb4] text-xs text-center italic py-2">No chapters</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 
@@ -904,24 +1773,6 @@ const BookIndex = () => {
                     <div className="relative z-10 w-full flex justify-center items-start">
                         {activePdfUrl ? (
                             <div className="w-full h-full flex justify-center items-center">
-                                <Document
-                                    file={activePdfUrl}
-                                    onLoadSuccess={onDocumentLoadSuccess}
-                                    options={pdfOptions}
-                                    className="pdf-document relative flex flex-col justify-center items-center h-full w-full"
-                                    loading={
-                                        <div className="flex flex-col items-center justify-center p-20 text-[#8b5a2b]">
-                                            <i className="pi pi-spinner pi-spin text-4xl opacity-70 mb-4"></i>
-                                            <span className="font-bold tracking-widest uppercase text-sm">Unrolling Scroll...</span>
-                                        </div>
-                                    }
-                                    error={
-                                        <div className="flex flex-col items-center justify-center p-20 text-red-800/60 font-bold bg-white/30 rounded-lg shadow-inner">
-                                            <i className="pi pi-exclamation-triangle text-4xl mb-4"></i>
-                                            <p className="tracking-widest uppercase">The scroll for this chapter is missing.</p>
-                                        </div>
-                                    }
-                                >
                                     {numPages && aspectReady && (
                                         <div
                                             className="relative mx-auto flex items-center justify-center"
@@ -944,9 +1795,10 @@ const BookIndex = () => {
                                                     maxHeight={9000}
                                                     drawShadow={true}
                                                     maxShadowOpacity={0.8}
-                                                    showCover={true}
+                                                    showCover={false}
                                                     mobileScrollSupport={true}
                                                     disableFlipByClick={true}
+                                                    showPageCorners={false}
                                                     className="mx-auto"
                                                     flippingTime={900}
                                                     usePortrait={false}
@@ -954,17 +1806,38 @@ const BookIndex = () => {
                                                     ref={flipBookRef}
                                                 >
                                                     {Array.from(new Array(totalPagesToRender), (_, index) => {
-                                                        const isHardCover = index === 0 || index === totalPagesToRender - 1;
-                                                        const isRightPage = (index + 1) % 2 !== 0;
+                                                        const isRightPage = index % 2 !== 0;
 
-                                                        if (index < numPages) {
+                                                        let pageToRender = null;
+                                                        let isBlank = false;
+
+                                                        if (numPages % 2 !== 0) {
+                                                            if (index < numPages - 1) {
+                                                                pageToRender = index + 1;
+                                                            } else if (index === numPages - 1) {
+                                                                isBlank = true;
+                                                            } else if (index === numPages) {
+                                                                pageToRender = numPages;
+                                                            } else {
+                                                                isBlank = true;
+                                                            }
+                                                        } else {
+                                                            if (index < numPages) {
+                                                                pageToRender = index + 1;
+                                                            } else {
+                                                                isBlank = true;
+                                                            }
+                                                        }
+
+                                                        if (!isBlank && pageToRender !== null) {
                                                             return (
                                                                 <PDFPageRender
                                                                     key={index}
-                                                                    pageNumber={index + 1}
+                                                                    pageNumber={pageToRender}
                                                                     width={baseWidth}
-                                                                    isCover={isHardCover}
-                                                                    pageHighlights={highlights.filter(h => h.pageNumber === index + 1)}
+                                                                    pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
+                                                                    pageData={bookData ? bookData.pages[pageToRender - 1] : null}
+                                                                    onDeleteHighlight={deleteHighlight}
                                                                 />
                                                             );
                                                         } else {
@@ -973,8 +1846,8 @@ const BookIndex = () => {
                                                             const lightingObj = { background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%)' };
 
                                                             return (
-                                                                <div key={index} className={`page ${isHardCover ? 'bg-[#1e2433]' : 'bg-[#ffffff]'} shadow-2xl`} data-density={isHardCover ? "hard" : "soft"}>
-                                                                    <div className={`page-content w-full h-full ${isHardCover ? 'bg-[#2a3045] border-[3px] border-[#151a26]' : 'bg-[#e5e7eb]'} flex flex-col justify-center items-center relative`}>
+                                                                <div key={index} className={`page bg-[#ffffff] shadow-2xl`} data-density="soft">
+                                                                    <div className={`page-content w-full h-full bg-[#e5e7eb] flex flex-col justify-center items-center relative`}>
                                                                         <i className="pi pi-book text-8xl text-gray-400 opacity-20"></i>
                                                                         <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />
                                                                         <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
@@ -987,8 +1860,7 @@ const BookIndex = () => {
                                             </div>
                                         </div>
                                     )}
-                                </Document>
-                            </div>
+                                        </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center text-[#5c3a21] bg-[#e8d5a2]/60 p-12 rounded-2xl shadow-sm border border-[#5c3a21]/20 w-full max-w-2xl text-center backdrop-blur-sm">
                                 <i className="pi pi-book text-6xl opacity-30 mb-6 drop-shadow-sm"></i>
@@ -1005,6 +1877,8 @@ const BookIndex = () => {
                     <ScrollMenuPopup
                         position={selectionMenu}
                         onSelect={captureHighlight}
+                        onClose={() => setSelectionMenu(null)}
+                        activeContent={activeContentDBItem}
                     />
                 )}
 
@@ -1024,7 +1898,7 @@ const BookIndex = () => {
                                 style={{ backgroundColor: playerBgColor, borderColor: playerBorderColor }}
                             >
                                 {/* Left Side: Play Button */}
-                                <button onClick={togglePlay} className="text-black hover:scale-110 active:scale-95 transition-all outline-none mr-3">
+                                <button onClick={() => { togglePlay(); incrementKltTouch(); }} className="text-black hover:scale-110 active:scale-95 transition-all outline-none mr-3">
                                     <i className={`pi ${isPlaying ? 'pi-pause' : 'pi-play'} text-[32px]`}></i>
                                 </button>
 
@@ -1082,9 +1956,11 @@ const BookIndex = () => {
                                     <WisdomOverlay
                                         onPencilClick={(color) => {
                                             setPlayerBgColor(color);
+                                            incrementTransformationTouch();
                                         }}
                                         onLetterClick={(color) => {
                                             setPlayerBorderColor(color);
+                                            incrementTransformationTouch();
                                         }}
                                     />
                                 </div>

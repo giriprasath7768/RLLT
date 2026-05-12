@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Button } from 'primereact/button';
@@ -356,6 +357,17 @@ const DLSizeChart = () => {
                                     REAL LIFE LEADERSHIP TRAINING - <span className="text-[14px] font-bold">{headerSubtitle}</span>
                                 </span>
                             </td>
+                            {/* DATE & TIME BLOCK */}
+                            <td className="w-[100px] border-l-2 border-black p-0 align-middle bg-white">
+                                <div className="flex flex-col h-[55px] w-full">
+                                    <div className="flex-1 flex items-center justify-start border-b-2 border-black px-2">
+                                        <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</span>
+                                    </div>
+                                    <div className="flex-1 flex items-center justify-start px-2">
+                                        <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                </div>
+                            </td>
                             <td className="w-[50px] bg-[#00b050] border-l-2 border-black p-0 h-[45px]">
                                 <div className="flex flex-col h-full w-full">
                                     <div className="flex-1 flex items-center justify-center border-b-2 border-black">
@@ -383,13 +395,13 @@ const DLSizeChart = () => {
                                     <span className="text-black font-bold text-[18px] uppercase">{bannerText}</span>
                                 </div>
                             </td>
-                            <td className="w-[120px] bg-[#ffff00] p-0 h-[55px]">
+                            <td className="w-[150px] bg-[#ffff00] p-0 h-[55px]">
                                 <div className="flex flex-col h-full w-full">
                                     <div className="flex-1 flex items-center justify-center border-b-2 border-black">
                                         <span className="text-black font-black tracking-widest text-[16px] whitespace-nowrap">B K - A R</span>
                                     </div>
                                     <div className="flex-1 flex items-center justify-center">
-                                        <span className="text-black font-black tracking-widest text-[14px]">6 6 - 4 0 +</span>
+                                        <span className="text-black font-black tracking-widest text-[14px]">{extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).bks} - {extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).art}</span>
                                     </div>
                                 </div>
                             </td>

@@ -151,7 +151,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
     ];
 
     return (
-        <div className="bg-white flex-grow flex flex-col pt-0 pb-4 px-1 rounded-b-lg overflow-y-auto custom-scrollbar border-t-4 border-[#12182b] w-full h-full relative">
+        <div className="bg-white flex-grow flex flex-col pt-2 pb-4 px-1 rounded-b-lg overflow-y-auto custom-scrollbar border-t-4 border-[#12182b] w-full h-full relative">
             {/* Pencils Row */}
             <div className="flex p-1 gap-1 h-[450px] sm:h-[450px] w-full justify-between items-stretch">
                 <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00c0ff]" tipColorClass="text-[#00c0ff]" textColor={pencilTextColor} onClick={onPencilClick} />

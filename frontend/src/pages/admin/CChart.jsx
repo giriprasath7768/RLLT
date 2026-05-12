@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
+import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Button } from 'primereact/button';
@@ -375,6 +376,18 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
                                     REAL LIFE LEADERSHIP TRAINING - <span className="text-[14px] font-bold">{headerSubtitle}</span>
                                 </span>
                             </td>
+                            {/* DATE & TIME BLOCK */}
+                            <td className="w-[100px] border-l-2 border-black p-0 align-middle bg-white">
+                                <div className="flex flex-col h-[55px] w-full">
+                                    <div className="flex-1 flex items-center justify-start border-b-2 border-black px-2">
+                                        <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</span>
+                                    </div>
+                                    <div className="flex-1 flex items-center justify-start px-2">
+                                        <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                </div>
+                            </td>
+
                             <td className="w-[50px] bg-[#00b050] border-l-2 border-black p-0 h-[45px]" style={{ backgroundColor: '#00b050 !important', WebkitPrintColorAdjust: 'exact' }}>
                                 <div className="flex flex-col h-full w-full">
                                     <div className="flex-1 flex items-center justify-center border-b-2 border-black">
@@ -400,13 +413,13 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
                                     <span className="text-black font-bold text-[18px] uppercase">{bannerText}</span>
                                 </div>
                             </td>
-                            <td className="w-[120px] bg-[#ffff00] p-0 h-[55px]" style={{ backgroundColor: '#ffff00 !important', WebkitPrintColorAdjust: 'exact' }}>
+                            <td className="w-[150px] bg-[#ffff00] p-0 h-[55px]" style={{ backgroundColor: '#ffff00 !important', WebkitPrintColorAdjust: 'exact' }}>
                                 <div className="flex flex-col h-full w-full">
                                     <div className="flex-1 flex items-center justify-center border-b-2 border-black">
                                         <span className="text-black font-black tracking-widest text-[16px] whitespace-nowrap">B K - A R</span>
                                     </div>
                                     <div className="flex-1 flex items-center justify-center">
-                                        <span className="text-black font-black tracking-widest text-[14px]">6 6 - 4 0 +</span>
+                                        <span className="text-black font-black tracking-widest text-[14px]">{extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).bks} - {extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).art}</span>
                                     </div>
                                 </div>
                             </td>
@@ -431,10 +444,10 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
                                     if (!d) return <td key={colIndex} className="p-3"></td>;
                                     const parsedLines = processDayData(d);
                                     return (
-                                        <td key={chunk.id || colIndex} className={`align-top px-3 ${rowIndex === 0 ? 'pt-3' : ''} ${rowIndex === 4 ? 'pb-3' : ''} ${colIndex < colCount - 1 ? 'border-r-[1px] border-black' : ''}`}>
-                                            <div className={`flex ${rowIndex < 4 ? 'mb-4' : ''}`}>
-                                                <div className="w-[50px] flex-shrink-0 font-bold text-red-600 tracking-wider" style={{ fontSize: getFS(25) }}>
-                                                    DAY {d.day}
+                                        <td key={chunk.id || colIndex} className="align-top px-5">
+                                            <div className={`flex ${rowIndex < 4 ? 'mb-5' : ''}`} style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
+                                                <div className="flex-shrink-0 font-bold text-red-600 tracking-wider mr-4" style={{ fontSize: getFS(25) }}>
+                                                    DAY-{d.day}
                                                 </div>
                                                 <div className="flex-1 flex flex-col font-black text-black leading-tight" style={{ fontSize: getFS(23) }}>
                                                     {parsedLines.map((line, lIdx) => (
@@ -565,7 +578,7 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
                         <div className="flex w-full">
 
                             {/* COLUMN 1: Colored Boxes */}
-                            <div className="w-[20px] flex flex-col border-r-[2px] border-black p-0.5 z-10 bg-white relative">
+                            <div className="w-[40px] flex flex-col border-r-[2px] border-black p-0.5 z-10 bg-white relative">
                                 <div className="absolute inset-y-0 left-0 right-0 flex flex-col p-0.5 pointer-events-none">
                                     {renderColors()}
                                 </div>
@@ -579,14 +592,14 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
 
                             {/* COLUMN 2: Data Content */}
                             <div className="flex-1 flex flex-col z-10 bg-white">
-                                <div className="flex-1 flex flex-col py-2">
+                                <div className="flex-1 flex flex-col py-5">
                                     {renderDataCols(row1)}
                                 </div>
                                 {row2.length > 0 && (
-                                    <div className="h-[35px] flex-none border-y-[2px] border-black w-full bg-white z-0 -ml-[2px]" style={{ width: 'calc(100% + 4px)' }}></div>
+                                    <div className="h-[35px] flex-none border-y-[2px] border-black w-full bg-white z-0"></div>
                                 )}
                                 {row2.length > 0 && (
-                                    <div className="flex-1 flex flex-col py-2">
+                                    <div className="flex-1 flex flex-col py-5">
                                         {renderDataCols(row2)}
                                     </div>
                                 )}

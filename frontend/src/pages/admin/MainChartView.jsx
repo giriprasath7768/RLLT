@@ -7,6 +7,7 @@ import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Dialog } from 'primereact/dialog';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
+import { extractBooksAndAuthors } from '../../utils/bookUtils';
 
 const parseTime = (t) => {
     if (!t) return 0;
@@ -609,6 +610,18 @@ const MainChartView = () => {
                                             </span>
                                         </td>
 
+                                        {/* DATE & TIME BLOCK */}
+                                        <td className="w-[100px] border-l-2 border-black p-0 align-middle bg-white">
+                                            <div className="flex flex-col h-[55px] w-full">
+                                                <div className="flex-1 flex items-center justify-start border-b-2 border-black px-2">
+                                                    <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</span>
+                                                </div>
+                                                <div className="flex-1 flex items-center justify-start px-2">
+                                                    <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+
                                         {/* PH BLOCK */}
                                         <td className="w-[60px] bg-[#00b050] border-l-2 border-black p-0 h-[55px]">
                                             <div className="flex flex-col h-[55px] w-full">
@@ -656,13 +669,15 @@ const MainChartView = () => {
                                         </td>
 
                                         {/* BK-AR BLOCK */}
-                                        <td className="w-[140px] bg-[#ffff00] p-0 h-[65px] align-middle">
+                                        <td className="w-[160px] bg-[#ffff00] p-0 h-[65px] align-middle">
                                             <div className="flex flex-col h-[65px] w-full">
                                                 <div className="flex-1 flex items-center justify-center border-b-2 border-black pt-1">
                                                     <span className="text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-center pb-1">
-                                                    <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>6 6 - 4 0 +</span>
+                                                    <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>
+                                                        {extractBooksAndAuthors(chunks).bks} - {extractBooksAndAuthors(chunks).art}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </td>

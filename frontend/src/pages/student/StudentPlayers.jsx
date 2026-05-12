@@ -71,7 +71,7 @@ const StudentPlayers = () => {
                 }
             });
         } else {
-            navigate(`/dashboard/student/smt-player?days=${queryDays}`, {
+            navigate(`/dashboard/student/book-index?days=${queryDays}`, {
                 state: {
                     payload: chartData.state_payload,
                     module: chartData.module,
@@ -140,7 +140,7 @@ const StudentPlayers = () => {
                             const variants = [
                                 { label: 'T-Tom-T Player', icon: 'pi-play', filter: 'main', color: 'bg-blue-600', isTtomT: true },
                                 { label: 'T-Tom-T (Morning & Evening)', icon: 'pi-play', filter: 'morning_evening', color: 'bg-orange-500', isTtomT: true },
-                                { label: 'SM-T Player', icon: 'pi-play-circle', filter: 'main', color: 'bg-gray-600', isTtomT: false }
+                                { label: 'SM-T Page', icon: 'pi-book', filter: 'main', color: 'bg-gray-600', isTtomT: false }
                             ];
 
                             return (

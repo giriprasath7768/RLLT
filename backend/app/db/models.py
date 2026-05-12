@@ -75,6 +75,26 @@ class StudentTouchCount(Base):
 
     user = relationship("User", backref="touch_counts")
 
+class StudentHighlight(Base):
+    __tablename__ = "student_highlights"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    book_id = Column(UUID(as_uuid=True), ForeignKey("books.id"), nullable=False, index=True)
+    chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False, index=True)
+    page_number = Column(Integer, nullable=False)
+    selected_text = Column(String, nullable=True)
+    color = Column(String, nullable=True)
+    label = Column(String, nullable=True)
+    format = Column(String, nullable=True)
+    style_option = Column(String, nullable=True)
+    rects = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    book = relationship("Book")
+    chapter = relationship("Chapter")
+
 class Location(Base):
     __tablename__ = "locations"
 
@@ -280,6 +300,22 @@ class Content(Base):
     chapter = relationship("Chapter", backref="contents")
 
     __table_args__ = (UniqueConstraint('book_id', 'chapter_id', name='uq_content_book_chapter'),)
+
+class SevenTNTContent(Base):
+    __tablename__ = "seven_tnt_contents"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    book_id = Column(UUID(as_uuid=True), ForeignKey("books.id"), nullable=False)
+    verses = Column(String, nullable=True)
+    audio_url = Column(String, nullable=True)
+    audio_language = Column(String, nullable=True)
+    video_url = Column(String, nullable=True)
+    ref_link = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    book = relationship("Book", backref="seven_tnt_contents")
+
 
 class Assignment(Base):
     __tablename__ = "assignments"

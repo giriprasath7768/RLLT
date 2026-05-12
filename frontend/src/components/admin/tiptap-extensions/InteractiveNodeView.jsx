@@ -217,8 +217,7 @@ const InteractiveNodeView = ({ node, updateAttributes, getPos, selected, editor,
                 margin: 0
             };
 
-            const isTop = !textConfig.verticalAlign || textConfig.verticalAlign === 'top';
-            const showDiv = !isFocused && !isTop;
+            const showDiv = !isFocused;
 
             return (
                 <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -241,7 +240,7 @@ const InteractiveNodeView = ({ node, updateAttributes, getPos, selected, editor,
                             ...commonStyle,
                             position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5,
                             display: 'flex', flexDirection: 'column',
-                            justifyContent: textConfig.verticalAlign === 'middle' ? 'center' : 'flex-end',
+                            justifyContent: textConfig.verticalAlign === 'middle' ? 'center' : (textConfig.verticalAlign === 'bottom' ? 'flex-end' : 'flex-start'),
                             whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                             overflow: 'hidden'
                         }}>

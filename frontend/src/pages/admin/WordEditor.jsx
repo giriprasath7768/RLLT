@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import WordToolbar from '../../components/admin/WordToolbar';
+import RLLTToolbarModal from '../../components/admin/RLLTToolbarModal';
 import SavedDocumentsModal from '../../components/admin/SavedDocumentsModal';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -10,7 +11,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import FontFamily from '@tiptap/extension-font-family';
-import { ResizableImage, ShapeNode, TextBoxNode, WisdomMark, TextEffectMark, FontSizeMark, PageNode, CustomDocument } from '../../components/admin/tiptap-extensions/extensions';
+import { ResizableImage, ShapeNode, TextBoxNode, WisdomMark, TextEffectMark, FontSizeMark, PageNode, CustomDocument, UnderlineMark } from '../../components/admin/tiptap-extensions/extensions';
 
 // Phase 3 Migration: Tiptap NodeViews
 // Custom Quill Blots have been completely replaced with React-driven Tiptap NodeViews.
@@ -46,6 +47,7 @@ const WordEditor = () => {
 
     // Book Index States
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [rlltToolbarOpen, setRlltToolbarOpen] = useState(false);
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
     const [expandedBookId, setExpandedBookId] = useState(null);
@@ -79,7 +81,8 @@ const WordEditor = () => {
             TextEffectMark,
             FontSizeMark,
             Link.configure({ openOnClick: false }),
-            FontFamily
+            FontFamily,
+            UnderlineMark
         ],
         content: content,
         onUpdate: ({ editor }) => {
@@ -192,6 +195,9 @@ const WordEditor = () => {
         setDocumentId(doc.id);
         setTitle(doc.title || 'Untitled Document');
         setContent(doc.content || '');
+        if (editor) {
+            editor.commands.setContent(doc.content || '', false);
+        }
         setWatermark(doc.watermark_url || '');
         setLanguage(doc.language || 'en');
         if (doc.country_code) {
@@ -373,16 +379,37 @@ const WordEditor = () => {
                     />
                 </div>
 
-                <div
-                    className={`text-sm flex items-center gap-2 font-medium shrink-0 select-none ${!isSaving ? 'cursor-pointer hover:text-blue-600 transition-colors' : 'text-gray-500'}`}
-                    onClick={() => { if (!isSaving) fetchSavedDocuments(); }}
-                    title="View Saved Documents"
-                >
-                    {isSaving ? (
-                        <><i className="pi pi-spin pi-spinner text-gray-400"></i> <span className="text-gray-500">Saving...</span></>
-                    ) : (
-                        <><i className="pi pi-check text-green-500"></i> <span>Saved</span> <i className="pi pi-history text-xs opacity-60"></i></>
-                    )}
+                <div className="flex items-center gap-5 shrink-0">
+                    <button 
+                        onClick={() => {
+                            if (window.confirm("Are you sure you want to start a new document?")) {
+                                setDocumentId(null);
+                                setTitle('Untitled Document');
+                                setContent('');
+                                if (editor) editor.commands.setContent('');
+                                setWatermark('');
+                                setSelectedCountry(null);
+                                setCategory(null);
+                                setNotes('');
+                            }
+                        }}
+                        className="text-sm flex items-center gap-1.5 font-medium cursor-pointer hover:text-blue-600 transition-colors text-gray-600 focus:outline-none"
+                        title="Create New Document"
+                    >
+                        <i className="pi pi-file"></i> <span>New File</span>
+                    </button>
+
+                    <div
+                        className={`text-sm flex items-center gap-2 font-medium shrink-0 select-none ${!isSaving ? 'cursor-pointer hover:text-blue-600 transition-colors' : 'text-gray-500'}`}
+                        onClick={() => { if (!isSaving) fetchSavedDocuments(); }}
+                        title="View Saved Documents"
+                    >
+                        {isSaving ? (
+                            <><i className="pi pi-spin pi-spinner text-gray-400"></i> <span className="text-gray-500">Saving...</span></>
+                        ) : (
+                            <><i className="pi pi-check text-green-500"></i> <span>Saved</span> <i className="pi pi-history text-xs opacity-60"></i></>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -415,11 +442,29 @@ const WordEditor = () => {
                     spellCheckEnabled={spellCheckEnabled}
                     setSpellCheckEnabled={setSpellCheckEnabled}
                     setIsChartEditing={setIsChartEditing}
+                    setRlltToolbarOpen={setRlltToolbarOpen}
                 />
             </div>
 
-            {/* Primary Editing Area */}
-            <div className={`flex-grow overflow-y-auto p-4 sm:p-8 flex justify-center bg-gray-100 print:bg-white print:p-0 ${['ar', 'he', 'fa', 'ur'].includes(language) ? 'rtl' : 'ltr'}`} lang={language}>
+            {/* Split layout: Sidebar + Word Page */}
+            <div className="flex-grow flex flex-row overflow-hidden relative">
+                {/* Embedded RLLT Toolbar Menu */}
+                <RLLTToolbarModal
+                    isOpen={rlltToolbarOpen}
+                    onClose={() => setRlltToolbarOpen(false)}
+                    onInsertText={(text, color) => {
+                        if (editor) {
+                            if (color) {
+                                editor.chain().focus().insertContent(`<span style="color: ${color}">${text} </span>`).run();
+                            } else {
+                                editor.chain().focus().insertContent(`${text} `).run();
+                            }
+                        }
+                    }}
+                />
+
+                {/* Primary Editing Area */}
+                <div className={`flex-grow overflow-y-auto p-4 sm:p-8 flex justify-center bg-gray-100 print:bg-white print:p-0 ${['ar', 'he', 'fa', 'ur'].includes(language) ? 'rtl' : 'ltr'}`} lang={language}>
                 <div
                     id="pdf-export-container"
                     className="relative transition-all mx-auto flex flex-col duration-300"
@@ -663,6 +708,7 @@ const WordEditor = () => {
                 onDeleteDocument={deleteDocument}
             />
 
+            </div>
         </div >
     );
 };

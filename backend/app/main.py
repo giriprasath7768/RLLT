@@ -12,15 +12,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Media Platform API", lifespan=lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost", "http://127.0.0.1"],
-    allow_origin_regex="https?://.*",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.api.websockets import manager
 import json
@@ -44,6 +35,15 @@ class BroadcastUpdateMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(BroadcastUpdateMiddleware)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost", "http://127.0.0.1", "http://localhost:80", "http://127.0.0.1:80"],
+    allow_origin_regex="https?://.*",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 from app.api.auth import router as auth_router
 from app.api.locations import router as locations_router
 from app.api.admins import router as admins_router
@@ -57,6 +57,7 @@ from app.api.rllt import router as rllt_router
 from app.api.charts import router as charts_router
 from app.api.vcards import router as vcards_router
 from app.api.contents import router as contents_router
+from app.api.seven_tnt_contents import router as seven_tnt_contents_router
 from app.api.oils import router as oils_router
 from app.api.assignments import router as assignments_router
 from app.api.documents import router as documents_router
@@ -67,6 +68,7 @@ from app.api.screen_recorder import router as screen_recorder_router
 from app.api.images import router as images_router
 from app.api.classroom import router as classroom_router
 from app.api.websockets import router as websockets_router
+from app.api.highlights import router as highlights_router
 
 app.include_router(auth_router, prefix="/api", tags=["auth"])
 app.include_router(profile_router, prefix="/api/profile", tags=["profile"])
@@ -81,6 +83,7 @@ app.include_router(rllt_router, prefix="/api/rllt_lookup", tags=["rllt_lookup"])
 app.include_router(charts_router, prefix="/api/charts", tags=["charts"])
 app.include_router(vcards_router, prefix="/api/vcards", tags=["vcards"])
 app.include_router(contents_router, prefix="/api/contents", tags=["contents"])
+app.include_router(seven_tnt_contents_router, prefix="/api/seven-tnt-contents", tags=["seven_tnt_contents"])
 app.include_router(oils_router, prefix="/api/oils", tags=["oils"])
 app.include_router(assignments_router, prefix="/api/assignments", tags=["assignments"])
 app.include_router(documents_router, prefix="/api/documents", tags=["documents"])
@@ -91,6 +94,7 @@ app.include_router(screen_recorder_router, prefix="/api/screen-recorder", tags=[
 app.include_router(images_router, prefix="/api/images", tags=["images"])
 app.include_router(classroom_router, prefix="/api/classroom", tags=["classroom"])
 app.include_router(websockets_router, prefix="/api", tags=["websockets"])
+app.include_router(highlights_router, prefix="/api/highlights", tags=["highlights"])
 
 import os
 from fastapi.staticfiles import StaticFiles
