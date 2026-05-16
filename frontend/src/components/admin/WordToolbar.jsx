@@ -106,7 +106,7 @@ const DropdownPortal = ({ isOpen, anchorRef, children }) => {
                 top: rect.bottom + 5,
                 left: Math.min(rect.left, window.innerWidth - 300)
             }}
-            onMouseDown={(e) => e.preventDefault()}
+            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
             onClick={(e) => e.stopPropagation()}
         >
             {children}
@@ -115,7 +115,7 @@ const DropdownPortal = ({ isOpen, anchorRef, children }) => {
     );
 };
 
-const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes, PAGE_SIZES, pageSize, setPageSize, setIsSidebarOpen, handleOpenMap, UN_COUNTRIES, regionNames, zoomLevel, setZoomLevel, isSaving, fetchSavedDocuments, spellCheckEnabled, setSpellCheckEnabled, setIsChartEditing, setChartProxy, setRlltToolbarOpen }) => {
+const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes, PAGE_SIZES, pageSize, setPageSize, setIsSidebarOpen, handleOpenMap, UN_COUNTRIES, regionNames, zoomLevel, setZoomLevel, isSaving, fetchSavedDocuments, spellCheckEnabled, setSpellCheckEnabled, setIsChartEditing, setChartProxy, setRlltToolbarOpen, setDailyISIOpen }) => {
     const fileInputRef = useRef(null);
     const puzzleInputRef = useRef(null);
     const watermarkInputRef = useRef(null);
@@ -269,13 +269,17 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
     const TEXT_EFFECT_MODES = [
         { id: '3d', icon: 'pi pi-box', label: '3D Text' },
         { id: '4d', icon: 'pi pi-clone', label: '4D Text' },
-        { id: '5d', icon: 'pi pi-globe', label: '5D Text' }
+        { id: '5d', icon: 'pi pi-globe', label: '5D Text' },
+        { id: '6d', icon: 'pi pi-star', label: '6D Text' },
+        { id: '7d', icon: 'pi pi-star-fill', label: '7D Text' },
+        { id: '8d', icon: 'pi pi-compass', label: '8D Text' },
+        { id: '9d', icon: 'pi pi-bolt', label: '9D Text' },
+        { id: '10d', icon: 'pi pi-sun', label: '10D Text' }
     ];
 
     const applyTextEffect = (color) => {
         if (!tiptapEditor) return;
         tiptapEditor.chain().focus().setTextEffect({ color, mode: textEffectMode }).run();
-        setTextEffectOpen(false);
     };
 
     const clearTextEffect = () => {
@@ -287,7 +291,6 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
     const applyWisdom = (color) => {
         if (!tiptapEditor) return;
         tiptapEditor.chain().focus().setWisdom({ color, mode: wisdomMode }).run();
-        setWisdomOpen(false);
     };
 
     const clearWisdom = () => {
@@ -1149,23 +1152,7 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                                 title="Font Size (px)"
                             />
                         </div>
-                    </span>
-                </div>
-
-                <div className="flex items-center gap-1 border-r pr-2">
-                    <span className="ql-formats m-0 flex items-center gap-1">
-                        <button 
-                            onClick={() => tiptapEditor?.chain().focus().toggleBold().run()} 
-                            className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${tiptapEditor?.isActive('bold') ? 'bg-gray-200 text-black font-bold' : 'hover:bg-gray-100 text-gray-600'}`}
-                            title="Bold"
-                        ><i className="pi pi-bold"></i></button>
-                        <button 
-                            onClick={() => tiptapEditor?.chain().focus().toggleItalic().run()} 
-                            className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${tiptapEditor?.isActive('italic') ? 'bg-gray-200 text-black font-bold' : 'hover:bg-gray-100 text-gray-600'}`}
-                            title="Italic"
-                        ><i className="pi pi-italic"></i></button>
-                        
-                        <div className="flex items-center ml-1 bg-white border border-gray-200 rounded overflow-hidden" title="Text Color">
+                        <div className="flex items-center ml-1 bg-white border border-gray-200 rounded overflow-hidden h-[24px]" title="Text Color">
                             <i className="pi pi-palette text-xs text-gray-400 px-1"></i>
                             <input 
                                 type="color" 
@@ -1174,134 +1161,159 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                             />
                         </div>
                     </span>
-
-                    {/* Custom Layering Controls using standard inputs hooked into Quill formats */}
-                    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded">
-                        <label className="flex items-center gap-1 cursor-pointer" title="Outline Color">
-                            <i className="pi pi-stop text-gray-500 text-xs"></i>
-                            <input type="color" defaultValue="#000000" className="w-5 h-5 rounded cursor-pointer border-0 p-0" onChange={handleOutlineColor} />
-                        </label>
-                        <label className="flex items-center gap-1 cursor-pointer" title="Drop Shadow Color">
-                            <i className="pi pi-clone text-gray-500 text-xs"></i>
-                            <input type="color" defaultValue="#aaaaaa" className="w-5 h-5 rounded cursor-pointer border-0 p-0" onChange={handleShadowColor} />
-                        </label>
-                    </div>
-
-                    {/* Text Effect Tool (3D, 4D, 5D) */}
-                    <div className="flex items-center relative pl-2" ref={textEffectDropdownRef}>
-                        <button
-                            onClick={() => setTextEffectOpen(!textEffectOpen)}
-                            className={`flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors ${textEffectOpen ? 'bg-purple-100 text-purple-700' : 'hover:bg-gray-100 text-gray-500'}`}
-                            title="Text Effects (3D/4D/5D)"
-                        >
-                            <i className="pi pi-box"></i>
-                        </button>
-                        <DropdownPortal isOpen={textEffectOpen} anchorRef={textEffectDropdownRef}>
-                            <div className="bg-white border border-gray-200 rounded-lg shadow-xl z-50 w-52 p-3 animate-fadein">
-                                <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Dimension</div>
-                                <div className="grid grid-cols-3 gap-2 mb-3">
-                                    {TEXT_EFFECT_MODES.map(m => (
-                                        <button
-                                            key={m.id}
-                                            onMouseDown={(e) => { e.preventDefault(); setTextEffectMode(m.id); }}
-                                            className={`py-2 px-1 border rounded flex flex-col justify-center items-center transition-all ${textEffectMode === m.id ? 'bg-purple-50 border-purple-300 text-purple-600 ring-1 ring-purple-300 shadow-inner' : 'hover:bg-gray-50 text-gray-400 border-gray-200'}`}
-                                            title={m.label}
-                                        >
-                                            <i className={m.icon}></i>
-                                            <span className="text-[8px] font-bold mt-1">{m.id.toUpperCase()}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Shadow Color</div>
-                                <div className="grid grid-cols-7 gap-1">
-                                    {WISDOM_COLORS.map(color => (
-                                        <button
-                                            key={color}
-                                            className="w-full aspect-square rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)] hover:scale-110 hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-400"
-                                            style={{ backgroundColor: color }}
-                                            onMouseDown={(e) => { e.preventDefault(); applyTextEffect(color); }}
-                                            title={`Apply Color`}
-                                        />
-                                    ))}
-                                </div>
-                                <button onMouseDown={(e) => { e.preventDefault(); clearTextEffect(); }} className="w-full mt-4 py-1.5 text-xs text-red-600 font-medium hover:bg-red-50 rounded border border-red-100 transition-colors flex justify-center items-center gap-1">
-                                    <i className="pi pi-eraser text-[10px]"></i> Clear Effect
-                                </button>
-                            </div>
-                        </DropdownPortal>
-                    </div>
-
-                    {/* Wisdom Overlay Tool */}
-                    <div className="flex items-center relative pl-2" ref={wisdomDropdownRef}>
-                        <button
-                            onClick={() => setWisdomOpen(!wisdomOpen)}
-                            className={`flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors ${wisdomOpen ? 'bg-amber-100 text-amber-700' : 'hover:bg-gray-100 text-gray-500'}`}
-                            title="Wisdom Overlay Toolkit"
-                        >
-                            <i className="pi pi-sparkles"></i>
-                        </button>
-                        <DropdownPortal isOpen={wisdomOpen} anchorRef={wisdomDropdownRef}>
-                            <div className="bg-white border border-gray-200 rounded-lg shadow-xl z-50 w-52 p-3 animate-fadein">
-                                <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Form Overlay</div>
-                                <div className="grid grid-cols-4 gap-2 mb-3">
-                                    {WISDOM_MODES.map(m => (
-                                        <button
-                                            key={m.id}
-                                            onMouseDown={(e) => { e.preventDefault(); setWisdomMode(m.id); }}
-                                            className={`py-2 px-1 border rounded flex justify-center items-center transition-all ${wisdomMode === m.id ? 'bg-amber-50 border-amber-300 text-amber-600 ring-1 ring-amber-300 shadow-inner' : 'hover:bg-gray-50 text-gray-400 border-gray-200'}`}
-                                            title={m.label}
-                                        >
-                                            <i className={m.icon}></i>
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Wisdom Application</div>
-                                <div className="grid grid-cols-7 gap-1">
-                                    {WISDOM_COLORS.map(color => (
-                                        <button
-                                            key={color}
-                                            className="w-full aspect-square rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)] hover:scale-110 hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400"
-                                            style={{ backgroundColor: color }}
-                                            onMouseDown={(e) => { e.preventDefault(); applyWisdom(color); }}
-                                            title={`Apply Color`}
-                                        />
-                                    ))}
-                                </div>
-                                <button onMouseDown={(e) => { e.preventDefault(); clearWisdom(); }} className="w-full mt-4 py-1.5 text-xs text-red-600 font-medium hover:bg-red-50 rounded border border-red-100 transition-colors flex justify-center items-center gap-1">
-                                    <i className="pi pi-eraser text-[10px]"></i> Clear Form
-                                </button>
-                            </div>
-                        </DropdownPortal>
-                    </div>
-
-                    {/* Watermark Upload Background Tool */}
-                    <div className="flex items-center gap-1 border-l pl-2 ml-1">
-                        <button
-                            onClick={() => watermarkInputRef.current?.click()}
-                            className="flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors text-gray-500 hover:bg-blue-50 hover:text-blue-600 shadow-sm border border-gray-100 bg-white"
-                            title="Set Background Transparent Watermark"
-                        >
-                            <i className="pi pi-images"></i>
-                        </button>
-                        {watermark && (
-                            <button
-                                onClick={() => setWatermark && setWatermark('')}
-                                className="flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors text-red-400 hover:bg-red-50 hover:text-red-500"
-                                title="Remove Watermark"
-                            >
-                                <i className="pi pi-times"></i>
-                            </button>
-                        )}
-                        <input
-                            type="file"
-                            ref={watermarkInputRef}
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleWatermarkUpload}
-                        />
-                    </div>
                 </div>
 
+                {/* Text Effect Tool (3D, 4D, 5D) */}
+                <div className="flex items-center relative pl-2" ref={textEffectDropdownRef}>
+                    <button
+                        onClick={() => setTextEffectOpen(!textEffectOpen)}
+                        className={`flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors ${textEffectOpen ? 'bg-purple-100 text-purple-700' : 'hover:bg-gray-100 text-gray-500'}`}
+                        title="Text Effects (3D/4D/5D)"
+                    >
+                        <i className="pi pi-box"></i>
+                    </button>
+                    <DropdownPortal isOpen={textEffectOpen} anchorRef={textEffectDropdownRef}>
+                        <div className="bg-white border border-gray-200 rounded-lg shadow-xl z-50 w-52 p-3 animate-fadein">
+                            <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Dimension</div>
+                            <div className="grid grid-cols-4 gap-2 mb-3">
+                                {TEXT_EFFECT_MODES.map(m => (
+                                    <button
+                                        key={m.id}
+                                        onMouseDown={(e) => { e.preventDefault(); setTextEffectMode(m.id); }}
+                                        className={`py-2 px-1 border rounded flex flex-col justify-center items-center transition-all ${textEffectMode === m.id ? 'bg-purple-50 border-purple-300 text-purple-600 ring-1 ring-purple-300 shadow-inner' : 'hover:bg-gray-50 text-gray-400 border-gray-200'}`}
+                                        title={m.label}
+                                    >
+                                        <i className={m.icon}></i>
+                                        <span className="text-[8px] font-bold mt-1">{m.id.toUpperCase()}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Shadow Color</div>
+                            <div className="grid grid-cols-8 gap-1">
+                                {WISDOM_COLORS.map(color => (
+                                    <button
+                                        key={color}
+                                        className="w-full aspect-square rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)] hover:scale-110 hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-400"
+                                        style={{ backgroundColor: color }}
+                                        onMouseDown={(e) => { e.preventDefault(); applyTextEffect(color); }}
+                                        title={`Apply Color`}
+                                    />
+                                ))}
+                                <div className="w-full aspect-square rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)] hover:scale-110 hover:-translate-y-0.5 transition-all flex items-center justify-center bg-[conic-gradient(red,yellow,green,cyan,blue,magenta,red)] overflow-hidden cursor-pointer relative" title="Custom Color">
+                                    <input 
+                                        type="color" 
+                                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] opacity-0 cursor-pointer"
+                                        onChange={(e) => applyTextEffect(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <button onMouseDown={(e) => { e.preventDefault(); clearTextEffect(); }} className="w-full mt-4 py-1.5 text-xs text-red-600 font-medium hover:bg-red-50 rounded border border-red-100 transition-colors flex justify-center items-center gap-1">
+                                <i className="pi pi-eraser text-[10px]"></i> Clear Effect
+                            </button>
+                        </div>
+                    </DropdownPortal>
+                </div>
+
+                {/* Wisdom Overlay Tool */}
+                <div className="flex items-center relative pl-2" ref={wisdomDropdownRef}>
+                    <button
+                        onClick={() => setWisdomOpen(!wisdomOpen)}
+                        className={`flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors ${wisdomOpen ? 'bg-amber-100 text-amber-700' : 'hover:bg-gray-100 text-gray-500'}`}
+                        title="Wisdom Overlay Toolkit"
+                    >
+                        <i className="pi pi-sparkles"></i>
+                    </button>
+                    <DropdownPortal isOpen={wisdomOpen} anchorRef={wisdomDropdownRef}>
+                        <div className="bg-white border border-gray-200 rounded-lg shadow-xl z-50 w-52 p-3 animate-fadein">
+                            <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Form Overlay</div>
+                            <div className="grid grid-cols-4 gap-2 mb-3">
+                                {WISDOM_MODES.map(m => (
+                                    <button
+                                        key={m.id}
+                                        onMouseDown={(e) => { e.preventDefault(); setWisdomMode(m.id); }}
+                                        className={`py-2 px-1 border rounded flex justify-center items-center transition-all ${wisdomMode === m.id ? 'bg-amber-50 border-amber-300 text-amber-600 ring-1 ring-amber-300 shadow-inner' : 'hover:bg-gray-50 text-gray-400 border-gray-200'}`}
+                                        title={m.label}
+                                    >
+                                        <i className={m.icon}></i>
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest text-center">Wisdom Application</div>
+                            <div className="grid grid-cols-8 gap-1">
+                                {WISDOM_COLORS.map(color => (
+                                    <button
+                                        key={color}
+                                        className="w-full aspect-square rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)] hover:scale-110 hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400"
+                                        style={{ backgroundColor: color }}
+                                        onMouseDown={(e) => { e.preventDefault(); applyWisdom(color); }}
+                                        title={`Apply Color`}
+                                    />
+                                ))}
+                                <div className="w-full aspect-square rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)] hover:scale-110 hover:-translate-y-0.5 transition-all flex items-center justify-center bg-[conic-gradient(red,yellow,green,cyan,blue,magenta,red)] overflow-hidden cursor-pointer relative" title="Custom Color">
+                                    <input 
+                                        type="color" 
+                                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] opacity-0 cursor-pointer"
+                                        onChange={(e) => applyWisdom(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <button onMouseDown={(e) => { e.preventDefault(); clearWisdom(); }} className="w-full mt-4 py-1.5 text-xs text-red-600 font-medium hover:bg-red-50 rounded border border-red-100 transition-colors flex justify-center items-center gap-1">
+                                <i className="pi pi-eraser text-[10px]"></i> Clear Form
+                            </button>
+                        </div>
+                    </DropdownPortal>
+                </div>
+
+                {/* Watermark Upload Background Tool */}
+                <div className="flex items-center gap-1 border-r pr-2 pl-2 ml-1">
+                    <button
+                        onClick={() => watermarkInputRef.current?.click()}
+                        className="flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors text-gray-500 hover:bg-blue-50 hover:text-blue-600 shadow-sm border border-gray-100 bg-white"
+                        title="Set Background Transparent Watermark"
+                    >
+                        <i className="pi pi-images"></i>
+                    </button>
+                    {watermark && (
+                        <button
+                            onClick={() => setWatermark && setWatermark('')}
+                            className="flex justify-center items-center gap-1 w-8 h-8 rounded transition-colors text-red-400 hover:bg-red-50 hover:text-red-500"
+                            title="Remove Watermark"
+                        >
+                            <i className="pi pi-times"></i>
+                        </button>
+                    )}
+                    <input
+                        type="file"
+                        ref={watermarkInputRef}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleWatermarkUpload}
+                    />
+                </div>
+
+                {/* History (Undo / Redo) */}
+                <div className="flex items-center gap-1 border-r pr-2">
+                    <span className="ql-formats m-0 flex items-center gap-1">
+                        <button 
+                            onClick={() => tiptapEditor?.chain().focus().undo().run()}
+                            disabled={!tiptapEditor?.can().undo()}
+                            className={`w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 transition-colors ${!tiptapEditor?.can().undo() ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
+                            title="Undo"
+                        >
+                            <i className="pi pi-undo"></i>
+                        </button>
+                        <button 
+                            onClick={() => tiptapEditor?.chain().focus().redo().run()}
+                            disabled={!tiptapEditor?.can().redo()}
+                            className={`w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 transition-colors ${!tiptapEditor?.can().redo() ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
+                            title="Redo"
+                        >
+                            <i className="pi pi-refresh"></i>
+                        </button>
+                    </span>
+                </div>
+
+                {/* Alignment */}
                 <div className="flex items-center gap-1 border-r pr-2">
                     <span className="ql-formats m-0 flex items-center gap-1">
                         <button 
@@ -1322,6 +1334,7 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                     </span>
                 </div>
 
+                {/* B, I, U, AA, aa */}
                 <div className="flex items-center gap-1 border-r pr-2">
                     <span className="ql-formats m-0 flex items-center gap-1">
                         <button 
@@ -1368,6 +1381,22 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                         ><span className="font-bold text-sm leading-none pt-0.5">aa</span></button>
                     </span>
                 </div>
+
+                {/* Spellcheck */}
+                <div className="flex items-center gap-1 border-r pr-2">
+                    <button
+                        onClick={() => setSpellCheckEnabled(!spellCheckEnabled)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded transition-colors hidden lg:flex ${spellCheckEnabled ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-700'}`}
+                        title={spellCheckEnabled ? 'Spell Check Enabled' : 'Enable Spell Check'}
+                    >
+                        <i className={`pi ${spellCheckEnabled ? 'pi-check-square' : 'pi-stop'}`}></i>
+                        <span className="hidden xl:inline">Spellcheck</span>
+                    </button>
+                </div>
+
+
+
+
 
             </div> {/* END QUILL CONTAINER */}
 
@@ -1542,15 +1571,7 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                 </div>
 
 
-                <div className="border-l border-gray-300 mx-1 h-5 hidden sm:block"></div>
-                <button
-                    onClick={() => setSpellCheckEnabled(!spellCheckEnabled)}
-                    className={`flex items-center gap-1 px-2 py-1 rounded transition-colors hidden lg:flex ${spellCheckEnabled ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-700'}`}
-                    title={spellCheckEnabled ? 'Spell Check Enabled' : 'Enable Spell Check'}
-                >
-                    <i className={`pi ${spellCheckEnabled ? 'pi-check-square' : 'pi-stop'}`}></i>
-                    <span className="hidden xl:inline">Spellcheck</span>
-                </button>
+                {/* Dictation */}
                 <button
                     onClick={toggleDictation}
                     className={`flex items-center gap-1 px-2 py-1 rounded transition-colors hidden xl:flex ${isListening ? 'bg-red-50 text-red-600' : 'hover:bg-gray-100 text-gray-700'}`}
@@ -1592,15 +1613,23 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                     <span className="font-bold">{wordCount}</span>
                     <span className="text-xs font-medium uppercase tracking-wider text-gray-400">words</span>
                 </div>
-
-
-
             </div>
             </div>
             
             {/* SECOND ROW */}
             <div className="flex flex-nowrap items-center gap-2 px-2 py-1 w-full overflow-x-auto custom-scrollbar border-t border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-1 shrink-0">
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="flex items-center gap-1 px-2 py-1 rounded transition-colors text-gray-600 hover:bg-blue-50 hover:text-blue-600 font-medium text-sm shrink-0"
+                        title="Open Bible Index"
+                    >
+                        <i className="pi pi-book text-blue-500"></i>
+                        <span className="hidden xl:inline font-medium">Books</span>
+                    </button>
+
+                    <div className="border-l border-gray-300 h-4 mx-1"></div>
+
                     <button
                         onClick={() => setHebrewCalculatorOpen(true)}
                         className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700 shrink-0"
@@ -1647,6 +1676,126 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                     </div>
 
                     <div className="border-l border-gray-300 h-4 mx-1"></div>
+
+                    <div className="relative shrink-0">
+                        <button
+                            onClick={() => setDailyISIOpen(true)}
+                            className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700"
+                            title="RLLT ISI"
+                        >
+                            <i className="pi pi-mobile text-lg text-emerald-500"></i>
+                            <span className="hidden lg:inline font-medium">RLLT ISI</span>
+                        </button>
+                    </div>
+
+                    <div className="border-l border-gray-300 h-4 mx-1"></div>
+
+                    <div className="relative shrink-0">
+                        <button
+                            onClick={() => setRlltToolbarOpen(true)}
+                            className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700"
+                            title="RLLT Toolbar"
+                        >
+                            <i className="pi pi-th-large text-lg text-blue-500"></i>
+                            <span className="hidden lg:inline font-medium">RLLT Toolbar</span>
+                        </button>
+                    </div>
+
+                    <div className="border-l border-gray-300 h-4 mx-1"></div>
+
+                    <button
+                        onClick={() => setScrollMenuOpen(true)}
+                        className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-orange-50 text-[#8b5a2b] shrink-0"
+                        title="Scroll Formats"
+                    >
+                        <span className="text-lg leading-none">📜</span>
+                        <span className="hidden xl:inline font-medium">Scroll</span>
+                    </button>
+                </div>
+                
+                {/* Advanced Document Tools moved to Second Row */}
+                <div className="flex items-center gap-1 ml-auto shrink-0">
+                    <button
+                        onClick={() => {
+                            if (tiptapEditor) {
+                                tiptapEditor.chain().focus().insertContentAt(tiptapEditor.state.doc.content.size, { type: 'page', content: [{ type: 'paragraph' }] }).run();
+                            }
+                        }}
+                        className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-600 hover:bg-green-100 rounded font-semibold transition-colors border border-green-200 mr-1"
+                        title="Add another page"
+                    >
+                        <i className="pi pi-file-plus"></i>
+                        <span className="hidden md:inline">Add Page</span>
+                    </button>
+
+                    <button
+                        onClick={handleExportPPT}
+                        className="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 hover:bg-orange-100 rounded font-semibold transition-colors border border-orange-200"
+                        title="Export as PowerPoint"
+                    >
+                        <i className="pi pi-file-export"></i>
+                        <span className="hidden md:inline">PPT</span>
+                    </button>
+                    <button
+                        onClick={handleExportPDF}
+                        className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded font-semibold transition-colors border border-red-200 ml-1"
+                        title="Download as PDF"
+                    >
+                        <i className="pi pi-file-pdf"></i>
+                        <span className="hidden md:inline">PDF</span>
+                    </button>
+
+                    <div className="flex items-center bg-gray-100 rounded-md p-0.5 mx-1">
+                        <button
+                            onClick={() => setZoomLevel(prev => Math.max(0.3, prev - 0.1))}
+                            className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
+                            title="Zoom Out"
+                        >
+                            <i className="pi pi-minus text-[10px]"></i>
+                        </button>
+                        <button
+                            onClick={() => setZoomLevel(1)}
+                            className="flex items-center justify-center min-w-[36px] px-1 text-[11px] font-bold text-gray-700 hover:text-blue-600 cursor-pointer focus:outline-none"
+                            title="Reset Zoom"
+                        >
+                            {Math.round((zoomLevel || 1) * 100)}%
+                        </button>
+                        <button
+                            onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.1))}
+                            className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
+                            title="Zoom In"
+                        >
+                            <i className="pi pi-plus text-[10px]"></i>
+                        </button>
+                    </div>
+
+                    <div className="border-l border-gray-200 h-5 mx-1 hidden md:block"></div>
+
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-gray-700 transition-colors"
+                        title="Print Document"
+                    >
+                        <i className="pi pi-print"></i>
+                    </button>
+
+                    <button
+                        onClick={handleShare}
+                        className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-gray-700 transition-colors border-r border-gray-200 pr-3 mr-1"
+                        title="Download"
+                    >
+                        <i className="pi pi-download"></i>
+                    </button>
+                    <button
+                        onClick={() => setNotesModalOpen(true)}
+                        className="flex items-center gap-1 px-2 py-1 hover:bg-amber-100 rounded text-amber-700 transition-colors ml-1 font-medium"
+                        title="Document Notes"
+                    >
+                        <i className="pi pi-clipboard"></i>
+                        <span className="hidden sm:inline">Notes</span>
+                    </button>
+
+                    <div className="border-l border-gray-200 h-5 mx-1 hidden md:block"></div>
 
                     <div className="relative shrink-0" ref={countryDropdownRef}>
                         <button
@@ -1750,26 +1899,6 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
 
                     <div className="border-l border-gray-300 h-4 mx-1"></div>
 
-                    <button
-                        onClick={() => setScrollMenuOpen(true)}
-                        className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-orange-50 text-[#8b5a2b] shrink-0"
-                        title="Scroll Formats"
-                    >
-                        <span className="text-lg leading-none">📜</span>
-                        <span className="hidden xl:inline font-medium">Scroll</span>
-                    </button>
-
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="flex items-center gap-1 px-2 py-1 rounded transition-colors text-gray-600 hover:bg-blue-50 hover:text-blue-600 font-medium text-sm shrink-0"
-                        title="Open Bible Index"
-                    >
-                        <i className="pi pi-book text-blue-500"></i>
-                        <span className="hidden xl:inline font-medium">Books</span>
-                    </button>
-
-                    <div className="border-l border-gray-300 h-4 mx-1"></div>
-
                     <div className="relative shrink-0" ref={emojiDropdownRef}>
                         <button
                             onClick={() => setEmojiDropdownOpen(!emojiDropdownOpen)}
@@ -1793,102 +1922,6 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                             </div>
                         </DropdownPortal>
                     </div>
-
-                    <div className="border-l border-gray-300 h-4 mx-1"></div>
-
-                    <div className="relative shrink-0">
-                        <button
-                            onClick={() => setRlltToolbarOpen(true)}
-                            className="flex items-center gap-1 px-2 py-1 rounded transition-colors hover:bg-gray-100 text-gray-700"
-                            title="RLLT Toolbar"
-                        >
-                            <i className="pi pi-th-large text-lg text-blue-500"></i>
-                            <span className="hidden lg:inline font-medium">RLLT Toolbar</span>
-                        </button>
-                    </div>
-                </div>
-                
-                {/* Advanced Document Tools moved to Second Row */}
-                <div className="flex items-center gap-1 ml-auto shrink-0">
-                    <button
-                        onClick={() => {
-                            if (tiptapEditor) {
-                                tiptapEditor.chain().focus().insertContentAt(tiptapEditor.state.doc.content.size, { type: 'page', content: [{ type: 'paragraph' }] }).run();
-                            }
-                        }}
-                        className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-600 hover:bg-green-100 rounded font-semibold transition-colors border border-green-200 mr-1"
-                        title="Add another page"
-                    >
-                        <i className="pi pi-file-plus"></i>
-                        <span className="hidden md:inline">Add Page</span>
-                    </button>
-
-                    <button
-                        onClick={handleExportPPT}
-                        className="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 hover:bg-orange-100 rounded font-semibold transition-colors border border-orange-200"
-                        title="Export as PowerPoint"
-                    >
-                        <i className="pi pi-file-export"></i>
-                        <span className="hidden md:inline">PPT</span>
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded font-semibold transition-colors border border-red-200 ml-1"
-                        title="Download as PDF"
-                    >
-                        <i className="pi pi-file-pdf"></i>
-                        <span className="hidden md:inline">PDF</span>
-                    </button>
-
-                    <div className="flex items-center bg-gray-100 rounded-md p-0.5 mx-1">
-                        <button
-                            onClick={() => setZoomLevel(prev => Math.max(0.3, prev - 0.1))}
-                            className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
-                            title="Zoom Out"
-                        >
-                            <i className="pi pi-minus text-[10px]"></i>
-                        </button>
-                        <button
-                            onClick={() => setZoomLevel(1)}
-                            className="flex items-center justify-center min-w-[36px] px-1 text-[11px] font-bold text-gray-700 hover:text-blue-600 cursor-pointer focus:outline-none"
-                            title="Reset Zoom"
-                        >
-                            {Math.round((zoomLevel || 1) * 100)}%
-                        </button>
-                        <button
-                            onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.1))}
-                            className="flex items-center justify-center w-6 h-6 hover:bg-white hover:shadow-sm rounded text-gray-600 transition-all focus:outline-none"
-                            title="Zoom In"
-                        >
-                            <i className="pi pi-plus text-[10px]"></i>
-                        </button>
-                    </div>
-
-                    <div className="border-l border-gray-200 h-5 mx-1 hidden md:block"></div>
-
-                    <button
-                        onClick={handlePrint}
-                        className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-gray-700 transition-colors"
-                        title="Print Document"
-                    >
-                        <i className="pi pi-print"></i>
-                    </button>
-
-                    <button
-                        onClick={handleShare}
-                        className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded text-gray-700 transition-colors border-r border-gray-200 pr-3 mr-1"
-                        title="Download"
-                    >
-                        <i className="pi pi-download"></i>
-                    </button>
-                    <button
-                        onClick={() => setNotesModalOpen(true)}
-                        className="flex items-center gap-1 px-2 py-1 hover:bg-amber-100 rounded text-amber-700 transition-colors ml-1 font-medium"
-                        title="Document Notes"
-                    >
-                        <i className="pi pi-clipboard"></i>
-                        <span className="hidden sm:inline">Notes</span>
-                    </button>
                 </div>
             </div>
 

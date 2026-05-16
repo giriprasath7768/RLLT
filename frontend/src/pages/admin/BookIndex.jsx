@@ -500,13 +500,13 @@ const GlobalPDFPageOverridesSMT = () => (
 
 // Constants for PDF Highlighting Tool
 const HIGHLIGHT_CATEGORIES = [
-    { label: "Wisdom of God", color: "#FCA5A5" }, // Red/Pink
-    { label: "Imagination", color: "#FCD34D" }, // Yellow
-    { label: "Scriptures to prayer", color: "#93C5FD" }, // Blue
-    { label: "Daily growing in Godliness", color: "#86EFAC" }, // Green
-    { label: "Obedience to God in action", color: "#FDBA74" }, // Orange
-    { label: "Meditating on God's Character", color: "#D8B4FE" }, // Purple
-    { label: "TRANSFORMATION", color: "#F9A8D4" } // Pink
+    { label: "Wisdom of God", color: "#DC2626" }, // Red-600
+    { label: "Imagination", color: "#D97706" }, // Amber-600
+    { label: "Scriptures to prayer", color: "#2563EB" }, // Blue-600
+    { label: "Daily growing in Godliness", color: "#16A34A" }, // Green-600
+    { label: "Obedience to God in action", color: "#EA580C" }, // Orange-600
+    { label: "Meditating on God's Character", color: "#9333EA" }, // Purple-600
+    { label: "TRANSFORMATION", color: "#DB2777" } // Pink-600
 ];
 
 const SEVEN_MOUNTAIN_SPHERES = [
@@ -519,7 +519,7 @@ const SEVEN_MOUNTAIN_SPHERES = [
     { label: "Service", color: "#e3242b" }
 ];
 
-const ScrollMenuPopup = ({ position, onSelect, onClose, activeContent }) => {
+const ScrollMenuPopup = ({ position, onSelect, onClose, activeContent, onRemove }) => {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isFlipped, setIsFlipped] = useState(false);
     const [flipMode, setFlipMode] = useState('format'); // 'format' or 'info'
@@ -552,9 +552,10 @@ const ScrollMenuPopup = ({ position, onSelect, onClose, activeContent }) => {
 
     const handleCategoryClick = (e, cat) => {
         if (e) e.stopPropagation();
-        setSelectedCategory(cat);
-        setFlipMode('format');
-        setIsFlipped(true);
+        
+        // Always apply directly with default styles, bypassing the format flip
+        if (onSelect) onSelect(cat, null, null);
+        if (onClose) onClose();
     };
 
     const handleFormatClick = (format, styleOption = null) => {
@@ -596,10 +597,10 @@ const ScrollMenuPopup = ({ position, onSelect, onClose, activeContent }) => {
 
                     <div className="relative z-10 px-6 py-3 flex flex-col gap-[7px] items-center text-[#2d1a11] font-serif w-full h-full justify-start">
                         <h2 className="text-[15px] font-black uppercase tracking-widest text-[#2d1a11] drop-shadow-sm mb-1 text-center leading-tight w-full flex flex-col gap-[2px] border-b-[1.5px] border-[#8b5a2b]/40 pb-2">
-                            <button onClick={(e) => handleCategoryClick(e, { label: "The Power of God", color: "#FCD34D" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
+                            <button onClick={(e) => handleCategoryClick(e, { label: "The Power of God", color: "#D97706" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
                                 The Power of God &
                             </button>
-                            <button onClick={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#FCA5A5" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
+                            <button onClick={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#DC2626" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
                                 The Wisdom of God
                             </button>
                         </h2>
@@ -631,6 +632,24 @@ const ScrollMenuPopup = ({ position, onSelect, onClose, activeContent }) => {
                         <div className="mt-3 flex flex-col items-center text-center text-[10px] leading-tight font-bold tracking-wider opacity-75 uppercase pointer-events-none text-[#1f1209]">
                             <span>I am here to do God's will and do what is</span>
                             <span>written about me in this scroll</span>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2 mt-3 items-center justify-center">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); if (onSelect) onSelect({ label: 'Underline', color: '#8b5a2b' }, 'underline', 'line-2px'); if (onClose) onClose(); }}
+                                className="text-[11px] font-black tracking-widest uppercase text-[#8b5a2b] hover:text-[#5c3a21] transition-colors drop-shadow-sm flex items-center gap-1 border border-[#8b5a2b]/30 bg-[#8b5a2b]/10 px-3 py-1 rounded-full hover:bg-[#8b5a2b]/20 cursor-pointer pointer-events-auto"
+                            >
+                                <i className="pi pi-pencil text-[10px]"></i> Underline
+                            </button>
+                            
+                            {onRemove && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                                    className="text-[11px] font-black tracking-widest uppercase text-red-700 hover:text-red-900 transition-colors drop-shadow-sm flex items-center gap-1 border border-red-800/30 bg-red-100/50 px-3 py-1 rounded-full hover:bg-red-200/60 cursor-pointer pointer-events-auto"
+                                >
+                                    <i className="pi pi-trash text-[10px]"></i> Remove
+                                </button>
+                            )}
                         </div>
                     </div>
                     
@@ -671,8 +690,8 @@ const ScrollMenuPopup = ({ position, onSelect, onClose, activeContent }) => {
                                         if (fmt === 'Square' || fmt === 'Oval') {
                                             formatOptions = [
                                                 { id: 'solid-1px', bWidth: '2px', bStyle: 'solid' },
-                                                { id: 'solid-3px', bWidth: '4px', bStyle: 'solid' },
-                                                { id: 'double-3px', bWidth: '4px', bStyle: 'double' },
+                                                { id: 'solid-3px', bWidth: '3.5px', bStyle: 'solid' },
+                                                { id: 'double-3px', bWidth: '3.5px', bStyle: 'double' },
                                                 { id: 'inner-shadow', bWidth: '0px', bStyle: 'none' },
                                                 { id: 'outer-shadow', bWidth: '0px', bStyle: 'none' }
                                             ];
@@ -776,6 +795,100 @@ const ScrollMenuPopup = ({ position, onSelect, onClose, activeContent }) => {
 };
 
 
+const HighlightOverlay = ({ h }) => {
+    const format = (h.format || 'highlight').toLowerCase();
+    const opt = h.styleOption || 'hl-5';
+    const color = h.color;
+
+    const renderHighlight = () => {
+        if (format === 'square' || format === 'circle' || format === 'oval') {
+            let minTop = 100, minLeft = 100, maxBottom = 0, maxRight = 0;
+            h.rects.forEach(r => {
+                if (r.top < minTop) minTop = r.top;
+                if (r.left < minLeft) minLeft = r.left;
+                if (r.top + r.height > maxBottom) maxBottom = r.top + r.height;
+                if (r.left + r.width > maxRight) maxRight = r.left + r.width;
+            });
+
+            const isOval = format === 'circle' || format === 'oval';
+            
+            // Expand by exactly 5px vertically, and 3.8px horizontally (or 8px for oval to accommodate curve)
+            const paddingY = 5;
+            const paddingX = isOval ? 8 : 3.8;
+
+            let style = {
+                position: 'absolute',
+                top: `calc(${minTop}% - ${paddingY}px)`,
+                left: `calc(${minLeft}% - ${paddingX}px)`,
+                width: `calc(${maxRight - minLeft}% + ${paddingX * 2}px)`,
+                height: `calc(${maxBottom - minTop}% + ${paddingY * 2}px)`,
+                zIndex: 45,
+                pointerEvents: 'none',
+                boxSizing: 'border-box'
+            };
+
+            if (isOval) {
+                style.borderRadius = '9999px';
+            } else {
+                style.borderRadius = '3px';
+            }
+
+            if (opt === 'inner-shadow') {
+                style.boxShadow = `inset 0 0 6px ${color}`;
+            } else if (opt === 'outer-shadow') {
+                style.boxShadow = `0 0 8px ${color}`;
+            } else {
+                const parts = opt.split('-');
+                const bStyle = parts[0] || 'solid';
+                const bWidth = parts[0] === 'solid' && parts[1] === '1px' ? '1.5px' : '3.5px';
+                style.border = `${bWidth} ${bStyle} ${color}`;
+            }
+
+            return <div style={style} />;
+        }
+
+        // For highlight and underline
+        return (
+            <React.Fragment>
+                {h.rects.map((rect, i) => {
+                    const expandTop = 0.7;
+                    const expandBottom = 0.3;
+                    const expandX = 0.1;
+                    
+                    let style = {
+                        position: 'absolute',
+                        top: `${Math.max(0, rect.top - expandTop)}%`,
+                        left: `${Math.max(0, rect.left - expandX)}%`,
+                        width: `${rect.width + (expandX * 2)}%`,
+                        height: `${rect.height + expandTop + expandBottom}%`,
+                        zIndex: 45,
+                        pointerEvents: 'none'
+                    };
+
+                    if (format === 'underline') {
+                        const px = opt.split('-')[1] || '2px';
+                        style.borderBottom = `${px} solid ${color}`;
+                    } else {
+                        const hlLvl = parseInt(opt.split('-')[1] || '5');
+                        style.backgroundColor = color;
+                        style.opacity = 0.35;
+                        style.mixBlendMode = 'multiply';
+                        
+                        const pct = (hlLvl / 5) * 100;
+                        const baseHeight = rect.height + expandTop + expandBottom;
+                        style.height = `${(baseHeight * pct) / 100}%`;
+                        style.top = `${Math.max(0, rect.top - expandTop) + (baseHeight * (100 - pct) / 100)}%`;
+                    }
+
+                    return <div key={`${h.id}_${i}`} style={style} />;
+                })}
+            </React.Fragment>
+        );
+    };
+
+    return renderHighlight();
+};
+
 const PDFPageRender = React.forwardRef((props, ref) => {
     const isRightPage = props.pageNumber % 2 !== 0;
 
@@ -797,127 +910,9 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                 </div>
 
                 {/* Render Highlight Overlays */}
-                {props.pageHighlights && props.pageHighlights.map(h => {
-                    const format = (h.format || 'highlight').toLowerCase();
-                    const opt = h.styleOption || 'hl-5';
-                    const color = h.color;
-
-                    if (format === 'square' || format === 'circle' || format === 'oval') {
-                        // Calculate unified bounding box for the shape
-                        let minTop = 100, minLeft = 100, maxBottom = 0, maxRight = 0;
-                        h.rects.forEach(r => {
-                            if (r.top < minTop) minTop = r.top;
-                            if (r.left < minLeft) minLeft = r.left;
-                            if (r.top + r.height > maxBottom) maxBottom = r.top + r.height;
-                            if (r.left + r.width > maxRight) maxRight = r.left + r.width;
-                        });
-
-                        // Asymmetrical vertical expansion: more on top for ascenders, less on bottom for descenders
-                        const expandTop = 0.7; 
-                        const expandBottom = 0.3; 
-                        const isOval = format === 'circle' || format === 'oval';
-                        const expandX = isOval ? 0.4 : 0.1;
-                        
-                        minTop = Math.max(0, minTop - expandTop);
-                        maxBottom = Math.min(100, maxBottom + expandBottom);
-                        minLeft = Math.max(0, minLeft - expandX);
-                        maxRight = Math.min(100, maxRight + expandX);
-
-                        let style = {
-                            position: 'absolute',
-                            top: `${minTop}%`,
-                            left: `${minLeft}%`,
-                            width: `${maxRight - minLeft}%`,
-                            height: `${maxBottom - minTop}%`,
-                            zIndex: 45,
-                            pointerEvents: 'none',
-                            boxSizing: 'content-box',
-                            padding: isOval ? '0px 2px' : '0px',
-                            margin: isOval ? '0px 0px 0px -2px' : '0px'
-                        };
-
-                        if (isOval) {
-                            style.borderRadius = '9999px';
-                        } else {
-                            style.borderRadius = '4px';
-                        }
-
-                        if (opt === 'inner-shadow') {
-                            style.boxShadow = `inset 0 0 6px ${color}`;
-                        } else if (opt === 'outer-shadow') {
-                            style.boxShadow = `0 0 8px ${color}`;
-                        } else {
-                            const parts = opt.split('-');
-                            const bStyle = parts[0] || 'solid';
-                            const bWidth = parts[0] === 'solid' && parts[1] === '1px' ? '2px' : '4px';
-                            style.border = `${bWidth} ${bStyle} ${color}`;
-                        }
-
-                        return <div key={h.id} style={style} />;
-                    }
-
-                    // For highlight and underline, render each line separately
-                    return (
-                        <React.Fragment key={h.id}>
-                            {h.rects.map((rect, i) => {
-                                const expandTop = 0.7;
-                                const expandBottom = 0.3;
-                                const expandX = 0.1;
-                                
-                                let style = {
-                                    position: 'absolute',
-                                    top: `${Math.max(0, rect.top - expandTop)}%`,
-                                    left: `${Math.max(0, rect.left - expandX)}%`,
-                                    width: `${rect.width + (expandX * 2)}%`,
-                                    height: `${rect.height + expandTop + expandBottom}%`,
-                                    zIndex: 45,
-                                    pointerEvents: 'none'
-                                };
-
-                                if (format === 'underline') {
-                                    const px = opt.split('-')[1] || '2px';
-                                    style.borderBottom = `${px} solid ${color}`;
-                                } else {
-                                    // highlight
-                                    const hlLvl = parseInt(opt.split('-')[1] || '5');
-                                    style.backgroundColor = color;
-                                    style.opacity = 0.35;
-                                    style.mixBlendMode = 'multiply';
-                                    
-                                    const pct = (hlLvl / 5) * 100;
-                                    const baseHeight = rect.height + expandTop + expandBottom;
-                                    style.height = `${(baseHeight * pct) / 100}%`;
-                                    style.top = `${Math.max(0, rect.top - expandTop) + (baseHeight * (100 - pct) / 100)}%`;
-                                }
-
-                                return <div key={`${h.id}_${i}`} style={style} />;
-                            })}
-                        </React.Fragment>
-                    );
-                })}
-
-                {/* Delete Buttons Layer */}
-                <div className="absolute inset-0 z-[60] pointer-events-none">
-                    {props.pageHighlights && props.pageHighlights.map(h => {
-                        let maxRight = 0;
-                        let minTop = 100;
-                        h.rects.forEach(r => {
-                            if (r.top < minTop) minTop = r.top;
-                            if (r.left + r.width > maxRight) maxRight = r.left + r.width;
-                        });
-                        return (
-                            <button
-                                key={`del-${h.id}`}
-                                onClick={(e) => { e.stopPropagation(); if (props.onDeleteHighlight) props.onDeleteHighlight(h.id); }}
-                                className="absolute w-5 h-5 bg-red-500/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center pointer-events-auto transition-all shadow-md hover:scale-110 backdrop-blur-sm"
-                                style={{ top: `calc(${Math.max(0, minTop - 1)}%)`, left: `calc(${Math.min(95, maxRight)}% + 4px)` }}
-                                title="Remove Highlight"
-                            >
-                                <i className="pi pi-times text-[10px]"></i>
-                            </button>
-                        );
-                    })}
-                </div>
+                {props.pageHighlights && props.pageHighlights.map(h => (
+                    <HighlightOverlay key={h.id} h={h} />
+                ))}
                 
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
@@ -932,6 +927,29 @@ const PDFPageRender = React.forwardRef((props, ref) => {
         </div>
     );
 });
+
+const BIBLICAL_ORDER = {
+    "GENESIS": 1, "EXODUS": 2, "LEVITICUS": 3, "NUMBERS": 4, "DEUTERONOMY": 5,
+    "JOSHUA": 6, "JUDGES": 7, "RUTH": 8, "1SAMUEL": 9, "2SAMUEL": 10,
+    "1KINGS": 11, "2KINGS": 12, "1CHRONICLES": 13, "2CHRONICLES": 14, "EZRA": 15,
+    "NEHEMIAH": 16, "ESTHER": 17, "JOB": 18, "PSALMS": 19, "PSALM": 19, "PROVERBS": 20, "PROVERB": 20,
+    "ECCLESIASTES": 21, "SONGOFSOLOMON": 22, "SONGOFSONGS": 22, "SONG": 22, "ISAIAH": 23, "JEREMIAH": 24, "LAMENTATIONS": 25,
+    "EZEKIEL": 26, "DANIEL": 27, "HOSEA": 28, "JOEL": 29, "AMOS": 30,
+    "OBADIAH": 31, "JONAH": 32, "MICAH": 33, "NAHUM": 34, "HABAKKUK": 35,
+    "ZEPHANIAH": 36, "HAGGAI": 37, "ZECHARIAH": 38, "MALACHI": 39,
+    "MATTHEW": 40, "MARK": 41, "LUKE": 42, "JOHN": 43, "ACTS": 44,
+    "ROMANS": 45, "1CORINTHIANS": 46, "2CORINTHIANS": 47, "GALATIANS": 48, "EPHESIANS": 49,
+    "PHILIPPIANS": 50, "COLOSSIANS": 51, "1THESSALONIANS": 52, "2THESSALONIANS": 53, "1TIMOTHY": 54,
+    "2TIMOTHY": 55, "TITUS": 56, "PHILEMON": 57, "HEBREWS": 58, "JAMES": 59,
+    "1PETER": 60, "2PETER": 61, "1JOHN": 62, "2JOHN": 63, "3JOHN": 64,
+    "JUDE": 65, "REVELATION": 66
+};
+
+const getBiblicalOrder = (bookName) => {
+    if (!bookName) return 999;
+    const clean = bookName.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return BIBLICAL_ORDER[clean] || 999;
+};
 
 const BookIndex = () => {
     const navigate = useNavigate();
@@ -1302,7 +1320,12 @@ const BookIndex = () => {
     useEffect(() => {
         axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => {
-                const sorted = res.data.sort((a, b) => a.name.localeCompare(b.name));
+                const sorted = res.data.sort((a, b) => {
+                    const orderA = getBiblicalOrder(a.name);
+                    const orderB = getBiblicalOrder(b.name);
+                    if (orderA !== orderB) return orderA - orderB;
+                    return a.name.localeCompare(b.name);
+                });
                 setBooksDB(sorted);
             })
             .catch(console.error);
@@ -1443,6 +1466,15 @@ const BookIndex = () => {
     const totalPagesToRender = numPages ? (numPages % 2 !== 0 ? numPages + 1 : numPages) : 0;
     const baseWidth = Math.floor(playerDimensions.width);
     const baseHeight = Math.floor(playerDimensions.height);
+
+    const overlappingHighlight = React.useMemo(() => {
+        if (!selectionMenu) return null;
+        return highlights.find(h => 
+            h.pageNumber === selectionMenu.pageNumber && 
+            h.text && selectionMenu.text && 
+            (h.text.includes(selectionMenu.text) || selectionMenu.text.includes(h.text))
+        );
+    }, [selectionMenu, highlights]);
 
     return (
         <div className="fixed inset-0 z-[100] bg-[#0b0f19] flex flex-col font-sans overflow-x-hidden overflow-y-auto">
@@ -1879,6 +1911,11 @@ const BookIndex = () => {
                         onSelect={captureHighlight}
                         onClose={() => setSelectionMenu(null)}
                         activeContent={activeContentDBItem}
+                        onRemove={overlappingHighlight ? () => {
+                            deleteHighlight(overlappingHighlight.id);
+                            setSelectionMenu(null);
+                            setTimeout(() => window.getSelection().removeAllRanges(), 0);
+                        } : null}
                     />
                 )}
 

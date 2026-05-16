@@ -133,15 +133,17 @@ const RLLTToolbarModal = ({ isOpen, onClose, onInsertText }) => {
         }
     }, [activeSquare, isSliderMode]);
 
+    const [isHovered, setIsHovered] = useState(false);
+
     useEffect(() => {
         let interval;
-        if (isSliderMode && !activeSquare) {
+        if (isSliderMode && !activeSquare && !isHovered && !isMenuOpen) {
             interval = setInterval(() => {
                 setCurrentSlideIndex((prev) => (prev < wisdomItems.length - 1 ? prev + 1 : 0));
             }, 3000);
         }
         return () => clearInterval(interval);
-    }, [isSliderMode, activeSquare, currentSlideIndex]);
+    }, [isSliderMode, activeSquare, currentSlideIndex, isHovered, isMenuOpen]);
     return (
         <div
             className={`transition-all duration-300 ease-in-out shrink-0 overflow-hidden flex flex-col bg-white border-r border-gray-300 shadow-[2px_0_10px_rgba(0,0,0,0.1)] print:hidden ${isOpen ? 'w-full sm:w-[430px]' : 'w-0'}`}
@@ -261,7 +263,11 @@ const RLLTToolbarModal = ({ isOpen, onClose, onInsertText }) => {
                                 </div>
                             ))
                         ) : (
-                            <div className="flex-grow flex items-center justify-center relative w-full min-h-[150px] border-2 border-gray-100 rounded-lg overflow-hidden bg-white shadow-inner mt-2">
+                            <div 
+                                className="flex-grow flex items-center justify-center relative w-full min-h-[150px] border-2 border-gray-100 rounded-lg overflow-hidden bg-white shadow-inner mt-2"
+                                onMouseEnter={() => setIsHovered(true)}
+                                onMouseLeave={() => setIsHovered(false)}
+                            >
                                 {/* Slide Container */}
                                 <div className="w-full h-full relative" style={{ perspective: '1000px' }}>
                                     {wisdomItems.map((item, idx) => (

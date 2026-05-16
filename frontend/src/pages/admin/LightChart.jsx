@@ -32,7 +32,8 @@ const ImageUploadPlaceholder = ({ state, setState, label }) => {
 };
 
 
-const LightChartTable = ({ moduleNum, rlltDB }) => {
+const LightChartTable = ({ moduleNum, rlltDB, tableFontSize }) => {
+    const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
     // Calculate totals from database or local data
     const dbRows = (rlltDB || []).filter(r => r.module === moduleNum);
     const totalFacets = dbRows.length > 0 ? dbRows.length : 10;
@@ -83,22 +84,48 @@ const LightChartTable = ({ moduleNum, rlltDB }) => {
                 MODULE {moduleNum}: <span className="text-black">{totalFacets} FACETS: {totalPhases} PHASES - EACH PHASE {scheduledDays} DAYS</span>
             </h2>
             <div className="overflow-x-auto w-full">
-                <table className="w-full border-collapse border-2 border-black text-center text-[10px] sm:text-xs font-bold font-sans">
+                <table className="w-full border-collapse border-2 border-black text-center font-bold" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif', fontSize: getFS(14) }}>
                     <thead>
-                        <tr className="bg-white leading-tight">
-                            <th className="border-2 border-black py-0.5 px-1 bg-black text-white w-10">S.NO</th>
-                            <th className="border-2 border-black py-0.5 px-1">FCT</th>
-                            <th className="border-2 border-black py-0.5 px-1">DAY/PPL</th>
-                            <th className="border-2 border-black py-0.5 px-1">O.T BKS</th>
-                            <th className="border-2 border-black py-0.5 px-1">N.T BKS</th>
-                            <th className="border-2 border-black py-0.5 px-1">PHS</th>
-                            <th className="border-2 border-black py-0.5 px-1">WE5</th>
-                            <th className="border-2 border-black py-0.5 px-1">PRO</th>
-                            <th className="border-2 border-black py-0.5 px-1">PSA</th>
-                            <th className="border-2 border-black py-0.5 px-1">CHP</th>
-                            <th className="border-2 border-black py-0.5 px-1">VER</th>
-                            <th className="border-2 border-black py-0.5 px-1">ART</th>
-                            <th className="border-2 border-black py-0.5 px-1">PPL</th>
+                        <tr className="bg-white leading-none">
+                            <th className="border-2 border-black p-0 align-middle bg-black text-white w-10">
+                                <div className="flex h-[22px] w-full items-center justify-center">S.NO</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">FCT</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">DAY/PPL</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">O.T BKS</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">N.T BKS</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">PHS</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">WE5</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">PRO</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">PSA</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">CHP</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">VER</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">ART</div>
+                            </th>
+                            <th className="border-2 border-black p-0 align-middle">
+                                <div className="flex h-[22px] w-full items-center justify-center">PPL</div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -108,20 +135,46 @@ const LightChartTable = ({ moduleNum, rlltDB }) => {
                             const snoColor = isGreenRow ? '#00E84D' : '#BCD2E8'; // Vivid green for 2&8
 
                             return (
-                                <tr key={idx} className="border border-black leading-tight h-[22px]">
-                                    <td className="border-2 border-black py-0.5 px-1 font-bold bg-white" style={{ backgroundColor: snoColor }}>{row.sno}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white" style={isGreenRow ? { backgroundColor: '#00E84D' } : {}}>{row.fct}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.dayPpl}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.otBks}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.ntBks}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.phs}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.we5}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.pro}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.psa}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.chp}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.ver}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.art}</td>
-                                    <td className="border-2 border-black py-0.5 px-1 bg-white">{row.ppl}</td>
+                                <tr key={idx} className="border border-black leading-none">
+                                    <td className="border-2 border-black p-0 align-middle font-bold bg-white" style={{ backgroundColor: snoColor }}>
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.sno}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white" style={isGreenRow ? { backgroundColor: '#00E84D' } : {}}>
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.fct}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.dayPpl}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.otBks}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.ntBks}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.phs}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.we5}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.pro}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.psa}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.chp}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.ver}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.art}</div>
+                                    </td>
+                                    <td className="border-2 border-black p-0 align-middle bg-white">
+                                        <div className="flex h-[22px] w-full items-center justify-center">{row.ppl}</div>
+                                    </td>
                                 </tr>
                             );
                         })}
@@ -139,7 +192,7 @@ const LightChart = () => {
     const [logo1, setLogo1] = useState(null);
     const [bannerText, setBannerText] = useState("MAIN CHART - 30 DAYS");
 
-    const [tableFontSize, setTableFontSize] = useState(8);
+    const [tableFontSize, setTableFontSize] = useState(14);
 
     // Feature States
     const toast = useRef(null);
@@ -181,105 +234,192 @@ const LightChart = () => {
         });
     };
 
-    const handlePrint = () => {
-        const element = document.getElementById('light-chart-content');
-        if (element) {
-            const height = element.offsetHeight;
-            // Standard A4 print area height at 96 DPI is roughly 1050px.
-            // If the content is taller than this, we calculate a scale ratio to fit it.
-            let scale = 1;
-            if (height > 1050) {
-                scale = 1050 / height;
-            }
-            
-            let styleEl = document.getElementById('dynamic-print-scale');
-            if (!styleEl) {
-                styleEl = document.createElement('style');
-                styleEl.id = 'dynamic-print-scale';
-                document.head.appendChild(styleEl);
-            }
-            // By scaling down and scaling the width up proportionally, we maintain the center alignment
-            styleEl.innerHTML = `@media print { #light-chart-content { transform: scale(${scale}); transform-origin: top center; width: ${100 / scale}%; } }`;
-        }
-        
-        setTimeout(() => {
-            window.print();
-        }, 100);
-    };
+    const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [readyShareFile, setReadyShareFile] = useState(null);
 
-    const generatePDFSinglePage = async () => {
-        const element = document.getElementById('light-chart-content');
-        if (!element) return;
-        
-        toast.current.show({ severity: 'success', summary: 'Generating PDF', detail: 'Fitting chart into a single page...', life: 3000 });
-        
+    const generatePdfBlob = async (returnCanvasOnly = false, forPrint = false) => {
+        setIsProcessingPdf(true);
         try {
-            const canvas = await window.html2canvas(element, { scale: 2, useCORS: true });
-            const imgData = canvas.toDataURL('image/jpeg', 0.98);
+            if (!window.html2canvas) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            if (!window.jspdf && !returnCanvasOnly) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+
+            const element = document.getElementById('light-chart-content');
+
+            // Force a fixed width so elements render exactly the same regardless of viewport
+            const EXACT_WIDTH = 1220;
+
+            const canvas = await window.html2canvas(element, {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                width: EXACT_WIDTH,
+                windowWidth: EXACT_WIDTH,
+                onclone: (clonedDoc) => {
+                    const clonedElement = clonedDoc.getElementById('light-chart-content');
+                    clonedElement.style.position = 'absolute';
+                    clonedElement.style.left = '0px';
+                    clonedElement.style.top = '0px';
+                    clonedElement.style.width = `${EXACT_WIDTH}px`;
+                    clonedElement.style.minWidth = `${EXACT_WIDTH}px`;
+                    clonedElement.style.maxWidth = `${EXACT_WIDTH}px`;
+                    clonedElement.style.margin = '0';
+                    
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `
+                        #light-chart-content * {
+                            font-weight: 900 !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
+                }
+            });
+
+            if (returnCanvasOnly) {
+                return canvas;
+            }
+
+            const imgData = canvas.toDataURL('image/png');
+            
+            const CSS_SCALE = 3;
+            const pdfWidthPx = canvas.width / CSS_SCALE;
+            const pdfHeightPx = canvas.height / CSS_SCALE;
             
             const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
             
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            
-            const margin = 5; // 5mm margin
-            const maxPdfWidth = pdfWidth - margin * 2;
-            const maxPdfHeight = pdfHeight - margin * 2;
-            
-            let finalWidth = maxPdfWidth;
-            let finalHeight = (canvas.height * finalWidth) / canvas.width;
-            
-            if (finalHeight > maxPdfHeight) {
-                finalHeight = maxPdfHeight;
-                finalWidth = (canvas.width * finalHeight) / canvas.height;
+            let pdf;
+            if (forPrint || true) {
+                // Landscape A4
+                pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'pt',
+                    format: 'a4'
+                });
+                
+                const a4Width = pdf.internal.pageSize.getWidth();
+                const a4Height = pdf.internal.pageSize.getHeight();
+                
+                // 30pt margin
+                const marginSafeW = a4Width - 60;
+                let marginSafeH = (pdfHeightPx * marginSafeW) / pdfWidthPx;
+
+                // Ensure it fits vertically as well, scale down if too tall
+                if (marginSafeH > a4Height - 60) {
+                    marginSafeH = a4Height - 60;
+                    const adjustedWidth = (pdfWidthPx * marginSafeH) / pdfHeightPx;
+                    const offsetX = 30 + (marginSafeW - adjustedWidth) / 2; // Center horizontally
+                    pdf.addImage(imgData, 'PNG', offsetX, 30, adjustedWidth, marginSafeH);
+                } else {
+                    pdf.addImage(imgData, 'PNG', 30, 30, marginSafeW, marginSafeH);
+                }
             }
-            
-            const x = margin + (maxPdfWidth - finalWidth) / 2;
-            const y = margin;
-            
-            pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
-            pdf.save('LightChart.pdf');
+
+            return pdf;
         } catch (e) {
-            console.error('PDF error', e);
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to generate PDF.', life: 3000 });
+            console.error('PDF generation error', e);
+            throw e;
+        } finally {
+            setIsProcessingPdf(false);
         }
     };
 
-    const handleExportPDF = () => {
-        if (!window.html2canvas || !window.jspdf) {
-            toast.current.show({ severity: 'info', summary: 'Loading Engine', detail: 'Preparing single-page PDF engine...', life: 2000 });
+    const handleExportPDF = async () => {
+        try {
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Generating PDF display...', life: 2000 });
+            const pdf = await generatePdfBlob(false, true);
+            pdf.save('LightChart.pdf');
+            toast.current?.show({ severity: 'success', summary: 'Exported', detail: 'PDF generated successfully.', life: 2000 });
+        } catch (e) {
+            toast.current?.show({ severity: 'error', summary: 'Export Failed', detail: 'Failed to generate PDF.', life: 3000 });
+        }
+    };
+
+    const handlePrint = async () => {
+        try {
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                toast.current?.show({ severity: 'warn', summary: 'Popup Blocked', detail: 'Please allow popups for this site to view the print format.', life: 5000 });
+                return;
+            }
             
-            const script1 = document.createElement('script');
-            script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-            script1.onload = () => {
-                const script2 = document.createElement('script');
-                script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-                script2.onload = () => {
-                    generatePDFSinglePage();
-                };
-                document.body.appendChild(script2);
-            };
-            document.body.appendChild(script1);
-        } else {
-            generatePDFSinglePage();
+            printWindow.document.write(`
+                <html>
+                <head><title>Generating Print...</title></head>
+                <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f3f4f6;">
+                    <h2>Preparing High-Quality Print Document...</h2>
+                </body>
+                </html>
+            `);
+
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing perfect print layout...', life: 2000 });
+            
+            const pdf = await generatePdfBlob(false, true);
+            pdf.autoPrint();
+            const blobUrl = pdf.output('bloburl');
+
+            printWindow.location.href = blobUrl;
+
+        } catch (e) {
+            console.error(e);
+            toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare perfect document for printing.', life: 3000 });
         }
     };
 
     const handleShare = async () => {
         try {
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing chart file for sharing...', life: 2000 });
+            const pdf = await generatePdfBlob(false, true);
+            const fileName = 'LightChart.pdf';
+            const blob = pdf.output('blob');
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+
+            setReadyShareFile([file]);
+            setShowShareModal(true);
+
+        } catch (e) {
+            console.error(e);
+            toast.current?.show({ severity: 'error', summary: 'Action Failed', detail: 'Could not process PDF document.', life: 3000 });
+        }
+    };
+
+    const executeNativeShare = async () => {
+        if (!readyShareFile) return;
+        setShowShareModal(false);
+        try {
             if (navigator.share) {
                 await navigator.share({
-                    title: 'Light Chart Configuration',
-                    text: 'Check out this Light Chart configuration',
-                    url: window.location.href,
+                    title: 'RLLT Light Chart',
+                    text: 'Please find the RLLT chart attached.',
+                    files: readyShareFile
                 });
+                toast.current?.show({ severity: 'success', summary: 'Shared Successfully', detail: 'Chart OS Sharing launched!', life: 3000 });
             } else {
-                await navigator.clipboard.writeText(window.location.href);
-                toast.current.show({ severity: 'success', summary: 'Success', detail: 'Link copied to clipboard!' });
+                throw new Error("Share API missing");
             }
-        } catch (error) {
-            console.error('Error sharing:', error);
+        } catch (shareErr) {
+            console.warn("Share API failed or rejected, falling back to direct download.", shareErr);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(readyShareFile[0]);
+            a.download = readyShareFile[0].name;
+            a.click();
+            toast.current?.show({ severity: 'warn', summary: 'File Downloaded', detail: 'Native Desktop Share API blocked the file. Falling back to native download.', life: 5000 });
         }
     };
 
@@ -288,10 +428,55 @@ const LightChart = () => {
     return (
         <div className="p-4 sm:p-8 w-full max-w-full overflow-x-auto bg-gray-50 min-h-screen print:bg-white print:p-0">
             <Toast ref={toast} />
+
+            <Dialog
+                header={
+                    <div className="flex items-center gap-2 text-indigo-900 border-b border-gray-200 pb-2">
+                        <i className="pi pi-share-alt text-xl"></i>
+                        <span className="font-bold">Ready to Share</span>
+                    </div>
+                }
+                visible={showShareModal}
+                onHide={() => setShowShareModal(false)}
+                className="w-[90vw] md:w-[400px] shadow-2xl rounded-2xl overflow-hidden"
+                contentClassName="p-6 bg-gray-50 flex flex-col items-center justify-center text-center gap-6"
+                headerClassName="bg-gray-50 pt-6 px-6 pb-2"
+                showHeader={true}
+                dismissableMask={true}
+                closable={false}
+            >
+                <div className="flex flex-col items-center">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4 animate-bounce">
+                        <i className="pi pi-file-pdf text-4xl"></i>
+                    </div>
+                    <h2 className="text-xl font-black text-gray-800 mb-2">PDF Generated!</h2>
+                    <p className="text-gray-500 font-medium leading-relaxed px-4">
+                        Your chart file is ready. Due to browser security on Desktop Chrome, please click below to launch the final native Share panel!
+                    </p>
+                </div>
+                <div className="w-full flex gap-3 mt-2">
+                    <Button
+                        label="Cancel"
+                        icon="pi pi-times"
+                        severity="secondary"
+                        outlined
+                        className="flex-1 font-bold tracking-wide rounded-xl border-gray-300 text-gray-600 hover:bg-gray-100"
+                        onClick={() => setShowShareModal(false)}
+                    />
+                    <Button
+                        label="Share Now"
+                        icon="pi pi-send"
+                        className="flex-[2] font-black tracking-wider shadow-lg bg-green-600 border-none hover:bg-green-700 rounded-xl"
+                        onClick={executeNativeShare}
+                        autoFocus
+                    />
+                </div>
+            </Dialog>
+
             {/* Inject print styles for perfect A4 fitting */}
             <style>{`
                 @media print {
-                    @page { size: A4 portrait; margin: 5mm; }
+                    @page { size: A4 landscape; margin: 5mm; }
                     body { 
                         display: block !important; 
                         height: auto !important; 
@@ -367,6 +552,7 @@ const LightChart = () => {
                                 className="p-button-rounded shadow-md w-10 h-10 p-0 flex items-center justify-center transition-transform hover:scale-105"
                                 style={{ backgroundColor: '#f97316', borderColor: '#f97316', color: '#ffffff' }}
                                 onClick={handleExportPDF}
+                                loading={isProcessingPdf}
                                 tooltip="Export to PDF"
                                 tooltipOptions={{ position: 'bottom' }}
                             />
@@ -375,6 +561,7 @@ const LightChart = () => {
                                 className="p-button-rounded shadow-md w-10 h-10 p-0 flex items-center justify-center transition-transform hover:scale-105"
                                 style={{ backgroundColor: '#64748b', borderColor: '#64748b', color: '#ffffff' }}
                                 onClick={handlePrint}
+                                loading={isProcessingPdf}
                                 tooltip="Print"
                                 tooltipOptions={{ position: 'bottom' }}
                             />
@@ -383,6 +570,7 @@ const LightChart = () => {
                                 className="p-button-rounded shadow-md w-10 h-10 p-0 flex items-center justify-center transition-transform hover:scale-105"
                                 style={{ backgroundColor: '#10b981', borderColor: '#10b981', color: '#ffffff' }}
                                 onClick={handleShare}
+                                loading={isProcessingPdf}
                                 tooltip="Share"
                                 tooltipOptions={{ position: 'bottom' }}
                             />
@@ -496,7 +684,7 @@ const LightChart = () => {
 
                     <div className="flex flex-col gap-2 sm:gap-3 w-full items-center justify-center pt-1">
                         {[1, 2, 3, 4, 5].map((moduleNum) => (
-                            <LightChartTable key={moduleNum} moduleNum={moduleNum} rlltDB={rlltDB} />
+                            <LightChartTable key={moduleNum} moduleNum={moduleNum} rlltDB={rlltDB} tableFontSize={tableFontSize} />
                         ))}
                     </div>
                 </div>

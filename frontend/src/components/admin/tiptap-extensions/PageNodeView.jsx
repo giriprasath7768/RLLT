@@ -1,12 +1,23 @@
 import React from 'react';
 import { NodeViewWrapper, NodeViewContent } from '@tiptap/react';
 
-const PageNodeView = ({ editor, getPos, deleteNode }) => {
+const PageNodeView = ({ editor, node, getPos, deleteNode }) => {
     // Determine if this is the first page node in the document
     const isFirstPage = getPos() === 0;
 
+    // Check if the page is essentially blank (no text and no interactive/image elements)
+    let hasContent = false;
+    if (node && node.content) {
+        if (node.textContent.trim().length > 0) hasContent = true;
+        node.content.descendants((child) => {
+            if (['image', 'resizableImage', 'shape', 'textbox'].includes(child.type.name)) {
+                hasContent = true;
+            }
+        });
+    }
+
     return (
-        <NodeViewWrapper className="a4-page-node relative group" style={{ margin: '0 auto 40px auto', width: '100%' }}>
+        <NodeViewWrapper className={`a4-page-node relative group ${!hasContent ? 'print:hidden' : ''}`} style={{ margin: '0 auto 40px auto', width: '100%' }}>
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-[200] print:hidden">
                 {!isFirstPage && (
                     <button

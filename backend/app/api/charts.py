@@ -24,12 +24,12 @@ async def sync_chart(
     banner_text: str = Form(""),
     t_label: str = Form(""),
     state_payload: str = Form(...),
-    logo: Optional[UploadFile] = File(None),
+    logo1: Optional[UploadFile] = File(None),
+    logo2: Optional[UploadFile] = File(None),
+    logo3: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db)
 ):
     try:
-        logo_url = None
-        
         # Check if an existing row exists to preserve its logo if an empty file is sent
         result = await db.execute(select(ChartMapping).filter(
             ChartMapping.module == module,
@@ -38,19 +38,34 @@ async def sync_chart(
         ))
         existing = result.scalars().first()
 
-        if logo and logo.filename:
-            # Save the new file
-            ext = os.path.splitext(logo.filename)[1]
-            filename = f"logo_{module}_{facet}_{phase}_{uuid.uuid4().hex}{ext}"
-            file_path = os.path.join(UPLOAD_DIR, filename)
-            
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(logo.file, buffer)
-            
-            logo_url = f"/api/uploads/{filename}"
-        elif existing:
-            # Preserve existing logo URL if no new upload provided
-            logo_url = existing.logo_url
+        logo_urls = {}
+        if existing and existing.logo_url:
+            try:
+                import json
+                parsed = json.loads(existing.logo_url)
+                if isinstance(parsed, dict):
+                    logo_urls = parsed
+                else:
+                    # Legacy fallback
+                    logo_urls = {"logo1": existing.logo_url, "logo2": existing.logo_url, "logo3": existing.logo_url}
+            except:
+                logo_urls = {"logo1": existing.logo_url, "logo2": existing.logo_url, "logo3": existing.logo_url}
+
+        async def process_logo(logo_file, key):
+            if logo_file and logo_file.filename:
+                ext = os.path.splitext(logo_file.filename)[1]
+                filename = f"logo_{key}_{module}_{facet}_{phase}_{uuid.uuid4().hex}{ext}"
+                file_path = os.path.join(UPLOAD_DIR, filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(logo_file.file, buffer)
+                logo_urls[key] = f"/api/uploads/{filename}"
+
+        await process_logo(logo1, "logo1")
+        await process_logo(logo2, "logo2")
+        await process_logo(logo3, "logo3")
+
+        import json
+        final_logo_url = json.dumps(logo_urls) if logo_urls else None
             
         upsert_stmt = insert(ChartMapping).values(
             id=uuid.uuid4(),
@@ -59,7 +74,7 @@ async def sync_chart(
             phase=phase,
             banner_text=banner_text,
             t_label=t_label,
-            logo_url=logo_url,
+            logo_url=final_logo_url,
             state_payload=state_payload
         )
         
@@ -76,7 +91,7 @@ async def sync_chart(
         await db.execute(on_conflict_stmt)
         await db.commit()
         
-        return {"status": "success", "logo_url": logo_url}
+        return {"status": "success", "logo_url": final_logo_url}
         
     except Exception as e:
         await db.rollback()
@@ -174,13 +189,23 @@ async def get_chart(module: int, facet: int, phase: int, db: AsyncSession = Depe
     if not mapping:
         raise HTTPException(status_code=404, detail="Mapping not found")
         
+    parsed_logo1 = mapping.logo_url
+    if mapping.logo_url and mapping.logo_url.startswith("{"):
+        import json
+        try:
+            urls = json.loads(mapping.logo_url)
+            parsed_logo1 = urls.get("logo1", mapping.logo_url)
+        except:
+            pass
+
     return {
         "module": mapping.module,
         "facet": mapping.facet,
         "phase": mapping.phase,
         "banner_text": mapping.banner_text,
         "t_label": mapping.t_label,
-        "logo_url": mapping.logo_url,
+        "logo_url": parsed_logo1,
+        "logo_urls_json": mapping.logo_url,
         "state_payload": mapping.state_payload
     }
 

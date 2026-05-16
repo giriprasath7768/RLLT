@@ -87,7 +87,9 @@ const MainChartView = () => {
     const [headerTitle, setHeaderTitle] = useState("Main Chart Viewer");
     const [bannerText, setBannerText] = useState("");
     const [tLabel, setTLabel] = useState("T");
-    const [logoUrl, setLogoUrl] = useState(null);
+    const [logoUrl1, setLogoUrl1] = useState(null);
+    const [logoUrl2, setLogoUrl2] = useState(null);
+    const [logoUrl3, setLogoUrl3] = useState(null);
     const [phaseLabel, setPhaseLabel] = useState("1");
 
     // Listing States
@@ -159,7 +161,9 @@ const MainChartView = () => {
             setChunks(generateInitialData());
             setBannerText("");
             setTLabel("T");
-            setLogoUrl(null);
+            setLogoUrl1(null);
+            setLogoUrl2(null);
+            setLogoUrl3(null);
             setHeaderSubtitle("NO CHART SELECTED");
             setPhaseLabel("1");
             return;
@@ -177,7 +181,22 @@ const MainChartView = () => {
             const phase = selectedChart?.phase || location.state?.assignment?.phase || '1';
             setBannerText(data.banner_text || "");
             setTLabel(data.t_label || "T");
-            setLogoUrl(data.logo_url ? `http://${window.location.hostname}:8000${data.logo_url}` : null);
+            let urls = {};
+            const rawJson = data.logo_urls_json || data.logo_url;
+            if (rawJson) {
+                try {
+                    urls = JSON.parse(rawJson);
+                    if (typeof urls !== 'object' || urls === null) {
+                        urls = { logo1: rawJson, logo2: rawJson, logo3: rawJson };
+                    }
+                } catch(e) {
+                    urls = { logo1: rawJson, logo2: rawJson, logo3: rawJson };
+                }
+            }
+            
+            setLogoUrl1(urls.logo1 ? `http://${window.location.hostname}:8000${urls.logo1}` : null);
+            setLogoUrl2(urls.logo2 ? `http://${window.location.hostname}:8000${urls.logo2}` : null);
+            setLogoUrl3(urls.logo3 ? `http://${window.location.hostname}:8000${urls.logo3}` : null);
             setHeaderSubtitle(`MODULE${module}:FACET${facet}:PHASE-${phase}`);
             setPhaseLabel(String(phase));
 
@@ -274,6 +293,15 @@ const MainChartView = () => {
                     clonedElement.style.maxWidth = `${EXACT_WIDTH}px`;
                     clonedElement.style.margin = '0';
                     if (clonedWrapper) clonedWrapper.style.overflowX = 'visible';
+
+                    // Force all text to be extra bold for printing visibility
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `
+                        #printable-chart-area * {
+                            font-weight: 900 !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
                 }
             });
 
@@ -309,16 +337,9 @@ const MainChartView = () => {
                 const marginSafeW = a4Width - 60;
                 const marginSafeH = a4Height - 60;
                 
-                // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
-                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
-                const printW = pdfWidthPx * ratio;
-                const printH = pdfHeightPx * ratio;
-                
-                const marginX = (a4Width - printW) / 2;
-                const marginY = (a4Height - printH) / 2;
-                
-                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
-                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+                // Force EXACTLY equal spacing (30pt) on all 4 sides by stretching to fill the safe area.
+                // This guarantees equal spacing on the A4 paper.
+                pdf.addImage(imgData, 'PNG', 30, 30, marginSafeW, marginSafeH);
             } else {
                 pdf = new jsPDF({
                     orientation: pdfOrientation,
@@ -644,19 +665,19 @@ const MainChartView = () => {
                                         {/* MAP 1 */}
                                         <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
                                             <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
-                                                <ImageBox url={logoUrl} label="" />
+                                                <ImageBox url={logoUrl1} label="" />
                                             </div>
                                         </td>
                                         {/* MAP 2 */}
                                         <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
                                             <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
-                                                <ImageBox url={logoUrl} label="" />
+                                                <ImageBox url={logoUrl2} label="" />
                                             </div>
                                         </td>
                                         {/* MAP 3 */}
                                         <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
                                             <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
-                                                <ImageBox url={logoUrl} label="" />
+                                                <ImageBox url={logoUrl3} label="" />
                                             </div>
                                         </td>
 

@@ -4,8 +4,10 @@ import { Avatar } from 'primereact/avatar';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProfileOverlay from './ProfileOverlay';
+import { useThemeContext } from '../../context/ThemeContext';
 
 const AdminHeader = ({ onMenuToggle }) => {
+    const { themeConfig } = useThemeContext();
     const menu = useRef(null);
     const navigate = useNavigate();
 
@@ -104,7 +106,10 @@ const AdminHeader = ({ onMenuToggle }) => {
     ];
 
     return (
-        <header className="sticky top-0 z-50 w-full h-16 sm:h-20 bg-white border-b border-gray-100 flex items-center justify-between px-3 sm:px-8 shadow-sm">
+        <header 
+            className="sticky top-0 z-50 w-full h-16 sm:h-20 border-b border-gray-100 flex items-center justify-between px-3 sm:px-8 shadow-sm transition-colors duration-300"
+            style={{ backgroundColor: themeConfig?.topbarBg || '#ffffff' }}
+        >
             {/* Left: Logo & Brand */}
             <div className="flex items-center gap-2 sm:gap-4">
                 {/* Mobile Menu Button */}
@@ -125,13 +130,15 @@ const AdminHeader = ({ onMenuToggle }) => {
                         e.target.src = "https://www.primefaces.org/wp-content/uploads/2020/05/placeholder.png";
                     }}
                 />
-                <span className="text-xl font-bold font-sans text-[#051220] hidden sm:block whitespace-nowrap">RLLT Web App</span>
+                <span className="text-xl font-bold font-sans hidden sm:block whitespace-nowrap" style={{ color: themeConfig?.topbarText || '#051220' }}>
+                    {themeConfig?.logoText || 'RLLT Web App'}
+                </span>
             </div>
 
             {/* Center: App Name */}
             <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2">
-                <h1 className="text-[#051220] font-bold text-xl tracking-wide whitespace-nowrap">
-                    Real Life Leadership Training
+                <h1 className="font-bold text-xl tracking-wide whitespace-nowrap" style={{ color: themeConfig?.topbarText || '#051220' }}>
+                    {themeConfig?.appTitle || 'Real Life Leadership Training'}
                 </h1>
             </div>
 

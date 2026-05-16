@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Tooltip } from 'primereact/tooltip';
 import { Toast } from 'primereact/toast';
-import { OverlayPanel } from 'primereact/overlaypanel';
 
 
 const parseTime = (t) => {
@@ -100,9 +99,9 @@ const isBookMatch = (bookCode, book) => {
 
 const StatItem = ({ title, icon, value, color }) => (
     <div className="flex flex-col items-center justify-center flex-1 py-2">
-        <div className="text-[10px] font-bold text-[#1e293b] mb-1">{title}</div>
-        <i className={`${icon} ${color} text-xl mb-1`}></i>
-        <div className={`${color} font-bold text-lg leading-none`}>{value}</div>
+        <div className="text-sm font-black text-[#1e293b] mb-1 [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">{title}</div>
+        <i className={`${icon} ${color} text-2xl mb-1 [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]`}></i>
+        <div className={`${color} font-black text-2xl leading-none [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]`}>{value}</div>
     </div>
 );
 
@@ -114,41 +113,14 @@ const Shanaz357 = () => {
     const [mdl, setMdl] = useState(1);
     const [fct, setFct] = useState(1);
     const [phs, setPhs] = useState(1);
+    const [cycle, setCycle] = useState(3);
     const [isViewing, setIsViewing] = useState(false);
+    const [dayValidationError, setDayValidationError] = useState('');
+    const [bookValidationError, setBookValidationError] = useState('');
 
-    const daysOp = React.useRef(null);
-
-    const moduleDaysOptions = React.useMemo(() => {
-        const options = [];
-        const seen = new Set();
-        
-        rlltDB.filter(d => Number(d.module) === Number(mdl)).forEach(d => {
-            const days = d.day;
-            if (days && !seen.has(days)) {
-                seen.add(days);
-                options.push({
-                    days: days,
-                    facet: d.facet
-                });
-            }
-        });
-        
-        return options.sort((a, b) => parseInt(a.days) - parseInt(b.days));
-    }, [rlltDB, mdl]);
-
-    const handleDaySelect = (option) => {
-        setEnteredDays(option.days.toString());
-        setFct(Number(option.facet));
-        daysOp.current?.hide();
-    };
-
-    const toggleDaySelection = (e) => {
-        if (daysOp.current) {
-            daysOp.current.toggle(e);
-        }
-    };
     const [chartStats, setChartStats] = useState(null);
     const [enteredDays, setEnteredDays] = useState('');
+    const [userRole, setUserRole] = useState(null);
     const navigate = useNavigate();
     const toast = React.useRef(null);
 
@@ -172,6 +144,10 @@ const Shanaz357 = () => {
     }, [enteredDays, rlltDB]);
 
     useEffect(() => {
+        axios.get('http://' + window.location.hostname + ':8000/api/me', { withCredentials: true })
+            .then(res => setUserRole(res.data.role))
+            .catch(err => console.error("Could not fetch user role", err));
+
         axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => setBooksDB(res.data))
             .catch(err => console.error(err));
@@ -194,6 +170,7 @@ const Shanaz357 = () => {
 
     const toggleBook = (id) => {
         setChartStats(null); // Clear phase-loaded stats if user interacts manually
+        setBookValidationError('');
         if (selectedBooks.includes(id)) {
             setSelectedBooks(selectedBooks.filter(b => b !== id));
         } else {
@@ -283,6 +260,7 @@ const Shanaz357 = () => {
     const displayStats = chartStats || stats;
 
     const handleNumberClick = (num) => {
+        setDayValidationError('');
         setEnteredDays(prev => {
             if (prev.length < 3) {
                 return prev + num.toString();
@@ -291,9 +269,7 @@ const Shanaz357 = () => {
         });
     };
 
-    const clearEnteredDays = () => {
-        setEnteredDays('');
-    };
+
 
     const handleIncrement = () => {
         const currIdx = uniqueModules.indexOf(mdl);
@@ -345,19 +321,37 @@ const Shanaz357 = () => {
 
     const handleSubmit = async () => {
         if (!enteredDays) {
-            toast.current?.show({ severity: 'warn', summary: 'Missing Selection', detail: 'Please enter or select a day first.' });
+            setDayValidationError('Please enter a day first.');
+            return;
+        }
+
+        const dVal = parseInt(enteredDays);
+        if (dVal > 366) {
+            setDayValidationError('Limit Exceeded: Max 366 days.');
             return;
         }
         if (selectedBooks.length === 0) {
-            toast.current?.show({ severity: 'warn', summary: 'Missing Books', detail: 'Please select at least one book.' });
+            setBookValidationError('Please select at least one book.');
             return;
         }
+        setBookValidationError('');
+
+        const validBooks = selectedBooks.map(id => booksDB.find(b => b.id === id)).filter(Boolean);
+        const isSpecialProcess = validBooks.some(b => {
+            const n = (b.name + " " + (b.short_form || "")).toUpperCase();
+            return n.includes("119") || n.includes("DAVID") || n.match(/\b(PSA|PSAM|PSALM|PSALMS)\s*1\b/);
+        });
+
+        if (dVal % 3 !== 0 && dVal % 5 !== 0 && dVal % 7 !== 0) {
+            setDayValidationError('Invalid: Multiples of 3, 5, or 7 only.');
+            return;
+        }
+        setDayValidationError('');
 
         let targetMdl = mdl;
         let targetFct = fct;
         let targetPhs = phs;
 
-        const dVal = parseInt(enteredDays);
         const mod4Match = rlltDB.find(d => Number(d.module) === 4 && Number(d.day) === dVal);
         const mod5Match = rlltDB.find(d => Number(d.module) === 5 && Number(d.day) === dVal);
 
@@ -366,11 +360,9 @@ const Shanaz357 = () => {
 
         if (mod4Match) {
             isMainChart = true;
-            chartLength = parseInt(mod4Match.scheduled_value_days) || 40;
             targetMdl = 4;
         } else if (mod5Match) {
             isMainChart = true;
-            chartLength = parseInt(mod5Match.scheduled_value_days) || 30;
             targetMdl = 5;
         }
 
@@ -388,6 +380,32 @@ const Shanaz357 = () => {
             }
             if (!allChaps.length) return Array.from({ length: daysOutCount }, () => null);
 
+            // Looping logic for books that don't have enough chapters to fill the days
+            if (allChaps.length < daysOutCount) {
+                const daysOut = [];
+                for (let day = 0; day < daysOutCount; day++) {
+                    const c = allChaps[day % allChaps.length];
+                    const portionStr = `${c._bookAbbr} ${c.chapter_number}`;
+                    const segART = typeof c.art === 'number' ? c.art : parseTime(c.art);
+                    let timeStr = "";
+                    const h = Math.floor(segART / 60);
+                    const m = Math.round(segART % 60);
+                    if (h > 0 && m > 0) timeStr = `${h}h.${m}m`;
+                    else if (h > 0) timeStr = `${h}h`;
+                    else timeStr = `${m}m`;
+
+                    daysOut.push({
+                        portion: portionStr,
+                        time: segART,
+                        timeStr: timeStr,
+                        timeFloat: segART,
+                        chapCount: 1,
+                        verseCount: c.verse_count || 0
+                    });
+                }
+                return daysOut;
+            }
+
             let cum = [], sum = 0;
             for (let c of allChaps) { 
                 sum += (typeof c.art === 'number' ? c.art : parseTime(c.art)); 
@@ -396,6 +414,7 @@ const Shanaz357 = () => {
             const totalART = sum;
             const daysOut = [];
             let lastChapterIndex = -1;
+            let overflowDayIndex = 0;
 
             for (let day = 1; day <= daysOutCount; day++) {
                 const target = (day / daysOutCount) * totalART;
@@ -442,39 +461,58 @@ const Shanaz357 = () => {
                     daysOut.push({ portion: portionStr, time: segART, timeStr: timeStr, timeFloat: segART, chapCount: (bestIdx - lastChapterIndex), verseCount: vs });
                     lastChapterIndex = bestIdx;
                 } else {
-                    daysOut.push(null);
+                    const c = allChaps[overflowDayIndex % allChaps.length];
+                    const portionStr = `${c._bookAbbr} ${c.chapter_number}`;
+                    const segART = typeof c.art === 'number' ? c.art : parseTime(c.art);
+                    let timeStr = "";
+                    const h = Math.floor(segART / 60);
+                    const m = Math.round(segART % 60);
+                    if (h > 0 && m > 0) timeStr = `${h}h.${m}m`;
+                    else if (h > 0) timeStr = `${h}h`;
+                    else timeStr = `${m}m`;
+
+                    daysOut.push({ portion: portionStr, time: segART, timeStr: timeStr, timeFloat: segART, chapCount: 1, verseCount: c.verse_count || 0 });
+                    overflowDayIndex++;
                 }
             }
             return daysOut;
         };
         
-        const validBooks = selectedBooks.map(id => booksDB.find(b => b.id === id)).filter(Boolean);
-        
+        const use5Segments = isSpecialProcess;
+        const daysPerChunk = cycle;
+
         const seg1Books = validBooks.slice(0, 1);
         const seg2Books = validBooks.slice(1, 2);
-        const seg3Books = validBooks.slice(2);
+        const seg3Books = use5Segments ? validBooks.slice(2, 3) : validBooks.slice(2);
+        const seg4Books = use5Segments ? validBooks.slice(3, 4) : [];
+        const seg5Books = use5Segments ? validBooks.slice(4) : [];
+
+        const newChunks = [];
 
         const dist1 = distributeBooks(seg1Books, chartLength);
         const dist2 = distributeBooks(seg2Books, chartLength);
         const dist3 = distributeBooks(seg3Books, chartLength);
+        const dist4 = use5Segments ? distributeBooks(seg4Books, chartLength) : [];
+        const dist5 = use5Segments ? distributeBooks(seg5Books, chartLength) : [];
 
-        const newChunks = [];
-        const numChunks = Math.ceil(chartLength / 5);
+        const numChunks = Math.ceil(chartLength / daysPerChunk);
         let dayCounter = 1;
 
         for (let c = 0; c < numChunks; c++) {
             const chunkDays = [];
-            for (let d = 0; d < 5; d++) {
+            for (let d = 0; d < daysPerChunk; d++) {
                 if (dayCounter > chartLength) break;
                 const dIndex = dayCounter - 1;
                 
                 const bd1 = dist1[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 };
                 const bd2 = dist2[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 };
                 const bd3 = dist3[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 };
-
-                const totChap = bd1.chapCount + bd2.chapCount + bd3.chapCount;
-                const totVerse = bd1.verseCount + bd2.verseCount + bd3.verseCount;
-                const totArtFloat = (bd1.timeFloat || 0) + (bd2.timeFloat || 0) + (bd3.timeFloat || 0);
+                const bd4 = use5Segments ? (dist4[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 }) : null;
+                const bd5 = use5Segments ? (dist5[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 }) : null;
+                
+                const totChap = bd1.chapCount + bd2.chapCount + bd3.chapCount + (use5Segments ? bd4.chapCount + bd5.chapCount : 0);
+                const totVerse = bd1.verseCount + bd2.verseCount + bd3.verseCount + (use5Segments ? bd4.verseCount + bd5.verseCount : 0);
+                const totArtFloat = (bd1.timeFloat || 0) + (bd2.timeFloat || 0) + (bd3.timeFloat || 0) + (use5Segments ? (bd4.timeFloat || 0) + (bd5.timeFloat || 0) : 0);
 
                 let totArtStr = "";
                 if (totArtFloat > 0) {
@@ -485,62 +523,55 @@ const Shanaz357 = () => {
                     else totArtStr = `${m}m`;
                 }
 
-                if (isMainChart) {
-                    chunkDays.push({
-                        id: dayCounter,
-                        day: dayCounter,
-                        m1b: bd1.portion,
-                        m1t: bd1.timeStr,
-                        m2b: bd2.portion,
-                        m2t: bd2.timeStr,
-                        m3b: bd3.portion,
-                        m3t: bd3.timeStr,
-                        chap: totChap,
-                        verse: totVerse,
-                        art: totArtStr,
-                        yes: false
-                    });
-                } else {
-                    chunkDays.push({
-                        id: `day_${dayCounter}`,
-                        day: dayCounter,
-                        booksData: [bd1, bd2, bd3],
-                        chap: totChap,
-                        verse: totVerse,
-                        art: totArtStr,
-                        artFloat: totArtFloat,
-                        yes: false
-                    });
+                const dayObj = {
+                    id: dayCounter,
+                    day: dayCounter,
+                    m1b: bd1.portion,
+                    m1t: bd1.timeStr,
+                    m2b: bd2.portion,
+                    m2t: bd2.timeStr,
+                    m3b: bd3.portion,
+                    m3t: bd3.timeStr,
+                    chap: totChap,
+                    verse: totVerse,
+                    art: totArtStr,
+                    yes: false
+                };
+
+                if (use5Segments) {
+                    dayObj.m4b = bd4.portion;
+                    dayObj.m4t = bd4.timeStr;
+                    dayObj.m5b = bd5.portion;
+                    dayObj.m5t = bd5.timeStr;
                 }
+
+                chunkDays.push(dayObj);
+                
                 dayCounter++;
             }
             if (chunkDays.length > 0) {
-                if (isMainChart) {
-                    newChunks.push({
-                        id: `chunk_${c + 1}`,
-                        team: `TEAM -${c + 1}`,
-                        phase: `PHASE - 1/1`,
-                        promiseLabel: "GOD'S PROMISES :",
-                        promises: "ENTER GOD'S PROMISSES HERE",
-                        promiseInput: "",
-                        h1: "",
-                        h2: "",
-                        h3: "",
-                        days: chunkDays
-                    });
-                } else {
-                    const maxPhases = availablePhases.length;
-                    newChunks.push({
-                        id: `chunk_${c + 1}`,
-                        team: `TEAM -${c + 1}`,
-                        phase: `MDL ${targetMdl}: FCT ${targetFct}: PHS - ${targetPhs}/${maxPhases}`,
-                        h_books: Array(3).fill(''),
-                        promiseLabel: "GOD'S PROMISES :",
-                        promises: "ENTER GOD'S PROMISSES HERE",
-                        promiseInput: "",
-                        days: chunkDays
-                    });
+                const maxPhases = availablePhases.length;
+                const phaseStr = isMainChart ? `PHASE - 1/1` : `MDL ${targetMdl}: FCT ${targetFct}: PHS - ${targetPhs}/${maxPhases}`;
+                
+                const chunkObj = {
+                    id: `chunk_${c + 1}`,
+                    team: `TEAM -${c + 1}`,
+                    phase: phaseStr,
+                    promiseLabel: "GOD'S PROMISES :",
+                    promises: "ENTER GOD'S PROMISSES HERE",
+                    promiseInput: "",
+                    h1: "",
+                    h2: "",
+                    h3: "",
+                    days: chunkDays
+                };
+
+                if (use5Segments) {
+                    chunkObj.h4 = "";
+                    chunkObj.h5 = "";
                 }
+
+                newChunks.push(chunkObj);
             }
         }
 
@@ -557,16 +588,76 @@ const Shanaz357 = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });
+            
+            // Update the RLLT lookup table with chosen book metrics
+            const matchingLookup = rlltDB.find(d => Number(d.module) === Number(targetMdl) && Number(d.facet) === Number(targetFct) && Number(d.phase) === Number(targetPhs));
+            
+            if (Number(targetMdl) === 5 && ['super_admin', 'admin'].includes(userRole)) {
+                let ot_count = 0;
+                let nt_count = 0;
+                let total_chp = 0;
+                let total_ver = 0;
+                let total_art = 0;
+
+                validBooks.forEach(b => {
+                    if (b.book_type && (b.book_type === 'OT' || b.book_type.toLowerCase().includes('old'))) {
+                        ot_count++;
+                    } else if (b.book_type && (b.book_type === 'NT' || b.book_type.toLowerCase().includes('new'))) {
+                        nt_count++;
+                    } else {
+                        if (b.id <= 39) ot_count++;
+                        else nt_count++;
+                    }
+                    
+                    total_art += (Number(b.total_art) || 0);
+                    
+                    const bChaps = chaptersDB.filter(c => c.book_id === b.id);
+                    total_chp += bChaps.length;
+                    bChaps.forEach(c => total_ver += (c.verse_count || 0));
+                });
+
+                const rlltPayload = {
+                    day: chartLength,
+                    ot_bks: String(ot_count),
+                    nt_bks: String(nt_count),
+                    chp: total_chp,
+                    ver: total_ver,
+                    art: String(Math.round(total_art)),
+                    pro: "1",
+                    psa: "1",
+                    ppl: String(chartLength)
+                };
+
+                try {
+                    if (matchingLookup && matchingLookup.id) {
+                        await axios.put(`http://${window.location.hostname}:8000/api/rllt_lookup/${matchingLookup.id}`, rlltPayload, { withCredentials: true });
+                    } else {
+                        // Create a new lookup entry if one does not exist for this combination
+                        const createPayload = {
+                            ...rlltPayload,
+                            module: Number(targetMdl),
+                            facet: Number(targetFct),
+                            phase: Number(targetPhs),
+                            we5: "5",
+                            scheduled_value_days: chartLength
+                        };
+                        await axios.post(`http://${window.location.hostname}:8000/api/rllt_lookup/`, createPayload, { withCredentials: true });
+                    }
+                } catch (putErr) {
+                    console.error("Failed to update/create RLLT lookup", putErr);
+                }
+            }
+
             toast.current?.show({ severity: 'success', summary: 'Success', detail: 'Chart Automated Successfully!', life: 2000 });
             setTimeout(() => {
-                if (isMainChart) {
-                    navigate(`/admin/charts?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
+                if (isSpecialProcess) {
+                    navigate(`/admin/twenty-four-seven-chart?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
                 } else {
                     navigate(`/admin/chart-creation/357-chart?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
                 }
             }, 1000);
         } catch (err) {
-            toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to generate chart', life: 3000 });
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to generate chart or update RLLT data', life: 3000 });
         }
     };
 
@@ -583,7 +674,7 @@ const Shanaz357 = () => {
             return (
                 <div 
                     key={bookCode} 
-                    className={`book-tooltip-item border rounded py-2 text-center text-[11px] font-bold cursor-pointer transition-colors shadow-sm w-[calc(20%-0.4rem)] ${isSelected ? `${colors.bg} text-white border-transparent` : `${colors.text} border-gray-300 hover:bg-gray-50`}`}
+                    className={`book-tooltip-item border rounded py-2 text-center text-sm font-black cursor-pointer transition-colors shadow-sm w-[calc(20%-0.4rem)] [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] ${isSelected ? `${colors.bg} text-white border-transparent` : `${colors.text} border-gray-300 hover:bg-gray-50`}`}
                     onClick={() => book && toggleBook(book.id)}
                     data-pr-tooltip={book ? getBookTooltip(book) : ''}
                 >
@@ -637,48 +728,83 @@ const Shanaz357 = () => {
                         scrollbar-width: none;
                     }
                 `}</style>
-                <div className="border border-gray-200 rounded-t-xl shadow-sm overflow-hidden flex flex-col">
-                    <div className="overflow-y-auto scrollbar-hide h-[215px]">
-                        <div className="bg-[#0B2149] text-white text-center font-bold py-2 text-sm tracking-wide sticky top-0 z-10">
+                <div className="relative mt-4">
+
+                    <div className="border border-gray-200 rounded-t-xl shadow-sm overflow-hidden flex flex-col">
+                        <div className="overflow-y-auto scrollbar-hide h-[215px]">
+                        <div className="bg-[#0B2149] text-white text-center font-black py-2 text-lg tracking-wider sticky top-0 z-10 [text-shadow:2px_2px_0_#000,3px_3px_0_rgba(0,0,0,0.5)]">
                             OLD TESTAMENT
                         </div>
                         <div className="p-3 flex flex-wrap justify-center gap-2 bg-white">
                             {booksDB.length > 0 && renderBooks(0, 39)}
                         </div>
                         
-                        <div className="bg-[#0B2149] text-white text-center font-bold py-2 text-sm tracking-wide sticky top-0 z-10 border-t border-[#0B2149]">
+                        <div className="bg-[#0B2149] text-white text-center font-black py-2 text-lg tracking-wider sticky top-0 z-10 border-t border-[#0B2149] [text-shadow:2px_2px_0_#000,3px_3px_0_rgba(0,0,0,0.5)]">
                             NEW TESTAMENT
                         </div>
                         <div className="p-3 flex flex-wrap justify-center gap-2 bg-white">
                             {booksDB.length > 0 && renderBooks(39, 66)}
+                        </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Middle Input Section */}
                 <div className="flex gap-2 mb-4 h-16 border border-gray-200 border-t-0 rounded-b-xl p-2 bg-white shadow-sm">
-                    <div className="flex-1 border border-[#388e3c] rounded-lg flex items-center justify-center text-center text-[#388e3c] text-[10px] font-bold uppercase bg-[#f1f8e9]">
-                        PSALMS<br/>CHP 119
-                    </div>
-                    <div className="flex-[1.5] border border-gray-300 rounded-lg flex justify-evenly items-center px-2">
-                        <div className="h-6 w-px bg-gray-200"></div>
-                        <div className="h-6 w-px bg-gray-200"></div>
-                        <div className="h-6 w-px bg-gray-200"></div>
-                    </div>
-                    <div className="flex-1 border border-[#388e3c] rounded-lg flex items-center justify-center text-center text-[#388e3c] text-[10px] font-bold uppercase bg-[#f1f8e9]">
-                        PSA OF DAVID<br/>73 CHP
-                    </div>
+                    {(() => {
+                        const p119Book = booksDB.find(b => b.name.includes('119') || (b.short_form && b.short_form.includes('119')));
+                        const p119Selected = p119Book && selectedBooks.includes(p119Book.id);
+                        
+                        const p75Book = booksDB.find(b => b.name.toUpperCase().includes('DAVID') || b.name.includes('75'));
+                        const p75Selected = p75Book && selectedBooks.includes(p75Book.id);
+
+                        return (
+                            <>
+                                <div 
+                                    className={`book-tooltip-item flex-1 border-2 rounded-lg flex items-center justify-center text-center text-sm font-black uppercase cursor-pointer transition-all [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] ${
+                                        p119Selected 
+                                            ? 'bg-[#388e3c] text-white border-transparent shadow-md scale-105' 
+                                            : 'bg-[#f1f8e9] text-[#388e3c] border-[#388e3c] hover:bg-[#e8f5e9]'
+                                    }`}
+                                    onClick={() => p119Book && toggleBook(p119Book.id)}
+                                    data-pr-tooltip={p119Book ? getBookTooltip(p119Book) : 'Book Not Found'}
+                                >
+                                    PSALMS<br/>CHP 119
+                                </div>
+                                <div className="flex-[1.5] border border-gray-300 rounded-lg flex justify-evenly items-center px-2">
+                                    <button onClick={() => setCycle(3)} className={`font-bold text-xs transition-colors ${cycle === 3 ? 'text-[#1976d2] scale-110' : 'text-gray-400 hover:text-gray-600'}`}>3 DAYS</button>
+                                    <div className="h-6 w-px bg-gray-200"></div>
+                                    <button onClick={() => setCycle(5)} className={`font-bold text-xs transition-colors ${cycle === 5 ? 'text-[#1976d2] scale-110' : 'text-gray-400 hover:text-gray-600'}`}>5 DAYS</button>
+                                    <div className="h-6 w-px bg-gray-200"></div>
+                                    <button onClick={() => setCycle(7)} className={`font-bold text-xs transition-colors ${cycle === 7 ? 'text-[#1976d2] scale-110' : 'text-gray-400 hover:text-gray-600'}`}>7 DAYS</button>
+                                </div>
+                                <div 
+                                    className={`book-tooltip-item flex-1 border-2 rounded-lg flex items-center justify-center text-center text-sm font-black uppercase cursor-pointer transition-all [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] ${
+                                        p75Selected 
+                                            ? 'bg-[#388e3c] text-white border-transparent shadow-md scale-105' 
+                                            : 'bg-[#f1f8e9] text-[#388e3c] border-[#388e3c] hover:bg-[#e8f5e9]'
+                                    }`}
+                                    onClick={() => p75Book && toggleBook(p75Book.id)}
+                                    data-pr-tooltip={p75Book ? getBookTooltip(p75Book) : 'Book Not Found'}
+                                >
+                                    PSA OF DAVID<br/>75 CHP
+                                </div>
+                            </>
+                        );
+                    })()}
                 </div>
 
-                {/* Numbers and Controls Section */}
-                <div className="mb-4">
+                {/* Numbers and Controls Card */}
+                <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm mb-4">
                     {/* Top Row: Refresh - Circle - Submit */}
-                    <div className="flex justify-center items-center gap-6 mb-3">
+                    <div className="flex justify-center items-center gap-6 mb-4">
                         <button 
                             onClick={() => {
                                 setEnteredDays('');
                                 setSelectedBooks([]);
                                 setChartStats(null);
+                                setDayValidationError('');
+                                setBookValidationError('');
                             }}
                             className="w-10 h-10 rounded-full border-2 border-red-300 text-red-500 flex items-center justify-center bg-white hover:bg-red-50 transition-colors shadow-sm"
                             title="Refresh Data"
@@ -686,34 +812,40 @@ const Shanaz357 = () => {
                             <i className="pi pi-refresh font-bold"></i>
                         </button>
 
-                        <div className="w-16 h-16 shrink-0 rounded-full border-4 border-gray-100 flex items-center justify-center bg-white shadow-inner mx-4 overflow-hidden relative cursor-pointer hover:border-[#1976d2] transition-colors" onClick={toggleDaySelection} title="Click to select days">
-                            {enteredDays ? <span className="text-xl font-black text-[#1976d2]">{enteredDays}</span> : <span className="text-[10px] font-bold text-gray-300">DAYS</span>}
-                        </div>
-                        
-                        <OverlayPanel ref={daysOp} className="w-48 shadow-lg rounded-xl">
-                            <div className="p-2 flex flex-col gap-1 max-h-60 overflow-y-auto">
-                                <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider text-center">Module {mdl} Days</div>
-                                {moduleDaysOptions.length > 0 ? moduleDaysOptions.map((opt, i) => (
-                                    <button 
-                                        key={i}
-                                        onClick={() => handleDaySelect(opt)}
-                                        className="w-full text-left px-4 py-2 hover:bg-[#f8faff] hover:text-[#1976d2] rounded-lg transition-colors font-bold text-sm border border-transparent hover:border-[#e0ebf5]"
-                                    >
-                                        {opt.days} Days <span className="text-xs text-gray-400 font-normal ml-2">(Facet {opt.facet})</span>
-                                    </button>
-                                )) : (
-                                    <div className="text-xs text-center text-gray-400 py-4">No days configured</div>
-                                )}
-                                <div className="border-t border-gray-100 mt-2 pt-2">
-                                    <button 
-                                        onClick={() => { clearEnteredDays(); daysOp.current?.hide(); }}
-                                        className="w-full text-center px-4 py-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors font-bold text-xs"
-                                    >
-                                        Clear Selection
-                                    </button>
+                        <div className="relative flex flex-col items-center mx-4">
+                            {dayValidationError && (
+                                <div className="absolute -top-12 bg-white text-red-600 border-2 border-red-500 font-bold px-3 py-1.5 rounded-lg shadow-xl text-xs z-50 whitespace-nowrap animate-bounce flex items-center gap-2">
+                                    <i className="pi pi-exclamation-circle text-sm"></i> 
+                                    <span>{dayValidationError}</span>
+                                    <i 
+                                        className="pi pi-times ml-1 cursor-pointer hover:bg-red-100 rounded-full p-0.5 transition-colors" 
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            setDayValidationError(''); 
+                                            setEnteredDays(''); 
+                                        }}
+                                        title="Clear error and input"
+                                    ></i>
                                 </div>
+                            )}
+                            {bookValidationError && (
+                                <div className="absolute -top-12 bg-white text-red-600 border-2 border-red-500 font-bold px-3 py-1.5 rounded-lg shadow-xl text-xs z-50 whitespace-nowrap animate-bounce flex items-center gap-2">
+                                    <i className="pi pi-exclamation-circle text-sm"></i> 
+                                    <span>{bookValidationError}</span>
+                                    <i 
+                                        className="pi pi-times ml-1 cursor-pointer hover:bg-red-100 rounded-full p-0.5 transition-colors" 
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            setBookValidationError(''); 
+                                        }}
+                                        title="Clear error"
+                                    ></i>
+                                </div>
+                            )}
+                            <div className="w-16 h-16 shrink-0 rounded-full border-4 border-gray-100 flex items-center justify-center bg-white shadow-inner overflow-hidden relative" title="Days">
+                                {enteredDays ? <span className="text-xl font-black text-[#1976d2]">{enteredDays}</span> : <span className="text-[10px] font-bold text-gray-300">DAYS</span>}
                             </div>
-                        </OverlayPanel>
+                        </div>
 
                         <button 
                             onClick={handleSubmit}
@@ -725,7 +857,7 @@ const Shanaz357 = () => {
                     </div>
 
                     {/* Numbers Card */}
-                    <div className="border border-[#1976d2] rounded-xl py-2 px-4 flex justify-between items-center text-lg font-black text-[#1976d2] bg-[#f8faff] shadow-sm">
+                    <div className="border border-[#1976d2] rounded-xl py-2 px-4 flex justify-between items-center text-2xl font-black text-[#1976d2] bg-[#f8faff] shadow-sm [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">
                         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                             <button 
                                 key={num} 
@@ -738,67 +870,70 @@ const Shanaz357 = () => {
                     </div>
                 </div>
 
-                {/* Plus/Minus Section */}
-                <div className="flex items-center justify-between mb-4 gap-2">
-                    <div className="flex-1 border border-gray-300 rounded-xl h-10 bg-gray-50"></div>
-                    <button 
-                        className={`font-bold text-2xl px-2 transition-colors ${uniqueModules.indexOf(mdl) > 0 ? 'text-[#f57c00] hover:text-orange-600 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
-                        onClick={handleDecrement}
-                        disabled={uniqueModules.indexOf(mdl) <= 0}
-                    >-</button>
-                    <div className="border border-[#f57c00] rounded-xl px-8 py-1 flex flex-col items-center justify-center bg-[#fff8e1]">
-                        <div className="text-[10px] font-bold text-[#f57c00]">MDL</div>
-                        <div className="text-xl font-bold text-[#f57c00] leading-none mt-1">{mdl}</div>
+                {/* Lower Controls Card */}
+                <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm mb-2">
+                    {/* Plus/Minus Section */}
+                    <div className="flex items-center justify-between mb-4 gap-2">
+                        <div className="flex-1 border border-gray-300 rounded-xl h-10 bg-gray-50"></div>
+                        <button 
+                            className={`font-bold text-2xl px-2 transition-colors ${uniqueModules.indexOf(mdl) > 0 ? 'text-[#f57c00] hover:text-orange-600 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                            onClick={handleDecrement}
+                            disabled={uniqueModules.indexOf(mdl) <= 0}
+                        >-</button>
+                        <div className="border border-[#f57c00] rounded-xl px-8 py-1 flex flex-col items-center justify-center bg-[#fff8e1]">
+                            <div className="text-xs font-black text-[#f57c00] [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">MDL</div>
+                            <div className="text-2xl font-black text-[#f57c00] leading-none mt-1 [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">{mdl}</div>
+                        </div>
+                        <button 
+                            className={`font-bold text-2xl px-2 transition-colors ${uniqueModules.indexOf(mdl) < uniqueModules.length - 1 ? 'text-[#f57c00] hover:text-orange-600 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
+                            onClick={handleIncrement}
+                            disabled={uniqueModules.indexOf(mdl) >= uniqueModules.length - 1}
+                        >+</button>
+                        <div className="flex-1 border border-gray-300 rounded-xl h-10 bg-gray-50"></div>
                     </div>
-                    <button 
-                        className={`font-bold text-2xl px-2 transition-colors ${uniqueModules.indexOf(mdl) < uniqueModules.length - 1 ? 'text-[#f57c00] hover:text-orange-600 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
-                        onClick={handleIncrement}
-                        disabled={uniqueModules.indexOf(mdl) >= uniqueModules.length - 1}
-                    >+</button>
-                    <div className="flex-1 border border-gray-300 rounded-xl h-10 bg-gray-50"></div>
-                </div>
 
-                {/* Bottom Stats Section */}
-                <div className="border border-[#388e3c] rounded-xl mb-6 flex justify-between p-2 text-center text-[#388e3c] text-[10px] font-bold uppercase bg-[#f1f8e9]">
-                    <div className="flex flex-col items-center justify-center flex-1">
-                        <div className="mb-1">FACET</div>
-                        <div className="flex items-center gap-2 text-base">
-                            <button onClick={handleFctDec} disabled={availableFacets.indexOf(fct) <= 0} className={`p-1 transition-colors ${availableFacets.indexOf(fct) > 0 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-left text-sm"></i></button>
-                            <span className="w-5 text-center">{fct || '-'}</span>
-                            <button onClick={handleFctInc} disabled={availableFacets.indexOf(fct) >= availableFacets.length - 1} className={`p-1 transition-colors ${availableFacets.indexOf(fct) < availableFacets.length - 1 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-right text-sm"></i></button>
+                    {/* Bottom Stats Section */}
+                    <div className="border border-[#388e3c] rounded-xl mb-4 flex justify-between p-2 text-center text-[#388e3c] uppercase bg-[#f1f8e9]">
+                        <div className="flex flex-col items-center justify-center flex-1">
+                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">FACET</div>
+                            <div className="flex items-center gap-2 text-xl font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">
+                                <button onClick={handleFctDec} disabled={availableFacets.indexOf(fct) <= 0} className={`p-1 transition-colors ${availableFacets.indexOf(fct) > 0 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-left text-lg"></i></button>
+                                <span className="w-5 text-center">{fct || '-'}</span>
+                                <button onClick={handleFctInc} disabled={availableFacets.indexOf(fct) >= availableFacets.length - 1} className={`p-1 transition-colors ${availableFacets.indexOf(fct) < availableFacets.length - 1 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-right text-lg"></i></button>
+                            </div>
+                        </div>
+                        <div className="w-px bg-green-200 my-1"></div>
+                        <div className="flex flex-col items-center justify-center flex-1">
+                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">PHS</div>
+                            <div className="flex items-center gap-2 text-xl font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">
+                                <button onClick={handlePhsDec} disabled={availablePhases.indexOf(phs) <= 0} className={`p-1 transition-colors ${availablePhases.indexOf(phs) > 0 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-left text-lg"></i></button>
+                                <span className="w-5 text-center">{phs || '-'}</span>
+                                <button onClick={handlePhsInc} disabled={availablePhases.indexOf(phs) >= availablePhases.length - 1} className={`p-1 transition-colors ${availablePhases.indexOf(phs) < availablePhases.length - 1 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-right text-lg"></i></button>
+                            </div>
+                        </div>
+                        <div className="w-px bg-green-200 my-1"></div>
+                        <div className="flex flex-col items-center justify-center flex-[1.5]">
+                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">EACH PHS</div>
+                            <div className="text-xl font-black flex items-center justify-center h-8 [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">{eachPhsDays ? `${eachPhsDays} DAYS` : '-'}</div>
                         </div>
                     </div>
-                    <div className="w-px bg-green-200 my-1"></div>
-                    <div className="flex flex-col items-center justify-center flex-1">
-                        <div className="mb-1">PHS</div>
-                        <div className="flex items-center gap-2 text-base">
-                            <button onClick={handlePhsDec} disabled={availablePhases.indexOf(phs) <= 0} className={`p-1 transition-colors ${availablePhases.indexOf(phs) > 0 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-left text-sm"></i></button>
-                            <span className="w-5 text-center">{phs || '-'}</span>
-                            <button onClick={handlePhsInc} disabled={availablePhases.indexOf(phs) >= availablePhases.length - 1} className={`p-1 transition-colors ${availablePhases.indexOf(phs) < availablePhases.length - 1 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-right text-sm"></i></button>
-                        </div>
-                    </div>
-                    <div className="w-px bg-green-200 my-1"></div>
-                    <div className="flex flex-col items-center justify-center flex-[1.5]">
-                        <div className="mb-1">EACH PHS</div>
-                        <div className="text-base flex items-center justify-center h-8">{eachPhsDays ? `${eachPhsDays} DAYS` : '-'}</div>
-                    </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                    <button className="flex flex-row items-center justify-center gap-2 border border-[#1976d2] text-[#1976d2] rounded-xl py-2 font-bold text-xs hover:bg-blue-50 transition-colors bg-white">
-                        <i className="pi pi-print text-base"></i> PRINT
-                    </button>
-                    <button 
-                        onClick={handleViewClick}
-                        disabled={isViewing}
-                        className={`flex flex-row items-center justify-center gap-2 border border-[#388e3c] text-[#388e3c] rounded-xl py-2 font-bold text-xs transition-colors bg-white ${isViewing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-50'}`}
-                    >
-                        <i className={`pi ${isViewing ? 'pi-spin pi-spinner' : 'pi-eye'} text-base`}></i> VIEW
-                    </button>
-                    <button className="flex flex-row items-center justify-center gap-2 border border-[#7b1fa2] text-[#7b1fa2] rounded-xl py-2 font-bold text-xs hover:bg-purple-50 transition-colors bg-white">
-                        <i className="pi pi-send text-base"></i> SEND
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <button className="flex flex-row items-center justify-center gap-2 border border-[#1976d2] text-[#1976d2] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] hover:bg-blue-50 transition-colors bg-white">
+                            <i className="pi pi-print text-base [text-shadow:none]"></i> PRINT
+                        </button>
+                        <button 
+                            onClick={handleViewClick}
+                            disabled={isViewing}
+                            className={`flex flex-row items-center justify-center gap-2 border border-[#388e3c] text-[#388e3c] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] transition-colors bg-white ${isViewing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-50'}`}
+                        >
+                            <i className={`pi ${isViewing ? 'pi-spin pi-spinner' : 'pi-eye'} text-base [text-shadow:none]`}></i> VIEW
+                        </button>
+                        <button className="flex flex-row items-center justify-center gap-2 border border-[#7b1fa2] text-[#7b1fa2] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] hover:bg-purple-50 transition-colors bg-white">
+                            <i className="pi pi-send text-base [text-shadow:none]"></i> SEND
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

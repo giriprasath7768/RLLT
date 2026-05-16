@@ -58,7 +58,7 @@ const generateInitialData = (totalDays = 30) => {
     for (let c = 0; c < numChunks; c++) {
         const daysArray = [];
         for (let d = 1; d <= 5; d++) {
-            daysArray.push({ id: (c * 5) + d, day: (c * 5) + d, m1b: '', m1t: '', m2b: '', m2t: '', m3b: '', m3t: '', m4b: '', m4t: '', chap: 0, verse: 0, art: '', yes: false });
+            daysArray.push({ id: (c * 5) + d, day: (c * 5) + d, m1b: '', m1t: '', m2b: '', m2t: '', m3b: '', m3t: '', m4b: '', m4t: '', m5b: '', m5t: '', chap: 0, verse: 0, art: '', yes: false });
         }
         defaultData.push({
             id: `chunk_${c + 1}`,
@@ -70,6 +70,7 @@ const generateInitialData = (totalDays = 30) => {
             h2: "",
             h3: "",
             h4: "",
+            h5: "",
             days: daysArray
         });
     }
@@ -251,6 +252,15 @@ const TwentyFourSevenChartView = () => {
                     clonedElement.style.maxWidth = `${EXACT_WIDTH}px`;
                     clonedElement.style.margin = '0';
                     if (clonedWrapper) clonedWrapper.style.overflowX = 'visible';
+
+                    // Force all text to be extra bold for printing visibility
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `
+                        #printable-chart-area * {
+                            font-weight: 900 !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
                 }
             });
 
@@ -286,16 +296,9 @@ const TwentyFourSevenChartView = () => {
                 const marginSafeW = a4Width - 60;
                 const marginSafeH = a4Height - 60;
                 
-                // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
-                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
-                const printW = pdfWidthPx * ratio;
-                const printH = pdfHeightPx * ratio;
-                
-                const marginX = (a4Width - printW) / 2;
-                const marginY = (a4Height - printH) / 2;
-                
-                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
-                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+                // Force EXACTLY equal spacing (30pt) on all 4 sides by stretching to fill the safe area.
+                // This guarantees equal spacing on the A4 paper.
+                pdf.addImage(imgData, 'PNG', 30, 30, marginSafeW, marginSafeH);
             } else {
                 pdf = new jsPDF({
                     orientation: pdfOrientation,
@@ -652,27 +655,30 @@ const TwentyFourSevenChartView = () => {
                                     return (
                                         <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
                                             <colgroup>
-                                                <col style={{ width: '2.5%' }} />
+                                                <col style={{ width: '2%' }} />
+                                                <col style={{ width: '3%' }} />
+                                                <col style={{ width: '12%' }} />
                                                 <col style={{ width: '3.5%' }} />
                                                 <col style={{ width: '12%' }} />
-                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '3.5%' }} />
                                                 <col style={{ width: '12%' }} />
-                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '3.5%' }} />
                                                 <col style={{ width: '12%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '11%' }} />
+                                                <col style={{ width: '3.5%' }} />
                                                 <col style={{ width: '4%' }} />
-                                                <col style={{ width: '22.5%' }} />
-                                                <col style={{ width: '4%' }} />
-                                                <col style={{ width: '4.5%' }} />
                                                 <col style={{ width: '5.5%' }} />
                                                 <col style={{ width: '4%' }} />
                                                 <col style={{ width: '3%' }} />
-                                                <col style={{ width: '2.5%' }} />
+                                                <col style={{ width: '2%' }} />
                                             </colgroup>
                                             {chunks.map((chunk, cIdx) => {
                                                 const m1Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m1t), 0);
                                                 const m2Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m2t), 0);
                                                 const m3Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m3t), 0);
                                                 const m4Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m4t), 0);
+                                                const m5Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m5t), 0);
                                                 const chapTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.chap) || 0), 0);
                                                 const verseTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.verse) || 0), 0);
                                                 const artTotal = chunk.days.reduce((acc, curr) => acc + parseTime(curr.art), 0);
@@ -684,12 +690,12 @@ const TwentyFourSevenChartView = () => {
                                                     <tbody key={chunk.id} className="text-black font-bold text-sm rllt-condensed">
                                                         <tr className="bg-white h-[35px]">
                                                             <td className="border-2 border-black bg-white"></td>
-                                                            <td colSpan={9} className="border-2 border-black px-2 align-middle bg-white">
+                                                            <td colSpan={11} className="border-2 border-black px-2 align-middle bg-white">
                                                                 <div className="flex h-full w-full items-center">
                                                                     <span className="w-full flex-1 font-bold text-left uppercase text-black leading-none tracking-tight pl-2" style={{ fontSize: getFS(20) }}>{chunk.promises}</span>
                                                                 </div>
                                                             </td>
-                                                            <td colSpan={5} className="bg-white p-0 align-middle" style={{ '--cell-border': `3.5px solid ${currentBorderColor}` }}>
+                                                            <td colSpan={4} className="bg-white p-0 align-middle" style={{ '--cell-border': `3.5px solid ${currentBorderColor}` }}>
                                                                 <div className="w-full h-full flex items-center justify-center p-1 text-center font-bold text-black px-2 block" style={{ fontSize: getFS(20) }}>
                                                                     {chunk.promiseInput}
                                                                 </div>
@@ -713,7 +719,9 @@ const TwentyFourSevenChartView = () => {
                                                             <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">{chunk.h4}</th>
                                                             <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">{chunk.h5}</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">THEM</th>
                                                             <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
                                                             <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
                                                             <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
@@ -730,17 +738,20 @@ const TwentyFourSevenChartView = () => {
                                                             <tr key={d.id} className="bg-white text-center border-b-2 border-black h-[38px]">
                                                                 <td className="border-2 border-black p-0 font-extrabold bg-white text-black align-middle" style={{ fontSize: getFS(25) }}>{d.day}</td>
 
-                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate" style={{ fontSize: getFS(25) }}>{d.m1b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m1t}</td>
+                                                                <td className="border-2 border-black p-1 bg-white text-center uppercase font-bold leading-tight align-middle break-words" style={{ fontSize: getFS(20) }}>{d.m1b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>{d.m1t}</td>
 
-                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate" style={{ fontSize: getFS(25) }}>{d.m2b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m2t}</td>
+                                                                <td className="border-2 border-black p-1 bg-white text-center uppercase font-bold leading-tight align-middle break-words" style={{ fontSize: getFS(20) }}>{d.m2b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>{d.m2t}</td>
 
-                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate" style={{ fontSize: getFS(25) }}>{d.m3b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m3t}</td>
+                                                                <td className="border-2 border-black p-1 bg-white text-center uppercase font-bold leading-tight align-middle break-words" style={{ fontSize: getFS(20) }}>{d.m3b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>{d.m3t}</td>
 
                                                                 <td className="border-2 border-black p-1 bg-white text-center uppercase font-bold leading-tight align-middle break-words" style={{ fontSize: getFS(20) }}>{d.m4b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m4t}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>{d.m4t}</td>
+
+                                                                <td className="border-2 border-black p-1 bg-white text-center uppercase font-bold leading-tight align-middle break-words" style={{ fontSize: getFS(20) }}>{d.m5b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>{d.m5t}</td>
 
                                                                 <td className="border-2 border-black p-0 font-bold align-middle" style={{ fontSize: getFS(25) }}>{d.chap}</td>
                                                                 <td className="border-2 border-black p-0 font-bold align-middle" style={{ fontSize: getFS(25) }}>{d.verse}</td>
@@ -759,6 +770,7 @@ const TwentyFourSevenChartView = () => {
                                                             <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m2Total, 'HrMins')}</td>
                                                             <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m3Total, 'HrMins')}</td>
                                                             <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m4Total, 'HrMins')}</td>
+                                                            <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m5Total, 'HrMins')}</td>
                                                             <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{chapTotal}</td>
                                                             <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{verseTotal}</td>
                                                             <td colSpan={2} className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{formatSum(artTotal, 'Hm')}</td>
@@ -768,7 +780,7 @@ const TwentyFourSevenChartView = () => {
                                             })}
                                             <tfoot className="pb-4 rllt-condensed">
                                                 <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(25) }}>
-                                                    <td colSpan={10} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-white" style={{ fontSize: getFS(20) }}>
+                                                    <td colSpan={12} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-white" style={{ fontSize: getFS(20) }}>
                                                         TOTAL AVERAGE READING TIME {formatSum(
                                                             chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
                                                             'HrMins'
@@ -788,7 +800,7 @@ const TwentyFourSevenChartView = () => {
                                                     </td>
                                                 </tr>
                                                 <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(25) }}>
-                                                    <td colSpan={15} className="border-2 border-black p-1 text-center font-semibold tracking-wide">
+                                                    <td colSpan={17} className="border-2 border-black p-1 text-center font-semibold tracking-wide">
                                                         It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11
                                                     </td>
                                                 </tr>

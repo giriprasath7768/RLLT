@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Sidebar as PrimeSidebar } from 'primereact/sidebar';
+import { AutoComplete } from 'primereact/autocomplete';
 
 const SidebarItem = ({ item, onClick }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -60,6 +61,10 @@ const SidebarItem = ({ item, onClick }) => {
 };
 
 const StudentSidebar = ({ visible, onHide }) => {
+    const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filteredItems, setFilteredItems] = useState([]);
+    const isSelecting = React.useRef(false);
 
     const menuItems = [
         { label: 'Overview Dashboard', icon: 'pi pi-home', to: '/dashboard/student' },
@@ -82,23 +87,98 @@ const StudentSidebar = ({ visible, onHide }) => {
         { label: 'Recordings', icon: 'pi pi-microphone', to: '/dashboard/student/recordings' }
     ];
 
-    const SidebarContent = ({ onItemClick }) => (
-        <div className="flex flex-col py-4 h-full bg-[#1F2937]">
-            <div className="px-6 mb-8 mt-2 flex flex-col items-center">
-                <img src="/custom-logo.png" alt="Student Logo" className="w-20 h-20 rounded-full border border-gray-600 mb-3 shadow-md object-cover" />
-                <span className="text-white text-sm font-semibold tracking-wider">STUDENT PORTAL</span>
+    const flattenMenu = (items, parentLabel = '') => {
+        let flat = [];
+        items.forEach(item => {
+            if (item.to) {
+                flat.push({ 
+                    label: parentLabel ? `${item.label} (${parentLabel})` : item.label, 
+                    to: item.to 
+                });
+            }
+            if (item.items) {
+                flat = flat.concat(flattenMenu(item.items, item.label));
+            }
+        });
+        return flat;
+    };
+
+    const flatMenu = flattenMenu(menuItems);
+
+    const searchMenu = (event) => {
+        const query = event.query.toLowerCase();
+        const results = flatMenu.filter(item => item.label.toLowerCase().includes(query));
+        setFilteredItems(results);
+    };
+
+    const renderSidebarContent = (onItemClick) => {
+        const handleSearchSelect = (e) => {
+            isSelecting.current = true;
+            if (e.value && e.value.to) {
+                navigate(e.value.to);
+                setSearchQuery('');
+                if (onItemClick) onItemClick();
+            }
+            setTimeout(() => {
+                isSelecting.current = false;
+            }, 100);
+        };
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter') {
+                setTimeout(() => {
+                    if (isSelecting.current) return;
+                    
+                    const queryStr = typeof searchQuery === 'string' ? searchQuery : (searchQuery?.label || '');
+                    if (queryStr) {
+                        const exactMatch = flatMenu.find(item => item.label.toLowerCase() === queryStr.toLowerCase());
+                        if (exactMatch) {
+                            navigate(exactMatch.to);
+                            setSearchQuery('');
+                            if (onItemClick) onItemClick();
+                        } else if (filteredItems.length > 0) {
+                            navigate(filteredItems[0].to);
+                            setSearchQuery('');
+                            if (onItemClick) onItemClick();
+                        }
+                    }
+                }, 50);
+            }
+        };
+
+        return (
+            <div className="flex flex-col py-4 h-full bg-[#1F2937]">
+                <div className="px-6 mb-4 mt-2 flex flex-col items-center">
+                    <img src="/custom-logo.png" alt="Student Logo" className="w-20 h-20 rounded-full border border-gray-600 mb-3 shadow-md object-cover" />
+                    <span className="text-white text-sm font-semibold tracking-wider">STUDENT PORTAL</span>
+                </div>
+                <div className="px-6 mb-4">
+                    <AutoComplete 
+                        value={searchQuery} 
+                        suggestions={filteredItems} 
+                        completeMethod={searchMenu} 
+                        field="label" 
+                        onChange={(e) => setSearchQuery(e.value)} 
+                        onSelect={handleSearchSelect}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Search menu..." 
+                        className="w-full"
+                        inputClassName="w-full bg-gray-700 border-gray-600 text-white px-3 py-2 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 placeholder-gray-400"
+                        panelClassName="bg-gray-800 text-white border border-gray-600 shadow-lg"
+                    />
+                </div>
+                {menuItems.map((item, index) => (
+                    <SidebarItem key={index} item={item} onClick={onItemClick} />
+                ))}
             </div>
-            {menuItems.map((item, index) => (
-                <SidebarItem key={index} item={item} onClick={onItemClick} />
-            ))}
-        </div>
-    );
+        );
+    };
 
     return (
         <>
             {/* Desktop Sidebar */}
             <aside className="hidden lg:block w-72 bg-[#1F2937] border-r border-[#1F2937] flex-shrink-0 min-h-[calc(100vh-80px)] overflow-y-auto sticky top-20">
-                <SidebarContent />
+                {renderSidebarContent()}
             </aside>
 
             {/* Mobile Sidebar (Drawer) */}
@@ -115,7 +195,7 @@ const StudentSidebar = ({ visible, onHide }) => {
                 )}
             >
                 <div className="h-full">
-                    <SidebarContent onItemClick={onHide} />
+                    {renderSidebarContent(onHide)}
                 </div>
             </PrimeSidebar>
         </>

@@ -12,8 +12,8 @@ const AdminLayout = () => {
 
     if (isFullScreenMode) {
         return (
-            <div className="min-h-screen bg-gray-50/30 flex flex-col font-sans">
-                <main className="flex-grow min-w-0 h-screen">
+            <div className="min-h-screen bg-gray-50/30 flex flex-col font-sans print:block print:min-h-0 print:h-auto">
+                <main className="flex-grow min-w-0 h-screen print:block print:h-auto print:overflow-visible">
                     <Outlet />
                 </main>
             </div>
@@ -21,27 +21,31 @@ const AdminLayout = () => {
     }
 
     return (
-        <div className="min-h-screen bg-white flex flex-col font-sans">
+        <div className="min-h-screen bg-white flex flex-col font-sans print:block print:min-h-0 print:h-auto">
             {/* Header / AppBar */}
-            <AdminHeader onMenuToggle={() => setSidebarVisible(true)} />
+            <div className="print:hidden">
+                <AdminHeader onMenuToggle={() => setSidebarVisible(true)} />
+            </div>
 
-            <div className="flex flex-grow">
+            <div className="flex flex-grow print:block print:h-auto print:overflow-visible">
                 {/* Sidebar */}
-                <AdminSidebar
-                    visible={sidebarVisible}
-                    onHide={() => setSidebarVisible(false)}
-                />
+                <div className="print:hidden h-full">
+                    <AdminSidebar
+                        visible={sidebarVisible}
+                        onHide={() => setSidebarVisible(false)}
+                    />
+                </div>
 
                 {/* Page Content */}
-                <main className="flex-grow bg-gray-50/30 min-w-0">
-                    <div className="w-full h-full overflow-x-hidden">
+                <main className="flex-grow bg-gray-50/30 min-w-0 print:block print:bg-white print:m-0 print:p-0 print:overflow-visible print:h-auto">
+                    <div className="w-full h-full overflow-x-hidden print:overflow-visible print:h-auto print:block">
                         <Outlet />
                     </div>
                 </main>
             </div>
 
             {/* Optional Footer */}
-            <footer className="py-4 px-4 sm:py-6 sm:px-8 border-t border-gray-50 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-center sm:justify-between items-center text-[11px] sm:text-[12px] text-gray-400 bg-white text-center">
+            <footer className="py-4 px-4 sm:py-6 sm:px-8 border-t border-gray-50 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-center sm:justify-between items-center text-[11px] sm:text-[12px] text-gray-400 bg-white text-center print:hidden">
                 <span>© 2026 App Creators Media. All rights reserved.</span>
                 <div className="flex gap-4">
                     <a href="#" className="hover:text-gray-600">Privacy Policy</a>

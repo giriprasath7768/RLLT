@@ -45,3 +45,14 @@ body:not(.pdf-is-generating) .printable-chart-area tbody input,
 body:not(.pdf-is-generating) .printable-chart-area tbody textarea {
   font-weight: 400 !important;
 }
+
+@media print {
+  body, html, #root {
+    display: block !important;
+    min-height: auto !important;
+    height: auto !important;
+    place-items: stretch !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}

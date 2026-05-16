@@ -102,6 +102,7 @@ const MainChart = () => {
     // Upload image states
     const [logo1, setLogo1] = useState(null);
     const [logo2, setLogo2] = useState(null);
+    const [logo3, setLogo3] = useState(null);
 
     // Aesthetic & UX Scaling
     const [tableFontSize, setTableFontSize] = useState(8); // Default base data size now 14 (requested shift from 12->14)
@@ -194,7 +195,23 @@ const MainChart = () => {
                     const data = res.data;
                     setBannerText(data.banner_text || "");
                     setTLabel(data.t_label || "T");
-                    setLogo1(data.logo_url ? `http://${window.location.hostname}:8000${data.logo_url}` : null);
+                    
+                    let urls = {};
+                    const rawJson = data.logo_urls_json || data.logo_url;
+                    if (rawJson) {
+                        try {
+                            urls = JSON.parse(rawJson);
+                            if (typeof urls !== 'object' || urls === null) {
+                                urls = { logo1: rawJson, logo2: rawJson, logo3: rawJson };
+                            }
+                        } catch(e) {
+                            urls = { logo1: rawJson, logo2: rawJson, logo3: rawJson };
+                        }
+                    }
+                    
+                    setLogo1(urls.logo1 ? `http://${window.location.hostname}:8000${urls.logo1}` : null);
+                    setLogo2(urls.logo2 ? `http://${window.location.hostname}:8000${urls.logo2}` : null);
+                    setLogo3(urls.logo3 ? `http://${window.location.hostname}:8000${urls.logo3}` : null);
 
                     if (data.state_payload) {
                         try {
@@ -278,7 +295,13 @@ const MainChart = () => {
         formData.append("state_payload", JSON.stringify(chunks));
 
         if (logo1 && typeof logo1 === 'object' && logo1.file) {
-            formData.append("logo", logo1.file);
+            formData.append("logo1", logo1.file);
+        }
+        if (logo2 && typeof logo2 === 'object' && logo2.file) {
+            formData.append("logo2", logo2.file);
+        }
+        if (logo3 && typeof logo3 === 'object' && logo3.file) {
+            formData.append("logo3", logo3.file);
         }
 
         try {
@@ -293,6 +316,8 @@ const MainChart = () => {
                 setBannerText(chartDays === 40 ? "40 DAYS MAIN CHART" : "MAIN CHART - 30 DAYS");
                 setTLabel("T");
                 setLogo1(null);
+                setLogo2(null);
+                setLogo3(null);
                 setMappingConfig(Array.from({ length: chartDays }, () => initialDayObj()));
                 setHeaderSubtitle(`MODULE${mdl}:FACET${fct}:PHASE-${currentPhs}/${maxPhases}`);
             }, 500);
@@ -799,13 +824,13 @@ const MainChart = () => {
                                         {/* MAP 2 */}
                                         <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
                                             <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
-                                                <ImageUploadPlaceholder state={logo1} setState={setLogo1} label="" />
+                                                <ImageUploadPlaceholder state={logo2} setState={setLogo2} label="" />
                                             </div>
                                         </td>
                                         {/* MAP 3 */}
                                         <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
                                             <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
-                                                <ImageUploadPlaceholder state={logo1} setState={setLogo1} label="" />
+                                                <ImageUploadPlaceholder state={logo3} setState={setLogo3} label="" />
                                             </div>
                                         </td>
 
@@ -994,7 +1019,7 @@ const MainChart = () => {
                                                         </td>
 
                                                         <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m3b} onChange={(e) => updateDay(cIdx, d.id, 'm3b', e.target.value)} />
+                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m3b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm3b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
                                                             <input className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />

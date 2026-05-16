@@ -252,6 +252,16 @@ export const TextEffectMark = Mark.create({
             style = `text-shadow: 1px 1px 0px #fff, 2px 2px 0px ${color}, 3px 3px 0px ${color}, 4px 4px 0px rgba(0,0,0,0.3); font-weight: bold; letter-spacing: 1px;`;
         } else if (mode === '5d') {
             style = `text-shadow: 0px 0px 5px ${color}, 1px 1px 0px #fff, 2px 2px 0px ${color}, 3px 3px 0px ${color}, 5px 5px 10px rgba(0,0,0,0.5); font-weight: bold; letter-spacing: 2px;`;
+        } else if (mode === '6d') {
+            style = `text-shadow: 0px 0px 6px ${color}, 1px 1px 0px #fff, 2px 2px 0px ${color}, 3px 3px 0px ${color}, 4px 4px 0px ${color}, 6px 6px 12px rgba(0,0,0,0.5); font-weight: bold; letter-spacing: 2px;`;
+        } else if (mode === '7d') {
+            style = `text-shadow: 0px 0px 7px ${color}, 1px 1px 0px #fff, 2px 2px 0px ${color}, 3px 3px 0px ${color}, 4px 4px 0px ${color}, 5px 5px 0px ${color}, 7px 7px 14px rgba(0,0,0,0.6); font-weight: bold; letter-spacing: 3px;`;
+        } else if (mode === '8d') {
+            style = `text-shadow: 0px 0px 8px ${color}, 1px 1px 0px #fff, 2px 2px 0px ${color}, 3px 3px 0px ${color}, 4px 4px 0px ${color}, 5px 5px 0px ${color}, 6px 6px 0px ${color}, 8px 8px 16px rgba(0,0,0,0.6); font-weight: bold; letter-spacing: 3px;`;
+        } else if (mode === '9d') {
+            style = `text-shadow: 0px 0px 9px ${color}, 1px 1px 0px #fff, 2px 2px 0px ${color}, 3px 3px 0px ${color}, 4px 4px 0px ${color}, 5px 5px 0px ${color}, 6px 6px 0px ${color}, 7px 7px 0px ${color}, 9px 9px 18px rgba(0,0,0,0.7); font-weight: bold; letter-spacing: 4px; display: inline-block; transform: scaleY(1.1);`;
+        } else if (mode === '10d') {
+            style = `text-shadow: 0px 0px 10px ${color}, 1px 1px 0px #fff, 2px 2px 0px ${color}, 3px 3px 0px ${color}, 4px 4px 0px ${color}, 5px 5px 0px ${color}, 6px 6px 0px ${color}, 7px 7px 0px ${color}, 8px 8px 0px ${color}, 10px 10px 20px rgba(0,0,0,0.8); font-weight: bold; letter-spacing: 4px; display: inline-block; transform: scaleY(1.2);`;
         }
         return ['span', mergeAttributes(HTMLAttributes, { 'data-type': 'textEffect', style, class: 'texteffect-format' }), 0];
     },

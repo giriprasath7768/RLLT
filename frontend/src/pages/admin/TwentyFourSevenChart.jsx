@@ -69,7 +69,7 @@ const generateInitialData = (totalDays = 30) => {
     for (let c = 0; c < numChunks; c++) {
         const daysArray = [];
         for (let d = 1; d <= 5; d++) {
-            daysArray.push({ id: (c * 5) + d, day: (c * 5) + d, m1b: '', m1t: '', m2b: '', m2t: '', m3b: '', m3t: '', m4b: '', m4t: '', chap: 0, verse: 0, art: '', yes: false });
+            daysArray.push({ id: (c * 5) + d, day: (c * 5) + d, m1b: '', m1t: '', m2b: '', m2t: '', m3b: '', m3t: '', m4b: '', m4t: '', m5b: '', m5t: '', chap: 0, verse: 0, art: '', yes: false });
         }
         defaultData.push({
             id: `chunk_${c + 1}`,
@@ -82,6 +82,7 @@ const generateInitialData = (totalDays = 30) => {
             h2: "",
             h3: "",
             h4: "",
+            h5: "",
             days: daysArray
         });
     }
@@ -117,7 +118,7 @@ const TwentyFourSevenChart = () => {
     const [maxFacets, setMaxFacets] = useState(1);
 
     const initialBookRow = () => ({ id: Date.now() + Math.random(), book_id: null, chFrom: null, chTo: null });
-    const initialDayObj = () => ({ s1: [initialBookRow()], s2: [initialBookRow()], s3: [initialBookRow()], s4: [initialBookRow()] });
+    const initialDayObj = () => ({ s1: [initialBookRow()], s2: [initialBookRow()], s3: [initialBookRow()], s4: [initialBookRow()], s5: [initialBookRow()] });
 
     const [mappingConfig, setMappingConfig] = useState(Array.from({ length: 30 }, () => initialDayObj()));
     const [expandedDay, setExpandedDay] = useState(0);
@@ -395,9 +396,12 @@ const TwentyFourSevenChart = () => {
             const m4bString = buildString(conf.s4);
             const m4Stats = calculateStats(conf.s4);
 
-            const dayChapters = m1Stats.totalChapters + m2Stats.totalChapters + m3Stats.totalChapters + m4Stats.totalChapters;
-            const dayVerses = m1Stats.totalVerses + m2Stats.totalVerses + m3Stats.totalVerses + m4Stats.totalVerses;
-            const dayArtFloat = m1Stats.totalArt + m2Stats.totalArt + m3Stats.totalArt + m4Stats.totalArt;
+            const m5bString = buildString(conf.s5);
+            const m5Stats = calculateStats(conf.s5);
+
+            const dayChapters = m1Stats.totalChapters + m2Stats.totalChapters + m3Stats.totalChapters + m4Stats.totalChapters + m5Stats.totalChapters;
+            const dayVerses = m1Stats.totalVerses + m2Stats.totalVerses + m3Stats.totalVerses + m4Stats.totalVerses + m5Stats.totalVerses;
+            const dayArtFloat = m1Stats.totalArt + m2Stats.totalArt + m3Stats.totalArt + m4Stats.totalArt + m5Stats.totalArt;
 
             for (let c of newChunks) {
                 c.phase = finalPhaseStr; // Update rotated phase globally
@@ -419,8 +423,12 @@ const TwentyFourSevenChart = () => {
                         dayObj.m4b = m4bString;
                         dayObj.m4t = formatHrMin(m4Stats.totalArt);
                     }
+                    if (m5bString) {
+                        dayObj.m5b = m5bString;
+                        dayObj.m5t = formatHrMin(m5Stats.totalArt);
+                    }
 
-                    if (m1bString || m2bString || m3bString || m4bString) {
+                    if (m1bString || m2bString || m3bString || m4bString || m5bString) {
                         dayObj.chap = dayChapters || dayObj.chap;
                         dayObj.verse = dayVerses || dayObj.verse;
                         dayObj.art = formatHrMin(dayArtFloat) || dayObj.art;
@@ -527,13 +535,16 @@ const TwentyFourSevenChart = () => {
                 'S3 To': '',
                 'S4 Book': '',
                 'S4 From': '',
-                'S4 To': ''
+                'S4 To': '',
+                'S5 Book': '',
+                'S5 From': '',
+                'S5 To': ''
             });
         }
         const ws = XLSX.utils.json_to_sheet(templateData);
         // Style a bit or set column widths
         const wscols = [
-            { wch: 6 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }
+            { wch: 6 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 10 }
         ];
         ws['!cols'] = wscols;
 
@@ -567,7 +578,7 @@ const TwentyFourSevenChart = () => {
                     return;
                 }
 
-                const newConfig = Array.from({ length: chartDays }, () => ({ s1: [], s2: [], s3: [], s4: [] }));
+                const newConfig = Array.from({ length: chartDays }, () => ({ s1: [], s2: [], s3: [], s4: [], s5: [] }));
                 let mappedCount = 0;
                 let lastDay = null; // Sticky day tracker for multi-row entries
 
@@ -626,6 +637,9 @@ const TwentyFourSevenChart = () => {
 
                         const s4Bk = parseSegment('s4book', 's4from', 's4to');
                         if (s4Bk) newConfig[dIdx].s4.push(s4Bk);
+
+                        const s5Bk = parseSegment('s5book', 's5from', 's5to');
+                        if (s5Bk) newConfig[dIdx].s5.push(s5Bk);
                     }
                 });
 
@@ -635,6 +649,7 @@ const TwentyFourSevenChart = () => {
                     if (day.s2.length === 0) day.s2 = [initialBookRow()];
                     if (day.s3.length === 0) day.s3 = [initialBookRow()];
                     if (day.s4.length === 0) day.s4 = [initialBookRow()];
+                    if (day.s5.length === 0) day.s5 = [initialBookRow()];
                 });
 
                 if (mappedCount === 0) {
@@ -658,6 +673,9 @@ const TwentyFourSevenChart = () => {
             <style>{`
                 .rllt-condensed {
                     font-family: 'Arial Narrow', Arial, sans-serif !important;
+                }
+                .rllt-condensed input, .rllt-condensed textarea {
+                    font-family: inherit !important;
                 }
                 
                 /* Ensure dropdown label text is black */
@@ -903,21 +921,23 @@ const TwentyFourSevenChart = () => {
                             <div className="editor-table-container">
                                 <table className="w-full bg-white table-fixed border-collapse" style={{ borderSpacing: 0 }}>
                                     <colgroup>
-                                        <col style={{ width: '2.5%' }} />
+                                        <col style={{ width: '2%' }} />
+                                        <col style={{ width: '3%' }} />
+                                        <col style={{ width: '12%' }} />
                                         <col style={{ width: '3.5%' }} />
                                         <col style={{ width: '12%' }} />
-                                        <col style={{ width: '4%' }} />
+                                        <col style={{ width: '3.5%' }} />
                                         <col style={{ width: '12%' }} />
-                                        <col style={{ width: '4%' }} />
+                                        <col style={{ width: '3.5%' }} />
                                         <col style={{ width: '12%' }} />
+                                        <col style={{ width: '3.5%' }} />
+                                        <col style={{ width: '11%' }} />
+                                        <col style={{ width: '3.5%' }} />
                                         <col style={{ width: '4%' }} />
-                                        <col style={{ width: '22.5%' }} />
-                                        <col style={{ width: '4%' }} />
-                                        <col style={{ width: '4.5%' }} />
                                         <col style={{ width: '5.5%' }} />
                                         <col style={{ width: '4%' }} />
                                         <col style={{ width: '3%' }} />
-                                        <col style={{ width: '2.5%' }} />
+                                        <col style={{ width: '2%' }} />
                                     </colgroup>
 
                                     {chunks.map((chunk, cIdx) => {
@@ -925,6 +945,7 @@ const TwentyFourSevenChart = () => {
                                         const m2Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m2t), 0);
                                         const m3Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m3t), 0);
                                         const m4Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m4t), 0);
+                                        const m5Total = chunk.days.reduce((acc, curr) => acc + parseTime(curr.m5t), 0);
                                         const chapTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.chap) || 0), 0);
                                         const verseTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.verse) || 0), 0);
                                         const artTotal = chunk.days.reduce((acc, curr) => acc + parseTime(curr.art), 0);
@@ -933,7 +954,7 @@ const TwentyFourSevenChart = () => {
                                             <tbody key={chunk.id} className="text-black font-bold text-sm rllt-condensed">
                                                 <tr className="bg-white h-[35px]">
                                                     <td className="border-2 border-black bg-white"></td>
-                                                    <td colSpan={9} className="border-2 border-black px-2 align-middle bg-white">
+                                                    <td colSpan={11} className="border-2 border-black px-2 align-middle bg-white">
                                                         <div className="flex h-full w-full items-center">
                                                             <input
                                                                 value={chunk.promises}
@@ -944,7 +965,7 @@ const TwentyFourSevenChart = () => {
                                                             />
                                                         </div>
                                                     </td>
-                                                    <td colSpan={5} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
+                                                    <td colSpan={4} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
                                                         <input
                                                             className="w-full h-full outline-none p-1 font-bold text-center bg-transparent text-black block"
                                                             style={{ fontSize: getFS(20) }}
@@ -983,7 +1004,11 @@ const TwentyFourSevenChart = () => {
                                                         <input className="w-full bg-transparent outline-none font-bold" value={chunk.h4} onChange={(e) => updateChunk(cIdx, 'h4', e.target.value)} />
                                                     </th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                    <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">
+                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h5} onChange={(e) => updateChunk(cIdx, 'h5', e.target.value)} />
+                                                    </th>
+                                                    <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                    <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">THEM</th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
@@ -1000,32 +1025,39 @@ const TwentyFourSevenChart = () => {
                                                     <tr key={d.id} className="bg-white text-center hover:bg-gray-50 border-b-2 border-black h-[38px]">
                                                         <td className="border-2 border-black p-0 font-extrabold bg-white text-black align-middle" style={{ fontSize: getFS(25) }}>{d.day}</td>
 
-                                                        <td className="border-2 border-black p-0 bg-white align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(25) }} value={d.m1b} onChange={(e) => updateDay(cIdx, d.id, 'm1b', e.target.value)} />
+                                                        <td className="border-2 border-black p-1 bg-white text-center align-middle">
+                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m1b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm1b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(25) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
-                                                        </td>
-
-                                                        <td className="border-2 border-black p-0 bg-white align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(25) }} value={d.m2b} onChange={(e) => updateDay(cIdx, d.id, 'm2b', e.target.value)} />
-                                                        </td>
-                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(25) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
-                                                        </td>
-
-                                                        <td className="border-2 border-black p-0 bg-white align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(25) }} value={d.m3b} onChange={(e) => updateDay(cIdx, d.id, 'm3b', e.target.value)} />
-                                                        </td>
-                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(25) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m4b} onChange={(e) => updateDay(cIdx, d.id, 'm4b', e.target.value)} />
+                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m2b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm2b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(25) }} value={d.m4t} onChange={(e) => updateDay(cIdx, d.id, 'm4t', e.target.value)} />
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
+                                                        </td>
+
+                                                        <td className="border-2 border-black p-1 bg-white text-center align-middle">
+                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m3b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm3b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
+                                                        </td>
+
+                                                        <td className="border-2 border-black p-1 bg-white text-center align-middle">
+                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m4b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm4b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m4t} onChange={(e) => updateDay(cIdx, d.id, 'm4t', e.target.value)} />
+                                                        </td>
+
+                                                        <td className="border-2 border-black p-1 bg-white text-center align-middle">
+                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m5b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm5b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
+                                                        </td>
+                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
+                                                            <input className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m5t} onChange={(e) => updateDay(cIdx, d.id, 'm5t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-0 align-middle">
@@ -1056,6 +1088,7 @@ const TwentyFourSevenChart = () => {
                                                     <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m2Total, 'HrMins')}</td>
                                                     <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m3Total, 'HrMins')}</td>
                                                     <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m4Total, 'HrMins')}</td>
+                                                    <td colSpan={2} className="border-2 border-black bg-white">{formatSum(m5Total, 'HrMins')}</td>
                                                     <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{chapTotal}</td>
                                                     <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{verseTotal}</td>
                                                     <td colSpan={2} className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{formatSum(artTotal, 'Hm')}</td>
@@ -1065,7 +1098,7 @@ const TwentyFourSevenChart = () => {
                                     })}
                                     <tfoot className="pb-4 rllt-condensed">
                                         <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(25) }}>
-                                            <td colSpan={10} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-gray-50" style={{ fontSize: getFS(20) }}>
+                                            <td colSpan={12} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-gray-50" style={{ fontSize: getFS(20) }}>
                                                 TOTAL AVERAGE READING TIME {formatSum(
                                                     chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
                                                     'HrMins'
@@ -1085,7 +1118,7 @@ const TwentyFourSevenChart = () => {
                                             </td>
                                         </tr>
                                         <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(25) }}>
-                                            <td colSpan={15} className="border-2 border-black p-1">
+                                            <td colSpan={17} className="border-2 border-black p-1">
                                                 <input
                                                     className="w-full text-center outline-none bg-transparent whitespace-nowrap overflow-hidden text-ellipsis italic font-semibold"
                                                     style={{ fontSize: getFS(25) }}
@@ -1199,6 +1232,11 @@ const TwentyFourSevenChart = () => {
                                     {renderBookRows(`Segment 4: Book Mapping`, dayConf.s4, (newRows) => {
                                         const newConfig = [...mappingConfig];
                                         newConfig[dIdx] = { ...newConfig[dIdx], s4: newRows };
+                                        setMappingConfig(newConfig);
+                                    })}
+                                    {renderBookRows(`Segment 5: Book Mapping`, dayConf.s5, (newRows) => {
+                                        const newConfig = [...mappingConfig];
+                                        newConfig[dIdx] = { ...newConfig[dIdx], s5: newRows };
                                         setMappingConfig(newConfig);
                                     })}
                                 </div>

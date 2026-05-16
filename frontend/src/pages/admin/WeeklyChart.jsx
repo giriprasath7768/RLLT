@@ -241,24 +241,27 @@ const WeeklyChart = () => {
                             el.style.overflow = 'hidden';
                         }
                     });
+                    
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `
+                        #printable-chart-area * {
+                            font-weight: 900 !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
                 }
             });
 
             const imgData = canvas.toDataURL('image/png');
             
-            // Revert back to logical CSS DOM dimensions by dividing by the scale factor (3)
-            // This ensures default PDF zoom levels present the text at normal display sizes 
-            // rather than zoomed out drastically from 3660 physical canvas units.
             const CSS_SCALE = 3;
             const pdfWidthPx = canvas.width / CSS_SCALE;
             const pdfHeightPx = canvas.height / CSS_SCALE;
             
-            // Allow the canvas dimensions to dictate portrait/landscape
             const pdfOrientation = pdfWidthPx > pdfHeightPx ? 'landscape' : 'portrait';
 
             let pdf;
             if (forPrint) {
-                // User explicitly requested SINGLE PAGE print layout for everything.
                 pdf = new jsPDF({
                     orientation: pdfOrientation,
                     unit: 'pt',
@@ -268,20 +271,10 @@ const WeeklyChart = () => {
                 const a4Width = pdf.internal.pageSize.getWidth();
                 const a4Height = pdf.internal.pageSize.getHeight();
                 
-                // Standard 30pt hardware margin (~1cm) around the edges.
                 const marginSafeW = a4Width - 60;
                 const marginSafeH = a4Height - 60;
                 
-                // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
-                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
-                const printW = pdfWidthPx * ratio;
-                const printH = pdfHeightPx * ratio;
-                
-                const marginX = (a4Width - printW) / 2;
-                const marginY = (a4Height - printH) / 2;
-                
-                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
-                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+                pdf.addImage(imgData, 'PNG', 30, 30, marginSafeW, marginSafeH);
             } else {
                 pdf = new jsPDF({
                     orientation: pdfOrientation,

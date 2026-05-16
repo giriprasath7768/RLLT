@@ -3,39 +3,39 @@ import { createPortal } from 'react-dom';
 import './HebrewCalculatorModal.css';
 
 const hebrewLetters = [
-    { letter: "א", name: "Aleph", value: 1, color: "red" },
-    { letter: "ב", name: "Bet", value: 2, color: "orange" },
-    { letter: "ג", name: "Gimel", value: 3, color: "yellow" },
-    { letter: "ד", name: "Dalet", value: 4, color: "green" },
-    { letter: "ה", name: "He", value: 5, color: "teal" },
+    { letter: "ה", name: "He", value: 5, color: "orange", idx: 5 },
+    { letter: "ד", name: "Dalet", value: 4, color: "pink", idx: 4 },
+    { letter: "ג", name: "Gimel", value: 3, color: "indigo", idx: 3 },
+    { letter: "ב", name: "Bet", value: 2, color: "blue", idx: 2 },
+    { letter: "א", name: "Aleph", value: 1, color: "orange", idx: 1 },
 
-    { letter: "ו", name: "Vav", value: 6, color: "blue" },
-    { letter: "ז", name: "Zayin", value: 7, color: "blue" },
-    { letter: "ח", name: "Chet", value: 8, color: "purple" },
-    { letter: "ט", name: "Tet", value: 9, color: "pink" },
-    { letter: "י", name: "Yod", value: 10, color: "magenta" },
+    { letter: "י", name: "Yod", value: 10, color: "teal", idx: 10 },
+    { letter: "ט", name: "Tet", value: 9, color: "green", idx: 9 },
+    { letter: "ח", name: "Chet", value: 8, color: "gold", idx: 8 },
+    { letter: "ז", name: "Zayin", value: 7, color: "orange", idx: 7 },
+    { letter: "ו", name: "Vav", value: 6, color: "gold", idx: 6 },
 
-    { letter: "כ", name: "Kaf", value: 20, color: "gold" },
-    { letter: "ל", name: "Lamed", value: 30, color: "green" },
-    { letter: "מ", name: "Mem", value: 40, color: "cyan" },
-    { letter: "נ", name: "Nun", value: 50, color: "blue" },
-    { letter: "ס", name: "Samekh", value: 60, color: "purple" },
+    { letter: "ס", name: "Samekh", value: 60, color: "red", idx: 15 },
+    { letter: "נ", name: "Nun", value: 50, color: "pink", idx: 14 },
+    { letter: "מ", name: "Mem", value: 40, color: "indigo", idx: 13 },
+    { letter: "ל", name: "Lamed", value: 30, color: "purple", idx: 12 },
+    { letter: "כ", name: "Kaf", value: 20, color: "cyan", idx: 11 },
 
-    { letter: "ע", name: "Ayin", value: 70, color: "pink" },
-    { letter: "פ", name: "Pe", value: 80, color: "orange" },
-    { letter: "צ", name: "Tsadi", value: 90, color: "gold" },
-    { letter: "ק", name: "Qof", value: 100, color: "green" },
-    { letter: "ר", name: "Resh", value: 200, color: "teal" },
+    { letter: "ר", name: "Resh", value: 200, color: "teal", idx: 20 },
+    { letter: "ק", name: "Qof", value: 100, color: "green", idx: 19 },
+    { letter: "צ", name: "Tsadi", value: 90, color: "gold", idx: 18 },
+    { letter: "פ", name: "Pe", value: 80, color: "orange", idx: 17 },
+    { letter: "ע", name: "Ayin", value: 70, color: "orange", idx: 16 },
 
-    { letter: "ש", name: "Shin", value: 300, color: "purple" },
-    { letter: "ת", name: "Tav", value: 400, color: "indigo" },
+    { letter: "ת", name: "Tav", value: 400, color: "indigo", idx: 22 },
+    { letter: "ש", name: "Shin", value: 300, color: "purple", idx: 21 },
 
     // Final forms at the end, marked to hide their index
-    { letter: "ך", name: "Final Kaf", value: 20, color: "gold", isFinal: true },
-    { letter: "ם", name: "Final Mem", value: 40, color: "cyan", isFinal: true },
-    { letter: "ן", name: "Final Nun", value: 50, color: "blue", isFinal: true },
-    { letter: "ף", name: "Final Pe", value: 80, color: "orange", isFinal: true },
-    { letter: "ץ", name: "Final Tsadi", value: 90, color: "gold", isFinal: true },
+    { letter: "ץ", name: "Final Tsadi", value: 900, color: "orange", isFinal: true },
+    { letter: "ף", name: "Final Pe", value: 800, color: "pink", isFinal: true },
+    { letter: "ן", name: "Final Nun", value: 700, color: "indigo", isFinal: true },
+    { letter: "ם", name: "Final Mem", value: 600, color: "blue", isFinal: true },
+    { letter: "ך", name: "Final Kaf", value: 500, color: "teal", isFinal: true },
 ];
 
 const meanings = {
@@ -355,13 +355,19 @@ const HebrewCalculatorModal = ({ isOpen, onClose }) => {
                                             className={`letter-card btn-3d ${item.color}`}
                                             onClick={() => handleLetterClick(item.letter)}
                                         >
-                                            {!item.isFinal && <div className="absolute top-1 left-2 text-[10px] text-white font-bold opacity-80">{index + 1}</div>}
+                                            {!item.isFinal && <div className="absolute top-1 left-2 text-[10px] text-white font-bold opacity-80">{item.idx}</div>}
                                             <div className="letter">{item.letter}</div>
                                             <div className="name">{item.name}</div>
                                             <div className={`value ${showLetterValues ? '' : 'invisible'}`}>{item.value}</div>
                                         </div>
-                                        {/* Force line break after the 22nd standard letter (Tav) */}
-                                        {item.letter === "ת" && <div className="w-full h-0 m-0 p-0 border-0"></div>}
+                                        {/* Force line break after the 22nd standard letter (Tav/Shin) */}
+                                        {item.letter === "ש" && (
+                                            <div className="w-full text-center mt-3 mb-1 flex items-center justify-center">
+                                                <div className="text-[11px] font-bold tracking-widest uppercase text-gray-300 drop-shadow-md">
+                                                    FINAL FORMS (5 LETTERS)
+                                                </div>
+                                            </div>
+                                        )}
                                     </React.Fragment>
                                 ))}
                             </div>

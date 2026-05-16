@@ -193,6 +193,7 @@ async def get_current_user_optional(request: Request, db: AsyncSession = Depends
     return user
 
 @router.get("/me", response_model=UserInfo)
+@router.get("/users/me", response_model=UserInfo)
 async def read_users_me(current_user: User = Depends(get_current_user)) -> Any:
     """
     Get current user info, leveraging the HttpOnly cookie

@@ -74,10 +74,9 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
     );
 };
 
-const StudentReport = () => {
+const HoneycombReport = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [students, setStudents] = useState([]);
-    const [selectedStudent, setSelectedStudent] = useState('');
     
     const [selectedModule, setSelectedModule] = useState('MODULE 1');
     const [selectedFacet, setSelectedFacet] = useState('FACET 1');
@@ -94,22 +93,18 @@ const StudentReport = () => {
     }, []);
 
     useEffect(() => {
-        if (selectedStudent) {
-            axios.get(`http://${window.location.hostname}:8000/api/assignments`, { withCredentials: true })
-                .then(res => {
-                    const studentAssignments = res.data.filter(a => a.user_id === selectedStudent);
-                    setAssignments(studentAssignments);
-                })
-                .catch(console.error);
-        } else {
-            setAssignments([]);
-        }
+        // Fetch all assignments for organization-wide aggregate
+        axios.get(`http://${window.location.hostname}:8000/api/assignments`, { withCredentials: true })
+            .then(res => {
+                setAssignments(Array.isArray(res.data) ? res.data : []);
+            })
+            .catch(console.error);
 
         // Fetch RLLT lookup for metrics table
         axios.get(`http://${window.location.hostname}:8000/api/rllt_lookup`, { withCredentials: true })
             .then(res => setRlltDB(Array.isArray(res.data) ? res.data : []))
             .catch(console.error);
-    }, [selectedStudent]);
+    }, []);
 
     const assignedCharts = React.useMemo(() => {
         return assignments.map(a => chartsList.find(c => c.id === a.chart_id)).filter(Boolean);
@@ -196,15 +191,10 @@ const StudentReport = () => {
         }
     }, [phaseOptions, selectedPhase]);
 
-    const isAssigned = selectedStudent !== '' && assignments.length > 0;
-
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
-
-    // Touch count increments are handled by the player pages (TTomTPlayer, SMTPlayer),
-    // NOT from this report page. This page is display-only.
 
     useEffect(() => {
         StudentService.getStudents()
@@ -212,34 +202,26 @@ const StudentReport = () => {
             .catch(console.error);
     }, []);
 
-    const currentStudentData = React.useMemo(() => {
-        return students.find(s => s.id === selectedStudent);
-    }, [students, selectedStudent]);
+    const totalTouchCounts = React.useMemo(() => {
+        let total = {
+            transformation: 0,
+            team_transformation: 0,
+            klt_reading_plan: 0
+        };
+        students.forEach(s => {
+            if (s.touch_counts) {
+                total.transformation += (s.touch_counts.transformation || 0);
+                total.team_transformation += (s.touch_counts.team_transformation || 0);
+                total.klt_reading_plan += (s.touch_counts.klt_reading_plan || 0);
+            }
+        });
+        return total;
+    }, [students]);
 
     const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const formattedDate = `${days[currentTime.getDay()]} ${currentTime.getDate().toString().padStart(2, '0')} ${months[currentTime.getMonth()]} ${currentTime.getFullYear()}`;
     const formattedTime = currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
-
-    const studentOptions = students.map((student) => ({
-        label: (student.name || `${student.first_name || ''} ${student.last_name || ''}`.trim() || student.username || `Student ${student.id}`).toUpperCase(),
-        value: student.id,
-        email: student.email || '',
-        mobile: student.mobile_number || student.mobile || student.phone || student.phone_number || ''
-    }));
-
-    const studentOptionTemplate = (option) => {
-        return (
-            <div className="flex flex-col">
-                <span className="font-bold">{option.label}</span>
-                {(option.mobile || option.email) && (
-                    <span className="text-xs text-gray-500 mt-0.5">
-                        {option.mobile} {option.mobile && option.email ? '|' : ''} {option.email}
-                    </span>
-                )}
-            </div>
-        );
-    };
 
     const handleExportPDF = async () => {
         const node = document.querySelector('.print-container');
@@ -259,7 +241,7 @@ const StudentReport = () => {
             const xOffset = (pageWidth - pdfWidth) / 2;
             const yOffset = (pageHeight - pdfHeight) / 2;
             pdf.addImage(dataUrl, 'JPEG', xOffset, yOffset, pdfWidth, pdfHeight);
-            pdf.save('Student_Report.pdf');
+            pdf.save('Honeycomb_Report.pdf');
         } catch (error) {
             console.error('Error generating PDF:', error);
             alert("Could not generate PDF. Please try the Print option and 'Save as PDF'.");
@@ -328,7 +310,7 @@ const StudentReport = () => {
 
                 {/* Top Title Bar */}
                 <div className="bg-[#0b172a] text-white text-center py-3 text-xl font-bold tracking-widest uppercase relative">
-                    REAL LIFE LEADERSHIP TRAINING - SUCCESS ROAD MAP - STUDENT REPORT
+                    REAL LIFE LEADERSHIP TRAINING - SUCCESS ROAD MAP - HONEYCOMB CHART
                 </div>
 
                 {/* Top Info Bar */}
@@ -341,24 +323,9 @@ const StudentReport = () => {
                         </div>
                     </div>
                     <div className="flex-[1.5] flex items-center p-3 px-4 border-r border-gray-300">
-                        <i className="pi pi-user text-purple-500 text-3xl mr-3 bg-purple-100 rounded-full p-1.5"></i>
-                        <div className="font-black text-gray-800 text-sm tracking-wide w-full">
-                            <Dropdown 
-                                value={selectedStudent} 
-                                onChange={(e) => setSelectedStudent(e.value)} 
-                                options={studentOptions} 
-                                optionLabel="label" 
-                                placeholder="SELECT STUDENT"
-                                filter 
-                                filterBy="label,email,mobile"
-                                itemTemplate={studentOptionTemplate}
-                                className="w-full bg-transparent border-none shadow-none font-black text-gray-800 text-sm tracking-wide p-0"
-                                pt={{
-                                    root: { className: 'w-full shadow-none border-none bg-transparent' },
-                                    input: { className: 'font-black text-gray-800 text-sm tracking-wide p-0' },
-                                    trigger: { className: 'w-8' }
-                                }}
-                            />
+                        <i className="pi pi-globe text-purple-500 text-3xl mr-3 bg-purple-100 rounded-full p-1.5"></i>
+                        <div className="font-black text-gray-800 text-sm tracking-wide w-full uppercase">
+                            ALL LOCATIONS & STUDENTS
                         </div>
                     </div>
                     <div className="flex-[1.5] flex items-center p-3 px-4 border-r border-gray-300">
@@ -435,7 +402,9 @@ const StudentReport = () => {
                         if (!currentRow && rlltDB.length > 0) currentRow = rlltDB[0];
                         if (!currentRow) currentRow = {};
 
-                        const val = (key) => isAssigned && currentRow[key] !== undefined && currentRow[key] !== null && currentRow[key] !== '' ? currentRow[key] : '-';
+                        // In Honeycomb we show data based on aggregated assignments? Or just from DB? 
+                        // It uses the same rlltDB logic as StudentReport.
+                        const val = (key) => currentRow[key] !== undefined && currentRow[key] !== null && currentRow[key] !== '' ? currentRow[key] : '-';
 
                         return [
                             { label: 'FCT', icon: 'pi pi-users text-[#a855f7] bg-[#f3e8ff] rounded-full p-2', value: val('facet') },
@@ -473,25 +442,23 @@ const StudentReport = () => {
                         <div className="flex-1 bg-white relative pl-2 overflow-hidden">
                             <div className="absolute inset-y-0 right-0 w-[calc(100%-0.5rem)] flex items-center justify-center">
                                 <div className="relative w-full h-[85%]">
-                                    {/* Map Image - using the exact image provided by the user */}
+                                    {/* Map Image */}
                                     <img src="/map_scroll.png" alt="Map Scroll" className="w-full h-full object-cover rounded shadow-sm" />
-                                    {/* Student Location Marker */}
-                                    {isAssigned && currentStudentData && (
+                                    {/* All Student Location Markers */}
+                                    {students.map((student, idx) => (
                                         <div 
+                                            key={idx}
                                             className="absolute z-20 pointer-events-none" 
                                             style={{ 
-                                                ...getStudentLocation(currentStudentData),
+                                                ...getStudentLocation(student),
                                                 transform: 'translate(-50%, -100%)' 
                                             }}
                                         >
-                                            <div className="flex flex-col items-center justify-center animate-bounce">
-                                                <i className="pi pi-map-marker text-red-600 text-2xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></i>
-                                                <span className="text-[8px] font-black bg-white/95 px-1.5 py-0.5 rounded shadow mt-0.5 text-black border border-gray-300 uppercase whitespace-nowrap">
-                                                    {currentStudentData.first_name || currentStudentData.username || currentStudentData.name || 'STUDENT'}
-                                                </span>
+                                            <div className="flex flex-col items-center justify-center">
+                                                <i className="pi pi-map-marker text-red-600 text-[14px] drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"></i>
                                             </div>
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -514,7 +481,7 @@ const StudentReport = () => {
                             <i className="pi pi-file-word text-[#ea580c] text-[36px] mb-1"></i>
                             <div className="text-[10px] font-bold text-center leading-tight px-1 text-gray-800">7 TNT<br />WORD COUNT</div>
                             <div className="text-[24px] font-black mt-1 text-gray-900">
-                                {currentStudentData?.touch_counts ? currentStudentData.touch_counts.transformation?.toLocaleString() || 0 : 0}
+                                {totalTouchCounts.transformation.toLocaleString()}
                             </div>
                         </div>
                     </div>
@@ -549,7 +516,7 @@ const StudentReport = () => {
                             <span className="tracking-widest">TRANSFORMATION</span>
                             <div className="flex gap-2 text-[10px] font-black items-center">
                                 <span className="bg-[#14532d] px-2 py-0.5 rounded border border-[#16a34a] shadow-inner" title="Total Touch Count (Pencils + Wisdom)">
-                                    TOUCH COUNT: {currentStudentData?.touch_counts ? currentStudentData.touch_counts.transformation?.toLocaleString() || 0 : 0}
+                                    TOUCH COUNT: {totalTouchCounts.transformation.toLocaleString()}
                                 </span>
                             </div>
                         </div>
@@ -602,7 +569,7 @@ const StudentReport = () => {
                             <span className="tracking-widest">TEAM TRANSFORMATION</span>
                             <div className="flex gap-2 text-[10px] font-black items-center">
                                 <span className="bg-[#1e1b4b] px-2 py-0.5 rounded border border-[#312e81] shadow-inner" title="Team Transformation Touch Count">
-                                    TOUCH COUNT: {currentStudentData?.touch_counts ? currentStudentData.touch_counts.team_transformation?.toLocaleString() || 0 : 0}
+                                    TOUCH COUNT: {totalTouchCounts.team_transformation.toLocaleString()}
                                 </span>
                             </div>
                         </div>
@@ -620,7 +587,7 @@ const StudentReport = () => {
                             </div>
                             <div className="flex gap-2 text-[10px] font-black items-center">
                                 <span className="bg-[#172554] px-2 py-0.5 rounded border border-[#1e3a8a] shadow-inner" title="Reading Plan Touch Count">
-                                    TOUCH COUNT: {currentStudentData?.touch_counts ? currentStudentData.touch_counts.klt_reading_plan?.toLocaleString() || 0 : 0}
+                                    TOUCH COUNT: {totalTouchCounts.klt_reading_plan.toLocaleString()}
                                 </span>
                             </div>
                         </div>
@@ -674,4 +641,4 @@ const StudentReport = () => {
     );
 };
 
-export default StudentReport;
+export default HoneycombReport;

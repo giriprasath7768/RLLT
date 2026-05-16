@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import WordToolbar from '../../components/admin/WordToolbar';
 import RLLTToolbarModal from '../../components/admin/RLLTToolbarModal';
+import DailyISIModal from '../../components/admin/DailyISIModal';
 import SavedDocumentsModal from '../../components/admin/SavedDocumentsModal';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -12,6 +13,7 @@ import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import FontFamily from '@tiptap/extension-font-family';
 import { ResizableImage, ShapeNode, TextBoxNode, WisdomMark, TextEffectMark, FontSizeMark, PageNode, CustomDocument, UnderlineMark } from '../../components/admin/tiptap-extensions/extensions';
+import { StudentService } from '../../services/studentService';
 
 // Phase 3 Migration: Tiptap NodeViews
 // Custom Quill Blots have been completely replaced with React-driven Tiptap NodeViews.
@@ -29,7 +31,7 @@ const WordEditor = () => {
     const quillRef = useRef(null);
     const [title, setTitle] = useState('Untitled Document');
     const [content, setContent] = useState('');
-    const [pageSize, setPageSize] = useState('Letter'); // Added state for Dynamic Settings
+    const [pageSize, setPageSize] = useState('A4'); // Added state for Dynamic Settings
     const [watermark, setWatermark] = useState('');
     const [language, setLanguage] = useState('en');
     const [selectedCountry, setSelectedCountry] = useState(null);
@@ -44,10 +46,21 @@ const WordEditor = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     const [spellCheckEnabled, setSpellCheckEnabled] = useState(true);
     const debounceTimeout = useRef(null);
+    const lastTouchRef = useRef(0);
+
+    const incrementWordTouch = () => {
+        const now = Date.now();
+        // Throttle to max 1 touch every 2 seconds while typing
+        if (now - lastTouchRef.current < 2000) return;
+        lastTouchRef.current = now;
+        StudentService.updateMyTouchCounts({ transformation: 1, team_transformation: 0, klt_reading_plan: 0 })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+    };
 
     // Book Index States
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [rlltToolbarOpen, setRlltToolbarOpen] = useState(false);
+    const [dailyISIOpen, setDailyISIOpen] = useState(false);
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
     const [expandedBookId, setExpandedBookId] = useState(null);
@@ -176,6 +189,7 @@ const WordEditor = () => {
         const citation = `${book.name} ${chapter.chapter_number}:${verseNum} `;
         editor.chain().focus().insertContent(citation).run();
         setIsSidebarOpen(false);
+        incrementWordTouch();
     };
 
     const [savedDocsModalOpen, setSavedDocsModalOpen] = useState(false);
@@ -248,6 +262,7 @@ const WordEditor = () => {
     const handleContentChange = (value) => {
         if (isChartEditing || window.isChartEditing) return; // Prevent ReactQuill from stealing focus during chart edits
         setContent(value);
+        incrementWordTouch();
 
         if (debounceTimeout.current) {
             clearTimeout(debounceTimeout.current);
@@ -443,6 +458,7 @@ const WordEditor = () => {
                     setSpellCheckEnabled={setSpellCheckEnabled}
                     setIsChartEditing={setIsChartEditing}
                     setRlltToolbarOpen={setRlltToolbarOpen}
+                    setDailyISIOpen={setDailyISIOpen}
                 />
             </div>
 
@@ -454,11 +470,28 @@ const WordEditor = () => {
                     onClose={() => setRlltToolbarOpen(false)}
                     onInsertText={(text, color) => {
                         if (editor) {
-                            if (color) {
-                                editor.chain().focus().insertContent(`<span style="color: ${color}">${text} </span>`).run();
+                            const { empty } = editor.state.selection;
+                            if (!empty && color) {
+                                // If text is selected, just color the selected text
+                                editor.chain().focus().setColor(color).run();
                             } else {
-                                editor.chain().focus().insertContent(`${text} `).run();
+                                // Otherwise, insert the text template
+                                if (color) {
+                                    editor.chain().focus().insertContent(`<span style="color: ${color}">${text} </span>`).run();
+                                } else {
+                                    editor.chain().focus().insertContent(`${text} `).run();
+                                }
                             }
+                        }
+                    }}
+                />
+
+                <DailyISIModal
+                    isOpen={dailyISIOpen}
+                    onClose={() => setDailyISIOpen(false)}
+                    onInsertImage={(dataUrl) => {
+                        if (editor) {
+                            editor.chain().focus().setImage({ src: dataUrl }).run();
                         }
                     }}
                 />
@@ -563,6 +596,11 @@ const WordEditor = () => {
                 }
                 
                 @media print {
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        color-adjust: exact !important;
+                    }
                     @page { margin: 0; size: ${PAGE_SIZES[pageSize].width} ${PAGE_SIZES[pageSize].height}; }
                     body { margin: 0; padding: 0; background: white; }
                     .fixed.inset-0, .fixed.inset-0 * { visibility: visible !important; }
@@ -580,8 +618,15 @@ const WordEditor = () => {
                         border: none !important; 
                         margin: 0 auto !important; 
                         width: 100% !important; 
-                        height: auto !important; 
-                        min-height: 0 !important;
+                    }
+                    .pdf-page-container {
+                        overflow: visible !important;
+                        height: var(--page-min-height, 297mm) !important;
+                        max-height: none !important;
+                    }
+                    #pdf-export-container {
+                        transform: none !important;
+                        margin-bottom: 0 !important;
                     }
                 }
             `}</style>

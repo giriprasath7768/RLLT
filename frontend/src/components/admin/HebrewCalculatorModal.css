@@ -24,7 +24,7 @@
         inset 0 -2px 4px rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(0, 0, 0, 0.6);
     width: calc(20% - 4px);
-    height: calc(100% / 6 - 4px);
+    height: 15%;
     /* 5 items per row, 6 rows total */
     display: flex;
     flex-direction: column;

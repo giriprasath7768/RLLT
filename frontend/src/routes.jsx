@@ -39,6 +39,7 @@ import CreateContent from './pages/admin/CreateContent';
 import SevenTNTMainChart from './pages/admin/SevenTNTMainChart';
 import LightChart from './pages/admin/LightChart';
 import StudentReport from './pages/admin/StudentReport';
+import HoneycombReport from './pages/admin/HoneycombReport';
 import SevenTNTPlayers from './pages/admin/SevenTNTPlayers';
 import SevenTNTPlayer from './pages/admin/SevenTNTPlayer';
 import SevenTNTContentManagement from './pages/admin/SevenTNTContentManagement';
@@ -46,6 +47,7 @@ import TTomTPlayer from './pages/admin/TTomTPlayer';
 import Players from './pages/admin/Players';
 import DashboardAdmin from './pages/admin/DashboardAdmin';
 import DashboardLeader from './pages/admin/DashboardLeader';
+import DashboardSuperAdmin from './pages/admin/DashboardSuperAdmin';
 import StudentAssessmentTest from './pages/student/StudentAssessmentTest';
 import AssessmentUnderReview from './pages/student/AssessmentUnderReview';
 import StudentLayout from './components/layout/StudentLayout';
@@ -61,6 +63,7 @@ import BookIndex from './pages/admin/BookIndex';
 import ScreenRecorder from './pages/admin/ScreenRecorder';
 import ImageGallery from './pages/admin/ImageGallery';
 import DynamicCycleChart from './pages/admin/DynamicCycleChart';
+import DynamicCycleChartView from './pages/admin/DynamicCycleChartView';
 import ClassroomAdmin from './pages/admin/ClassroomAdmin';
 import StudentClassroom from './pages/student/StudentClassroom';
 import StudentAssignments from './pages/student/StudentAssignments';
@@ -72,30 +75,6 @@ import Shanaz357 from './pages/admin/Shanaz357';
 import Settings from './pages/admin/Settings';
 
 // Dashboard Components
-const DashboardSuperAdmin = () => (
-    <div className="p-10">
-        <div className="mb-8">
-            <h1 className="text-3xl font-black text-[#051220] tracking-tight mb-2">Dashboard</h1>
-            <p className="text-gray-500">Welcome back, Super Administrator. Here's an overview of your platform.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Total Users</div>
-                <div className="text-4xl font-black text-[#c8a165]">1,284</div>
-            </div>
-            <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Active Media</div>
-                <div className="text-4xl font-black text-[#051220]">524</div>
-            </div>
-            <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Cloud Usage</div>
-                <div className="text-4xl font-black text-[#051220]">68%</div>
-            </div>
-        </div>
-    </div>
-);
-
 const DefaultDashboard = () => <div className="p-8 text-gray-800"><h1>Dashboard</h1></div>;
 
 // Protected Route Wrapper
@@ -203,7 +182,9 @@ const AppRoutes = () => {
                     <Route path="/admin/chart-creation/7tnt-day-cycle" element={<SevenTNTDayCycleChart />} />
                     <Route path="/admin/chart-listing/light-chart" element={<LightChart />} />
                     <Route path="/admin/reports/student-report" element={<StudentReport />} />
+                    <Route path="/admin/reports/honeycomb-report" element={<HoneycombReport />} />
                     <Route path="/admin/shanaz-357" element={<Shanaz357 />} />
+                    <Route path="/admin/chart-listing/357-chart" element={<DynamicCycleChartView />} />
                     <Route path="/admin/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />
                     <Route path="/admin/chart-listing/7tnt-weekly-chart" element={<SevenTNTWeeklyChart />} />
                     <Route path="/admin/chart-listing/7tnt-day-cycle" element={<SevenTNTDayCycleChartView />} />
@@ -253,6 +234,7 @@ const AppRoutes = () => {
                 <Route path="/dashboard/student/chart-listing/twenty-four-seven-morning-evening" element={<TwentyFourSevenMorningEveningChart />} />
                 <Route path="/dashboard/student/chart-listing/twenty-four-seven-dl-size-chart" element={<TwentyFourSevenDLSizeChart />} />
                 <Route path="/dashboard/student/chart-listing/main-chart" element={<MainChartView />} />
+                <Route path="/dashboard/student/chart-listing/357-chart" element={<DynamicCycleChartView />} />
                 <Route path="/dashboard/student/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />
                 <Route path="/dashboard/student/chart-listing/7tnt-weekly-chart" element={<SevenTNTWeeklyChart />} />
                 <Route path="/dashboard/student/chart-listing/7tnt-day-cycle" element={<SevenTNTDayCycleChartView />} />

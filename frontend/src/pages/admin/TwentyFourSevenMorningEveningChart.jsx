@@ -247,6 +247,15 @@ const TwentyFourSevenMorningEveningChart = () => {
                     clonedElement.style.maxWidth = `${EXACT_WIDTH}px`;
                     clonedElement.style.margin = '0';
                     if (clonedWrapper) clonedWrapper.style.overflowX = 'visible';
+
+                    // Force all text to be extra bold for printing visibility
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `
+                        #printable-chart-area * {
+                            font-weight: 900 !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
                 }
             });
 
@@ -283,15 +292,9 @@ const TwentyFourSevenMorningEveningChart = () => {
                 const marginSafeH = a4Height - 60;
                 
                 // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
-                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
-                const printW = pdfWidthPx * ratio;
-                const printH = pdfHeightPx * ratio;
-                
-                const marginX = (a4Width - printW) / 2;
-                const marginY = (a4Height - printH) / 2;
-                
-                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
-                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+                // Force EXACTLY equal spacing (30pt) on all 4 sides by stretching to fill the safe area.
+                // This guarantees equal spacing on the A4 paper.
+                pdf.addImage(imgData, 'PNG', 30, 30, marginSafeW, marginSafeH);
             } else {
                 pdf = new jsPDF({
                     orientation: pdfOrientation,
@@ -650,14 +653,14 @@ const TwentyFourSevenMorningEveningChart = () => {
                                             <colgroup>
                                                 <col style={{ width: '2.5%' }} />
                                                 <col style={{ width: '3.5%' }} />
-                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '13%' }} />
                                                 <col style={{ width: '4%' }} />
-                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '13%' }} />
                                                 <col style={{ width: '4%' }} />
-                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '13%' }} />
                                                 <col style={{ width: '4%' }} />
-                                                <col style={{ width: '22.5%' }} />
-                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '14.5%' }} />
+                                                <col style={{ width: '9%' }} />
                                                 <col style={{ width: '4.5%' }} />
                                                 <col style={{ width: '5.5%' }} />
                                                 <col style={{ width: '4%' }} />
@@ -693,27 +696,27 @@ const TwentyFourSevenMorningEveningChart = () => {
                                                         </tr>
 
                                                         <tr className="bg-white text-center font-bold h-[30px]" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
-                                                            <th rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(23) }}>
+                                                            <th rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(20) }}>
                                                                 <div className="absolute inset-0 flex items-center justify-center">
-                                                                    <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center">
+                                                                    <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(20) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center">
                                                                         {chunk.team}
                                                                     </div>
                                                                 </div>
                                                             </th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
-                                                            <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h1}</th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h2}</th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h3}</th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h1}</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h2}</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h3}</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">{chunk.h4}</th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
-                                                            <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
-                                                            <th rowSpan={7} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(23) }}>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">ART</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">YES</th>
+                                                            <th rowSpan={7} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(20) }}>
                                                                 <div className="absolute inset-0 flex items-center justify-center">
                                                                     <div style={{ transform: 'rotate(-90deg)' }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center">
                                                                         {headerSubtitle}
@@ -724,19 +727,19 @@ const TwentyFourSevenMorningEveningChart = () => {
 
                                                         {chunk.days.map((d, dIdx) => (
                                                             <tr key={d.id} className="bg-white text-center border-b-2 border-black h-[38px]">
-                                                                <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(25) }}>{d.day}</td>
+                                                                <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(20) }}>{d.day}</td>
 
                                                                 {/* M1 TEXT (Light Green) */}
-                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate text-[#2ed573]" style={{ fontSize: getFS(25) }}>{d.m1b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m1t}</td>
+                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate text-[#2ed573]" style={{ fontSize: getFS(20) }}>{d.m1b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>{d.m1t}</td>
 
                                                                 {/* M2 TEXT (Light Green) */}
-                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate text-[#2ed573]" style={{ fontSize: getFS(25) }}>{d.m2b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m2t}</td>
+                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate text-[#2ed573]" style={{ fontSize: getFS(20) }}>{d.m2b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>{d.m2t}</td>
 
                                                                 {/* M3 TEXT (Light Green) */}
-                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate text-[#2ed573]" style={{ fontSize: getFS(25) }}>{d.m3b}</td>
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>{d.m3t}</td>
+                                                                <td className="border-2 border-black p-0 px-1 bg-white uppercase font-bold leading-tight align-middle truncate text-[#2ed573]" style={{ fontSize: getFS(20) }}>{d.m3b}</td>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>{d.m3t}</td>
 
                                                                 {/* COMBINED M4 TEXT (Light Green + Deep Blue in 50/50 grid) */}
                                                                 <td className="border-2 border-black p-0 bg-white text-center uppercase font-bold leading-tight align-middle" style={{ fontSize: getFS(20) }}>
@@ -751,7 +754,7 @@ const TwentyFourSevenMorningEveningChart = () => {
                                                                 </td>
 
                                                                 {/* COMBINED M4 TIME (Light Green + Deep Blue in 50/50 grid) */}
-                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(25) }}>
+                                                                <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>
                                                                     <div className="flex w-full h-full items-center">
                                                                         <div className="w-1/2 text-center text-[#2ed573] whitespace-nowrap">
                                                                             {d.m4t_morning}
@@ -762,9 +765,9 @@ const TwentyFourSevenMorningEveningChart = () => {
                                                                     </div>
                                                                 </td>
 
-                                                                <td className="border-2 border-black p-0 font-bold leading-none align-middle" style={{ fontSize: getFS(25) }}>{d.chap}</td>
-                                                                <td className="border-2 border-black p-0 font-bold leading-none align-middle" style={{ fontSize: getFS(25) }}>{d.verse}</td>
-                                                                <td className="border-2 border-black p-0 font-bold leading-none align-middle" style={{ fontSize: getFS(25) }}>{d.art}</td>
+                                                                <td className="border-2 border-black p-0 font-bold leading-none align-middle" style={{ fontSize: getFS(20) }}>{d.chap}</td>
+                                                                <td className="border-2 border-black p-0 font-bold leading-none align-middle" style={{ fontSize: getFS(20) }}>{d.verse}</td>
+                                                                <td className="border-2 border-black p-0 font-bold leading-none align-middle" style={{ fontSize: getFS(20) }}>{d.art}</td>
 
                                                                 <td className="border-2 border-black p-0 text-center align-middle">
                                                                     {d.yes ? '✔️' : ''}

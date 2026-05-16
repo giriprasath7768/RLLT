@@ -79,7 +79,7 @@ const generateInitialData = (cycle = 3) => {
         for (let d = 0; d < 5; d++) {
             const idx = c * 5 + d;
             if (idx < daysList.length) {
-                daysArray.push({ id: daysList[idx], day: daysList[idx], m1b: '', m1t: '', m2b: '', m2t: '', m3b: '', m3t: '', chap: 0, verse: 0, art: '', yes: false });
+                daysArray.push({ id: daysList[idx], day: daysList[idx], m1b: '', m1t: '', m2b: '', m2t: '', m3b: '', m3t: '', m4b: '', m4t: '', m5b: '', m5t: '', chap: 0, verse: 0, art: '', yes: false });
             }
         }
         defaultData.push({
@@ -92,6 +92,8 @@ const generateInitialData = (cycle = 3) => {
             h1: "",
             h2: "",
             h3: "",
+            h4: "",
+            h5: "",
             days: daysArray
         });
     }
@@ -709,7 +711,12 @@ const DynamicCycleChart = () => {
                 chunkDays.push({
                     id: `day_${dayCounter}`,
                     day: dayCounter,
-                    booksData: booksForDay,
+                    m1b: booksForDay[0]?.portion || '',
+                    m1t: booksForDay[0]?.timeStr || '',
+                    m2b: booksForDay[1]?.portion || '',
+                    m2t: booksForDay[1]?.timeStr || '',
+                    m3b: booksForDay[2]?.portion || '',
+                    m3t: booksForDay[2]?.timeStr || '',
                     chap: totChap,
                     verse: totVerse,
                     art: formatHrMin(totArt),
@@ -723,10 +730,12 @@ const DynamicCycleChart = () => {
                     id: `chunk_${c + 1}`,
                     team: `TEAM -${c + 1}`,
                     phase: `MDL ${mdl}: FCT ${fct}: PHS - ${phs}/${maxPhases}`,
-                    h_books: Array(3).fill(''),
                     promiseLabel: "GOD'S PROMISES :",
                     promises: "ENTER GOD'S PROMISSES HERE",
                     promiseInput: "",
+                    h1: "",
+                    h2: "",
+                    h3: "",
                     days: chunkDays
                 });
             }
@@ -1005,25 +1014,55 @@ const DynamicCycleChart = () => {
                     `}</style>
                             <div className="editor-table-container">
                                 <table className="w-full bg-white table-fixed border-collapse" style={{ borderSpacing: 0 }}>
-                                    <colgroup>
-                                        <col style={{ width: '4%' }} />
-                                        <col style={{ width: '4%' }} />
-                                        <col style={{ width: '15%' }} />
-                                        <col style={{ width: '4%' }} />
-                                        <col style={{ width: '15%' }} />
-                                        <col style={{ width: '4%' }} />
-                                        <col style={{ width: '15%' }} />
-                                        <col style={{ width: '4%' }} />
-                                        <col style={{ width: '5%' }} />
-                                        <col style={{ width: '5%' }} />
-                                        <col style={{ width: '5%' }} />
-                                        <col style={{ width: '3%' }} />
-                                        <col style={{ width: '4%' }} />
-                                    </colgroup>
+                                    {(() => {
+                                        const is5Seg = chunks[0]?.days?.[0]?.m4b !== undefined;
+                                        return is5Seg ? (
+                                            <colgroup>
+                                                <col style={{ width: '2%' }} />
+                                                <col style={{ width: '3%' }} />
+                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '11%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '5.5%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '3%' }} />
+                                                <col style={{ width: '2%' }} />
+                                            </colgroup>
+                                        ) : (
+                                            <colgroup>
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '15%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '15%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '15%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '5%' }} />
+                                                <col style={{ width: '5%' }} />
+                                                <col style={{ width: '5%' }} />
+                                                <col style={{ width: '3%' }} />
+                                                <col style={{ width: '4%' }} />
+                                            </colgroup>
+                                        );
+                                    })()}
 
                                     {chunks.map((chunk, cIdx) => {
-                                        const booksTotals = Array.from({ length: 3 }).map((_, i) =>
-                                            chunk.days.reduce((acc, curr) => acc + (curr.booksData && curr.booksData[i] ? (curr.booksData[i].timeFloat || parseTime(curr.booksData[i].timeStr)) : 0), 0)
+                                        const is5Seg = chunk.days[0]?.m4b !== undefined;
+                                        const numSegs = is5Seg ? 5 : 3;
+                                        const booksTotals = Array.from({ length: numSegs }).map((_, i) =>
+                                            chunk.days.reduce((acc, curr) => {
+                                                const tVal = curr[`m${i+1}t`];
+                                                return acc + parseTime(tVal);
+                                            }, 0)
                                         );
                                         const chapTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.chap) || 0), 0);
                                         const verseTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.verse) || 0), 0);
@@ -1033,7 +1072,7 @@ const DynamicCycleChart = () => {
                                             <tbody key={chunk.id} className="text-black font-bold text-sm rllt-condensed">
                                                 <tr className="bg-white h-[35px]">
                                                     <td className="border-2 border-black bg-white"></td>
-                                                    <td colSpan={6} className="border-2 border-black px-2 align-middle bg-white">
+                                                    <td colSpan={is5Seg ? 11 : 6} className="border-2 border-black px-2 align-middle bg-white">
                                                         <div className="flex h-full w-full items-center">
                                                             <input
                                                                 value={chunk.promises}
@@ -1044,7 +1083,7 @@ const DynamicCycleChart = () => {
                                                             />
                                                         </div>
                                                     </td>
-                                                    <td colSpan={5} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
+                                                    <td colSpan={is5Seg ? 4 : 5} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
                                                         <input
                                                             className="w-full h-full outline-none p-1 font-bold text-center bg-transparent text-black block"
                                                             style={{ fontSize: getFS(20) }}
@@ -1074,15 +1113,15 @@ const DynamicCycleChart = () => {
                                                         </div>
                                                     </th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">DAY</th>
-                                                    {Array.from({ length: 3 }).map((_, i) => (
+                                                    {Array.from({ length: numSegs }).map((_, i) => (
                                                         <React.Fragment key={i}>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-center align-middle">
-                                                                <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h_books?.[i] || ''} onChange={(e) => updateChunkHBook(cIdx, i, e.target.value)} />
+                                                                <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk[`h${i+1}`] || ''} onChange={(e) => updateChunk(cIdx, `h${i+1}`, e.target.value)} />
                                                             </th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black text-center w-12 align-middle">TIME</th>
                                                         </React.Fragment>
                                                     ))}
-                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">CHAP</th>
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{is5Seg ? 'THEM' : 'CHAP'}</th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">VERSE</th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">ART</th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">YES</th>
@@ -1092,15 +1131,16 @@ const DynamicCycleChart = () => {
                                                     <tr key={d.id} className="bg-white text-center hover:bg-gray-50 border-b-2 border-black h-[38px]">
                                                         <td className="border-2 border-black p-0 font-extrabold bg-white text-black align-middle" style={{ fontSize: getFS(20) }}>{d.day}</td>
 
-                                                        {Array.from({ length: 3 }).map((_, bIdx) => {
-                                                            const bInfo = d.booksData && d.booksData[bIdx] ? d.booksData[bIdx] : { portion: '', timeStr: '', timeFloat: 0 };
+                                                        {Array.from({ length: numSegs }).map((_, bIdx) => {
+                                                            const b = `m${bIdx + 1}b`;
+                                                            const t = `m${bIdx + 1}t`;
                                                             return (
                                                                 <React.Fragment key={bIdx}>
                                                                     <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                                        <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={bInfo.portion} onChange={(e) => updateDayBook(cIdx, d.id, bIdx, 'portion', e.target.value)} />
+                                                                        <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d[b] || ''} onChange={(e) => updateDay(cIdx, d.id, b, e.target.value)} />
                                                                     </td>
                                                                     <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                                        <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={bInfo.timeStr} onChange={(e) => updateDayBook(cIdx, d.id, bIdx, 'timeStr', e.target.value)} />
+                                                                        <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d[t] || ''} onChange={(e) => updateDay(cIdx, d.id, t, e.target.value)} />
                                                                     </td>
                                                                 </React.Fragment>
                                                             );
@@ -1141,13 +1181,16 @@ const DynamicCycleChart = () => {
                                         );
                                     })}
                                     <tfoot className="pb-4 rllt-condensed">
-                                        <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(25) }}>
-                                            <td colSpan={8} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-gray-50" style={{ fontSize: getFS(20) }}>
-                                                TOTAL AVERAGE READING TIME {formatSum(
-                                                    chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
-                                                    'HrMins'
-                                                )}
-                                            </td>
+                                        {(() => {
+                                            const is5Seg = chunks[0]?.days?.[0]?.m4b !== undefined;
+                                            return (
+                                                <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(25) }}>
+                                                    <td colSpan={is5Seg ? 12 : 8} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-gray-50" style={{ fontSize: getFS(20) }}>
+                                                        TOTAL AVERAGE READING TIME {formatSum(
+                                                            chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
+                                                            'HrMins'
+                                                        )}
+                                                    </td>
                                             <td className="border-2 border-black p-1 text-center font-extrabold" style={{ fontSize: getFS(20) }}>
                                                 {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.chap) || 0), 0), 0)}
                                             </td>
@@ -1161,14 +1204,21 @@ const DynamicCycleChart = () => {
                                                 )}
                                             </td>
                                         </tr>
+                                        );
+                                        })()}
                                         <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(25) }}>
-                                            <td colSpan={13} className="border-2 border-black p-1 text-center font-semibold tracking-wide">
-                                                <input
-                                                    className="w-full text-center outline-none bg-transparent whitespace-nowrap overflow-hidden text-ellipsis italic font-semibold"
-                                                    style={{ fontSize: getFS(25) }}
-                                                    defaultValue={`It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11`}
-                                                />
-                                            </td>
+                                        {(() => {
+                                            const is5Seg = chunks[0]?.days?.[0]?.m4b !== undefined;
+                                            return (
+                                                <td colSpan={is5Seg ? 17 : 13} className="border-2 border-black p-1 text-center font-semibold tracking-wide">
+                                                    <input
+                                                        className="w-full text-center outline-none bg-transparent whitespace-nowrap overflow-hidden text-ellipsis italic font-semibold"
+                                                        style={{ fontSize: getFS(25) }}
+                                                        defaultValue={`It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11`}
+                                                    />
+                                                </td>
+                                            );
+                                        })()}
                                         </tr>
                                     </tfoot>
                                 </table>

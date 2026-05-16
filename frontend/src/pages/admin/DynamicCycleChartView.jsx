@@ -1,0 +1,756 @@
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { Dropdown } from 'primereact/dropdown';
+import { Toast } from 'primereact/toast';
+import { Button } from 'primereact/button';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import { Dialog } from 'primereact/dialog';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
+import { extractBooksAndAuthors } from '../../utils/bookUtils';
+
+const parseTime = (t) => {
+    if (!t) return 0;
+    t = t.toString().trim().toLowerCase();
+    if (t.includes('h')) {
+        const match = t.match(/(\d+)h\.?(\d+)m?/);
+        if (match) {
+            return (parseInt(match[1] || 0) * 60) + parseInt(match[2] || 0);
+        }
+    } else if (t.includes('.')) {
+        const parts = t.split('.');
+        let sStr = parts[1] || "0";
+        if (sStr.length === 1) sStr += '0'; // Handle '3.3' meaning 3 minutes 30 seconds
+        return parseInt(parts[0] || 0) + (parseInt(sStr.substring(0, 2)) / 60);
+    } else {
+        return parseInt(t) || 0;
+    }
+    return 0;
+};
+
+const formatSum = (totalMins, formatType) => {
+    const rawMins = Math.round(totalMins);
+    if (rawMins === 0) return '';
+    if (formatType === 'HrMins') return rawMins >= 60 ? `${Math.floor(rawMins / 60)} Hr ${rawMins % 60} Mins` : `${rawMins} Mins`;
+    if (formatType === 'Hm') return `${Math.floor(rawMins / 60)}H ${rawMins % 60}m`;
+    return `${rawMins} Mins`;
+};
+
+const CHUNK_COLORS = ['#00a8ff', '#2ed573', '#0A1F35', '#f1c40f', '#9b59b6', '#d35400', '#e74c3c'];
+
+// View-only Image Box
+const ImageBox = ({ url, label }) => {
+    return (
+        <div className="w-full h-full flex items-center justify-center bg-white overflow-hidden relative group">
+            {url ? (
+                <img src={url} className="w-full h-full object-contain" alt="Chart Logo" />
+            ) : (
+                <div className="flex flex-col items-center justify-center text-gray-400 p-1 text-center w-full h-full">
+                    {label && <span className="text-[10px] font-bold leading-tight mt-1">{label}</span>}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const DynamicCycleChartView = () => {
+    const toast = useRef(null);
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [chunks, setChunks] = useState([]);
+    const [chartCycle, setChartCycle] = useState(3);
+
+    // Header States
+    const [headerSubtitle, setHeaderSubtitle] = useState("NO CHART SELECTED");
+    const [headerTitle, setHeaderTitle] = useState("3-5-7 Chart Viewer");
+    const [bannerText, setBannerText] = useState("");
+    const [tLabel, setTLabel] = useState("T");
+    const [logoUrl, setLogoUrl] = useState(null);
+    const [phaseLabel, setPhaseLabel] = useState("1");
+    const [mdl, setMdl] = useState(1);
+    const [fct, setFct] = useState(1);
+
+    // Listing States
+    const [chartsList, setChartsList] = useState([]);
+    const [selectedChart, setSelectedChart] = useState(null);
+
+    // Dynamic Footer States
+    const [rlltDB, setRlltDB] = useState([]);
+    const [maxFacets, setMaxFacets] = useState(1);
+    const [maxPhases, setMaxPhases] = useState(1);
+
+    // Aesthetic & UX Scaling
+    const [tableFontSize, setTableFontSize] = useState(8);
+    const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
+
+    const fetchChartList = () => {
+        axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
+            .then(res => {
+                // Filter for dynamically detected 357 charts - the ones matching banner text "3-5-7 CHART"
+                // Or we can just include them all, but let's assume the user selects from all or we filter.
+                // We'll show all charts that contain 'days' in their parsed payload and have 'booksData' property
+                setChartsList(res.data);
+                if (location.state?.preselect) {
+                    const match = res.data.find(c => 
+                        Number(c.module) === Number(location.state.preselect.module) && 
+                        Number(c.facet) === Number(location.state.preselect.facet) && 
+                        Number(c.phase) === Number(location.state.preselect.phase)
+                    );
+                    if (match) {
+                        setSelectedChart(match);
+                    }
+                }
+            })
+            .catch(err => console.error("Could not fetch charts list", err));
+
+        axios.get('http://' + window.location.hostname + ':8000/api/rllt_lookup', { withCredentials: true })
+            .then(res => setRlltDB(res.data))
+            .catch(err => console.error("Could not fetch RLLT db", err));
+    };
+
+    useEffect(() => {
+        fetchChartList();
+    }, []);
+
+    useEffect(() => {
+        if (!selectedChart || rlltDB.length === 0) return;
+        const m = selectedChart.module;
+        const f = selectedChart.facet;
+        setMdl(m);
+        setFct(f);
+
+        const availableFacets = rlltDB.filter(d => d.module === m);
+        const uniqueFacets = [...new Set(availableFacets.map(d => d.facet))];
+        setMaxFacets(uniqueFacets.length > 0 ? Math.max(...uniqueFacets) : 1);
+
+        const availablePhases = rlltDB.filter(d => d.module === m && d.facet === f);
+        const uniquePhases = [...new Set(availablePhases.map(d => d.phase))];
+        setMaxPhases(uniquePhases.length > 0 ? Math.max(...uniquePhases) : 1);
+    }, [selectedChart, rlltDB]);
+
+    // Load Data when selection changes
+    useEffect(() => {
+        if (!location.state?.chartData && !selectedChart) {
+            setChunks([]);
+            setBannerText("");
+            setTLabel("T");
+            setLogoUrl(null);
+            setHeaderSubtitle("NO CHART SELECTED");
+            setPhaseLabel("1");
+            return;
+        }
+
+        const __fixedPreload = location.state?.chartData;
+        const fetchPromise = __fixedPreload
+            ? Promise.resolve({ data: __fixedPreload })
+            : axios.get(`http://${window.location.hostname}:8000/api/charts/sync/${selectedChart.module}/${selectedChart.facet}/${selectedChart.phase}`, { withCredentials: true });
+
+        fetchPromise.then(res => {
+            const data = res.data;
+            const module = selectedChart?.module || location.state?.assignment?.module || '1';
+            const facet = selectedChart?.facet || location.state?.assignment?.facet || '1';
+            const phase = selectedChart?.phase || location.state?.assignment?.phase || '1';
+            setBannerText(data.banner_text || "");
+            setTLabel(data.t_label || "T");
+            setLogoUrl(data.logo_url ? `http://${window.location.hostname}:8000${data.logo_url}` : null);
+            setHeaderSubtitle(`MODULE${module}:FACET${facet}:PHASE-${phase}`);
+            setPhaseLabel(String(phase));
+
+            if (data.state_payload) {
+                try {
+                    const parsed = JSON.parse(data.state_payload);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        setChunks(parsed);
+                        if (parsed[0].days && parsed[0].days.length > 0) {
+                            setChartCycle(parsed[0].days.length);
+                            setHeaderTitle(`3-5-7 CHART - ${parsed[0].days.length} DAY CYCLE VIEWER`);
+                        }
+                    } else {
+                        setChunks([]);
+                    }
+                } catch (e) {
+                    setChunks([]);
+                }
+            }
+            toast.current?.show({ severity: 'success', summary: 'Loaded', detail: 'Chart configuration loaded.', life: 2000 });
+        })
+            .catch(err => {
+                toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Could not load chart details.', life: 3000 });
+                setChunks([]);
+            });
+    }, [selectedChart]);
+
+    const confirmDelete = () => {
+        if (!selectedChart) return;
+        confirmDialog({
+            message: 'Are you sure you want to delete this specific chart and all of its configurations?',
+            header: 'Delete Confirmation',
+            icon: 'pi pi-info-circle',
+            acceptClassName: 'p-button-danger',
+            accept: () => {
+                const { module, facet, phase } = selectedChart;
+                axios.delete(`http://${window.location.hostname}:8000/api/charts/sync/${module}/${facet}/${phase}`, { withCredentials: true })
+                    .then(res => {
+                        toast.current?.show({ severity: 'success', summary: 'Deleted', detail: 'Chart deleted successfully.', life: 3000 });
+                        setSelectedChart(null);
+                        fetchChartList();
+                    })
+                    .catch(err => {
+                        toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Could not delete the chart.', life: 3000 });
+                    });
+            }
+        });
+    };
+
+    const handleEdit = () => {
+        if (!selectedChart) return;
+        const { module, facet, phase } = selectedChart;
+        navigate(`/admin/chart-creation/357-chart?editMod=${module}&editFct=${facet}&editPhs=${phase}`);
+    };
+
+    const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [readyShareFile, setReadyShareFile] = useState(null);
+
+    const generatePdfBlob = async (returnCanvasOnly = false, forPrint = false) => {
+        setIsProcessingPdf(true);
+        try {
+            if (!window.html2canvas) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            const element = document.getElementById('printable-chart-area');
+            const EXACT_WIDTH = 1220;
+
+            const canvas = await window.html2canvas(element, {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                width: EXACT_WIDTH,
+                windowWidth: EXACT_WIDTH,
+                onclone: (clonedDoc) => {
+                    const clonedElement = clonedDoc.getElementById('printable-chart-area');
+                    clonedElement.style.position = 'absolute';
+                    clonedElement.style.left = '0px';
+                    clonedElement.style.top = '0px';
+                    clonedElement.style.width = `${EXACT_WIDTH}px`;
+                    clonedElement.style.minWidth = `${EXACT_WIDTH}px`;
+                    clonedElement.style.maxWidth = `${EXACT_WIDTH}px`;
+                    clonedElement.style.margin = '0';
+
+                    // Force all text to be extra bold for printing visibility
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `
+                        #printable-chart-area * {
+                            font-weight: 900 !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
+                }
+            });
+
+            if (returnCanvasOnly) return canvas;
+
+            const imgData = canvas.toDataURL('image/png');
+            const CSS_SCALE = 3;
+            const pdfWidthPx = canvas.width / CSS_SCALE;
+            const pdfHeightPx = canvas.height / CSS_SCALE;
+            const pdfOrientation = pdfWidthPx > pdfHeightPx ? 'landscape' : 'portrait';
+
+            let pdf;
+            if (forPrint) {
+                pdf = new jsPDF({ orientation: pdfOrientation, unit: 'pt', format: 'a4' });
+                const a4Width = pdf.internal.pageSize.getWidth();
+                const a4Height = pdf.internal.pageSize.getHeight();
+                const marginSafeW = a4Width - 60;
+                const marginSafeH = a4Height - 60;
+                // Force EXACTLY equal spacing (30pt) on all 4 sides by stretching to fill the safe area.
+                // This guarantees equal spacing on the A4 paper.
+                pdf.addImage(imgData, 'PNG', 30, 30, marginSafeW, marginSafeH);
+            } else {
+                pdf = new jsPDF({ orientation: pdfOrientation, unit: 'pt', format: [pdfWidthPx, pdfHeightPx] });
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidthPx, pdfHeightPx);
+            }
+            return pdf;
+        } catch (e) {
+            console.error('PDF generation error', e);
+            throw e;
+        } finally {
+            setIsProcessingPdf(false);
+        }
+    };
+
+    const handleExportPdf = async () => {
+        try {
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Generating PDF display...', life: 2000 });
+            const pdf = await generatePdfBlob();
+            const fileName = `RLLT_357Chart_Mod${selectedChart?.module}_Fct${selectedChart?.facet}_Phase${selectedChart?.phase}.pdf`;
+            pdf.save(fileName);
+            toast.current?.show({ severity: 'success', summary: 'Exported', detail: 'PDF generated successfully.', life: 2000 });
+        } catch (e) {
+            toast.current?.show({ severity: 'error', summary: 'Export Failed', detail: 'Failed to generate PDF.', life: 3000 });
+        }
+    };
+
+    const handleShare = async () => {
+        try {
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing chart file for sharing...', life: 2000 });
+            const pdf = await generatePdfBlob();
+            const fileName = `RLLT_357Chart_Mod${selectedChart?.module}_Fct${selectedChart?.facet}_Phase${selectedChart?.phase}.pdf`;
+            const blob = pdf.output('blob');
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+
+            setReadyShareFile([file]);
+            setShowShareModal(true);
+
+        } catch (e) {
+            console.error(e);
+            toast.current?.show({ severity: 'error', summary: 'Action Failed', detail: 'Could not process PDF document.', life: 3000 });
+        }
+    };
+
+    const executeNativeShare = async () => {
+        if (!readyShareFile) return;
+        setShowShareModal(false);
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'RLLT Chart Target',
+                    text: 'Please find the RLLT chart attached.',
+                    files: readyShareFile
+                });
+                toast.current?.show({ severity: 'success', summary: 'Shared Successfully', detail: 'Chart OS Sharing launched!', life: 3000 });
+            } else {
+                throw new Error("Share API missing");
+            }
+        } catch (shareErr) {
+            console.warn("Share API failed or rejected, falling back to direct download.", shareErr);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(readyShareFile[0]);
+            a.download = readyShareFile[0].name;
+            a.click();
+            toast.current?.show({ severity: 'warn', summary: 'File Downloaded', detail: 'Native Desktop Share API blocked the file. Falling back to native download.', life: 5000 });
+        }
+    };
+
+    const handlePrint = async () => {
+        try {
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                toast.current?.show({ severity: 'warn', summary: 'Popup Blocked', detail: 'Please allow popups for this site to view the print format.', life: 5000 });
+                return;
+            }
+
+            printWindow.document.write(`
+                <html>
+                <head><title>Generating Print...</title></head>
+                <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; background:#f3f4f6;">
+                    <h2>Preparing High-Quality Print Document...</h2>
+                </body>
+                </html>
+            `);
+
+            toast.current?.show({ severity: 'info', summary: 'Processing', detail: 'Preparing perfect print layout...', life: 2000 });
+            const pdf = await generatePdfBlob(false, true);
+            pdf.autoPrint();
+            const blobUrl = pdf.output('bloburl');
+            printWindow.location.href = blobUrl;
+
+        } catch (e) {
+            console.error(e);
+            toast.current?.show({ severity: 'error', summary: 'Print Failed', detail: 'Could not prepare perfect document for printing.', life: 3000 });
+        }
+    };
+
+    return (
+        <div className="p-8 w-full max-w-full overflow-x-auto bg-gray-50 min-h-screen print:bg-white print:p-0 print:overflow-visible">
+            <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet" />
+            <style>{`
+                @media print {
+                    @page { size: landscape; margin: 10mm; }
+                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    body { background-color: transparent !important; }
+                    .print\\:overflow-visible { overflow: visible !important; }
+                }
+                .rllt-condensed { font-family: 'Arial Narrow', Arial, sans-serif !important; }
+                .custom-white-dropdown .p-dropdown-label, .custom-white-dropdown .p-inputtext { color: #000 !important; }
+                .p-dropdown-panel.custom-white-panel .p-dropdown-item { color: #000 !important; background-color: #fff !important; }
+                .p-dropdown-panel.custom-white-panel .p-dropdown-item:hover, .p-dropdown-panel.custom-white-panel .p-dropdown-item.p-highlight { background-color: #e2e8f0 !important; color: #000 !important; }
+                .custom-white-dropdown .p-placeholder { color: #4b5563 !important; }
+            `}</style>
+            <Toast ref={toast} />
+            <ConfirmDialog />
+
+            <Dialog
+                header={<div className="flex items-center gap-2 text-indigo-900 border-b border-gray-200 pb-2"><i className="pi pi-share-alt text-xl"></i><span className="font-bold">Ready to Share</span></div>}
+                visible={showShareModal}
+                onHide={() => setShowShareModal(false)}
+                className="w-[90vw] md:w-[400px] shadow-2xl rounded-2xl overflow-hidden"
+                contentClassName="p-6 bg-gray-50 flex flex-col items-center justify-center text-center gap-6"
+                headerClassName="bg-gray-50 pt-6 px-6 pb-2"
+                showHeader={true}
+                dismissableMask={true}
+                closable={false}
+            >
+                <div className="flex flex-col items-center">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4 animate-bounce"><i className="pi pi-file-pdf text-4xl"></i></div>
+                    <h2 className="text-xl font-black text-gray-800 mb-2">PDF Generated!</h2>
+                    <p className="text-gray-500 font-medium leading-relaxed px-4">Your chart file is ready. Click below to launch the native Share panel!</p>
+                </div>
+                <div className="w-full flex gap-3 mt-2">
+                    <Button label="Cancel" icon="pi pi-times" severity="secondary" outlined className="flex-1 font-bold rounded-xl" onClick={() => setShowShareModal(false)} />
+                    <Button label="Share Now" icon="pi pi-send" className="flex-[2] font-black tracking-wider shadow-lg bg-green-600 border-none hover:bg-green-700 rounded-xl" onClick={executeNativeShare} autoFocus />
+                </div>
+            </Dialog>
+
+            <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6 print:border-none print:shadow-none print:overflow-visible">
+                <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] py-3 px-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 gap-2 print:hidden">
+                    <div className="flex-shrink-0 text-center xl:text-left mb-2 xl:mb-0">
+                        <h1 className="text-xl font-black tracking-tight mb-0.5 text-[#c8a165] whitespace-nowrap">{headerTitle}</h1>
+                        <p className="text-[11px] font-medium text-gray-300 uppercase tracking-widest mb-1.5">Administrative Chart Database (Read-Only)</p>
+
+                        <div className="flex gap-2 items-center bg-white/10 px-2 py-1 rounded-lg border border-white/20 shadow-inner inline-flex">
+                            <span className="text-[10px] uppercase font-black text-gray-300 mr-2">Scale</span>
+                            <Button icon="pi pi-minus" className="p-button-rounded p-button-text text-white h-7 w-7 p-0" onClick={() => setTableFontSize(prev => Math.max(8, prev - 1))} />
+                            <span className="font-black text-base w-6 text-center text-[#c8a165] drop-shadow-sm">{tableFontSize}</span>
+                            <Button icon="pi pi-plus" className="p-button-rounded p-button-text text-white h-7 w-7 p-0" onClick={() => setTableFontSize(prev => Math.min(20, prev + 1))} />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-center xl:items-end flex-wrap justify-center xl:justify-end gap-2 w-full xl:w-auto">
+                        {!(location.state?.chartData) && (
+                            <div className="flex items-center gap-3 bg-white p-1.5 px-3 rounded-lg shadow-inner w-full md:w-auto overflow-x-auto">
+                                <span className="text-black font-semibold text-sm whitespace-nowrap px-1">Select Chart:</span>
+                                <Dropdown
+                                    value={selectedChart}
+                                    options={chartsList}
+                                    optionLabel="label"
+                                    placeholder="Select a saved chart..."
+                                    className="bg-gray-100 text-black border border-gray-300 shadow-sm w-72 md:w-80 h-[36px] flex items-center custom-white-dropdown"
+                                    panelClassName="bg-white text-black custom-white-panel"
+                                    onChange={(e) => setSelectedChart(e.value)}
+                                />
+                            </div>
+                        )}
+                        {(location.state?.chartData || selectedChart) && (
+                            <div className="flex gap-2 justify-center xl:justify-end w-full">
+                                <Button icon="pi pi-file-pdf" tooltip="Export to PDF" loading={isProcessingPdf} className="bg-orange-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-orange-600 transition-colors" onClick={handleExportPdf} />
+                                <Button icon="pi pi-print" tooltip="Browser Print" loading={isProcessingPdf} className="bg-slate-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-slate-600 transition-colors" onClick={handlePrint} />
+                                {!(location.state?.chartData) && (
+                                    <>
+                                        <Button icon="pi pi-share-alt" tooltip="Share Chart PDF" loading={isProcessingPdf} className="bg-emerald-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-emerald-600 transition-colors" onClick={handleShare} />
+                                        <Button icon="pi pi-pencil" tooltip="Edit Chart" className="bg-blue-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-blue-600 transition-colors" onClick={handleEdit} />
+                                        <Button icon="pi pi-trash" tooltip="Delete Chart" className="bg-red-500 text-white border-none w-9 h-9 p-0 flex justify-center items-center rounded-full shadow-md hover:bg-red-600 transition-colors" onClick={confirmDelete} />
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div id="printable-chart-area" className="w-full bg-white pb-6 rounded-b-2xl pt-6 px-6">
+                    {chunks.length > 0 && (
+                        <div className="w-full border-[3px] border-black p-3 flex flex-col bg-white">
+                            <div className="flex flex-col w-full mb-2">
+                                <table className="w-full bg-white table-fixed border-collapse border-2 border-black" style={{ borderSpacing: 0 }}>
+                                    <tbody>
+                                        <tr className="h-[55px]">
+                                            <td className="w-[55px] bg-[#00b050] border-r-2 border-black p-0 align-middle">
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <span className="text-white font-serif text-[32px] font-normal leading-none" style={{ transform: 'translateY(-2px)' }}>{tLabel}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-0 align-middle text-center bg-white">
+                                                <span className="text-[#ff0000] font-bold text-[20px] tracking-wide uppercase" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+                                                    REAL LIFE LEADERSHIP TRAINING - <span className="text-[16px] font-bold">{headerSubtitle}</span>
+                                                </span>
+                                            </td>
+                                            <td className="w-[100px] border-l-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex flex-col h-[55px] w-full">
+                                                    <div className="flex-1 flex items-center justify-start border-b-2 border-black px-2">
+                                                        <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</span>
+                                                    </div>
+                                                    <div className="flex-1 flex items-center justify-start px-2">
+                                                        <span className="text-[12px] font-bold text-black uppercase">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="w-[60px] bg-[#00b050] border-l-2 border-black p-0 h-[55px]">
+                                                <div className="flex flex-col h-[55px] w-full">
+                                                    <div className="flex-1 flex items-center justify-center border-b-2 border-black">
+                                                        <span className="text-white font-black text-[15px] tracking-tighter">PH</span>
+                                                    </div>
+                                                    <div className="flex-1 flex items-center justify-center">
+                                                        <span className="text-white font-bold text-[18px]">{phaseLabel}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <table className="w-full bg-white table-fixed border-collapse border-b-2 border-l-2 border-r-2 border-black" style={{ borderSpacing: 0 }}>
+                                    <tbody>
+                                        <tr className="h-[65px]">
+                                            <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
+                                                <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
+                                                    <ImageBox url={logoUrl} label="" />
+                                                </div>
+                                            </td>
+                                            <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
+                                                <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
+                                                    <ImageBox url={logoUrl} label="" />
+                                                </div>
+                                            </td>
+                                            <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white">
+                                                <div className="w-[85px] h-[65px] p-1 overflow-hidden flex items-center justify-center">
+                                                    <ImageBox url={logoUrl} label="" />
+                                                </div>
+                                            </td>
+                                            <td className="border-r-2 border-black p-1 align-middle bg-white relative">
+                                                <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
+                                                <div className="w-full h-full min-h-[50px] flex items-center px-4 relative z-10">
+                                                    <span className="text-black font-bold text-[22px] uppercase">{bannerText}</span>
+                                                </div>
+                                            </td>
+                                            <td className="w-[160px] bg-[#ffff00] p-0 h-[65px] align-middle">
+                                                <div className="flex flex-col h-[65px] w-full">
+                                                    <div className="flex-1 flex items-center justify-center border-b-2 border-black pt-1">
+                                                        <span className="text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
+                                                    </div>
+                                                    <div className="flex-1 flex items-center justify-center pb-1">
+                                                        <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>
+                                                            {extractBooksAndAuthors(chunks).bks} - {extractBooksAndAuthors(chunks).art}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="pb-1 overflow-x-auto print:overflow-visible">
+                                <style>{`
+                                    .pdf-table, .pdf-table td, .pdf-table th { 
+                                        border: var(--cell-border, 1px solid #000) !important; 
+                                        border-collapse: collapse !important; 
+                                        position: relative !important;
+                                        top: 0 !important;
+                                        left: 0 !important;
+                                        box-sizing: border-box !important;
+                                    }
+                                    .pdf-table {
+                                        table-layout: fixed !important;
+                                    }
+                                `}</style>
+                                <div className="bg-black p-0 mt-0.5">
+                                    <table className="w-full bg-white pdf-table table-fixed border-collapse" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
+                                    {(() => {
+                                        const is5Seg = chunks[0]?.days?.[0]?.m4b !== undefined;
+                                        return is5Seg ? (
+                                            <colgroup>
+                                                <col style={{ width: '2%' }} />
+                                                <col style={{ width: '3%' }} />
+                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '12%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '11%' }} />
+                                                <col style={{ width: '3.5%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '5.5%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '3%' }} />
+                                                <col style={{ width: '2%' }} />
+                                            </colgroup>
+                                        ) : (
+                                            <colgroup>
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '15%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '15%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '15%' }} />
+                                                <col style={{ width: '4%' }} />
+                                                <col style={{ width: '5%' }} />
+                                                <col style={{ width: '5%' }} />
+                                                <col style={{ width: '5%' }} />
+                                                <col style={{ width: '3%' }} />
+                                                <col style={{ width: '4%' }} />
+                                            </colgroup>
+                                        );
+                                    })()}
+
+                                        {chunks.map((chunk, cIdx) => {
+                                            const is5Seg = chunk.days[0]?.m4b !== undefined;
+                                            const numSegs = is5Seg ? 5 : 3;
+                                            const booksTotals = Array.from({ length: numSegs }).map((_, i) =>
+                                                chunk.days.reduce((acc, curr) => {
+                                                    const tVal = curr[`m${i+1}t`];
+                                                    return acc + parseTime(tVal);
+                                                }, 0)
+                                            );
+                                            const chapTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.chap) || 0), 0);
+                                            const verseTotal = chunk.days.reduce((acc, curr) => acc + (parseInt(curr.verse) || 0), 0);
+                                            const artTotal = chunk.days.reduce((acc, curr) => acc + parseTime(curr.art), 0);
+                                            const currentBorderColor = CHUNK_COLORS[cIdx % CHUNK_COLORS.length];
+
+                                            return (
+                                                <tbody key={chunk.id} className="text-black font-bold text-sm rllt-condensed">
+                                                    <tr className="bg-white h-[35px]">
+                                                        <td className="border-2 border-black bg-white"></td>
+                                                        <td colSpan={is5Seg ? 11 : 6} className="border-2 border-black px-2 align-middle bg-white">
+                                                            <div className="flex h-full w-full items-center">
+                                                                <span className="w-full flex-1 font-bold text-left uppercase text-black leading-none tracking-tight pl-2" style={{ fontSize: getFS(20) }}>{chunk.promises}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td colSpan={is5Seg ? 4 : 5} className="bg-white p-0 align-middle" style={{ '--cell-border': `3.5px solid ${currentBorderColor}` }}>
+                                                            <div className="w-full h-full flex items-center justify-center p-1 text-center font-bold text-black px-2 block" style={{ fontSize: getFS(20) }}>
+                                                                {chunk.promiseInput}
+                                                            </div>
+                                                        </td>
+                                                        <td rowSpan={chunk.days.length + 3} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(20) }}>
+                                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                                <div style={{ transform: 'rotate(-90deg)' }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center text-center leading-none">
+                                                                    {headerSubtitle}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+
+                                                    <tr className="bg-white text-center font-bold h-[30px]" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
+                                                        <th rowSpan={chunk.days.length + 1} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(20) }}>
+                                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                                <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(20) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center text-center leading-none">
+                                                                    {chunk.team}
+                                                                </div>
+                                                            </div>
+                                                        </th>
+                                                        <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">DAY</th>
+                                                        {Array.from({ length: numSegs }).map((_, i) => (
+                                                            <React.Fragment key={i}>
+                                                                <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-center align-middle">
+                                                                    {chunk[`h${i+1}`] || chunk.h_books?.[i] || ''}
+                                                                </th>
+                                                                <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black text-center w-12 align-middle">TIME</th>
+                                                            </React.Fragment>
+                                                        ))}
+                                                        <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{is5Seg ? 'THEM' : 'CHAP'}</th>
+                                                        <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">VERSE</th>
+                                                        <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">ART</th>
+                                                        <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">YES</th>
+                                                    </tr>
+
+                                                    {chunk.days.map((d, dIdx) => (
+                                                        <tr key={d.id} className="bg-white text-center hover:bg-gray-50 border-b-2 border-black h-[38px]">
+                                                            <td className="border-2 border-black p-0 font-extrabold bg-white text-black align-middle" style={{ fontSize: getFS(20) }}>{d.day}</td>
+
+                                                            {Array.from({ length: numSegs }).map((_, bIdx) => {
+                                                                const b = `m${bIdx + 1}b`;
+                                                                const t = `m${bIdx + 1}t`;
+                                                                return (
+                                                                    <React.Fragment key={bIdx}>
+                                                                        <td className="border-2 border-black p-1 bg-white text-center align-middle font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }}>
+                                                                            {d[b] || ''}
+                                                                        </td>
+                                                                        <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle" style={{ fontSize: getFS(20) }}>
+                                                                            {d[t] || ''}
+                                                                        </td>
+                                                                    </React.Fragment>
+                                                                );
+                                                            })}
+
+                                                            <td className="border-2 border-black p-0 font-bold align-middle" style={{ fontSize: getFS(20) }}>{d.chap}</td>
+                                                            <td className="border-2 border-black p-0 font-bold align-middle" style={{ fontSize: getFS(20) }}>{d.verse}</td>
+                                                            <td className="border-2 border-black p-0 font-bold align-middle" style={{ fontSize: getFS(20) }}>{d.art}</td>
+
+                                                            <td className="border-2 border-black p-0 text-center align-middle">
+                                                                {d.yes ? '✔️' : ''}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+
+                                                    <tr className="bg-white text-center font-extrabold tracking-wide h-[35px]" style={{ fontSize: getFS(20) }}>
+                                                        <td className="border-2 border-black bg-white"></td>
+                                                        <td className="border-2 border-black bg-white"></td>
+                                                        {booksTotals.map((bt, i) => (
+                                                            <td colSpan={2} key={i} className="border-2 border-black bg-white">{formatSum(bt, 'HrMins')}</td>
+                                                        ))}
+                                                        <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{chapTotal}</td>
+                                                        <td className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{verseTotal}</td>
+                                                        <td colSpan={2} className="border-2 border-black p-1 bg-white font-bold text-black" style={{ fontSize: getFS(20) }}>{formatSum(artTotal, 'Hm')}</td>
+                                                    </tr>
+                                                </tbody>
+                                            );
+                                        })}
+                                        <tfoot className="pb-4 rllt-condensed">
+                                            {(() => {
+                                                const is5Seg = chunks[0]?.days?.[0]?.m4b !== undefined;
+                                                return (
+                                                    <tr className="bg-white text-black font-extrabold tracking-wide text-center uppercase" style={{ fontSize: getFS(25) }}>
+                                                        <td colSpan={is5Seg ? 12 : 8} className="border-2 border-black p-1 text-center font-extrabold uppercase tracking-wide bg-gray-50" style={{ fontSize: getFS(20) }}>
+                                                            TOTAL AVERAGE READING TIME {formatSum(
+                                                                chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
+                                                                'HrMins'
+                                                            )}
+                                                        </td>
+                                                <td className="border-2 border-black p-1 text-center font-extrabold" style={{ fontSize: getFS(20) }}>
+                                                    {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.chap) || 0), 0), 0)}
+                                                </td>
+                                                <td className="border-2 border-black p-1 text-center font-extrabold font-black text-blue-900" style={{ fontSize: getFS(20) }}>
+                                                    {chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + (parseInt(day.verse) || 0), 0), 0)}
+                                                </td>
+                                                <td colSpan={3} className="border-2 border-black p-1 text-center font-extrabold bg-gray-50" style={{ fontSize: getFS(20) }}>
+                                                    {formatSum(
+                                                        chunks.reduce((acc, chunk) => acc + chunk.days.reduce((dAcc, day) => dAcc + parseTime(day.art), 0), 0),
+                                                        'Hm'
+                                                    )}
+                                                </td>
+                                            </tr>
+                                                );
+                                            })()}
+                                            <tr className="bg-white text-black text-center font-medium italic" style={{ fontSize: getFS(25) }}>
+                                                {(() => {
+                                                    const is5Seg = chunks[0]?.days?.[0]?.m4b !== undefined;
+                                                    return (
+                                                        <td colSpan={is5Seg ? 17 : 13} className="border-2 border-black p-1 text-center font-semibold tracking-wide">
+                                                            <span className="w-full text-center outline-none bg-transparent whitespace-nowrap overflow-hidden text-ellipsis italic font-semibold" style={{ fontSize: getFS(25) }}>
+                                                                It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11
+                                                            </span>
+                                                        </td>
+                                                    );
+                                                })()}
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                <div className="flex items-center w-full px-2 pt-2 pb-4 bg-transparent mt-1 uppercase">
+                                    <span className="font-extrabold text-[15px] text-[#c8a165]">1</span>
+                                    <div className="flex-1 text-center">
+                                        <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
+                                            MODULE {mdl} - FACET {fct}/{maxFacets}: PHASE - {phaseLabel}/{maxPhases}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default DynamicCycleChartView;

@@ -124,6 +124,7 @@ const StudentChartListing = () => {
                                 { label: '24/7 DLL Size Chart', icon: 'pi-chart-bar', route: 'twenty-four-seven-dl-size-chart', color: 'bg-blue-500' },
                             ] : [
                                 { label: 'Main Chart', icon: 'pi-table', route: 'main-chart', color: 'bg-blue-600' },
+                                { label: '3-5-7 Chart', icon: 'pi-calendar-plus', route: '357-chart', color: 'bg-indigo-600' },
                                 { label: '7TNT Main Chart', icon: 'pi-table', route: '7tnt-main-chart', color: 'bg-green-600' },
                                 { label: '7TNT Day Cycle', icon: 'pi-table', route: '7tnt-day-cycle', color: 'bg-emerald-500' },
                                 { label: '7TNT Weekly', icon: 'pi-calendar', route: '7tnt-weekly-chart', color: 'bg-teal-500' },

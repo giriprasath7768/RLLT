@@ -124,6 +124,16 @@ const EveningChart = () => {
                 onclone: (clonedDoc) => {
                     const clonedElement = clonedDoc.getElementById('printable-chart-area');
                     clonedElement.style.position = 'absolute';
+                    clonedElement.style.margin = '0';
+
+                    // Force all text to be extra bold for printing visibility
+                    const style = clonedDoc.createElement('style');
+                    style.innerHTML = `
+                        #printable-chart-area * {
+                            font-weight: 900 !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(style);
                     clonedElement.style.left = '0px';
                     clonedElement.style.top = '0px';
                     clonedElement.style.width = `${EXACT_WIDTH}px`; 
@@ -161,15 +171,9 @@ const EveningChart = () => {
                 const marginSafeH = a4Height - 60;
                 
                 // Scale aggressively by BOTH dimensions so the entire chart squeezes onto exactly 1 piece of paper natively.
-                const ratio = Math.min(marginSafeW / pdfWidthPx, marginSafeH / pdfHeightPx);
-                const printW = pdfWidthPx * ratio;
-                const printH = pdfHeightPx * ratio;
-                
-                const marginX = (a4Width - printW) / 2;
-                const marginY = (a4Height - printH) / 2;
-                
-                // Print directly to one page. (Produces ~6pt text on giant tables, approved by user).
-                pdf.addImage(imgData, 'PNG', marginX, marginY, printW, printH);
+                // Force EXACTLY equal spacing (30pt) on all 4 sides by stretching to fill the safe area.
+                // This guarantees equal spacing on the A4 paper.
+                pdf.addImage(imgData, 'PNG', 30, 30, marginSafeW, marginSafeH);
             } else {
                 pdf = new jsPDF({
                     orientation: pdfOrientation,
