@@ -152,7 +152,8 @@ async def sync_content(
                 
                 if ext.lower() == ".pdf":
                     import subprocess
-                    subprocess.Popen(["python", "/app/scripts/extract_pdf.py", file_path, UPLOAD_DIR])
+                    script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "scripts", "extract_pdf.py")
+                    subprocess.Popen(["python", script_path, file_path, UPLOAD_DIR])
                 
         pdf_url_json = json.dumps(pdf_urls) if pdf_urls else None
 
@@ -290,7 +291,8 @@ async def upload_files(file: List[UploadFile] = File(...)):
                 
                 if ext.lower() == ".pdf":
                     import subprocess
-                    subprocess.Popen(["python", "/app/scripts/extract_pdf.py", file_path, UPLOAD_DIR])
+                    script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "scripts", "extract_pdf.py")
+                    subprocess.Popen(["python", script_path, file_path, UPLOAD_DIR])
         return {"status": "success", "urls": urls}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
