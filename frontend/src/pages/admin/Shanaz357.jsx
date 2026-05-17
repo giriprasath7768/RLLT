@@ -99,9 +99,9 @@ const isBookMatch = (bookCode, book) => {
 
 const StatItem = ({ title, icon, value, color }) => (
     <div className="flex flex-col items-center justify-center flex-1 py-2">
-        <div className="text-sm font-black text-[#1e293b] mb-1 [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">{title}</div>
-        <i className={`${icon} ${color} text-2xl mb-1 [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]`}></i>
-        <div className={`${color} font-black text-2xl leading-none [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]`}>{value}</div>
+        <div className="text-sm font-black text-[#1e293b] mb-1 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">{title}</div>
+        <i className={`${icon} ${color} text-2xl mb-1 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]`}></i>
+        <div className={`${color} font-black text-2xl leading-none [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]`}>{value}</div>
     </div>
 );
 
@@ -674,7 +674,7 @@ const Shanaz357 = () => {
             return (
                 <div 
                     key={bookCode} 
-                    className={`book-tooltip-item border rounded py-2 text-center text-sm font-black cursor-pointer transition-colors shadow-sm w-[calc(20%-0.4rem)] [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] ${isSelected ? `${colors.bg} text-white border-transparent` : `${colors.text} border-gray-300 hover:bg-gray-50`}`}
+                    className={`book-tooltip-item border rounded py-2 text-center text-base font-black tracking-wide cursor-pointer transition-colors shadow-sm w-[calc(20%-0.4rem)] [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] ${isSelected ? `${colors.bg} text-white border-transparent` : `${colors.text} border-gray-300 hover:bg-gray-50`}`}
                     onClick={() => book && toggleBook(book.id)}
                     data-pr-tooltip={book ? getBookTooltip(book) : ''}
                 >
@@ -688,7 +688,7 @@ const Shanaz357 = () => {
         <div className="min-h-screen bg-gray-100 p-8 flex justify-center items-start font-sans">
             <Toast ref={toast} />
             <Tooltip target=".book-tooltip-item" position="top" />
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-[480px] p-6 border border-gray-200">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-[600px] p-6 border border-gray-200">
                 {/* Header Section */}
                 <div className="text-center mb-6">
                     <p className="text-gray-500 italic text-sm font-serif">Unlocking Transformation Through</p>
@@ -705,6 +705,7 @@ const Shanaz357 = () => {
                     </div>
                 </div>
 
+                <div className="bg-[#37475a] rounded-xl p-3 shadow-inner border-[4px] border-[#1a2234]">
                 {/* Stats Section */}
                 <div className="flex justify-between border border-gray-200 rounded-xl mb-6 bg-white shadow-sm overflow-hidden">
                     <StatItem title="BKS" icon="pi pi-book" value={displayStats.bks} color="text-[#1976d2]" />
@@ -732,14 +733,14 @@ const Shanaz357 = () => {
 
                     <div className="border border-gray-200 rounded-t-xl shadow-sm overflow-hidden flex flex-col">
                         <div className="overflow-y-auto scrollbar-hide h-[215px]">
-                        <div className="bg-[#0B2149] text-white text-center font-black py-2 text-lg tracking-wider sticky top-0 z-10 [text-shadow:2px_2px_0_#000,3px_3px_0_rgba(0,0,0,0.5)]">
+                        <div className="bg-[#0B2149] text-white text-center font-black py-2 text-lg tracking-wider sticky top-0 z-10 [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]">
                             OLD TESTAMENT
                         </div>
                         <div className="p-3 flex flex-wrap justify-center gap-2 bg-white">
                             {booksDB.length > 0 && renderBooks(0, 39)}
                         </div>
                         
-                        <div className="bg-[#0B2149] text-white text-center font-black py-2 text-lg tracking-wider sticky top-0 z-10 border-t border-[#0B2149] [text-shadow:2px_2px_0_#000,3px_3px_0_rgba(0,0,0,0.5)]">
+                        <div className="bg-[#0B2149] text-white text-center font-black py-2 text-lg tracking-wider sticky top-0 z-10 border-t border-[#0B2149] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]">
                             NEW TESTAMENT
                         </div>
                         <div className="p-3 flex flex-wrap justify-center gap-2 bg-white">
@@ -750,7 +751,7 @@ const Shanaz357 = () => {
                 </div>
 
                 {/* Middle Input Section */}
-                <div className="flex gap-2 mb-4 h-16 border border-gray-200 border-t-0 rounded-b-xl p-2 bg-white shadow-sm">
+                <div className="flex gap-2 mb-4 min-h-[5rem] border border-gray-200 border-t-0 rounded-b-xl p-2 bg-white shadow-sm">
                     {(() => {
                         const p119Book = booksDB.find(b => b.name.includes('119') || (b.short_form && b.short_form.includes('119')));
                         const p119Selected = p119Book && selectedBooks.includes(p119Book.id);
@@ -857,12 +858,12 @@ const Shanaz357 = () => {
                     </div>
 
                     {/* Numbers Card */}
-                    <div className="border border-[#1976d2] rounded-xl py-2 px-4 flex justify-between items-center text-2xl font-black text-[#1976d2] bg-[#f8faff] shadow-sm [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">
+                    <div className="border border-[#1976d2] rounded-xl py-2 px-4 flex justify-between items-center text-2xl font-black text-[#1976d2] bg-[#f8faff] shadow-sm [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">
                         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                             <button 
                                 key={num} 
                                 onClick={() => handleNumberClick(num)} 
-                                className="hover:text-orange-500 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-100"
+                                className="hover:text-orange-500 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-100 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]"
                             >
                                 {num}
                             </button>
@@ -881,8 +882,8 @@ const Shanaz357 = () => {
                             disabled={uniqueModules.indexOf(mdl) <= 0}
                         >-</button>
                         <div className="border border-[#f57c00] rounded-xl px-8 py-1 flex flex-col items-center justify-center bg-[#fff8e1]">
-                            <div className="text-xs font-black text-[#f57c00] [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">MDL</div>
-                            <div className="text-2xl font-black text-[#f57c00] leading-none mt-1 [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">{mdl}</div>
+                            <div className="text-xs font-black text-[#f57c00] [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">MDL</div>
+                            <div className="text-2xl font-black text-[#f57c00] leading-none mt-1 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">{mdl}</div>
                         </div>
                         <button 
                             className={`font-bold text-2xl px-2 transition-colors ${uniqueModules.indexOf(mdl) < uniqueModules.length - 1 ? 'text-[#f57c00] hover:text-orange-600 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
@@ -895,8 +896,8 @@ const Shanaz357 = () => {
                     {/* Bottom Stats Section */}
                     <div className="border border-[#388e3c] rounded-xl mb-4 flex justify-between p-2 text-center text-[#388e3c] uppercase bg-[#f1f8e9]">
                         <div className="flex flex-col items-center justify-center flex-1">
-                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">FACET</div>
-                            <div className="flex items-center gap-2 text-xl font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">
+                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">FACET</div>
+                            <div className="flex items-center gap-2 text-xl font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">
                                 <button onClick={handleFctDec} disabled={availableFacets.indexOf(fct) <= 0} className={`p-1 transition-colors ${availableFacets.indexOf(fct) > 0 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-left text-lg"></i></button>
                                 <span className="w-5 text-center">{fct || '-'}</span>
                                 <button onClick={handleFctInc} disabled={availableFacets.indexOf(fct) >= availableFacets.length - 1} className={`p-1 transition-colors ${availableFacets.indexOf(fct) < availableFacets.length - 1 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-right text-lg"></i></button>
@@ -904,8 +905,8 @@ const Shanaz357 = () => {
                         </div>
                         <div className="w-px bg-green-200 my-1"></div>
                         <div className="flex flex-col items-center justify-center flex-1">
-                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">PHS</div>
-                            <div className="flex items-center gap-2 text-xl font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">
+                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">PHS</div>
+                            <div className="flex items-center gap-2 text-xl font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">
                                 <button onClick={handlePhsDec} disabled={availablePhases.indexOf(phs) <= 0} className={`p-1 transition-colors ${availablePhases.indexOf(phs) > 0 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-left text-lg"></i></button>
                                 <span className="w-5 text-center">{phs || '-'}</span>
                                 <button onClick={handlePhsInc} disabled={availablePhases.indexOf(phs) >= availablePhases.length - 1} className={`p-1 transition-colors ${availablePhases.indexOf(phs) < availablePhases.length - 1 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-right text-lg"></i></button>
@@ -913,27 +914,28 @@ const Shanaz357 = () => {
                         </div>
                         <div className="w-px bg-green-200 my-1"></div>
                         <div className="flex flex-col items-center justify-center flex-[1.5]">
-                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">EACH PHS</div>
-                            <div className="text-xl font-black flex items-center justify-center h-8 [text-shadow:1px_1px_0_rgba(0,0,0,0.2)]">{eachPhsDays ? `${eachPhsDays} DAYS` : '-'}</div>
+                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">EACH PHS</div>
+                            <div className="text-xl font-black flex items-center justify-center h-8 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">{eachPhsDays ? `${eachPhsDays} DAYS` : '-'}</div>
                         </div>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="grid grid-cols-3 gap-3">
-                        <button className="flex flex-row items-center justify-center gap-2 border border-[#1976d2] text-[#1976d2] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] hover:bg-blue-50 transition-colors bg-white">
+                        <button className="flex flex-row items-center justify-center gap-2 border border-[#1976d2] text-[#1976d2] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)] hover:bg-blue-50 transition-colors bg-white">
                             <i className="pi pi-print text-base [text-shadow:none]"></i> PRINT
                         </button>
                         <button 
                             onClick={handleViewClick}
                             disabled={isViewing}
-                            className={`flex flex-row items-center justify-center gap-2 border border-[#388e3c] text-[#388e3c] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] transition-colors bg-white ${isViewing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-50'}`}
+                            className={`flex flex-row items-center justify-center gap-2 border border-[#388e3c] text-[#388e3c] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)] transition-colors bg-white ${isViewing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-50'}`}
                         >
                             <i className={`pi ${isViewing ? 'pi-spin pi-spinner' : 'pi-eye'} text-base [text-shadow:none]`}></i> VIEW
                         </button>
-                        <button className="flex flex-row items-center justify-center gap-2 border border-[#7b1fa2] text-[#7b1fa2] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] hover:bg-purple-50 transition-colors bg-white">
+                        <button className="flex flex-row items-center justify-center gap-2 border border-[#7b1fa2] text-[#7b1fa2] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)] hover:bg-purple-50 transition-colors bg-white">
                             <i className="pi pi-send text-base [text-shadow:none]"></i> SEND
                         </button>
                     </div>
+                </div>
                 </div>
             </div>
         </div>

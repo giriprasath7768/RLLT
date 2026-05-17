@@ -29,7 +29,7 @@ const AdminLayout = () => {
 
             <div className="flex flex-grow print:block print:h-auto print:overflow-visible">
                 {/* Sidebar */}
-                <div className="print:hidden h-full">
+                <div className="print:hidden flex flex-col">
                     <AdminSidebar
                         visible={sidebarVisible}
                         onHide={() => setSidebarVisible(false)}

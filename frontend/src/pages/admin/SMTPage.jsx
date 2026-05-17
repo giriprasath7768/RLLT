@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { StudentService } from '../../services/studentService';
+import ScrollMenuModal from '../../components/admin/ScrollMenuModal';
 import * as htmlToImage from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -263,258 +264,7 @@ const HTMLPageOverrides = () => (
 
 
 
-// --- Selection Popup Menu ---
-const ScrollMenuPopup = ({ position, onSelect, onClose, contentDB = [], activeTrackName = '' }) => {
-    const [selectedCategory, setSelectedCategory] = useState(null);
-    const [isFlipped, setIsFlipped] = useState(false);
-    const [flipMode, setFlipMode] = useState('format'); // 'format' or 'info'
 
-    // Forces exact center of the screen globally
-    const topPos = Math.max(0, (window.innerHeight - 500) / 2);
-    const leftPos = Math.max(0, (window.innerWidth - 350) / 2);
-
-    const activeContent = React.useMemo(() => {
-        if (!activeTrackName) return null;
-        const parts = activeTrackName.trim().split(' ');
-        const chapNum = parseInt(parts.pop());
-        const bookName = parts.join(' ').toUpperCase();
-        return contentDB.find(c => c.book_name?.toUpperCase() === bookName && parseInt(c.chapter_number) === chapNum);
-    }, [activeTrackName, contentDB]);
-
-    const refLinks = React.useMemo(() => {
-        if (!activeContent?.ref_link) return [];
-        try { const arr = JSON.parse(activeContent.ref_link); return Array.isArray(arr) ? arr : [activeContent.ref_link]; }
-        catch (e) { return [activeContent.ref_link]; }
-    }, [activeContent]);
-
-    const refVideos = React.useMemo(() => {
-        if (!activeContent?.video_url) return [];
-        try { const arr = JSON.parse(activeContent.video_url); return Array.isArray(arr) ? arr : [activeContent.video_url]; }
-        catch (e) { return [activeContent.video_url]; }
-    }, [activeContent]);
-
-    const handleCategoryClick = (e, cat) => {
-        if (e) e.stopPropagation();
-        setSelectedCategory(cat);
-        setFlipMode('format');
-        setIsFlipped(true);
-    };
-
-    const handleFormatClick = (format, styleOption = null) => {
-        if (onSelect) onSelect(selectedCategory, format, styleOption);
-        if (onClose) onClose();
-    };
-
-    return (
-        <div
-            className="fixed z-[9999] pointer-events-auto smt-scroll-popup"
-            style={{
-                top: topPos,
-                left: leftPos,
-                width: '350px',
-                height: '500px',
-                perspective: '1500px'
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-        >
-            <div
-                className="relative w-full h-full flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]"
-                style={{ transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-            >
-                {/* FRONT FACE */}
-                <div
-                    className={`absolute inset-0 flex flex-col items-center justify-start bg-[#faf4ec] border-[3px] border-[#8b5a2b]/80 rounded-2xl drop-shadow-2xl overflow-hidden transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
-                >
-                    <div 
-                        className="absolute inset-0 pointer-events-none"
-                        style={{
-                            backgroundImage: "url('/scrollimage.png')",
-                            backgroundSize: '100% 100%',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat',
-                            mixBlendMode: 'multiply'
-                        }}
-                    />
-                    
-                    {/* Info toggle instead of Close button */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setFlipMode('info'); setIsFlipped(true); }}
-                        className="absolute top-[80px] right-[50px] text-[#8b5a2b] hover:text-red-700 hover:scale-110 transition-all z-[101]"
-                        title="Reference Info"
-                    >
-                        <i className="pi pi-info-circle text-[22px] font-bold"></i>
-                    </button>
-                    <div className="relative z-10 px-6 pt-[60px] pb-[60px] flex flex-col gap-[7px] items-center text-[#2d1a11] font-serif w-full h-full justify-center -translate-y-2">
-                        <h2 className="text-[17px] font-black uppercase tracking-widest text-[#2d1a11] drop-shadow-sm mb-1 text-center leading-tight w-full flex flex-col gap-[2px]">
-                            <button onClick={(e) => handleCategoryClick(e, { label: "The Power of God", color: "#FCD34D" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
-                                The Power of God
-                            </button>
-                        </h2>
-
-                        <div className="flex flex-col w-full items-center gap-[5px] mt-2">
-                            {HIGHLIGHT_CATEGORIES.map(cat => (
-                                <button
-                                    key={cat.label}
-                                    onClick={(e) => handleCategoryClick(e, cat)}
-                                    className="text-[16px] font-extrabold w-[85%] text-center transform drop-shadow-sm transition-all hover:text-[#8b5a2b] hover:scale-105 cursor-pointer leading-tight"
-                                >
-                                    {cat.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="w-[90%] flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 text-[16px] font-black font-serif leading-tight">
-                            {SEVEN_MOUNTAIN_SPHERES.map(cat => (
-                                <button
-                                    key={cat.label}
-                                    onClick={(e) => handleCategoryClick(e, cat)}
-                                    className="hover:text-[#8b5a2b] transition-colors relative group hover:scale-110 transform drop-shadow-sm"
-                                >
-                                    {cat.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="mt-3 flex flex-col items-center text-center text-[10px] leading-tight font-bold tracking-wider opacity-75 uppercase pointer-events-none">
-                            <span>I am here to do God's will and do what</span>
-                            <span>written about me in this scroll</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* BACK FACE */}
-                <div
-                    className={`absolute inset-x-2 inset-y-6 flex flex-col items-center justify-start bg-[#faf4ec] border-[3px] border-[#8b5a2b]/80 shadow-[0_20px_40px_rgba(0,0,0,0.6)] rounded-2xl transition-opacity duration-300 ${isFlipped ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                    style={{
-                        transform: 'rotateY(180deg)'
-                    }}
-                >
-                    {/* Top action row */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }}
-                        className="absolute top-4 right-4 text-[#8b5a2b] hover:text-red-700 hover:scale-110 transition-all z-[101]"
-                        title="Flip Back"
-                    >
-                        {flipMode === 'info' ? (
-                            <i className="pi pi-info-circle text-[22px] font-bold"></i>
-                        ) : (
-                            <i className="pi pi-arrow-left text-[18px] font-bold"></i>
-                        )}
-                    </button>
-
-                    <div className="px-6 py-12 flex flex-col items-center w-full h-full overflow-y-auto no-scrollbar">
-
-                        {flipMode === 'format' && (
-                            <>
-                                <span className="font-serif font-black text-[13px] text-[#2d1a11] tracking-wider uppercase drop-shadow-sm text-center leading-tight w-full break-words mb-4 border-b pb-2 border-[#8b5a2b]/30">{selectedCategory?.label || ''}</span>
-
-                                <div className="flex flex-col gap-2 w-[95%] flex-shrink-0">
-                                    {['Underline', 'Circle', 'Square', 'Highlight'].map(fmt => {
-                                        let formatOptions = [];
-                                        if (fmt === 'Square' || fmt === 'Circle') {
-                                            formatOptions = [
-                                                { id: 'solid-1px', bWidth: '2px', bStyle: 'solid' },
-                                                { id: 'solid-3px', bWidth: '4px', bStyle: 'solid' },
-                                                { id: 'double-3px', bWidth: '4px', bStyle: 'double' },
-                                                { id: 'inner-shadow', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'outer-shadow', bWidth: '0px', bStyle: 'none' }
-                                            ];
-                                        } else if (fmt === 'Underline') {
-                                            formatOptions = [
-                                                { id: 'line-1px', bWidth: '1px', bStyle: 'solid' },
-                                                { id: 'line-2px', bWidth: '2px', bStyle: 'solid' },
-                                                { id: 'line-3px', bWidth: '3px', bStyle: 'solid' },
-                                                { id: 'line-4px', bWidth: '4px', bStyle: 'solid' },
-                                                { id: 'line-5px', bWidth: '5px', bStyle: 'solid' }
-                                            ];
-                                        } else if (fmt === 'Highlight') {
-                                            formatOptions = [
-                                                { id: 'hl-1', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'hl-2', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'hl-3', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'hl-4', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'hl-5', bWidth: '0px', bStyle: 'none' }
-                                            ];
-                                        }
-
-                                        return (
-                                            <div key={fmt} className="relative group w-full flex flex-col items-center z-10 bg-[#faf4ec] border border-[#8b5a2b]/20 shadow-sm rounded-lg overflow-hidden">
-                                                <div className="w-full px-3 py-1 bg-[#8b5a2b]/10 font-bold font-serif text-[12px] text-[#2d1a11] text-center border-b border-[#8b5a2b]/10">
-                                                    {fmt}
-                                                </div>
-                                                <div className="grid grid-cols-5 gap-1 p-1.5 w-full bg-[#faf4ec]">
-                                                    {formatOptions.map(opt => {
-                                                        let renderPreview;
-                                                        const activeColor = selectedCategory?.color || '#8b5a2b';
-                                                        const bProps = { borderStyle: opt.bStyle, borderWidth: opt.bWidth, borderColor: activeColor };
-
-                                                        if (fmt === 'Underline') {
-                                                            renderPreview = <div className="w-[90%]" style={{ borderBottomStyle: opt.bStyle, borderBottomWidth: opt.bWidth, borderBottomColor: activeColor }} />;
-                                                        } else if (fmt === 'Circle') {
-                                                            const isInner = opt.id === 'inner-shadow';
-                                                            const isOuter = opt.id === 'outer-shadow';
-                                                            const shadowStyle = isInner ? { boxShadow: `inset 0 0 4px ${activeColor}` } : isOuter ? { boxShadow: `0 0 6px ${activeColor}` } : bProps;
-                                                            renderPreview = <div className="w-[14px] h-[14px] rounded-full flex-shrink-0" style={shadowStyle} />;
-                                                        } else if (fmt === 'Square') {
-                                                            const isInner = opt.id === 'inner-shadow';
-                                                            const isOuter = opt.id === 'outer-shadow';
-                                                            const shadowStyle = isInner ? { boxShadow: `inset 0 0 4px ${activeColor}` } : isOuter ? { boxShadow: `0 0 6px ${activeColor}` } : bProps;
-                                                            renderPreview = <div className="w-[14px] h-[14px] rounded-[2px] flex-shrink-0" style={shadowStyle} />;
-                                                        } else {
-                                                            const hlLvl = parseInt(opt.id.split('-')[1]);
-                                                            renderPreview = <div className="w-[90%] rounded-[2px]" style={{ height: `${hlLvl * 2}px`, backgroundColor: activeColor, opacity: 0.35, alignSelf: 'flex-end', marginBottom: '2px' }} />;
-                                                        }
-
-                                                        return (
-                                                            <button
-                                                                key={opt.id}
-                                                                onClick={(e) => { e.stopPropagation(); handleFormatClick(fmt.toLowerCase(), opt.id); }}
-                                                                className="w-full h-6 flex items-end justify-center hover:bg-[#8b5a2b]/20 rounded transition-colors pb-1"
-                                                                title={opt.id}
-                                                            >
-                                                                {renderPreview}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </>
-                        )}
-
-                        {flipMode === 'info' && (
-                            <div className="w-full flex-shrink-0 flex flex-col">
-                                <h4 className="font-serif font-black text-[15px] text-[#2d1a11] mb-4 text-center uppercase tracking-widest border-b border-[#8b5a2b]/20 pb-2 w-[90%] mx-auto drop-shadow-sm">Reference Media</h4>
-
-                                {refLinks.length === 0 && refVideos.length === 0 ? (
-                                    <div className="text-center text-gray-500 italic mt-10 text-sm">No references configured for this chapter.</div>
-                                ) : (
-                                    <div className="flex flex-col gap-3 w-full px-2">
-                                        {refVideos.map((v, i) => (
-                                            <a key={`v-${i}`} href={`http://${window.location.hostname}:8000${v}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-all text-red-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
-                                                <i className="pi pi-video text-red-600 text-[14px]"></i>
-                                                <span className="truncate">Chapter Video {i + 1}</span>
-                                            </a>
-                                        ))}
-                                        {refLinks.map((l, i) => (
-                                            <a key={`l-${i}`} href={l} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-all text-blue-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
-                                                <i className="pi pi-external-link text-blue-600 text-[14px]"></i>
-                                                <span className="truncate max-w-[180px]">{l.replace(/^https?:\/\//, '')}</span>
-                                            </a>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 // --- Main HTML Page Renderer component ---
 const HTMLPageRender = React.forwardRef(({ 
@@ -809,6 +559,27 @@ const SMTPage = () => {
     const captureHighlight = (categoryObj, format, styleOption) => {
         if (!selectionMenu) return;
 
+        if (format === 'copy') {
+            navigator.clipboard.writeText(selectionMenu.text || window.getSelection().toString());
+            setSelectionMenu(null);
+            setTimeout(() => window.getSelection().removeAllRanges(), 0);
+            return;
+        }
+
+        if (format === 'remove') {
+            setHighlights(prev => prev.filter(h => {
+                if (h.pageNumber !== selectionMenu.pageNumber) return true;
+                return !h.rects.some(hr => 
+                    selectionMenu.rects.some(sr => 
+                        !(hr.left > sr.left + sr.width || hr.left + hr.width < sr.left || hr.top > sr.top + sr.height || hr.top + hr.height < sr.top)
+                    )
+                );
+            }));
+            setSelectionMenu(null);
+            setTimeout(() => window.getSelection().removeAllRanges(), 0);
+            return;
+        }
+
         const isMountain = SEVEN_MOUNTAIN_SPHERES.some(m => m.label === categoryObj.label);
 
         setHighlights(prev => [...prev, {
@@ -1036,7 +807,7 @@ const SMTPage = () => {
                                                             thicknessRatio = level / 5;
                                                         }
                                                         styles.backgroundColor = h.color || '#ffeb3b';
-                                                        styles.opacity = 0.35;
+                                                        styles.opacity = 0.75;
                                                         styles.mixBlendMode = 'multiply';
                                                         const currentH = parseFloat(rect.height);
                                                         const newH = currentH * thicknessRatio;
@@ -1095,18 +866,14 @@ const SMTPage = () => {
                 </div>
             </div>
 
-            {selectionMenu && (
-                <ScrollMenuPopup
-                    position={selectionMenu}
-                    onSelect={(cat, format, styleOption) => captureHighlight(cat, format, styleOption)}
-                    onClose={() => {
-                        setSelectionMenu(null);
-                        window.getSelection().removeAllRanges();
-                    }}
-                    contentDB={contentDB}
-                    activeTrackName={activeTrackName}
-                />
-            )}
+            <ScrollMenuModal
+                isOpen={!!selectionMenu}
+                onSelect={(cat, format, styleOption) => captureHighlight(cat, format, styleOption)}
+                onClose={() => {
+                    setSelectionMenu(null);
+                    window.getSelection().removeAllRanges();
+                }}
+            />
         </div>
     );
 };

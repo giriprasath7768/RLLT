@@ -4,6 +4,7 @@ import axios from 'axios';
 import HTMLFlipBook from 'react-pageflip';
 import { splitS3Data, splitS4Data } from '../../utils/chartDataSplitter';
 import { StudentService } from '../../services/studentService';
+import ScrollMenuModal from '../../components/admin/ScrollMenuModal';
 
 const explodeBookString = (str, booksDB) => {
     if (!str) return [];
@@ -519,280 +520,7 @@ const SEVEN_MOUNTAIN_SPHERES = [
     { label: "Service", color: "#e3242b" }
 ];
 
-const ScrollMenuPopup = ({ position, onSelect, onClose, activeContent, onRemove }) => {
-    const [selectedCategory, setSelectedCategory] = useState(null);
-    const [isFlipped, setIsFlipped] = useState(false);
-    const [flipMode, setFlipMode] = useState('format'); // 'format' or 'info'
 
-    useEffect(() => {
-        setIsFlipped(false);
-        setFlipMode('format');
-        setSelectedCategory(null);
-    }, [position]);
-
-    // Dynamic collision detection to ensure the entire popup is always perfectly visible
-    const assumedMenuHeight = 500;
-    const spaceBelow = window.innerHeight - position.y;
-    const isUpward = spaceBelow < assumedMenuHeight;
-
-    const topPos = isUpward ? Math.max(10, position.y - assumedMenuHeight) : position.y + 10;
-    const leftPos = Math.min(position.x + 10, window.innerWidth - 350);
-
-    const refLinks = React.useMemo(() => {
-        if (!activeContent?.ref_link) return [];
-        try { const arr = JSON.parse(activeContent.ref_link); return Array.isArray(arr) ? arr : [activeContent.ref_link]; }
-        catch (e) { return [activeContent.ref_link]; }
-    }, [activeContent]);
-
-    const refVideos = React.useMemo(() => {
-        if (!activeContent?.video_url) return [];
-        try { const arr = JSON.parse(activeContent.video_url); return Array.isArray(arr) ? arr : [activeContent.video_url]; }
-        catch (e) { return [activeContent.video_url]; }
-    }, [activeContent]);
-
-    const handleCategoryClick = (e, cat) => {
-        if (e) e.stopPropagation();
-        
-        // Always apply directly with default styles, bypassing the format flip
-        if (onSelect) onSelect(cat, null, null);
-        if (onClose) onClose();
-    };
-
-    const handleFormatClick = (format, styleOption = null) => {
-        if (onSelect) onSelect(selectedCategory, format, styleOption);
-        if (onClose) onClose();
-    };
-
-    return (
-        <div
-            className="fixed z-[9999] pointer-events-auto ancient-scroll-bg"
-            style={{
-                top: topPos,
-                left: leftPos,
-                width: '350px',
-                height: '500px',
-                perspective: '1500px',
-                transformOrigin: isUpward ? 'bottom center' : 'top center'
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-        >
-            <div
-                className="relative w-full h-full flex items-center justify-center transition-transform duration-700 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]"
-                style={{ transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-            >
-                {/* FRONT FACE */}
-                <div
-                    className={`absolute inset-0 flex flex-col items-center justify-start overflow-hidden transition-opacity duration-300 ${isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
-                >
-                    {/* Info toggle instead of Close button */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setFlipMode('info'); setIsFlipped(true); }}
-                        className="absolute top-[20px] right-[20px] text-[#8b5a2b] hover:text-red-700 hover:scale-110 transition-all z-[101]"
-                        title="Reference Info"
-                    >
-                        <i className="pi pi-info-circle text-[22px] font-bold"></i>
-                    </button>
-                    
-                    <div className="w-[108%] h-5 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mb-1 relative z-10 border border-[#1f1209] shrink-0" />
-
-                    <div className="relative z-10 px-6 py-3 flex flex-col gap-[7px] items-center text-[#2d1a11] font-serif w-full h-full justify-start">
-                        <h2 className="text-[15px] font-black uppercase tracking-widest text-[#2d1a11] drop-shadow-sm mb-1 text-center leading-tight w-full flex flex-col gap-[2px] border-b-[1.5px] border-[#8b5a2b]/40 pb-2">
-                            <button onClick={(e) => handleCategoryClick(e, { label: "The Power of God", color: "#D97706" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
-                                The Power of God &
-                            </button>
-                            <button onClick={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#DC2626" })} className="hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full">
-                                The Wisdom of God
-                            </button>
-                        </h2>
-
-                        <div className="flex flex-col w-full items-center gap-[5px] mt-2">
-                            {HIGHLIGHT_CATEGORIES.filter(cat => cat.label !== "Wisdom of God").map(cat => (
-                                <button
-                                    key={cat.label}
-                                    onClick={(e) => handleCategoryClick(e, cat)}
-                                    className="text-[16px] font-extrabold w-[85%] text-center transform drop-shadow-sm transition-all hover:text-[#8b5a2b] hover:scale-105 cursor-pointer leading-tight"
-                                >
-                                    {cat.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="w-[90%] flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 text-[16px] font-black font-serif leading-tight">
-                            {SEVEN_MOUNTAIN_SPHERES.map(cat => (
-                                <button
-                                    key={cat.label}
-                                    onClick={(e) => handleCategoryClick(e, cat)}
-                                    className="hover:text-[#8b5a2b] transition-colors relative group hover:scale-110 transform drop-shadow-sm"
-                                >
-                                    {cat.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="mt-3 flex flex-col items-center text-center text-[10px] leading-tight font-bold tracking-wider opacity-75 uppercase pointer-events-none text-[#1f1209]">
-                            <span>I am here to do God's will and do what is</span>
-                            <span>written about me in this scroll</span>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-2 mt-3 items-center justify-center">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); if (onSelect) onSelect({ label: 'Underline', color: '#8b5a2b' }, 'underline', 'line-2px'); if (onClose) onClose(); }}
-                                className="text-[11px] font-black tracking-widest uppercase text-[#8b5a2b] hover:text-[#5c3a21] transition-colors drop-shadow-sm flex items-center gap-1 border border-[#8b5a2b]/30 bg-[#8b5a2b]/10 px-3 py-1 rounded-full hover:bg-[#8b5a2b]/20 cursor-pointer pointer-events-auto"
-                            >
-                                <i className="pi pi-pencil text-[10px]"></i> Underline
-                            </button>
-                            
-                            {onRemove && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                                    className="text-[11px] font-black tracking-widest uppercase text-red-700 hover:text-red-900 transition-colors drop-shadow-sm flex items-center gap-1 border border-red-800/30 bg-red-100/50 px-3 py-1 rounded-full hover:bg-red-200/60 cursor-pointer pointer-events-auto"
-                                >
-                                    <i className="pi pi-trash text-[10px]"></i> Remove
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    
-                    <div className="w-[108%] h-5 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mt-auto relative z-10 border border-[#1f1209] shrink-0" />
-                </div>
-
-                {/* BACK FACE */}
-                <div
-                    className={`absolute inset-0 flex flex-col items-center justify-start transition-opacity duration-300 ${isFlipped ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                    style={{
-                        transform: 'rotateY(180deg)'
-                    }}
-                >
-                    <div className="w-[108%] h-5 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mb-1 relative z-10 border border-[#1f1209] shrink-0" />
-
-                    {/* Top action row */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }}
-                        className="absolute top-[20px] right-[20px] text-[#8b5a2b] hover:text-red-700 hover:scale-110 transition-all z-[101]"
-                        title="Flip Back"
-                    >
-                        {flipMode === 'info' ? (
-                            <i className="pi pi-info-circle text-[22px] font-bold"></i>
-                        ) : (
-                            <i className="pi pi-arrow-left text-[18px] font-bold"></i>
-                        )}
-                    </button>
-
-                    <div className="px-6 py-6 flex flex-col items-center w-full h-full overflow-y-auto no-scrollbar relative z-10">
-
-                        {flipMode === 'format' && (
-                            <>
-                                <span className="font-serif font-black text-[14px] text-[#2d1a11] tracking-wider uppercase drop-shadow-sm text-center leading-tight w-full break-words mb-4 border-b pb-2 border-[#8b5a2b]/30">{selectedCategory?.label || ''}</span>
-
-                                <div className="flex flex-col gap-2 w-[95%] flex-shrink-0">
-                                    {['Underline', 'Oval', 'Square', 'Highlight'].map(fmt => {
-                                        let formatOptions = [];
-                                        if (fmt === 'Square' || fmt === 'Oval') {
-                                            formatOptions = [
-                                                { id: 'solid-1px', bWidth: '2px', bStyle: 'solid' },
-                                                { id: 'solid-3px', bWidth: '3.5px', bStyle: 'solid' },
-                                                { id: 'double-3px', bWidth: '3.5px', bStyle: 'double' },
-                                                { id: 'inner-shadow', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'outer-shadow', bWidth: '0px', bStyle: 'none' }
-                                            ];
-                                        } else if (fmt === 'Underline') {
-                                            formatOptions = [
-                                                { id: 'line-1px', bWidth: '1px', bStyle: 'solid' },
-                                                { id: 'line-2px', bWidth: '2px', bStyle: 'solid' },
-                                                { id: 'line-3px', bWidth: '3px', bStyle: 'solid' },
-                                                { id: 'line-4px', bWidth: '4px', bStyle: 'solid' },
-                                                { id: 'line-5px', bWidth: '5px', bStyle: 'solid' }
-                                            ];
-                                        } else if (fmt === 'Highlight') {
-                                            formatOptions = [
-                                                { id: 'hl-1', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'hl-2', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'hl-3', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'hl-4', bWidth: '0px', bStyle: 'none' },
-                                                { id: 'hl-5', bWidth: '0px', bStyle: 'none' }
-                                            ];
-                                        }
-
-                                        return (
-                                            <div key={fmt} className="relative group w-full flex flex-col items-center z-10 bg-white/50 border border-[#8b5a2b]/30 shadow-sm rounded-lg overflow-hidden">
-                                                <div className="w-full px-3 py-1 bg-[#8b5a2b]/10 font-bold font-serif text-[12px] text-[#2d1a11] text-center border-b border-[#8b5a2b]/20">
-                                                    {fmt}
-                                                </div>
-                                                <div className="grid grid-cols-5 gap-1 p-1.5 w-full bg-transparent">
-                                                    {formatOptions.map(opt => {
-                                                        let renderPreview;
-                                                        const activeColor = selectedCategory?.color || '#8b5a2b';
-                                                        const bProps = { borderStyle: opt.bStyle, borderWidth: opt.bWidth, borderColor: activeColor };
-
-                                                        if (fmt === 'Underline') {
-                                                            renderPreview = <div className="w-[90%]" style={{ borderBottomStyle: opt.bStyle, borderBottomWidth: opt.bWidth, borderBottomColor: activeColor }} />;
-                                                        } else if (fmt === 'Oval') {
-                                                            const isInner = opt.id === 'inner-shadow';
-                                                            const isOuter = opt.id === 'outer-shadow';
-                                                            const shadowStyle = isInner ? { boxShadow: `inset 0 0 4px ${activeColor}` } : isOuter ? { boxShadow: `0 0 6px ${activeColor}` } : bProps;
-                                                            renderPreview = <div className="w-[20px] h-[12px] rounded-full flex-shrink-0" style={shadowStyle} />;
-                                                        } else if (fmt === 'Square') {
-                                                            const isInner = opt.id === 'inner-shadow';
-                                                            const isOuter = opt.id === 'outer-shadow';
-                                                            const shadowStyle = isInner ? { boxShadow: `inset 0 0 4px ${activeColor}` } : isOuter ? { boxShadow: `0 0 6px ${activeColor}` } : bProps;
-                                                            renderPreview = <div className="w-[14px] h-[14px] rounded-[2px] flex-shrink-0" style={shadowStyle} />;
-                                                        } else {
-                                                            const hlLvl = parseInt(opt.id.split('-')[1]);
-                                                            renderPreview = <div className="w-[90%] rounded-[2px]" style={{ height: `${hlLvl * 2}px`, backgroundColor: activeColor, opacity: 0.35, alignSelf: 'flex-end', marginBottom: '2px' }} />;
-                                                        }
-
-                                                        return (
-                                                            <button
-                                                                key={opt.id}
-                                                                onClick={(e) => { e.stopPropagation(); handleFormatClick(fmt.toLowerCase(), opt.id); }}
-                                                                className="w-full h-6 flex items-end justify-center hover:bg-[#8b5a2b]/30 rounded transition-colors pb-1"
-                                                                title={opt.id}
-                                                            >
-                                                                {renderPreview}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </>
-                        )}
-
-                        {flipMode === 'info' && (
-                            <div className="w-full flex-shrink-0 flex flex-col">
-                                <h4 className="font-serif font-black text-[15px] text-[#2d1a11] mb-4 text-center uppercase tracking-widest border-b border-[#8b5a2b]/30 pb-2 w-[90%] mx-auto drop-shadow-sm">Reference Media</h4>
-
-                                {refLinks.length === 0 && refVideos.length === 0 ? (
-                                    <div className="text-center text-gray-700 italic mt-10 text-sm">No references configured for this chapter.</div>
-                                ) : (
-                                    <div className="flex flex-col gap-3 w-full px-2">
-                                        {refVideos.map((v, i) => (
-                                            <a key={`v-${i}`} href={`http://${window.location.hostname}:8000${v}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50/80 hover:bg-red-100/90 border border-red-300 rounded-md transition-all text-red-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
-                                                <i className="pi pi-video text-red-600 text-[14px]"></i>
-                                                <span className="truncate">Chapter Video {i + 1}</span>
-                                            </a>
-                                        ))}
-                                        {refLinks.map((l, i) => (
-                                            <a key={`l-${i}`} href={l} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-50/80 hover:bg-blue-100/90 border border-blue-300 rounded-md transition-all text-blue-900 font-sans font-bold text-[12px] drop-shadow-sm w-full text-center hover:scale-105">
-                                                <i className="pi pi-external-link text-blue-600 text-[14px]"></i>
-                                                <span className="truncate max-w-[180px]">{l.replace(/^https?:\/\//, '')}</span>
-                                            </a>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                    </div>
-                    
-                    <div className="w-[108%] h-5 bg-gradient-to-b from-[#4e2f18] via-[#754a28] to-[#2d1b0e] rounded-full mx-[-4%] shadow-[0_8px_15px_rgba(0,0,0,0.6)] mt-auto relative z-10 border border-[#1f1209] shrink-0" />
-                </div>
-            </div>
-        </div>
-    );
-};
 
 
 const HighlightOverlay = ({ h }) => {
@@ -871,7 +599,7 @@ const HighlightOverlay = ({ h }) => {
                     } else {
                         const hlLvl = parseInt(opt.split('-')[1] || '5');
                         style.backgroundColor = color;
-                        style.opacity = 0.35;
+                        style.opacity = 0.75;
                         style.mixBlendMode = 'multiply';
                         
                         const pct = (hlLvl / 5) * 100;
@@ -1226,6 +954,45 @@ const BookIndex = () => {
 
     const captureHighlight = (categoryObj, format, styleOption) => {
         if (!selectionMenu) return;
+
+        if (format === 'copy') {
+            navigator.clipboard.writeText(selectionMenu.text || window.getSelection().toString());
+            setSelectionMenu(null);
+            setTimeout(() => window.getSelection().removeAllRanges(), 0);
+            return;
+        }
+
+        if (format === 'remove') {
+            setHighlights(prev => {
+                const toKeep = [];
+                const toRemove = [];
+                prev.forEach(h => {
+                    if (h.pageNumber !== selectionMenu.pageNumber) {
+                        toKeep.push(h);
+                        return;
+                    }
+                    const overlaps = h.rects.some(hr => 
+                        selectionMenu.rects.some(sr => 
+                            !(hr.left > sr.left + sr.width || hr.left + hr.width < sr.left || hr.top > sr.top + sr.height || hr.top + hr.height < sr.top)
+                        )
+                    );
+                    if (overlaps) toRemove.push(h);
+                    else toKeep.push(h);
+                });
+
+                toRemove.forEach(h => {
+                    if (h.id && typeof h.id === 'string' && h.id.length > 15) {
+                        axios.delete(`http://${window.location.hostname}:8000/api/highlights/${h.id}`, { withCredentials: true })
+                            .catch(err => console.error("Failed to delete highlight:", err));
+                    }
+                });
+
+                return toKeep;
+            });
+            setSelectionMenu(null);
+            setTimeout(() => window.getSelection().removeAllRanges(), 0);
+            return;
+        }
         
         // Ensure format and styleOption are set, with fallbacks for legacy/direct calls
         const isMountain = SEVEN_MOUNTAIN_SPHERES.some(m => m.label === categoryObj.label);
@@ -1906,16 +1673,15 @@ const BookIndex = () => {
 
                 {/* Ancient Scroll Overlay Rendering! */}
                 {selectionMenu && (
-                    <ScrollMenuPopup
-                        position={selectionMenu}
-                        onSelect={captureHighlight}
-                        onClose={() => setSelectionMenu(null)}
-                        activeContent={activeContentDBItem}
-                        onRemove={overlappingHighlight ? () => {
-                            deleteHighlight(overlappingHighlight.id);
+                    <ScrollMenuModal
+                        isOpen={!!selectionMenu}
+                        onSelect={(categoryObj, format, styleOption) => {
+                            captureHighlight(categoryObj, format, styleOption);
+                        }}
+                        onClose={() => {
                             setSelectionMenu(null);
-                            setTimeout(() => window.getSelection().removeAllRanges(), 0);
-                        } : null}
+                            window.getSelection().removeAllRanges();
+                        }}
                     />
                 )}
 

@@ -115,7 +115,7 @@ const DropdownPortal = ({ isOpen, anchorRef, children }) => {
     );
 };
 
-const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes, PAGE_SIZES, pageSize, setPageSize, setIsSidebarOpen, handleOpenMap, UN_COUNTRIES, regionNames, zoomLevel, setZoomLevel, isSaving, fetchSavedDocuments, spellCheckEnabled, setSpellCheckEnabled, setIsChartEditing, setChartProxy, setRlltToolbarOpen, setDailyISIOpen }) => {
+const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, watermark, setWatermark, language, setLanguage, notes, setNotes, PAGE_SIZES, pageSize, setPageSize, setIsSidebarOpen, handleOpenMap, UN_COUNTRIES, regionNames, zoomLevel, setZoomLevel, isSaving, fetchSavedDocuments, spellCheckEnabled, setSpellCheckEnabled, setIsChartEditing, setChartProxy, setRlltToolbarOpen, setScrollMenuOpen, setDailyISIOpen }) => {
     const fileInputRef = useRef(null);
     const puzzleInputRef = useRef(null);
     const watermarkInputRef = useRef(null);
@@ -195,12 +195,6 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
     const cChartCursorRef = useRef(null);
 
     const [galleryModalOpen, setGalleryModalOpen] = useState(false);
-    const [scrollMenuOpen, setScrollMenuOpen] = useState(false);
-
-    const handleScrollFormatSelect = (category, format, styleOption) => {
-        alert("Scroll formats disabled in Phase 2. They will return in Phase 3.");
-        setScrollMenuOpen(false);
-    };
 
     const safeInsert = (callback) => {
         if (!tiptapEditor) return;
@@ -2017,12 +2011,6 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                 onInsert={insertGalleryImage}
             />
 
-            {scrollMenuOpen && (
-                <ScrollMenuModal 
-                    onSelect={handleScrollFormatSelect} 
-                    onClose={() => setScrollMenuOpen(false)} 
-                />
-            )}
 
             <HebrewCalculatorModal
                 isOpen={hebrewCalculatorOpen}

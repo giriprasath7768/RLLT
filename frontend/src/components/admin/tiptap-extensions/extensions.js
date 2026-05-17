@@ -180,6 +180,7 @@ export const TextBoxNode = Node.create({
 
 export const WisdomMark = Mark.create({
     name: 'wisdom',
+    inclusive: false,
     addAttributes() {
         return {
             color: { default: '#00C0FF' },

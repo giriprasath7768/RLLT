@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import WordToolbar from '../../components/admin/WordToolbar';
 import RLLTToolbarModal from '../../components/admin/RLLTToolbarModal';
+import ScrollMenuModal from '../../components/admin/ScrollMenuModal';
 import DailyISIModal from '../../components/admin/DailyISIModal';
 import SavedDocumentsModal from '../../components/admin/SavedDocumentsModal';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -60,6 +61,7 @@ const WordEditor = () => {
     // Book Index States
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [rlltToolbarOpen, setRlltToolbarOpen] = useState(false);
+    const [scrollMenuOpen, setScrollMenuOpen] = useState(false);
     const [dailyISIOpen, setDailyISIOpen] = useState(false);
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
@@ -458,6 +460,7 @@ const WordEditor = () => {
                     setSpellCheckEnabled={setSpellCheckEnabled}
                     setIsChartEditing={setIsChartEditing}
                     setRlltToolbarOpen={setRlltToolbarOpen}
+                    setScrollMenuOpen={setScrollMenuOpen}
                     setDailyISIOpen={setDailyISIOpen}
                 />
             </div>
@@ -494,6 +497,38 @@ const WordEditor = () => {
                             editor.chain().focus().setImage({ src: dataUrl }).run();
                         }
                     }}
+                />
+
+                {/* Embedded Scroll Menu Modal */}
+                <ScrollMenuModal 
+                    isOpen={scrollMenuOpen}
+                    onSelect={(category, format, styleOption) => {
+                        if (!editor) return;
+                        const { empty } = editor.state.selection;
+                        if (empty) return;
+
+                        if (format === 'copy') {
+                            const text = editor.state.selection.content().textBetween(0, editor.state.selection.content().size, '\n');
+                            navigator.clipboard.writeText(text || window.getSelection().toString());
+                            return;
+                        }
+
+                        if (format === 'remove') {
+                            editor.chain().focus().unsetWisdom().run();
+                            return;
+                        }
+
+                        const color = category?.color || '#8b5a2b';
+                        let markMode = format;
+                        if (format === 'circle') markMode = 'round'; // Map to WisdomMark mode
+
+                        // Instead of raw HTML which Tiptap might strip, we use the custom WisdomMark
+                        // which supports mode="highlight|square|round|underline" and "color"
+                        editor.chain().focus()
+                            .setWisdom({ color, mode: markMode })
+                            .run();
+                    }}
+                    onClose={() => setScrollMenuOpen(false)}
                 />
 
                 {/* Primary Editing Area */}

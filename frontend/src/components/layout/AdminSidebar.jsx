@@ -114,6 +114,8 @@ const AdminSidebar = ({ visible, onHide }) => {
                         { label: 'Assessment Summary', icon: 'pi pi-list', to: '/admin/assessment-summary' }
                     ]
                 },
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'SMT Page', icon: 'pi pi-book', to: '/admin/book-index' }] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: '7TNT Word', icon: 'pi pi-file-word', to: '/admin/7tnt-word' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
                     label: 'Classroom',
                     icon: 'pi pi-book',
@@ -124,23 +126,6 @@ const AdminSidebar = ({ visible, onHide }) => {
                         { label: 'Resources', icon: 'pi pi-folder-open', to: '/admin/classroom/resources' }
                     ]
                 }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: '7TNT Word', icon: 'pi pi-file-word', to: '/admin/7tnt-word' }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
-                    label: 'Library',
-                    icon: 'pi pi-folder-open',
-                    items: [
-                        { label: 'Book Master', icon: 'pi pi-book', to: '/admin/books' },
-                        { label: 'Chapter Master', icon: 'pi pi-bookmark', to: '/admin/chapters' },
-                        { label: 'RLLT Table Data', icon: 'pi pi-table', to: '/admin/rllt-data' },
-                        { label: 'Image', icon: 'pi pi-image', to: '/admin/image-gallery' }
-                    ]
-                }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'SMT Page', icon: 'pi pi-book', to: '/admin/book-index' }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Recordings', icon: 'pi pi-microphone', to: '/admin/recordings' }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Screen Recorder', icon: 'pi pi-desktop', to: '/admin/screen-recorder' }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Manage Training Contents', icon: 'pi pi-video', to: '/admin/manage-training' }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: '7 TNT Content management', icon: 'pi pi-server', to: '/admin/7tnt-content' }] : []),
-                ...(userRole === 'super_admin' ? [{ label: 'Locations', icon: 'pi pi-map-marker', to: '/admin/locations' }] : []),
                 {
                     label: 'Reports',
                     icon: 'pi pi-chart-bar',
@@ -200,7 +185,28 @@ const AdminSidebar = ({ visible, onHide }) => {
             items: [
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'T-Tom-T Registered Users', icon: 'pi pi-user-plus', to: '/admin/ttom-users' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: '7 TNT Players', icon: 'pi pi-play', to: '/admin/7tnt-players' }] : []),
-                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'Players', icon: 'pi pi-play', to: '/admin/players' }] : [])
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'Players', icon: 'pi pi-play', to: '/admin/players' }] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Recordings', icon: 'pi pi-microphone', to: '/admin/recordings' }] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Screen Recorder', icon: 'pi pi-desktop', to: '/admin/screen-recorder' }] : [])
+            ]
+        },
+        {
+            label: 'LIBRARY',
+            icon: 'pi pi-folder-open',
+            items: [
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [
+                    { label: 'Book Master', icon: 'pi pi-book', to: '/admin/books' },
+                    { label: 'Chapter Master', icon: 'pi pi-bookmark', to: '/admin/chapters' },
+                    { label: 'RLLT Table Data', icon: 'pi pi-table', to: '/admin/rllt-data' },
+                    { label: 'Image', icon: 'pi pi-image', to: '/admin/image-gallery' }
+                ] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' ? [
+                    { label: 'Manage Training Contents', icon: 'pi pi-video', to: '/admin/manage-training' },
+                    { label: '7 TNT Content management', icon: 'pi pi-server', to: '/admin/7tnt-content' }
+                ] : []),
+                ...(userRole === 'super_admin' ? [
+                    { label: 'Locations', icon: 'pi pi-map-marker', to: '/admin/locations' }
+                ] : [])
             ]
         },
         ...(userRole === 'super_admin' || userRole === 'admin' ? [{
@@ -272,7 +278,7 @@ const AdminSidebar = ({ visible, onHide }) => {
         };
 
         return (
-            <div className="flex flex-col py-4 h-full" style={{ backgroundColor: themeConfig?.sidebarBg || '#1F2937', color: themeConfig?.sidebarText || '#D1D5DB' }}>
+            <div className="flex flex-col py-4 min-h-full" style={{ backgroundColor: themeConfig?.sidebarBg || '#1F2937', color: themeConfig?.sidebarText || '#D1D5DB' }}>
                 <div className="px-6 mb-4">
                     <AutoComplete 
                         value={searchQuery} 
@@ -297,13 +303,14 @@ const AdminSidebar = ({ visible, onHide }) => {
 
     return (
         <>
-            {/* Desktop Sidebar */}
-            <aside 
-                className="hidden lg:block w-72 border-r flex-shrink-0 min-h-[calc(100vh-80px)] overflow-y-auto sticky top-20 transition-colors duration-300"
-                style={{ backgroundColor: themeConfig?.sidebarBg || '#1F2937', borderColor: themeConfig?.sidebarBg || '#1F2937' }}
-            >
-                {renderSidebarContent()}
-            </aside>
+            {/* Desktop Sidebar Wrapper */}
+            <div className="hidden lg:block w-72 flex-grow border-r transition-colors duration-300"
+                 style={{ backgroundColor: themeConfig?.sidebarBg || '#1F2937', borderColor: themeConfig?.sidebarBg || '#1F2937' }}>
+                {/* Sticky Content inside wrapper */}
+                <aside className="w-full sticky top-20 h-[calc(100vh-80px)] overflow-y-auto">
+                    {renderSidebarContent()}
+                </aside>
+            </div>
 
             {/* Mobile Sidebar (Drawer) */}
             <PrimeSidebar
