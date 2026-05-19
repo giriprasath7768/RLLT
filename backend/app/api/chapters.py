@@ -3,10 +3,11 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import delete
 from sqlalchemy.orm import selectinload
 
 from app.db.database import get_db
-from app.db.models import Chapter, Book, User
+from app.db.models import Chapter, Book, User, Content, StudentHighlight
 from app.schemas.book import ChapterCreate, ChapterUpdate, ChapterWithBookResponse, ChapterResponse
 from app.api.auth import get_current_user
 
@@ -100,6 +101,10 @@ async def delete_chapter(
     
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
+        
+    # Cascade delete dependencies
+    await db.execute(delete(Content).where(Content.chapter_id == chapter_id))
+    await db.execute(delete(StudentHighlight).where(StudentHighlight.chapter_id == chapter_id))
         
     await db.delete(chapter)
     await db.commit()

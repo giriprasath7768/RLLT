@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes';
 import { ScreenRecordingProvider } from './context/ScreenRecordingContext';
 import { CustomThemeProvider } from './context/ThemeContext';
+import FloatingMenu from './components/FloatingMenu';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <BrowserRouter>
           <div className="min-h-screen bg-gray-900 overflow-hidden">
             <AppRoutes />
+            <FloatingMenu />
           </div>
         </BrowserRouter>
       </ScreenRecordingProvider>

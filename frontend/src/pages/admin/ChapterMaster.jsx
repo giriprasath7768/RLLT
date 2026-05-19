@@ -22,7 +22,10 @@ const ChapterMaster = () => {
         book_id: null,
         chapter_number: 0,
         verse_count: 0,
-        art: 0.0
+        art: 0.0,
+        english_words: 0,
+        hebrew_words: 0,
+        greek_words: 0
     };
 
     const [chapters, setChapters] = useState([]);
@@ -33,7 +36,9 @@ const ChapterMaster = () => {
     // CRUD state
     const [chapterDialog, setChapterDialog] = useState(false);
     const [deleteChapterDialog, setDeleteChapterDialog] = useState(false);
+    const [deleteChaptersDialog, setDeleteChaptersDialog] = useState(false);
     const [importDialog, setImportDialog] = useState(false);
+    const [selectedChapters, setSelectedChapters] = useState(null);
     const [chapter, setChapter] = useState(emptyChapter);
     const [submitted, setSubmitted] = useState(false);
     const [first, setFirst] = useState(0);
@@ -79,6 +84,14 @@ const ChapterMaster = () => {
 
     const hideDeleteChapterDialog = () => {
         setDeleteChapterDialog(false);
+    };
+
+    const hideDeleteChaptersDialog = () => {
+        setDeleteChaptersDialog(false);
+    };
+
+    const confirmDeleteSelected = () => {
+        setDeleteChaptersDialog(true);
     };
 
     const saveChapter = async () => {
@@ -132,6 +145,26 @@ const ChapterMaster = () => {
         } catch (error) {
             console.error("Delete error: ", error);
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to delete chapter', life: 3000 });
+        }
+    };
+
+    const deleteSelectedChapters = async () => {
+        let _chapters = chapters.filter(val => !selectedChapters.includes(val));
+        
+        try {
+            await Promise.all(
+                selectedChapters.map(chap => 
+                    axios.delete(`http://${window.location.hostname}:8000/api/chapters/${chap.id}`, { withCredentials: true })
+                )
+            );
+            
+            setChapters(_chapters);
+            setDeleteChaptersDialog(false);
+            setSelectedChapters(null);
+            toast.current.show({ severity: 'success', summary: 'Successful', detail: 'Chapters Deleted', life: 3000 });
+        } catch (error) {
+            console.error("Bulk delete error: ", error);
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to delete some chapters', life: 3000 });
         }
     };
 
@@ -208,7 +241,10 @@ const ChapterMaster = () => {
                         book_id: matchBook.id,
                         chapter_number: parseInt(normalized['chapterno.'] || normalized['chapterno'] || normalized['chapternumber'] || normalized['chapter'] || normalized['chapters']) || 0,
                         verse_count: parseInt(normalized['verses'] || normalized['versecount']) || 0,
-                        art: parseFloat(normalized['totalart'] || normalized['art']) || 0.0
+                        art: parseFloat(normalized['totalart'] || normalized['art']) || 0.0,
+                        english_words: parseInt(normalized['englishwords'] || normalized['english_words']) || 0,
+                        hebrew_words: parseInt(normalized['hebrewwords'] || normalized['hebrew_words'] || normalized['weswords'] || normalized['hebwords']) || 0,
+                        greek_words: parseInt(normalized['greekwords'] || normalized['greek_words'] || normalized['grwords'] || normalized['gkwords']) || 0
                     };
                 }).filter(c => c !== null);
 
@@ -246,6 +282,7 @@ const ChapterMaster = () => {
             <div className="flex flex-wrap gap-2">
                 <Button label="New Chapter" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
                 <Button label="Import Excel" icon="pi pi-upload" severity="help" onClick={() => setImportDialog(true)} className="hidden md:flex" />
+                <Button label="Delete Selected" icon="pi pi-trash" severity="danger" onClick={confirmDeleteSelected} disabled={!selectedChapters || !selectedChapters.length} className="hidden md:flex" />
             </div>
         </div>
     );
@@ -283,6 +320,13 @@ const ChapterMaster = () => {
         </React.Fragment>
     );
 
+    const deleteChaptersDialogFooter = (
+        <React.Fragment>
+            <Button label="No" icon="pi pi-times" outlined onClick={hideDeleteChaptersDialog} />
+            <Button label="Yes" icon="pi pi-check" severity="danger" onClick={deleteSelectedChapters} />
+        </React.Fragment>
+    );
+
     const filteredChapters = chapters.filter(chap => {
         if (!globalFilter) return true;
         const search = globalFilter.toLowerCase();
@@ -301,17 +345,21 @@ const ChapterMaster = () => {
                 </div>
 
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
-                    <DataTable ref={dt} value={chapters} dataKey="id"
+                    <DataTable ref={dt} value={chapters} dataKey="id" selection={selectedChapters} onSelectionChange={(e) => setSelectedChapters(e.value)}
                         paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
                         loading={loading} globalFilter={globalFilter} header={tableHeader}
                         className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines
                         rowClassName={() => 'bg-white text-black'} emptyMessage="No chapters found.">
+                        <Column selectionMode="multiple" exportable={false} style={{ width: '3rem' }} headerClassName="admin-table-header"></Column>
                         <Column header="S.No" body={(data, options) => options.rowIndex + 1} exportable={false} style={{ width: '4rem' }} headerClassName="admin-table-header"></Column>
                         <Column field="book_name" header="Book Name" sortable filterField="book_name" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }} headerClassName="admin-table-header"></Column>
-                        <Column field="chapter_number" header="Chapter No." sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
-                        <Column field="verse_count" header="Verses" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
-                        <Column field="art" header="ART" sortable style={{ width: '15%' }} headerClassName="admin-table-header"></Column>
-                        <Column header="Activity" body={actionBodyTemplate} exportable={false} style={{ width: '12%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="chapter_number" header="Chapter No." sortable style={{ width: '10%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="verse_count" header="Verses" sortable style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="art" header="ART" sortable style={{ width: '8%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="english_words" header="English Words" sortable style={{ width: '12%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="hebrew_words" header="Hebrew Words" sortable style={{ width: '12%' }} headerClassName="admin-table-header"></Column>
+                        <Column field="greek_words" header="Greek Words" sortable style={{ width: '12%' }} headerClassName="admin-table-header"></Column>
+                        <Column header="Activity" body={actionBodyTemplate} exportable={false} style={{ width: '10%' }} headerClassName="admin-table-header"></Column>
                     </DataTable>
                 </div>
 
@@ -332,7 +380,10 @@ const ChapterMaster = () => {
                                 data={[
                                     { label: 'Chapter No.', value: chap.chapter_number },
                                     { label: 'Verses', value: chap.verse_count },
-                                    { label: 'ART', value: chap.art }
+                                    { label: 'ART', value: chap.art },
+                                    { label: 'English Words', value: chap.english_words },
+                                    { label: 'Hebrew Words', value: chap.hebrew_words },
+                                    { label: 'Greek Words', value: chap.greek_words }
                                 ]}
                                 onEdit={() => editChapter(chap)}
                                 onDelete={() => confirmDeleteChapter(chap)}
@@ -392,6 +443,21 @@ const ChapterMaster = () => {
                     </div>
                 </div>
 
+                <div className="formgrid grid grid-cols-3 gap-4 mt-4">
+                    <div className="field">
+                        <label htmlFor="english_words" className="font-bold block mb-2">English Words</label>
+                        <InputNumber id="english_words" value={chapter.english_words} onValueChange={(e) => onInputNumberChange(e, 'english_words')} useGrouping={false} />
+                    </div>
+                    <div className="field">
+                        <label htmlFor="hebrew_words" className="font-bold block mb-2">Hebrew Words</label>
+                        <InputNumber id="hebrew_words" value={chapter.hebrew_words} onValueChange={(e) => onInputNumberChange(e, 'hebrew_words')} useGrouping={false} />
+                    </div>
+                    <div className="field">
+                        <label htmlFor="greek_words" className="font-bold block mb-2">Greek Words</label>
+                        <InputNumber id="greek_words" value={chapter.greek_words} onValueChange={(e) => onInputNumberChange(e, 'greek_words')} useGrouping={false} />
+                    </div>
+                </div>
+
             </Dialog>
 
             <Dialog visible={deleteChapterDialog} style={{ width: '32rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Confirm" modal footer={deleteChapterDialogFooter} onHide={hideDeleteChapterDialog}>
@@ -400,6 +466,17 @@ const ChapterMaster = () => {
                     {chapter && (
                         <span>
                             Are you sure you want to delete Chapter <b>{chapter.chapter_number}</b>?
+                        </span>
+                    )}
+                </div>
+            </Dialog>
+
+            <Dialog visible={deleteChaptersDialog} style={{ width: '32rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Confirm" modal footer={deleteChaptersDialogFooter} onHide={hideDeleteChaptersDialog}>
+                <div className="confirmation-content flex items-center gap-3">
+                    <i className="pi pi-exclamation-triangle text-4xl text-yellow-500" />
+                    {selectedChapters && (
+                        <span>
+                            Are you sure you want to delete the selected chapters?
                         </span>
                     )}
                 </div>

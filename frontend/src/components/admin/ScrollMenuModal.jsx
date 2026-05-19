@@ -96,72 +96,75 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                             
 
 
-                            <div className="relative z-10 px-8 pt-[20px] pb-[70px] flex flex-col items-center text-[#000] w-full h-[900px] justify-center">
+                            <div className="relative z-10 px-8 pt-[20px] pb-[95px] flex flex-col items-center text-[#000] w-full h-[900px] justify-center">
                                 <style>{`
-                                    @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
-                                    @font-face {
-                                        font-family: 'Algerian';
-                                        src: local('Algerian'), local('Algerian Regular');
+                                    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap');
+                                    .font-cinzel {
+                                        font-family: 'Cinzel', serif;
                                     }
-                                    .font-algerian {
-                                        font-family: 'Algerian', 'Uncial Antiqua', serif;
+                                    .font-times {
+                                        font-family: 'Times New Roman', Times, serif;
                                     }
-                                    .font-ms-uighur {
-                                        font-family: 'Microsoft Uighur', 'Segoe UI', sans-serif;
+                                    .text-stroke-1 {
+                                        -webkit-text-stroke: 1px black;
+                                    }
+                                    .text-stroke-sm {
+                                        -webkit-text-stroke: 0.5px black;
                                     }
                                 `}</style>
 
-                                <div className="text-center w-full flex flex-col gap-[2px] mb-1 mt-1">
-                                    <button onMouseDown={(e) => handleCategoryClick(e, { label: "The Power of God", color: "#8A2BE2" })} className="font-algerian font-black text-[16px] leading-tight hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full text-center drop-shadow-sm">
+                                <div className="text-center w-full flex flex-col gap-[2px] mb-3 mt-2">
+                                    <div className="font-cinzel font-black text-[18px] leading-tight w-full text-center drop-shadow-sm tracking-wide text-stroke-1">
                                         THE POWER OF GOD AND THE-
-                                    </button>
-                                    <button onMouseDown={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#8A2BE2" })} className="font-algerian font-black text-[16px] leading-tight hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full text-center drop-shadow-sm">
-                                        WISDOM OF GOD
+                                    </div>
+                                    <button onMouseDown={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#8A2BE2" })} className="font-cinzel font-black leading-tight hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full text-center drop-shadow-sm flex justify-center items-baseline tracking-wide text-stroke-1">
+                                        <span className="text-[26px]">W</span>
+                                        <span className="text-[18px] ml-[2px]">ISDOM OF GOD</span>
                                     </button>
                                 </div>
 
-                                <div className="flex flex-col w-full items-center gap-[0px] mb-3">
+                                <div className="flex flex-col w-full items-center gap-[8px] mb-4">
                                     {HIGHLIGHT_CATEGORIES.map(cat => (
                                         <button
                                             key={cat.label}
                                             onMouseDown={(e) => handleCategoryClick(e, cat)}
                                             className="w-full text-center transform transition-all hover:text-[#8b5a2b] hover:scale-105 cursor-pointer leading-none flex justify-center items-baseline drop-shadow-sm font-bold"
                                         >
-                                            <span className="font-algerian font-black text-[30px]">{cat.label.charAt(0)}</span>
-                                            <span className="font-ms-uighur font-black text-[28px] tracking-wide">{cat.label.slice(1)}</span>
+                                            <span className="font-cinzel font-black text-[26px] text-stroke-1">{cat.label.charAt(0)}</span>
+                                            <span className="font-times font-black text-[18px] tracking-wide ml-[2px] text-stroke-sm">{cat.label.slice(1)}</span>
                                         </button>
                                     ))}
                                 </div>
 
-                                <div className="w-full text-center drop-shadow-sm mb-3">
-                                    <button onMouseDown={(e) => handleCategoryClick(e, { label: "TRANSFORMATION", color: "#fafa33" })} className="font-algerian font-black text-[18px] hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer">
+                                <div className="w-full text-center drop-shadow-sm mb-4">
+                                    <div className="font-cinzel font-black text-[22px] tracking-wide text-stroke-1">
                                         TRANSFORMATION
-                                    </button>
+                                    </div>
                                 </div>
 
-                                <div className="w-[90%] flex flex-wrap justify-center gap-x-3 gap-y-1 mb-2 leading-none drop-shadow-sm">
+                                <div className="w-[90%] flex flex-wrap justify-center gap-x-3 gap-y-3 mb-3 leading-none drop-shadow-sm">
                                     {SEVEN_MOUNTAIN_SPHERES.slice(0, 4).map(cat => (
                                         <button key={cat.label} onMouseDown={(e) => handleCategoryClick(e, cat)} className="hover:text-[#8b5a2b] transition-colors hover:scale-110 transform flex items-baseline font-bold">
-                                            <span className="font-algerian font-black text-[24px]">{cat.label.charAt(0)}</span>
-                                            <span className="font-ms-uighur font-black text-[22px] tracking-wide">{cat.label.slice(1)}</span>
+                                            <span className="font-cinzel font-black text-[20px] text-stroke-1">{cat.label.charAt(0)}</span>
+                                            <span className="font-times font-black text-[16px] tracking-wide ml-[1px] text-stroke-sm">{cat.label.slice(1)}</span>
                                         </button>
                                     ))}
                                 </div>
-                                <div className="w-[90%] flex flex-wrap justify-center gap-x-3 gap-y-1 mb-2 leading-none drop-shadow-sm">
+                                <div className="w-[90%] flex flex-wrap justify-center gap-x-3 gap-y-3 mb-3 leading-none drop-shadow-sm">
                                     {SEVEN_MOUNTAIN_SPHERES.slice(4).map(cat => (
                                         <button key={cat.label} onMouseDown={(e) => handleCategoryClick(e, cat)} className="hover:text-[#8b5a2b] transition-colors hover:scale-110 transform flex items-baseline font-bold">
-                                            <span className="font-algerian font-black text-[24px]">{cat.label.charAt(0)}</span>
-                                            <span className="font-ms-uighur font-black text-[22px] tracking-wide">{cat.label.slice(1)}</span>
+                                            <span className="font-cinzel font-black text-[20px] text-stroke-1">{cat.label.charAt(0)}</span>
+                                            <span className="font-times font-black text-[16px] tracking-wide ml-[1px] text-stroke-sm">{cat.label.slice(1)}</span>
                                         </button>
                                     ))}
                                 </div>
 
-                                <div className="flex flex-col items-center text-center font-ms-uighur italic text-[14px] leading-tight font-black pointer-events-none w-[80%] opacity-90 drop-shadow-sm mt-3 mb-0">
+                                <div className="flex flex-col items-center text-center font-times italic text-[13px] leading-tight font-black pointer-events-none w-[80%] opacity-90 drop-shadow-sm mt-3 mb-0">
                                     <span>I AM HERE TO DO GOD'S WILL and DO WHAT IS</span>
                                     <span>WRITTEN ABOUT ME IN THIS SCROLL</span>
                                 </div>
 
-                                <div className="w-full flex justify-center gap-4 mt-5 mb-2">
+                                <div className="w-full flex justify-center gap-4 mt-3 mb-6">
                                     <button 
                                         onMouseDown={(e) => {
                                             if (e) { e.preventDefault(); e.stopPropagation(); }

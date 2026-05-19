@@ -133,7 +133,12 @@ const AdminSidebar = ({ visible, onHide }) => {
                         { label: 'Student Report', icon: 'pi pi-file', to: '/admin/reports/student-report' },
                         { label: 'Honeycomb Report', icon: 'pi pi-th-large', to: '/admin/reports/honeycomb-report' }
                     ]
-                }
+                },
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
+                    label: 'Light Digital Chart',
+                    icon: 'pi pi-sun',
+                    to: '/admin/light-chart-digital'
+                }] : [])
             ]
         },
         {

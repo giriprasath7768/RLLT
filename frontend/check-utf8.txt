@@ -1,2 +1,0 @@
-blank-scroll: 1a45dfa39f428681
-player-mockup: 1a45dfa39f428681

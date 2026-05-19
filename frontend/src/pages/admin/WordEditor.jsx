@@ -540,7 +540,6 @@ const WordEditor = () => {
                         width: PAGE_SIZES[pageSize].width,
                         '--page-min-height': PAGE_SIZES[pageSize].height,
                         '--page-padding': PAGE_SIZES[pageSize].padding,
-                        '--page-padding': PAGE_SIZES[pageSize].padding,
                         transform: `scale(${zoomLevel})`,
                         transformOrigin: 'top center',
                         marginBottom: `calc(${PAGE_SIZES[pageSize].height} * ${Math.max(0, zoomLevel - 1)})`,

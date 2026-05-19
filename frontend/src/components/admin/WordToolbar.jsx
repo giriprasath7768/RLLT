@@ -1654,7 +1654,6 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                         <DropdownPortal isOpen={agScriptDropdownOpen} anchorRef={agScriptDropdownRef}>
                             <div className="w-48 bg-gray-900 border border-gray-700 shadow-2xl rounded-lg p-1 flex flex-col gap-1 text-gray-200 pointer-events-auto">
                                 {Object.values(ANTI_GRAVITY_SCRIPTS)
-                                    .filter(script => script.id !== 'hebrew' && script.id !== 'greek')
                                     .map(script => (
                                         <button
                                             key={script.id}

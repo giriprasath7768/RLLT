@@ -211,6 +211,9 @@ class Chapter(Base):
     chapter_number = Column(Integer, nullable=False)
     verse_count = Column(Integer, default=0)
     art = Column(Float, default=0.0)
+    english_words = Column(Integer, default=0)
+    hebrew_words = Column(Integer, default=0)
+    greek_words = Column(Integer, default=0)
 
     book = relationship("Book", back_populates="chapters")
 

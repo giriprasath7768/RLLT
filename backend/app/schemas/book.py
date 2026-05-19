@@ -6,6 +6,9 @@ class ChapterBase(BaseModel):
     chapter_number: int
     verse_count: int = 0
     art: float = 0.0
+    english_words: Optional[int] = 0
+    hebrew_words: Optional[int] = 0
+    greek_words: Optional[int] = 0
 
 class ChapterCreate(ChapterBase):
     book_id: UUID
@@ -14,6 +17,9 @@ class ChapterUpdate(BaseModel):
     chapter_number: Optional[int] = None
     verse_count: Optional[int] = None
     art: Optional[float] = None
+    english_words: Optional[int] = None
+    hebrew_words: Optional[int] = None
+    greek_words: Optional[int] = None
 
 class ChapterResponse(ChapterBase):
     id: UUID

@@ -72,6 +72,7 @@ import ClassroomQnA from './pages/admin/ClassroomQnA';
 import ClassroomAssignments from './pages/admin/ClassroomAssignments';
 import EvaluateAssignments from './pages/admin/EvaluateAssignments';
 import Shanaz357 from './pages/admin/Shanaz357';
+import LightChartDigital from './pages/admin/LightChartDigital';
 import Settings from './pages/admin/Settings';
 
 // Dashboard Components
@@ -184,6 +185,7 @@ const AppRoutes = () => {
                     <Route path="/admin/reports/student-report" element={<StudentReport />} />
                     <Route path="/admin/reports/honeycomb-report" element={<HoneycombReport />} />
                     <Route path="/admin/shanaz-357" element={<Shanaz357 />} />
+                    <Route path="/admin/light-chart-digital" element={<LightChartDigital />} />
                     <Route path="/admin/chart-listing/357-chart" element={<DynamicCycleChartView />} />
                     <Route path="/admin/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />
                     <Route path="/admin/chart-listing/7tnt-weekly-chart" element={<SevenTNTWeeklyChart />} />

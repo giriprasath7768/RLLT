@@ -5,6 +5,8 @@ const ScriptViewerModal = ({ isOpen, onClose, scriptData, onInsert }) => {
 
     if (!isOpen || !scriptData) return null;
 
+    const isTableFormat = scriptData.id === 'hebrew' || scriptData.id === 'greek';
+
     return (
         <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4 py-8 backdrop-blur-md print:hidden">
             <div className="bg-gray-900 border border-gray-700 shadow-[0_0_40px_rgba(0,0,0,0.8)] rounded-xl overflow-hidden w-full max-w-6xl h-[95vh] max-h-full flex flex-col text-gray-100 transform transition-all scale-100 opacity-100 relative">
@@ -35,12 +37,12 @@ const ScriptViewerModal = ({ isOpen, onClose, scriptData, onInsert }) => {
                         <table className="w-full text-left text-sm whitespace-nowrap">
                             <thead className="bg-gray-100 border-b border-gray-200 text-black text-xs tracking-widest font-mono font-bold select-none">
                                 <tr>
-                                    <th className="px-4 py-4 w-16 text-center">SEQ</th>
-                                    <th className="px-4 py-4 text-center">GLYPH</th>
-                                    <th className="px-4 py-4">PHONETIC</th>
-                                    <th className="px-4 py-4 w-1/3 whitespace-normal">STYLIZED FORM DESCRIPTION</th>
-                                    <th className="px-4 py-4 w-1/4">SYMBOLIC ARCHETYPE</th>
-                                    <th className="px-4 py-4 text-right">VAL</th>
+                                    <th className="px-4 py-4 w-16 text-center">{isTableFormat ? 'NO.' : 'SEQ'}</th>
+                                    <th className="px-4 py-4 text-center">{scriptData.id === 'hebrew' ? 'HEBREW LETTER' : scriptData.id === 'greek' ? 'GREEK LETTER' : 'GLYPH'}</th>
+                                    <th className="px-4 py-4">{isTableFormat ? 'ENGLISH PRONUNCIATION' : 'PHONETIC'}</th>
+                                    {!isTableFormat && <th className="px-4 py-4 w-1/3 whitespace-normal">STYLIZED FORM DESCRIPTION</th>}
+                                    <th className="px-4 py-4 w-1/4">{isTableFormat ? 'NAME' : 'SYMBOLIC ARCHETYPE'}</th>
+                                    <th className="px-4 py-4 text-right">{isTableFormat ? 'NUMERIC VALUE' : 'VAL'}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -61,9 +63,9 @@ const ScriptViewerModal = ({ isOpen, onClose, scriptData, onInsert }) => {
                                             <td className="px-4 py-4 font-mono transition-colors">
                                                 {letter.phonetic}
                                             </td>
-                                            <td className="px-4 py-4 whitespace-normal leading-relaxed text-xs italic transition-colors pr-8">
+                                            {!isTableFormat && <td className="px-4 py-4 whitespace-normal leading-relaxed text-xs italic transition-colors pr-8">
                                                 {letter.desc}
-                                            </td>
+                                            </td>}
                                             <td className="px-4 py-4 font-medium tracking-wide text-xs transition-colors">
                                                 {letter.meaning}
                                             </td>

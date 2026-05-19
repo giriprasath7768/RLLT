@@ -2,25 +2,53 @@ import React, { useState } from 'react';
 import { useThemeContext } from '../../context/ThemeContext';
 
 const Settings = () => {
-    const allScreens = [
-        'Dashboard', 'Manage Admin', 'Manage Leaders', 'Manage Students', 
-        'Manage Assessment', 'Assessment Results', 'Assessment Summary',
-        'Assign Assignments', 'Evaluate Assignments', 'Q&A', 'Resources',
-        '7TNT Word', 'Book Master', 'Chapter Master', 'RLLT Table Data', 'Image',
-        'SMT Page', 'Recordings', 'Screen Recorder', 'Manage Training Contents',
-        '7 TNT Content management', 'Locations', 'SHANAZ 357', 
-        'Chart Creation - Main Chart', 'Chart Creation - 3-5-7 Chart', 
-        'Chart Creation - 7TNT Main Chart', 'Chart Creation - 7TNT Day Cycle Chart', 
-        'Chart Creation - V-Card Chart', 'Chart Creation - 24x7 Chart',
-        'Chart Listing - Main Chart', 'Chart Listing - 7TNT Main Chart', 
-        'Chart Listing - 7TNT Day Cycle Chart', 'Chart Listing - 7TNT Weekly Chart', 
-        'Chart Listing - Morning & Evening', 'Chart Listing - DL Size Chart', 
-        'Chart Listing - C-Chart Index', 'Chart Listing - Oil Chart', 
-        'Chart Listing - Weekly Chart', 'Chart Listing - 24x7 Chart', 
-        'Chart Listing - 24x7 Morning/Evening', 'Chart Listing - 24x7 DL Size Chart', 
-        'Chart Listing - Light Chart', 'Student Report', 'T-Tom-T Registered Users', 
-        '7 TNT Players', 'Players', 'System Settings'
-    ];
+    const menuGroups = {
+        Digital: [
+            { label: 'Dashboard' },
+            { label: 'Manage Admin' },
+            { label: 'Manage Leaders' },
+            { label: 'Manage Students' },
+            { label: 'Assessment', items: ['Manage Assessment', 'Assessment Results', 'Assessment Summary'] },
+            { label: 'SMT Page' },
+            { label: '7TNT Word' },
+            { label: 'Classroom', items: ['Assign Assignments', 'Evaluate Assignments', 'Q&A', 'Resources'] },
+            { label: 'Reports', items: ['Student Report', 'Honeycomb Report'] },
+            { label: 'Light Digital Chart' }
+        ],
+        'Non-Digital': [
+            { label: 'SHANAZ 357' },
+            { label: 'Chart Creation', items: [
+                'Chart Creation - Main Chart', 'Chart Creation - 3-5-7 Chart', 
+                'Chart Creation - 7TNT Main Chart', 'Chart Creation - 7TNT Day Cycle Chart', 
+                'Chart Creation - V-Card Chart', 'Chart Creation - 24x7 Chart'
+            ]},
+            { label: 'Chart Listing', items: [
+                'Chart Listing - Main Chart', 'Chart Listing - 3-5-7 Chart', 
+                'Chart Listing - 7TNT Main Chart', 'Chart Listing - 7TNT Day Cycle Chart', 
+                'Chart Listing - 7TNT Weekly Chart', 'Chart Listing - Morning & Evening', 
+                'Chart Listing - DL Size Chart', 'Chart Listing - C-Chart Index', 
+                'Chart Listing - Oil Chart', 'Chart Listing - Weekly Chart', 
+                'Chart Listing - 24x7 Chart', 'Chart Listing - 24x7 Morning/Evening', 
+                'Chart Listing - 24x7 DL Size Chart', 'Chart Listing - Light Chart'
+            ]}
+        ],
+        Audio: [
+            { label: 'T-Tom-T Registered Users' },
+            { label: '7 TNT Players' },
+            { label: 'Players' },
+            { label: 'Recordings' },
+            { label: 'Screen Recorder' },
+            { label: 'Library', items: [
+                'Book Master', 'Chapter Master', 'RLLT Table Data', 'Image', 
+                'Manage Training Contents', '7 TNT Content management', 'Locations'
+            ]},
+            { label: 'System Settings' }
+        ]
+    };
+
+    const allScreens = Object.values(menuGroups).flatMap(group => 
+        group.flatMap(item => item.items ? item.items : [item.label])
+    );
 
     const [activeTab, setActiveTab] = useState('application');
     const { themeConfig, updateTheme, applyPreset, themePresets, resetTheme } = useThemeContext();
@@ -335,11 +363,96 @@ const Settings = () => {
         );
     };
 
+    const handleSaveFloatingMenu = (e) => {
+        e.preventDefault();
+        showNotification('Floating menu shortcuts saved successfully.');
+    };
+
+    const renderFloatingMenuSettings = () => (
+        <form onSubmit={handleSaveFloatingMenu} className="space-y-6 animate-fadeIn">
+            <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Floating Menu Shortcuts</h3>
+                <p className="text-sm text-gray-500 mb-6">Select your favorite screens to appear as shortcuts in the global floating menu.</p>
+
+                <div className="bg-white p-6 rounded-xl border border-gray-100 max-h-[600px] overflow-y-auto shadow-inner">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {Object.entries(menuGroups).map(([groupName, groupItems]) => (
+                            <div key={groupName} className="flex flex-col space-y-6">
+                                <h4 className="text-lg font-black text-gray-800 border-b-2 border-gray-100 pb-2 uppercase tracking-wider">{groupName}</h4>
+                                <div className="flex flex-col space-y-5">
+                                    {groupItems.map(item => (
+                                        <div key={item.label}>
+                                            {item.items ? (
+                                                <div className="mb-2">
+                                                    <span className="text-sm font-bold text-gray-800 block mb-3 bg-gray-50 px-2 py-1 rounded border-l-4 border-blue-500">{item.label}</span>
+                                                    <div className="flex flex-col space-y-3 pl-3 border-l-2 border-blue-100 ml-1">
+                                                        {item.items.map(subItem => {
+                                                            const isSelected = (themeConfig.floatingMenuItems || []).includes(subItem);
+                                                            // Strip redundant prefixes for cleaner display if it exists
+                                                            const displayName = subItem.startsWith(item.label + ' - ') 
+                                                                ? subItem.replace(item.label + ' - ', '') 
+                                                                : subItem;
+                                                            return (
+                                                                <label key={subItem} className="flex items-center gap-3 cursor-pointer group">
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 transition-colors" 
+                                                                        checked={isSelected}
+                                                                        onChange={(e) => {
+                                                                            const currentItems = themeConfig.floatingMenuItems || [];
+                                                                            if (e.target.checked) {
+                                                                                updateTheme({ floatingMenuItems: [...currentItems, subItem] });
+                                                                            } else {
+                                                                                updateTheme({ floatingMenuItems: currentItems.filter(s => s !== subItem) });
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <span className="text-sm font-semibold text-gray-600 group-hover:text-blue-600 transition-colors">{displayName}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <label className="flex items-center gap-3 cursor-pointer group">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 transition-colors" 
+                                                        checked={(themeConfig.floatingMenuItems || []).includes(item.label)}
+                                                        onChange={(e) => {
+                                                            const currentItems = themeConfig.floatingMenuItems || [];
+                                                            if (e.target.checked) {
+                                                                updateTheme({ floatingMenuItems: [...currentItems, item.label] });
+                                                            } else {
+                                                                updateTheme({ floatingMenuItems: currentItems.filter(s => s !== item.label) });
+                                                            }
+                                                        }}
+                                                    />
+                                                    <span className="text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{item.label}</span>
+                                                </label>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <div className="flex justify-end border-t border-gray-100 pt-6">
+                <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
+                    Save Shortcuts
+                </button>
+            </div>
+        </form>
+    );
+
     const tabs = [
         { id: 'application', label: 'Application Customization', icon: 'pi pi-desktop' },
         { id: 'role', label: 'Role Management', icon: 'pi pi-users' },
         { id: 'permissions', label: 'Access and Permissions', icon: 'pi pi-lock' },
-        { id: 'theme', label: 'Theme Customization', icon: 'pi pi-palette' }
+        { id: 'theme', label: 'Theme Customization', icon: 'pi pi-palette' },
+        { id: 'floatingMenu', label: 'Floating Menu Shortcuts', icon: 'pi pi-compass' }
     ];
 
     return (
@@ -386,6 +499,7 @@ const Settings = () => {
                         {activeTab === 'role' && renderRoleManagement()}
                         {activeTab === 'theme' && renderThemeCustomization()}
                         {activeTab === 'permissions' && renderDetailedPermissions()}
+                        {activeTab === 'floatingMenu' && renderFloatingMenuSettings()}
                     </div>
                 </div>
             </div>

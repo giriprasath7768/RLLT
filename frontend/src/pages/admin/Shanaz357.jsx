@@ -41,22 +41,21 @@ const STANDARD_BOOKS = [
 ];
 
 const getBookColorConfig = (index) => {
-    const id = index + 1;
-    // Old Testament
-    if (id >= 1 && id <= 5) return { text: 'text-[#d32f2f]', border: 'border-[#d32f2f]', bg: 'bg-[#d32f2f]' };
-    if (id >= 6 && id <= 17) return { text: 'text-[#f57c00]', border: 'border-[#f57c00]', bg: 'bg-[#f57c00]' };
-    if (id >= 18 && id <= 22) return { text: 'text-[#388e3c]', border: 'border-[#388e3c]', bg: 'bg-[#388e3c]' };
-    if (id >= 23 && id <= 27) return { text: 'text-[#1976d2]', border: 'border-[#1976d2]', bg: 'bg-[#1976d2]' };
-    if (id >= 28 && id <= 39) return { text: 'text-[#7b1fa2]', border: 'border-[#7b1fa2]', bg: 'bg-[#7b1fa2]' };
+    // Old Testament group colors based on screenshot
+    if (index >= 0 && index <= 4) return { text: 'text-[#c00000]', bg: 'bg-[#c00000]', activeText: 'text-white' }; // Red
+    if (index >= 5 && index <= 16) return { text: 'text-[#a67c00]', bg: 'bg-[#a67c00]', activeText: 'text-white' }; // Gold/Brown
+    if (index >= 17 && index <= 21) return { text: 'text-[#007020]', bg: 'bg-[#007020]', activeText: 'text-white' }; // Green
+    if (index >= 22 && index <= 26) return { text: 'text-[#0055a4]', bg: 'bg-[#0055a4]', activeText: 'text-white' }; // Blue
+    if (index >= 27 && index <= 38) return { text: 'text-[#4b0082]', bg: 'bg-[#4b0082]', activeText: 'text-white' }; // Purple
     
-    // New Testament
-    if (id >= 40 && id <= 43) return { text: 'text-[#d32f2f]', border: 'border-[#d32f2f]', bg: 'bg-[#d32f2f]' };
-    if (id === 44) return { text: 'text-[#f57c00]', border: 'border-[#f57c00]', bg: 'bg-[#f57c00]' };
-    if (id >= 45 && id <= 56) return { text: 'text-[#388e3c]', border: 'border-[#388e3c]', bg: 'bg-[#388e3c]' };
-    if (id >= 57 && id <= 64) return { text: 'text-[#1976d2]', border: 'border-[#1976d2]', bg: 'bg-[#1976d2]' };
-    if (id >= 65 && id <= 66) return { text: 'text-[#7b1fa2]', border: 'border-[#7b1fa2]', bg: 'bg-[#7b1fa2]' };
+    // New Testament group colors based on screenshot
+    if (index >= 39 && index <= 42) return { text: 'text-[#c00000]', bg: 'bg-[#c00000]', activeText: 'text-white' }; // Red (Gospels)
+    if (index === 43) return { text: 'text-[#a67c00]', bg: 'bg-[#a67c00]', activeText: 'text-white' }; // Gold (Acts)
+    if (index >= 44 && index <= 55) return { text: 'text-[#007020]', bg: 'bg-[#007020]', activeText: 'text-white' }; // Green (Romans to Titus)
+    if (index >= 56 && index <= 63) return { text: 'text-[#0055a4]', bg: 'bg-[#0055a4]', activeText: 'text-white' }; // Blue (Philemon to 3 John)
+    if (index >= 64 && index <= 66) return { text: 'text-[#4b0082]', bg: 'bg-[#4b0082]', activeText: 'text-white' }; // Purple (Jude, Revelation)
     
-    return { text: 'text-gray-700', border: 'border-gray-200', bg: 'bg-gray-700' };
+    return { text: 'text-[#2b4c7e]', bg: 'bg-[#2b4c7e]', activeText: 'text-white' };
 };
 
 const isBookMatch = (bookCode, book) => {
@@ -98,10 +97,10 @@ const isBookMatch = (bookCode, book) => {
 };
 
 const StatItem = ({ title, icon, value, color }) => (
-    <div className="flex flex-col items-center justify-center flex-1 py-2">
-        <div className="text-sm font-black text-[#1e293b] mb-1 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">{title}</div>
-        <i className={`${icon} ${color} text-2xl mb-1 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]`}></i>
-        <div className={`${color} font-black text-2xl leading-none [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]`}>{value}</div>
+    <div className="flex flex-col items-center justify-center flex-1 py-3">
+        <div className="text-[14px] font-bold text-[#0B2149] mb-2 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">{title}</div>
+        <i className={`${icon} ${color} text-3xl mb-2 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]`}></i>
+        <div className={`${color} font-bold text-xl leading-none [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]`}>{value}</div>
     </div>
 );
 
@@ -219,19 +218,17 @@ const Shanaz357 = () => {
         }
     }, [mdl, fct, availablePhases, phs]);
 
-
-    let currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct) && Number(d.phase) === Number(phs));
-    if (!currentPhaseData) {
-        // Fallback: if exact phase is not found, use any phase's data within the same facet to grab the scheduled days
-        currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
+    let eachPhsDays = 0;
+    if (Number(mdl) === 5) {
+        eachPhsDays = enteredDays ? parseInt(enteredDays) : 0;
+    } else {
+        let currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct) && Number(d.phase) === Number(phs));
+        if (!currentPhaseData) {
+            // Fallback if exact phase not found
+            currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
+        }
+        eachPhsDays = currentPhaseData ? currentPhaseData.scheduled_value_days : 0;
     }
-    let eachPhsDays = currentPhaseData ? currentPhaseData.scheduled_value_days : 0;
-    if (!eachPhsDays) {
-        const days = parseInt(enteredDays);
-        if (Number(mdl) === 4 && days && days % 40 === 0) eachPhsDays = 40;
-        if (Number(mdl) === 5 && days && days % 30 === 0) eachPhsDays = 30;
-    }
-
     const stats = React.useMemo(() => {
         let bks = selectedBooks.length;
         let chp = 0;
@@ -674,7 +671,7 @@ const Shanaz357 = () => {
             return (
                 <div 
                     key={bookCode} 
-                    className={`book-tooltip-item border rounded py-2 text-center text-base font-black tracking-wide cursor-pointer transition-colors shadow-sm w-[calc(20%-0.4rem)] [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] ${isSelected ? `${colors.bg} text-white border-transparent` : `${colors.text} border-gray-300 hover:bg-gray-50`}`}
+                    className={`book-tooltip-item border border-[#d3c09b] rounded-[5px] flex items-center justify-center py-2 text-center text-sm font-bold font-serif tracking-widest cursor-pointer shadow-md transition-all w-[calc(20%-0.5rem)] ${isSelected ? `${colors.bg} ${colors.activeText} shadow-inner` : `bg-[#fbf6ec] hover:bg-[#f0e4cd] ${colors.text}`}`}
                     onClick={() => book && toggleBook(book.id)}
                     data-pr-tooltip={book ? getBookTooltip(book) : ''}
                 >
@@ -685,257 +682,257 @@ const Shanaz357 = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8 flex justify-center items-start font-sans">
+        <div className="min-h-screen bg-white p-8 flex justify-center items-start font-sans">
             <Toast ref={toast} />
             <Tooltip target=".book-tooltip-item" position="top" />
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-[600px] p-6 border border-gray-200">
+            <div className="bg-[#fcf8ef] rounded-[20px] shadow-[12px_12px_30px_rgba(0,0,0,0.25)] w-full max-w-[650px] p-8 calc-border-6 relative">
+                {/* Decorative dots in corners */}
+                <div className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
+                <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
+                <div className="absolute bottom-2 left-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
+                <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
+
                 {/* Header Section */}
-                <div className="text-center mb-6">
-                    <p className="text-gray-500 italic text-sm font-serif">Unlocking Transformation Through</p>
-                    <div className="flex items-center justify-center gap-2 my-1">
-                        <div className="h-px bg-gray-300 flex-1"></div>
-                        <span className="text-[10px] text-gray-500 font-bold tracking-[0.2em]">THE WORD</span>
-                        <div className="h-px bg-gray-300 flex-1"></div>
+                <div className="text-center mb-4">
+                    <div className="flex justify-center items-center gap-1 mb-1">
+                        <span className="w-1 h-1 rounded-full bg-gray-400"></span>
+                        <span className="w-1 h-1 rounded-full bg-gray-400"></span>
+                        <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                     </div>
-                    <h1 className="text-5xl font-black text-[#0B2149] tracking-tight mt-2 mb-2">SHANAZ 357</h1>
+                    <p className="text-[#8c7355] italic text-xs font-serif">Unlocking Transformation Through</p>
+                    <div className="flex items-center justify-center gap-2 my-2">
+                        <div className="h-[1px] bg-[#d3c09b] w-12"></div>
+                        <span className="text-[9px] text-[#555] font-bold tracking-[0.2em] [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">THE WORD</span>
+                        <div className="h-[1px] bg-[#d3c09b] w-12"></div>
+                    </div>
+                    <h1 className="text-4xl text-[#0B2149] tracking-wider mt-1 mb-2 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]" style={{fontFamily: "'Algerian', serif"}}>SHANAZ 357</h1>
                     <div className="flex items-center justify-center">
-                        <div className="h-px bg-[#0B2149] w-24"></div>
-                        <div className="w-2 h-2 bg-[#0B2149] rotate-45 mx-2"></div>
-                        <div className="h-px bg-[#0B2149] w-24"></div>
+                        <span className="text-[#d3c09b] text-lg leading-none">✧</span>
                     </div>
                 </div>
 
-                <div className="bg-[#37475a] rounded-xl p-3 shadow-inner border-[4px] border-[#1a2234]">
-                {/* Stats Section */}
-                <div className="flex justify-between border border-gray-200 rounded-xl mb-6 bg-white shadow-sm overflow-hidden">
-                    <StatItem title="BKS" icon="pi pi-book" value={displayStats.bks} color="text-[#1976d2]" />
-                    <div className="w-px bg-gray-200 my-2"></div>
-                    <StatItem title="CHP" icon="pi pi-file" value={displayStats.chp} color="text-[#388e3c]" />
-                    <div className="w-px bg-gray-200 my-2"></div>
-                    <StatItem title="VRS" icon="pi pi-crown" value={displayStats.vrs} color="text-[#f57c00]" />
-                    <div className="w-px bg-gray-200 my-2"></div>
-                    <StatItem title="ART" icon="pi pi-clock" value={displayStats.art} color="text-[#7b1fa2]" />
-                    <div className="w-px bg-gray-200 my-2"></div>
-                    <StatItem title="DAYS" icon="pi pi-calendar" value={eachPhsDays || 0} color="text-[#d32f2f]" />
-                </div>
-
-                {/* Books Grid - Combined Scrollable Card */}
-                <style>{`
-                    .scrollbar-hide::-webkit-scrollbar {
-                        display: none;
-                    }
-                    .scrollbar-hide {
-                        -ms-overflow-style: none;
-                        scrollbar-width: none;
-                    }
-                `}</style>
-                <div className="relative mt-4">
-
-                    <div className="border border-gray-200 rounded-t-xl shadow-sm overflow-hidden flex flex-col">
-                        <div className="overflow-y-auto scrollbar-hide h-[215px]">
-                        <div className="bg-[#0B2149] text-white text-center font-black py-2 text-lg tracking-wider sticky top-0 z-10 [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]">
-                            OLD TESTAMENT
-                        </div>
-                        <div className="p-3 flex flex-wrap justify-center gap-2 bg-white">
-                            {booksDB.length > 0 && renderBooks(0, 39)}
-                        </div>
-                        
-                        <div className="bg-[#0B2149] text-white text-center font-black py-2 text-lg tracking-wider sticky top-0 z-10 border-t border-[#0B2149] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]">
-                            NEW TESTAMENT
-                        </div>
-                        <div className="p-3 flex flex-wrap justify-center gap-2 bg-white">
-                            {booksDB.length > 0 && renderBooks(39, 66)}
-                        </div>
-                        </div>
+                <div className="px-1">
+                    {/* Stats Section */}
+                    <div className="flex justify-between calc-border-4 rounded-lg mb-4 bg-[#fdfbf6] shadow-sm overflow-hidden py-1">
+                        <StatItem title="BKS" icon="pi pi-book" value={displayStats.bks} color="text-[#1976d2]" />
+                        <div className="w-px bg-[#e8dcb9] my-1"></div>
+                        <StatItem title="CHP" icon="pi pi-file" value={displayStats.chp} color="text-[#388e3c]" />
+                        <div className="w-px bg-[#e8dcb9] my-1"></div>
+                        <StatItem title="VRS" icon="pi pi-crown" value={displayStats.vrs} color="text-[#f57c00]" />
+                        <div className="w-px bg-[#e8dcb9] my-1"></div>
+                        <StatItem title="ART" icon="pi pi-clock" value={displayStats.art} color="text-[#7b1fa2]" />
+                        <div className="w-px bg-[#e8dcb9] my-1"></div>
+                        <StatItem title="DAYS" icon="pi pi-calendar" value={eachPhsDays || 0} color="text-[#d32f2f]" />
                     </div>
-                </div>
 
-                {/* Middle Input Section */}
-                <div className="flex gap-2 mb-4 min-h-[5rem] border border-gray-200 border-t-0 rounded-b-xl p-2 bg-white shadow-sm">
-                    {(() => {
-                        const p119Book = booksDB.find(b => b.name.includes('119') || (b.short_form && b.short_form.includes('119')));
-                        const p119Selected = p119Book && selectedBooks.includes(p119Book.id);
-                        
-                        const p75Book = booksDB.find(b => b.name.toUpperCase().includes('DAVID') || b.name.includes('75'));
-                        const p75Selected = p75Book && selectedBooks.includes(p75Book.id);
+                    <style>{`
+                        .scrollbar-hide::-webkit-scrollbar { display: none; }
+                        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+                        .calc-border-4 {
+                            border: 1px solid #69512a;
+                            box-shadow: inset 0 0 0 1px #fffdf8, inset 0 0 0 3px #d3c09b;
+                        }
+                        .calc-border-6 {
+                            border: 1px solid #69512a;
+                            box-shadow: inset 0 0 0 2px #fffdf8, inset 0 0 0 6px #d3c09b, inset 0 0 0 7px #a48654;
+                        }
+                    `}</style>
 
-                        return (
-                            <>
-                                <div 
-                                    className={`book-tooltip-item flex-1 border-2 rounded-lg flex items-center justify-center text-center text-sm font-black uppercase cursor-pointer transition-all [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] ${
-                                        p119Selected 
-                                            ? 'bg-[#388e3c] text-white border-transparent shadow-md scale-105' 
-                                            : 'bg-[#f1f8e9] text-[#388e3c] border-[#388e3c] hover:bg-[#e8f5e9]'
-                                    }`}
-                                    onClick={() => p119Book && toggleBook(p119Book.id)}
-                                    data-pr-tooltip={p119Book ? getBookTooltip(p119Book) : 'Book Not Found'}
-                                >
-                                    PSALMS<br/>CHP 119
-                                </div>
-                                <div className="flex-[1.5] border border-gray-300 rounded-lg flex justify-evenly items-center px-2">
-                                    <button onClick={() => setCycle(3)} className={`font-bold text-xs transition-colors ${cycle === 3 ? 'text-[#1976d2] scale-110' : 'text-gray-400 hover:text-gray-600'}`}>3 DAYS</button>
-                                    <div className="h-6 w-px bg-gray-200"></div>
-                                    <button onClick={() => setCycle(5)} className={`font-bold text-xs transition-colors ${cycle === 5 ? 'text-[#1976d2] scale-110' : 'text-gray-400 hover:text-gray-600'}`}>5 DAYS</button>
-                                    <div className="h-6 w-px bg-gray-200"></div>
-                                    <button onClick={() => setCycle(7)} className={`font-bold text-xs transition-colors ${cycle === 7 ? 'text-[#1976d2] scale-110' : 'text-gray-400 hover:text-gray-600'}`}>7 DAYS</button>
-                                </div>
-                                <div 
-                                    className={`book-tooltip-item flex-1 border-2 rounded-lg flex items-center justify-center text-center text-sm font-black uppercase cursor-pointer transition-all [text-shadow:1px_1px_0_rgba(0,0,0,0.2)] ${
-                                        p75Selected 
-                                            ? 'bg-[#388e3c] text-white border-transparent shadow-md scale-105' 
-                                            : 'bg-[#f1f8e9] text-[#388e3c] border-[#388e3c] hover:bg-[#e8f5e9]'
-                                    }`}
-                                    onClick={() => p75Book && toggleBook(p75Book.id)}
-                                    data-pr-tooltip={p75Book ? getBookTooltip(p75Book) : 'Book Not Found'}
-                                >
-                                    PSA OF DAVID<br/>75 CHP
-                                </div>
-                            </>
-                        );
-                    })()}
-                </div>
-
-                {/* Numbers and Controls Card */}
-                <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm mb-4">
-                    {/* Top Row: Refresh - Circle - Submit */}
-                    <div className="flex justify-center items-center gap-6 mb-4">
-                        <button 
-                            onClick={() => {
-                                setEnteredDays('');
-                                setSelectedBooks([]);
-                                setChartStats(null);
-                                setDayValidationError('');
-                                setBookValidationError('');
-                            }}
-                            className="w-10 h-10 rounded-full border-2 border-red-300 text-red-500 flex items-center justify-center bg-white hover:bg-red-50 transition-colors shadow-sm"
-                            title="Refresh Data"
-                        >
-                            <i className="pi pi-refresh font-bold"></i>
-                        </button>
-
-                        <div className="relative flex flex-col items-center mx-4">
-                            {dayValidationError && (
-                                <div className="absolute -top-12 bg-white text-red-600 border-2 border-red-500 font-bold px-3 py-1.5 rounded-lg shadow-xl text-xs z-50 whitespace-nowrap animate-bounce flex items-center gap-2">
-                                    <i className="pi pi-exclamation-circle text-sm"></i> 
-                                    <span>{dayValidationError}</span>
-                                    <i 
-                                        className="pi pi-times ml-1 cursor-pointer hover:bg-red-100 rounded-full p-0.5 transition-colors" 
-                                        onClick={(e) => { 
-                                            e.stopPropagation(); 
-                                            setDayValidationError(''); 
-                                            setEnteredDays(''); 
-                                        }}
-                                        title="Clear error and input"
-                                    ></i>
-                                </div>
-                            )}
-                            {bookValidationError && (
-                                <div className="absolute -top-12 bg-white text-red-600 border-2 border-red-500 font-bold px-3 py-1.5 rounded-lg shadow-xl text-xs z-50 whitespace-nowrap animate-bounce flex items-center gap-2">
-                                    <i className="pi pi-exclamation-circle text-sm"></i> 
-                                    <span>{bookValidationError}</span>
-                                    <i 
-                                        className="pi pi-times ml-1 cursor-pointer hover:bg-red-100 rounded-full p-0.5 transition-colors" 
-                                        onClick={(e) => { 
-                                            e.stopPropagation(); 
-                                            setBookValidationError(''); 
-                                        }}
-                                        title="Clear error"
-                                    ></i>
-                                </div>
-                            )}
-                            <div className="w-16 h-16 shrink-0 rounded-full border-4 border-gray-100 flex items-center justify-center bg-white shadow-inner overflow-hidden relative" title="Days">
-                                {enteredDays ? <span className="text-xl font-black text-[#1976d2]">{enteredDays}</span> : <span className="text-[10px] font-bold text-gray-300">DAYS</span>}
+                    {/* Books Grid */}
+                    <div className="calc-border-4 rounded-lg shadow-sm overflow-hidden flex flex-col mb-4">
+                        <div className="bg-[#0B2149] text-white py-1.5 flex items-center justify-center relative border-b-[3px] border-[#c7a96b]">
+                            <div className="absolute left-3 text-[#d3c09b] text-[10px]">❖</div>
+                            <div className="h-px bg-[#d3c09b] w-8 mx-2"></div>
+                            <div className="text-sm tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{fontFamily: "'Algerian', serif"}}>OLD TESTAMENT</div>
+                            <div className="h-px bg-[#d3c09b] w-8 mx-2"></div>
+                            <div className="absolute right-3 text-[#d3c09b] text-[10px]">❖</div>
+                        </div>
+                        <div className="overflow-y-auto max-h-[260px] scrollbar-hide bg-[#fcf8ef]">
+                            <div className="p-3 flex flex-wrap justify-center gap-2">
+                                {booksDB.length > 0 && renderBooks(0, 39)}
+                            </div>
+                            
+                            <div className="bg-[#0B2149] text-white py-1 flex items-center justify-center relative border-y-[3px] border-[#c7a96b]">
+                                <div className="absolute left-3 text-[#d3c09b] text-[10px]">❖</div>
+                                <div className="h-px bg-[#d3c09b] w-6 mx-2"></div>
+                                <div className="text-xs tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{fontFamily: "'Algerian', serif"}}>NEW TESTAMENT</div>
+                                <div className="h-px bg-[#d3c09b] w-6 mx-2"></div>
+                                <div className="absolute right-3 text-[#d3c09b] text-[10px]">❖</div>
+                            </div>
+                            <div className="p-3 flex flex-wrap justify-center gap-2">
+                                {booksDB.length > 0 && renderBooks(39, 66)}
                             </div>
                         </div>
+                    </div>
 
-                        <button 
-                            onClick={handleSubmit}
-                            className="w-10 h-10 rounded-full border-2 border-green-400 text-green-600 flex items-center justify-center bg-white hover:bg-green-50 transition-colors shadow-sm"
-                            title="Submit"
-                        >
-                            <i className="pi pi-check font-bold text-lg"></i>
-                        </button>
+                    {/* Middle Input Section */}
+                    <div className="calc-border-4 rounded-lg p-2 bg-[#fdfbf6] shadow-sm mb-4">
+                        <div className="flex gap-3 min-h-[4.5rem]">
+                            {(() => {
+                                const p119Book = booksDB.find(b => b.name.includes('119') || (b.short_form && b.short_form.includes('119')));
+                                const p119Selected = p119Book && selectedBooks.includes(p119Book.id);
+                                
+                                const p75Book = booksDB.find(b => b.name.toUpperCase().includes('DAVID') || b.name.includes('75'));
+                                const p75Selected = p75Book && selectedBooks.includes(p75Book.id);
+
+                                return (
+                                    <>
+                                        <div 
+                                            className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex flex-col items-center justify-center text-center text-sm font-bold uppercase cursor-pointer transition-all ${
+                                                p119Selected 
+                                                    ? 'bg-[#e2efe2] text-[#1c3a1c] ring-1 ring-[#1c3a1c] shadow-inner' 
+                                                    : 'bg-[#f0f7f0] text-[#3b603b] hover:bg-[#e2efe2]'
+                                            }`}
+                                            onClick={() => p119Book && toggleBook(p119Book.id)}
+                                            data-pr-tooltip={p119Book ? getBookTooltip(p119Book) : 'Book Not Found'}
+                                        >
+                                            <span>PSALMS</span><span>CHP 119</span>
+                                        </div>
+                                        <div className="flex-[1.5] border border-[#e8dcb9] bg-white rounded-[4px] flex justify-evenly items-center px-1">
+                                            <button onClick={() => setCycle(3)} className={`font-bold text-sm transition-colors ${cycle === 3 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}`}>3 DAYS</button>
+                                            <div className="h-8 w-px bg-[#e8dcb9]"></div>
+                                            <button onClick={() => setCycle(5)} className={`font-bold text-sm transition-colors ${cycle === 5 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}`}>5 DAYS</button>
+                                            <div className="h-8 w-px bg-[#e8dcb9]"></div>
+                                            <button onClick={() => setCycle(7)} className={`font-bold text-sm transition-colors ${cycle === 7 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}`}>7 DAYS</button>
+                                        </div>
+                                        <div 
+                                            className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex flex-col items-center justify-center text-center text-sm font-bold uppercase cursor-pointer transition-all ${
+                                                p75Selected 
+                                                    ? 'bg-[#e2efe2] text-[#1c3a1c] ring-1 ring-[#1c3a1c] shadow-inner' 
+                                                    : 'bg-[#f0f7f0] text-[#3b603b] hover:bg-[#e2efe2]'
+                                            }`}
+                                            onClick={() => p75Book && toggleBook(p75Book.id)}
+                                            data-pr-tooltip={p75Book ? getBookTooltip(p75Book) : 'Book Not Found'}
+                                        >
+                                            <span>PSA OF DAVID</span><span>75 CHP</span>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
                     </div>
 
                     {/* Numbers Card */}
-                    <div className="border border-[#1976d2] rounded-xl py-2 px-4 flex justify-between items-center text-2xl font-black text-[#1976d2] bg-[#f8faff] shadow-sm [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">
-                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                    <div className="calc-border-4 rounded-lg p-3 bg-[#fdfbf6] shadow-sm mb-4 relative">
+                        {dayValidationError && (
+                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-red-600 border border-red-500 font-bold px-2 py-1 rounded shadow-lg text-[10px] z-50 whitespace-nowrap animate-bounce flex items-center gap-1">
+                                <span>{dayValidationError}</span>
+                                <i className="pi pi-times ml-1 cursor-pointer" onClick={() => { setDayValidationError(''); setEnteredDays(''); }}></i>
+                            </div>
+                        )}
+                        {bookValidationError && (
+                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-red-600 border border-red-500 font-bold px-2 py-1 rounded shadow-lg text-[10px] z-50 whitespace-nowrap animate-bounce flex items-center gap-1">
+                                <span>{bookValidationError}</span>
+                                <i className="pi pi-times ml-1 cursor-pointer" onClick={() => setBookValidationError('')}></i>
+                            </div>
+                        )}
+
+                        <div className="flex justify-between items-center px-4 mb-3">
                             <button 
-                                key={num} 
-                                onClick={() => handleNumberClick(num)} 
-                                className="hover:text-orange-500 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-100 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]"
+                                onClick={() => { setEnteredDays(''); setSelectedBooks([]); setChartStats(null); setDayValidationError(''); setBookValidationError(''); }}
+                                className="w-6 h-6 rounded-full border border-[#9c2929] text-[#9c2929] flex items-center justify-center hover:bg-red-50 transition-colors"
                             >
-                                {num}
+                                <i className="pi pi-refresh text-[10px] font-bold"></i>
                             </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Lower Controls Card */}
-                <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm mb-2">
-                    {/* Plus/Minus Section */}
-                    <div className="flex items-center justify-between mb-4 gap-2">
-                        <div className="flex-1 border border-gray-300 rounded-xl h-10 bg-gray-50"></div>
-                        <button 
-                            className={`font-bold text-2xl px-2 transition-colors ${uniqueModules.indexOf(mdl) > 0 ? 'text-[#f57c00] hover:text-orange-600 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
-                            onClick={handleDecrement}
-                            disabled={uniqueModules.indexOf(mdl) <= 0}
-                        >-</button>
-                        <div className="border border-[#f57c00] rounded-xl px-8 py-1 flex flex-col items-center justify-center bg-[#fff8e1]">
-                            <div className="text-xs font-black text-[#f57c00] [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">MDL</div>
-                            <div className="text-2xl font-black text-[#f57c00] leading-none mt-1 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">{mdl}</div>
+                            <div className="relative">
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#c3b08e] text-xs font-bold tracking-widest bg-[#fdfbf6] px-2 z-10 whitespace-nowrap">DAYS</div>
+                                <div className="w-16 h-10 border border-[#e8dcb9] rounded-full flex items-center justify-center bg-white shadow-inner">
+                                    {enteredDays && <span className="text-xl font-black text-[#0B2149] z-20 bg-white px-2 rounded">{enteredDays}</span>}
+                                </div>
+                            </div>
+                            <button 
+                                onClick={handleSubmit}
+                                className="w-6 h-6 rounded-full border border-[#2e532e] text-[#2e532e] flex items-center justify-center hover:bg-green-50 transition-colors"
+                            >
+                                <i className="pi pi-check text-[10px] font-bold"></i>
+                            </button>
                         </div>
-                        <button 
-                            className={`font-bold text-2xl px-2 transition-colors ${uniqueModules.indexOf(mdl) < uniqueModules.length - 1 ? 'text-[#f57c00] hover:text-orange-600 cursor-pointer' : 'text-gray-300 cursor-not-allowed'}`}
-                            onClick={handleIncrement}
-                            disabled={uniqueModules.indexOf(mdl) >= uniqueModules.length - 1}
-                        >+</button>
-                        <div className="flex-1 border border-gray-300 rounded-xl h-10 bg-gray-50"></div>
+                        
+                        <div className="flex justify-between items-center bg-[#f7eedc] rounded px-3 py-3 calc-border-4">
+                            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                <button 
+                                    key={num} 
+                                    onClick={() => handleNumberClick(num)} 
+                                    className="text-[#0B2149] font-bold text-2xl w-8 h-8 flex items-center justify-center hover:bg-[#ebd8b7] rounded transition-colors"
+                                >
+                                    {num}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Bottom Stats Section */}
-                    <div className="border border-[#388e3c] rounded-xl mb-4 flex justify-between p-2 text-center text-[#388e3c] uppercase bg-[#f1f8e9]">
-                        <div className="flex flex-col items-center justify-center flex-1">
-                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">FACET</div>
-                            <div className="flex items-center gap-2 text-xl font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">
-                                <button onClick={handleFctDec} disabled={availableFacets.indexOf(fct) <= 0} className={`p-1 transition-colors ${availableFacets.indexOf(fct) > 0 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-left text-lg"></i></button>
-                                <span className="w-5 text-center">{fct || '-'}</span>
-                                <button onClick={handleFctInc} disabled={availableFacets.indexOf(fct) >= availableFacets.length - 1} className={`p-1 transition-colors ${availableFacets.indexOf(fct) < availableFacets.length - 1 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-right text-lg"></i></button>
+                    {/* Lower Controls Section */}
+                    <div className="calc-border-4 rounded-lg p-3 bg-[#fdfbf6] shadow-sm mb-4">
+                        {/* Plus/Minus Section */}
+                        <div className="flex items-center justify-between mb-3 gap-2">
+                            <div className="flex-1 h-6 bg-white border border-[#e8dcb9] rounded-sm"></div>
+                            <button 
+                                className={`text-xl font-bold px-1 pb-1 ${uniqueModules.indexOf(mdl) > 0 ? 'text-[#8c7355] hover:text-[#5c4a35]' : 'text-gray-300'}`}
+                                onClick={handleDecrement} disabled={uniqueModules.indexOf(mdl) <= 0}
+                            >-</button>
+                            
+                            <div className="border border-[#d4af37] bg-[#f7eedc] px-6 py-1 rounded-[4px] flex flex-col items-center justify-center shadow-sm min-w-[70px]">
+                                <div className="text-[11px] font-bold text-[#8c7355]">MDL.</div>
+                                <div className="text-xl font-black text-[#8c7355] leading-none mt-0.5">{mdl}</div>
+                            </div>
+                            
+                            <button 
+                                className={`text-xl font-bold px-1 pb-1 ${uniqueModules.indexOf(mdl) < uniqueModules.length - 1 ? 'text-[#8c7355] hover:text-[#5c4a35]' : 'text-gray-300'}`}
+                                onClick={handleIncrement} disabled={uniqueModules.indexOf(mdl) >= uniqueModules.length - 1}
+                            >+</button>
+                            <div className="flex-1 h-6 bg-white border border-[#e8dcb9] rounded-sm"></div>
+                        </div>
+
+                        {/* PHS Stats Section */}
+                        <div className="border border-[#7a9e7a] bg-[#f0f7f0] rounded-[4px] flex justify-between p-3 mb-3 text-center text-[#2e532e]">
+                            <div className="flex flex-col items-center flex-1">
+                                <div className="text-xs font-bold mb-1">PAGES</div>
+                                <div className="flex items-center gap-1 text-base font-bold">
+                                    <button onClick={handleFctDec} disabled={availableFacets.indexOf(fct) <= 0} className={availableFacets.indexOf(fct) > 0 ? 'hover:text-[#1c3a1c]' : 'opacity-30'}><i className="pi pi-angle-left text-sm"></i></button>
+                                    <span className="w-4">{fct || '-'}</span>
+                                    <button onClick={handleFctInc} disabled={availableFacets.indexOf(fct) >= availableFacets.length - 1} className={availableFacets.indexOf(fct) < availableFacets.length - 1 ? 'hover:text-[#1c3a1c]' : 'opacity-30'}><i className="pi pi-angle-right text-sm"></i></button>
+                                </div>
+                            </div>
+                            <div className="w-px bg-[#7a9e7a] my-1 opacity-50"></div>
+                            <div className="flex flex-col items-center flex-1">
+                                <div className="text-xs font-bold mb-1">PHS.</div>
+                                <div className="flex items-center gap-1 text-base font-bold">
+                                    <button onClick={handlePhsDec} disabled={availablePhases.indexOf(phs) <= 0} className={availablePhases.indexOf(phs) > 0 ? 'hover:text-[#1c3a1c]' : 'opacity-30'}><i className="pi pi-angle-left text-sm"></i></button>
+                                    <span className="w-4">{phs || '-'}</span>
+                                    <button onClick={handlePhsInc} disabled={availablePhases.indexOf(phs) >= availablePhases.length - 1} className={availablePhases.indexOf(phs) < availablePhases.length - 1 ? 'hover:text-[#1c3a1c]' : 'opacity-30'}><i className="pi pi-angle-right text-sm"></i></button>
+                                </div>
+                            </div>
+                            <div className="w-px bg-[#7a9e7a] my-1 opacity-50"></div>
+                            <div className="flex flex-col items-center flex-[1.5]">
+                                <div className="text-xs font-bold mb-1">EACH PHS.</div>
+                                <div className="text-base font-bold flex items-center h-5">{eachPhsDays ? `${eachPhsDays} DAYS` : '0 DAYS'}</div>
                             </div>
                         </div>
-                        <div className="w-px bg-green-200 my-1"></div>
-                        <div className="flex flex-col items-center justify-center flex-1">
-                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">PHS</div>
-                            <div className="flex items-center gap-2 text-xl font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">
-                                <button onClick={handlePhsDec} disabled={availablePhases.indexOf(phs) <= 0} className={`p-1 transition-colors ${availablePhases.indexOf(phs) > 0 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-left text-lg"></i></button>
-                                <span className="w-5 text-center">{phs || '-'}</span>
-                                <button onClick={handlePhsInc} disabled={availablePhases.indexOf(phs) >= availablePhases.length - 1} className={`p-1 transition-colors ${availablePhases.indexOf(phs) < availablePhases.length - 1 ? 'hover:text-green-800' : 'text-green-200 cursor-not-allowed'}`}><i className="pi pi-angle-right text-lg"></i></button>
-                            </div>
-                        </div>
-                        <div className="w-px bg-green-200 my-1"></div>
-                        <div className="flex flex-col items-center justify-center flex-[1.5]">
-                            <div className="mb-1 text-xs font-black [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">EACH PHS</div>
-                            <div className="text-xl font-black flex items-center justify-center h-8 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">{eachPhsDays ? `${eachPhsDays} DAYS` : '-'}</div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-3 gap-2">
+                            <button className="flex items-center justify-center gap-1.5 border border-[#4a5e78] text-[#4a5e78] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-gray-50 transition-colors">
+                                <i className="pi pi-print text-sm"></i> PRINT
+                            </button>
+                            <button onClick={handleViewClick} disabled={isViewing} className="flex items-center justify-center gap-1.5 border border-[#2e532e] text-[#2e532e] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-green-50 transition-colors">
+                                <i className={`pi ${isViewing ? 'pi-spin pi-spinner' : 'pi-eye'} text-sm`}></i> VIEW
+                            </button>
+                            <button className="flex items-center justify-center gap-1.5 border border-[#6b3582] text-[#6b3582] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-purple-50 transition-colors">
+                                <i className="pi pi-send text-sm"></i> SEND
+                            </button>
                         </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="grid grid-cols-3 gap-3">
-                        <button className="flex flex-row items-center justify-center gap-2 border border-[#1976d2] text-[#1976d2] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)] hover:bg-blue-50 transition-colors bg-white">
-                            <i className="pi pi-print text-base [text-shadow:none]"></i> PRINT
-                        </button>
-                        <button 
-                            onClick={handleViewClick}
-                            disabled={isViewing}
-                            className={`flex flex-row items-center justify-center gap-2 border border-[#388e3c] text-[#388e3c] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)] transition-colors bg-white ${isViewing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-50'}`}
-                        >
-                            <i className={`pi ${isViewing ? 'pi-spin pi-spinner' : 'pi-eye'} text-base [text-shadow:none]`}></i> VIEW
-                        </button>
-                        <button className="flex flex-row items-center justify-center gap-2 border border-[#7b1fa2] text-[#7b1fa2] rounded-xl py-2 font-black text-xs [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)] hover:bg-purple-50 transition-colors bg-white">
-                            <i className="pi pi-send text-base [text-shadow:none]"></i> SEND
-                        </button>
+                    {/* Footer Image Area */}
+                    <div className="mt-4 w-full flex justify-center shadow-sm">
+                        {/* 
+                          To use your custom image:
+                          1. Place the image in the frontend/public folder
+                          2. Change the src below to match your filename (e.g., "/my-image.png")
+                        */}
+                        <img src="/footer-image.png" alt="Footer Illustration" className="w-full h-auto block" />
                     </div>
-                </div>
+
                 </div>
             </div>
         </div>
