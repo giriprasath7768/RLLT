@@ -759,8 +759,9 @@ const MainChart = () => {
 
 
                 <div className="p-4 pb-4 pt-6">
-                    {/* NEW OUTER BORDER WRAPPER */}
-                    <div className="w-full border-[3px] border-black p-3 flex flex-col bg-white overflow-hidden">
+                    <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                        {/* NEW OUTER BORDER WRAPPER */}
+                        <div className="min-w-[1024px] border-[3px] border-black p-3 flex flex-col bg-white overflow-hidden" style={{ minWidth: '1024px' }}>
                         {/* TOP HEADER BLOCK - MATCHING SCREENSHOT EXACTLY */}
                         <div className="flex flex-col w-full mb-2">
                             {/* ROW 1: T | REAL LIFE... | PH */}
@@ -1102,6 +1103,7 @@ const MainChart = () => {
                             </div>
                         </div>
                     </div> {/* END OF OUTER BORDER WRAPPER */}
+                    </div> {/* END OF SCROLL WRAPPER */}
                 </div> {/* END OF P-4 WRAPPER */}
             </div> {/* END OF SHADOW-2XL MAIN CONTENT CONTAINER */}
 

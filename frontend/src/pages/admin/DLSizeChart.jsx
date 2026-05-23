@@ -623,20 +623,22 @@ const DLSizeChart = () => {
             </div>
 
             <div id="printable-chart-area" className="w-full bg-white pb-4 rounded-b-2xl pt-4 px-4 overflow-hidden">
-                {/* OUTER BORDER WRAPPER */}
-                <div className="w-full border-[2px] border-black p-2 flex flex-col bg-white">
-                    {/* TWO COLUMN DL SIZE DATA WRAPPER */}
-                    <div className="flex flex-row w-full gap-[6px]">
-                        {/* LEFT COLUMN */}
-                        <div className="flex-1 flex flex-col w-[49.5%] overflow-hidden">
-                            {renderMainHeaderBlock()}
-                            {renderChunkTable(leftChunks, 0)}
-                        </div>
+                <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                    {/* OUTER BORDER WRAPPER */}
+                    <div className="min-w-[1024px] border-[2px] border-black p-2 flex flex-col bg-white" style={{ minWidth: '1024px' }}>
+                        {/* TWO COLUMN DL SIZE DATA WRAPPER */}
+                        <div className="flex flex-row w-full gap-[6px]">
+                            {/* LEFT COLUMN */}
+                            <div className="flex-1 flex flex-col w-[49.5%] overflow-hidden">
+                                {renderMainHeaderBlock()}
+                                {renderChunkTable(leftChunks, 0)}
+                            </div>
 
-                        {/* RIGHT COLUMN */}
-                        <div className="flex-1 flex flex-col w-[49.5%] overflow-hidden">
-                            {renderMainHeaderBlock()}
-                            {renderChunkTable(rightChunks, splitIndex)}
+                            {/* RIGHT COLUMN */}
+                            <div className="flex-1 flex flex-col w-[49.5%] overflow-hidden">
+                                {renderMainHeaderBlock()}
+                                {renderChunkTable(rightChunks, splitIndex)}
+                            </div>
                         </div>
                     </div>
                 </div>

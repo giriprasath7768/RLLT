@@ -38,6 +38,7 @@ class TouchCountSchema(BaseModel):
     transformation: int = 0
     team_transformation: int = 0
     klt_reading_plan: int = 0
+    word_editor: int = 0
 
     class Config:
         from_attributes = True

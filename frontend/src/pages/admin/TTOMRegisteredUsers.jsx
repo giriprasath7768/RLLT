@@ -401,7 +401,22 @@ export default function TTOMRegisteredUsers() {
                     {topCardContent}
                 </div>
 
-                <div className="bg-white shadow-sm border border-gray-100 mb-8">
+                {/* Mobile Action Bar */}
+                <div className="block md:hidden mb-4 bg-gray-50 border border-gray-100 rounded-xl p-3">
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button label="New User" icon="pi pi-plus" severity="success" onClick={openNew} className="w-full text-xs font-bold py-2 rounded-lg" />
+                        <Button label="Export PDF" icon="pi pi-file-pdf" severity="help" onClick={() => setExportModalVisible(true)} className="w-full text-xs font-bold py-2 rounded-lg" />
+                        <Button label="Assign Chart" icon="pi pi-chart-line" severity="info" outlined onClick={handleOpenAssignChart} className="w-full text-xs font-bold py-2 rounded-lg" />
+                        <Button label="Remove Chart" icon="pi pi-eraser" severity="warning" outlined onClick={handleOpenRemoveChart} className="w-full text-xs font-bold py-2 rounded-lg" />
+                    </div>
+                    {selectedUsers && selectedUsers.length > 0 && (
+                        <div className="mt-2 text-center text-xs text-blue-700 bg-blue-50 py-1.5 rounded-lg font-bold border border-blue-100 animate-pulse">
+                            {selectedUsers.length} user(s) selected for chart actions
+                        </div>
+                    )}
+                </div>
+
+                <div className="bg-white shadow-sm border border-gray-100 mb-8 hidden md:block">
                     <DataTable value={filteredUsers} selection={selectedUsers} onSelectionChange={(e) => setSelectedUsers(e.value)} dataKey="id" header={tableHeader} responsiveLayout="stack" breakpoint="960px" emptyMessage="No users found." className="custom-admin-table" rowClassName={() => 'bg-white'}>
                         <Column headerClassName="admin-table-header" selectionMode="multiple" headerStyle={{ width: '3rem' }}></Column>
                         <Column headerClassName="admin-table-header" field="name" header="Name" sortable body={(rowData) => <span className="font-bold text-gray-800">{rowData.name}</span>} />
@@ -414,6 +429,110 @@ export default function TTOMRegisteredUsers() {
                         <Column headerClassName="admin-table-header" field="is_active" header="Status" sortable body={statusBodyTemplate} />
                         <Column headerClassName="admin-table-header" header="Actions" body={actionBodyTemplate} exportable={false} align="center" style={{ minWidth: '8rem' }} />
                     </DataTable>
+                </div>
+
+                {/* Mobile Card List */}
+                <div className="block md:hidden space-y-3">
+                    {filteredUsers.length > 0 ? (
+                        filteredUsers.slice(first, first + rows).map((item, index) => {
+                            const isSelected = selectedUsers?.some(u => u.id === item.id);
+                            return (
+                                <div 
+                                    key={item.id || index} 
+                                    className={`bg-white rounded-2xl shadow-sm p-4 border transition-all flex flex-col gap-3.5 cursor-pointer ${
+                                        isSelected ? 'border-blue-500 ring-2 ring-blue-100 bg-blue-50/5' : 'border-gray-100'
+                                    }`}
+                                    onClick={() => {
+                                        // Toggle selection on tap
+                                        const currentSelected = selectedUsers || [];
+                                        if (isSelected) {
+                                            setSelectedUsers(currentSelected.filter(u => u.id !== item.id));
+                                        } else {
+                                            setSelectedUsers([...currentSelected, item]);
+                                        }
+                                    }}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                                                isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 bg-white'
+                                            }`}>
+                                                {isSelected && <i className="pi pi-check text-[10px] font-bold"></i>}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-base text-gray-800 m-0 leading-tight">{item.name}</h4>
+                                                <div className="text-xs text-gray-500 font-bold mt-0.5">{item.mobile_number}</div>
+                                            </div>
+                                        </div>
+                                        <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">#{first + index + 1}</span>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-y-2.5 gap-x-4 text-xs border-t border-gray-50 pt-3">
+                                        <div>
+                                            <div className="text-gray-400 font-medium mb-0.5">Password PIN</div>
+                                            <span className="font-mono text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded text-[11px] inline-block">
+                                                {item.plain_password || 'Generating...'}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-400 font-medium mb-0.5">Location</div>
+                                            <div className="text-gray-700 font-bold">{item.city || '-'}</div>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <div className="text-gray-400 font-medium mb-0.5">Assigned Chart</div>
+                                            <div>{assignedChartBodyTemplate(item)}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-400 font-medium mb-0.5 font-bold">Status</div>
+                                            <div>{statusBodyTemplate(item)}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-400 font-medium mb-0.5 font-bold">Created Date</div>
+                                            <div className="text-gray-700 font-bold">{new Date(item.created_at).toLocaleDateString()}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons for Mobile Card */}
+                                    <div className="border-t border-gray-100 pt-3 mt-1 flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                        <Button 
+                                            label="Edit" 
+                                            icon="pi pi-pencil" 
+                                            outlined 
+                                            size="small" 
+                                            className="text-xs font-bold" 
+                                            onClick={() => editUser(item)} 
+                                        />
+                                        <Button 
+                                            label="Delete" 
+                                            icon="pi pi-trash" 
+                                            outlined 
+                                            severity="danger" 
+                                            size="small" 
+                                            className="text-xs font-bold" 
+                                            onClick={() => confirmDeleteUser(item)} 
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
+                            No users found.
+                        </div>
+                    )}
+
+                    {/* Mobile Paginator */}
+                    {filteredUsers.length > 0 && (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4">
+                            <Paginator 
+                                first={first} 
+                                rows={rows} 
+                                totalRecords={filteredUsers.length} 
+                                onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                template="PrevPageLink PageLinks NextPageLink" 
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">

@@ -531,7 +531,8 @@ const SevenTNTMainChart = () => {
                 </div>
 
                 <div className="p-4 pb-4 pt-6">
-                    <div className="w-full border-[3px] border-black p-3 flex flex-col bg-white overflow-hidden">
+                    <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                        <div className="min-w-[1024px] border-[3px] border-black p-3 flex flex-col bg-white overflow-hidden" style={{ minWidth: '1024px' }}>
 
                         {/* Header Architecture replicating Main Chart */}
                         <div className="flex flex-col w-full mb-2">
@@ -859,6 +860,7 @@ const SevenTNTMainChart = () => {
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
                         </div>
                     </div>
                 </div>

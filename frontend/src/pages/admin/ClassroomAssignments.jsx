@@ -241,6 +241,59 @@ const ClassroomAssignments = () => {
                 </DataTable>
             </div>
 
+            {/* Mobile View */}
+            <div className="block md:hidden mt-4 space-y-4">
+                {assignments.length > 0 ? (
+                    assignments
+                        .filter(item => {
+                            if (!globalFilter) return true;
+                            const query = globalFilter.toLowerCase();
+                            return (
+                                item.title?.toLowerCase().includes(query) ||
+                                (item.due_date && new Date(item.due_date).toLocaleDateString().toLowerCase().includes(query)) ||
+                                locationTemplate(item).toLowerCase().includes(query)
+                            );
+                        })
+                        .map((item, index) => (
+                            <div key={item.id || index} className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="font-bold text-base text-gray-800 m-0">{item.title}</h4>
+                                    <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">#{index + 1}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
+                                    <div>
+                                        <div className="text-gray-400 font-medium mb-0.5">Due Date</div>
+                                        <div className="text-gray-700 font-bold">
+                                            {item.due_date ? new Date(item.due_date).toLocaleDateString() : 'No Due Date'}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-gray-400 font-medium mb-0.5">Location</div>
+                                        <div className="text-gray-700 font-bold">{locationTemplate(item)}</div>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <div className="text-gray-400 font-medium mb-0.5">Target</div>
+                                        <div>{targetTemplate(item)}</div>
+                                    </div>
+                                </div>
+                                <div className="border-t border-gray-50 pt-3 mt-1 flex justify-end">
+                                    <Button 
+                                        label="View Submissions" 
+                                        icon="pi pi-eye" 
+                                        outlined 
+                                        className="w-full text-xs font-bold py-2 rounded-lg" 
+                                        onClick={() => viewSubmissions(item)} 
+                                    />
+                                </div>
+                            </div>
+                        ))
+                ) : (
+                    <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        No assignments found.
+                    </div>
+                )}
+            </div>
+
             <Dialog visible={dialogVisible} modal className="p-fluid max-w-2xl w-full" onHide={() => setDialogVisible(false)} header="Create Assignment">
                 <div className="grid grid-cols-1 gap-4 p-4">
                     <div className="field">
@@ -292,13 +345,43 @@ const ClassroomAssignments = () => {
                 </div>
             </Dialog>
 
-            <Dialog visible={submissionsDialogVisible} modal className="p-fluid max-w-4xl w-full" onHide={() => setSubmissionsDialogVisible(false)} header={`Submissions for: ${selectedAssignment?.title}`}>
-                <div className="p-4">
-                    <DataTable value={submissions} loading={submissionsLoading} paginator rows={5} showGridlines emptyMessage="No submissions yet.">
-                        <Column field="student_id" header="Student ID" style={{ width: '25%' }}></Column>
-                        <Column field="status" header="Status"></Column>
-                        <Column header="Evaluate / File" body={submissionActionTemplate} style={{ width: '200px' }}></Column>
-                    </DataTable>
+            <Dialog visible={submissionsDialogVisible} modal className="p-fluid max-w-4xl w-full" onHide={() => setSubmissionsDialogVisible(false)} header={`Submissions for: ${selectedAssignment?.title}`} breakpoints={{ '960px': '75vw', '641px': '95vw' }}>
+                <div className="p-2 sm:p-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    {/* Desktop View */}
+                    <div className="hidden sm:block">
+                        <DataTable value={submissions} loading={submissionsLoading} paginator rows={5} showGridlines emptyMessage="No submissions yet.">
+                            <Column field="student_id" header="Student ID" style={{ width: '25%' }}></Column>
+                            <Column field="status" header="Status"></Column>
+                            <Column header="Evaluate / File" body={submissionActionTemplate} style={{ width: '200px' }}></Column>
+                        </DataTable>
+                    </div>
+                    {/* Mobile View */}
+                    <div className="block sm:hidden space-y-3">
+                        {submissionsLoading ? (
+                            <div className="text-center p-4 text-gray-500">Loading submissions...</div>
+                        ) : submissions.length > 0 ? (
+                            submissions.map((sub, index) => (
+                                <div key={sub.id || index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex flex-col gap-2">
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-xs font-bold text-gray-500">Student ID</div>
+                                        <div className="text-sm font-black text-gray-800">{sub.student_id}</div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <div className="text-xs font-bold text-gray-500">Status</div>
+                                        <div className="text-xs font-bold bg-green-50 text-green-700 px-2 py-0.5 rounded">{sub.status}</div>
+                                    </div>
+                                    <div className="border-t border-gray-200/50 pt-2 mt-1">
+                                        <div className="text-xs font-bold text-gray-500 mb-1.5">Evaluate / File</div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {submissionActionTemplate(sub)}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center p-4 text-gray-500">No submissions yet.</div>
+                        )}
+                    </div>
                 </div>
             </Dialog>
 

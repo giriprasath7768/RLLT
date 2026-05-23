@@ -502,7 +502,7 @@ const ManageAssessment = () => {
                     {topCardContent}
                 </div>
 
-                <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden w-full p-4">
                     <div className="flex flex-row justify-between w-full mb-4 border-b border-gray-100 pb-3">
                         <div className="flex flex-wrap items-center gap-3">
                             <Button label="Delete selected" icon="pi pi-trash" text className="font-bold" style={{ color: '#FF0000' }} onClick={deleteSelectedAssessments} disabled={!selectedAssessments || !selectedAssessments.length} />
@@ -512,12 +512,14 @@ const ManageAssessment = () => {
                             <Button label={testMode ? "Exit Test Mode" : "Test Format Mode"} icon="pi pi-eye" text className="font-bold" style={{ color: testMode || filterName ? '#2F5597' : '#9CA3AF' }} disabled={!filterName && !testMode} onClick={() => setTestMode(!testMode)} />
                         </div>
                     </div>
-                    <DataTable value={assessments} selection={selectedAssessments} onSelectionChange={(e) => setSelectedAssessments(e.value)}
-                        dataKey="id" paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
-                        globalFilter={globalFilter}
-                        emptyMessage="No questions found. Try importing an Excel file or adjusting the filters." loading={loading}
-                        header={tableHeader} className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines
-                        rowClassName={() => 'bg-white text-black'}>
+                    <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                        <div className="min-w-[1600px] w-full">
+                            <DataTable value={assessments} selection={selectedAssessments} onSelectionChange={(e) => setSelectedAssessments(e.value)}
+                                dataKey="id" paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                globalFilter={globalFilter}
+                                emptyMessage="No questions found. Try importing an Excel file or adjusting the filters." loading={loading}
+                                header={tableHeader} className="p-datatable-sm w-full custom-admin-table" responsiveLayout="scroll" showGridlines
+                                rowClassName={() => 'bg-white text-black'}>
                         <Column selectionMode="multiple" exportable={false} headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
                         <Column field="question_number" header="S.No" sortable headerStyle={{ backgroundColor: '#2F5597', color: 'white' }} style={{ width: '5%', minWidth: '60px' }}></Column>
                         <Column field="question_text" header="Question" sortable style={{ width: '40%', minWidth: '16rem' }} headerStyle={{ backgroundColor: '#FF0000', color: 'white' }} body={(rowData) => renderHTMLContent(rowData.question_text)}></Column>
@@ -537,11 +539,13 @@ const ManageAssessment = () => {
                         <Column field="grade_5" header="Grade" headerStyle={{ backgroundColor: '#2F5597', color: 'white' }} style={{ minWidth: '80px' }}></Column>
 
                         <Column body={actionBodyTemplate} exportable={false} style={{ width: '8rem' }} headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
-                    </DataTable>
+                            </DataTable>
+                        </div>
+                    </div>
                 </div>
 
                 {/* External Paginator Card */}
-                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 w-full">
                     <Paginator first={first} rows={rows} totalRecords={filteredAssessments.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
                         template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                         currentPageReportTemplate="Showing {first} to {last} of {totalRecords} questions" />

@@ -565,9 +565,11 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
             </div>
 
             <div id="printable-cchart" className="w-full bg-white pb-4 rounded-b-2xl pt-4 px-4 overflow-hidden max-w-6xl mx-auto flex flex-col items-center" style={{ pageBreakInside: 'avoid' }}>
-                {renderMainHeaderBlock()}
+                <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                    <div className="min-w-[1024px] flex flex-col items-center w-full" style={{ minWidth: '1024px' }}>
+                        {renderMainHeaderBlock()}
 
-                <div className="w-full border-[2px] border-black flex flex-col bg-white" style={{ pageBreakInside: 'avoid' }}>
+                        <div className="w-full border-[2px] border-black flex flex-col bg-white" style={{ pageBreakInside: 'avoid' }}>
                     {/* Table Header Row */}
                     <div className="border-b-[2px] border-black py-1">
                         <h1 className="text-red-700 font-extrabold text-[28px] tracking-[0.05em] mb-0 mt-0 text-center uppercase">CO-CREATE</h1>
@@ -698,6 +700,8 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
                                 MODULE{selectedChart.module}: FACET{selectedChart.facet}: PHASE - {phaseLabel}
                             </div>
                         )}
+                    </div>
+                </div>
                     </div>
                 </div>
             </div>

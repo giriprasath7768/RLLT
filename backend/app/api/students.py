@@ -28,15 +28,16 @@ class TouchCountUpdatePayload(BaseModel):
     transformation: int = 0
     team_transformation: int = 0
     klt_reading_plan: int = 0
+    word_editor: int = 0
 
 router = APIRouter()
 
 @router.get("/debug-touches")
 async def debug_touches(db: AsyncSession = Depends(get_db)):
     from app.db.models import StudentTouchCount, User
-    result = await db.execute(select(User.email, StudentTouchCount.transformation_touches, StudentTouchCount.team_transformation_touches, StudentTouchCount.klt_reading_plan_touches).outerjoin(StudentTouchCount, User.id == StudentTouchCount.user_id))
+    result = await db.execute(select(User.email, StudentTouchCount.transformation_touches, StudentTouchCount.team_transformation_touches, StudentTouchCount.klt_reading_plan_touches, StudentTouchCount.word_editor_touches).outerjoin(StudentTouchCount, User.id == StudentTouchCount.user_id))
     rows = result.all()
-    return [{"email": r[0], "transformation": r[1], "team_transformation": r[2], "klt_reading_plan": r[3]} for r in rows]
+    return [{"email": r[0], "transformation": r[1], "team_transformation": r[2], "klt_reading_plan": r[3], "word_editor": r[4]} for r in rows]
 
 async def verify_admin_or_higher(current_user: User = Depends(get_current_user)):
     if current_user.role not in [UserRole.super_admin, UserRole.admin, UserRole.leader]:
@@ -96,7 +97,8 @@ async def get_students(db: AsyncSession = Depends(get_db), current_user: User = 
             "touch_counts": {
                 "transformation": touch_count_obj.transformation_touches or 0 if touch_count_obj else 0,
                 "team_transformation": touch_count_obj.team_transformation_touches or 0 if touch_count_obj else 0,
-                "klt_reading_plan": touch_count_obj.klt_reading_plan_touches or 0 if touch_count_obj else 0
+                "klt_reading_plan": touch_count_obj.klt_reading_plan_touches or 0 if touch_count_obj else 0,
+                "word_editor": touch_count_obj.word_editor_touches or 0 if touch_count_obj else 0
             } if touch_count_obj else None
         }
         response_list.append(user_dict)
@@ -201,13 +203,14 @@ async def increment_my_touch_counts(payload: TouchCountUpdatePayload, db: AsyncS
                 user_id=user_id,
                 transformation_touches=payload.transformation,
                 team_transformation_touches=payload.team_transformation,
-                klt_reading_plan_touches=payload.klt_reading_plan
+                klt_reading_plan_touches=payload.klt_reading_plan,
+                word_editor_touches=payload.word_editor
             )
             db.add(new_tc)
             await db.commit()
         except Exception:
             await db.rollback()
-            return {"transformation": 0, "team_transformation": 0, "klt_reading_plan": 0}
+            return {"transformation": 0, "team_transformation": 0, "klt_reading_plan": 0, "word_editor": 0}
     else:
         await db.execute(
             update(StudentTouchCount)
@@ -215,7 +218,8 @@ async def increment_my_touch_counts(payload: TouchCountUpdatePayload, db: AsyncS
             .values(
                 transformation_touches=func.coalesce(StudentTouchCount.transformation_touches, 0) + payload.transformation,
                 team_transformation_touches=func.coalesce(StudentTouchCount.team_transformation_touches, 0) + payload.team_transformation,
-                klt_reading_plan_touches=func.coalesce(StudentTouchCount.klt_reading_plan_touches, 0) + payload.klt_reading_plan
+                klt_reading_plan_touches=func.coalesce(StudentTouchCount.klt_reading_plan_touches, 0) + payload.klt_reading_plan,
+                word_editor_touches=func.coalesce(StudentTouchCount.word_editor_touches, 0) + payload.word_editor
             )
         )
         await db.commit()
@@ -227,7 +231,8 @@ async def increment_my_touch_counts(payload: TouchCountUpdatePayload, db: AsyncS
     return {
         "transformation": fresh_tc.transformation_touches if fresh_tc and fresh_tc.transformation_touches else 0,
         "team_transformation": fresh_tc.team_transformation_touches if fresh_tc and fresh_tc.team_transformation_touches else 0,
-        "klt_reading_plan": fresh_tc.klt_reading_plan_touches if fresh_tc and fresh_tc.klt_reading_plan_touches else 0
+        "klt_reading_plan": fresh_tc.klt_reading_plan_touches if fresh_tc and fresh_tc.klt_reading_plan_touches else 0,
+        "word_editor": fresh_tc.word_editor_touches if fresh_tc and fresh_tc.word_editor_touches else 0
     }
 
 @router.put("/{student_id}/touch-counts", response_model=StudentResponse)
@@ -250,7 +255,8 @@ async def update_student_touch_counts(student_id: UUID, payload: TouchCountUpdat
             user_id=student_id,
             transformation_touches=payload.transformation,
             team_transformation_touches=payload.team_transformation,
-            klt_reading_plan_touches=payload.klt_reading_plan
+            klt_reading_plan_touches=payload.klt_reading_plan,
+            word_editor_touches=payload.word_editor
         )
         db.add(new_tc)
     else:
@@ -261,7 +267,8 @@ async def update_student_touch_counts(student_id: UUID, payload: TouchCountUpdat
             .values(
                 transformation_touches=func.coalesce(StudentTouchCount.transformation_touches, 0) + payload.transformation,
                 team_transformation_touches=func.coalesce(StudentTouchCount.team_transformation_touches, 0) + payload.team_transformation,
-                klt_reading_plan_touches=func.coalesce(StudentTouchCount.klt_reading_plan_touches, 0) + payload.klt_reading_plan
+                klt_reading_plan_touches=func.coalesce(StudentTouchCount.klt_reading_plan_touches, 0) + payload.klt_reading_plan,
+                word_editor_touches=func.coalesce(StudentTouchCount.word_editor_touches, 0) + payload.word_editor
             )
         )
 
@@ -277,6 +284,7 @@ async def update_student_touch_counts(student_id: UUID, payload: TouchCountUpdat
     t_val = fresh_tc.transformation_touches if fresh_tc and fresh_tc.transformation_touches else 0
     tt_val = fresh_tc.team_transformation_touches if fresh_tc and fresh_tc.team_transformation_touches else 0
     klt_val = fresh_tc.klt_reading_plan_touches if fresh_tc and fresh_tc.klt_reading_plan_touches else 0
+    we_val = fresh_tc.word_editor_touches if fresh_tc and fresh_tc.word_editor_touches else 0
 
     user_dict = {
         "id": user.id,
@@ -298,7 +306,8 @@ async def update_student_touch_counts(student_id: UUID, payload: TouchCountUpdat
         "touch_counts": {
             "transformation": t_val,
             "team_transformation": tt_val,
-            "klt_reading_plan": klt_val
+            "klt_reading_plan": klt_val,
+            "word_editor": we_val
         }
     }
     return user_dict

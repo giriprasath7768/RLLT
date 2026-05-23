@@ -367,6 +367,79 @@ const ClassroomQnA = () => {
                     </DataTable>
                 </div>
 
+                {/* Mobile View */}
+                <div className="block md:hidden mt-4 space-y-4">
+                    {loading ? (
+                        <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
+                            Loading Q&A items...
+                        </div>
+                    ) : filteredQnas.length > 0 ? (
+                        filteredQnas.slice(first, first + rows).map((item, index) => (
+                            <div key={item.id || index} className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <span className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold">
+                                            Topic: {item.topic}
+                                        </span>
+                                        {item.question_number && (
+                                            <span className="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold ml-2">
+                                                Q# {item.question_number}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-[11px] text-gray-400 font-medium">#{first + index + 1}</span>
+                                </div>
+                                <div className="text-sm font-bold text-gray-900 border-t border-gray-50 pt-2">
+                                    <span className="text-red-500 font-extrabold mr-1">Q:</span>
+                                    {renderHTMLContent(item.question_text)}
+                                </div>
+                                <div className="text-xs text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                    <span className="text-green-600 font-extrabold block mb-1">Answer / Choices:</span>
+                                    {renderAnswer(item)}
+                                </div>
+                                {userRole !== 'student' && (
+                                    <div className="border-t border-gray-50 pt-3 mt-1 flex justify-end gap-2">
+                                        <Button 
+                                            label="Edit" 
+                                            icon="pi pi-pencil" 
+                                            outlined 
+                                            size="small" 
+                                            className="text-xs" 
+                                            onClick={() => editQna(item)} 
+                                        />
+                                        <Button 
+                                            label="Delete" 
+                                            icon="pi pi-trash" 
+                                            outlined 
+                                            severity="danger" 
+                                            size="small" 
+                                            className="text-xs" 
+                                            onClick={() => confirmDeleteQna(item)} 
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
+                            No Q&A found.
+                        </div>
+                    )}
+
+                    {/* Mobile Paginator */}
+                    {filteredQnas.length > 0 && (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4">
+                            <Paginator 
+                                first={first} 
+                                rows={rows} 
+                                totalRecords={filteredQnas.length} 
+                                onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                template="PrevPageLink PageLinks NextPageLink" 
+                            />
+                        </div>
+                    )}
+                </div>
+
                 {/* External Paginator Card */}
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredQnas.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}

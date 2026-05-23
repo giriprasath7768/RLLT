@@ -747,7 +747,7 @@ const Shanaz357 = () => {
                             <div className="h-px bg-[#d3c09b] w-8 mx-2"></div>
                             <div className="absolute right-3 text-[#d3c09b] text-[10px]">❖</div>
                         </div>
-                        <div className="overflow-y-auto max-h-[260px] scrollbar-hide bg-[#fcf8ef]">
+                        <div className="overflow-y-auto max-h-[234px] scrollbar-hide bg-[#fcf8ef]">
                             <div className="p-3 flex flex-wrap justify-center gap-2">
                                 {booksDB.length > 0 && renderBooks(0, 39)}
                             </div>

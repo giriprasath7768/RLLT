@@ -357,7 +357,7 @@ const DashboardStudent = () => {
                             <div className="bg-white border border-gray-100 rounded-[2rem] shadow-sm p-8 relative overflow-hidden flex flex-col">
                                 {/* Top Header Row */}
                                 <div className="flex flex-col gap-4 mb-6">
-                                    <div className="flex justify-start gap-1 sm:gap-2 pb-2">
+                                    <div className="flex justify-start gap-1 sm:gap-2 pb-2 overflow-x-auto custom-scrollbar w-full">
                                         {tntOptions.map((tab) => {
                                             const isActive = selectedTNT === tab.value;
                                             const v = tab.value.toLowerCase();

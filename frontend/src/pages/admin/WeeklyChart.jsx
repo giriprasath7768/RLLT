@@ -400,7 +400,9 @@ const WeeklyChart = () => {
                 </div>
 
                 <div id="printable-chart-area" className="w-full bg-white pb-6 rounded-b-2xl pt-6 px-6 relative">
-                    <div className="w-full border-[3px] border-black p-3 flex flex-col bg-white">
+                    <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                        <div className="min-w-[1024px] w-full" style={{ minWidth: '1024px' }}>
+                            <div className="w-full border-[3px] border-black p-3 flex flex-col bg-white">
                         
                         {/* HEADER BLOCK EXACTLY LIKE MORNINGEVENINGCHART */}
                         <div className="flex flex-col w-full mb-2">
@@ -629,14 +631,16 @@ const WeeklyChart = () => {
                             </table>
                         </div>
 
-                    </div>
-                    {/* FOOTER BAR */}
-                    <div className="flex items-center w-full px-2 pt-2 bg-transparent mt-1 uppercase justify-between">
-                        <span className="font-extrabold text-[15px] text-[#c8a165]">1</span>
-                        <div className="flex-1 text-center">
-                            <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
-                                MODULE {selectedChart?.module || '1'} - FACET {selectedChart?.facet || '1'}/{maxFacets}: PHASE - {selectedChart?.phase || '1'}/{maxPhases}
-                            </span>
+                            </div>
+                            {/* FOOTER BAR */}
+                            <div className="flex items-center w-full px-2 pt-2 bg-transparent mt-1 uppercase justify-between">
+                                <span className="font-extrabold text-[15px] text-[#c8a165]">1</span>
+                                <div className="flex-1 text-center">
+                                    <span className="font-extrabold text-[14px] tracking-widest text-black mr-4" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
+                                        MODULE {selectedChart?.module || '1'} - FACET {selectedChart?.facet || '1'}/{maxFacets}: PHASE - {selectedChart?.phase || '1'}/{maxPhases}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

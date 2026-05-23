@@ -43,7 +43,7 @@ const LightChartDigital = () => {
         return {
             modules: mods,
             facets: allFacets.size > 0 ? allFacets.size : 40,
-            phases: allPhases.size > 0 ? allPhases.size : 153
+            phases: 153
         };
     }, [rlltDB, uniqueModules]);
 
@@ -148,19 +148,23 @@ const LightChartDigital = () => {
         if (formattedArt.includes('H')) {
             const splitH = formattedArt.split('H');
             artParts.push(splitH[0]);
-            artParts.push(<span key="h" className="text-lg">H</span>);
+            artParts.push(<span key="h" className="text-2xl">H</span>);
             if (splitH[1]) {
                 const rest = splitH[1].trim();
                 if (rest.includes('m')) {
-                    artParts.push(' ' + rest.replace('m', ''));
-                    artParts.push(<span key="m" className="text-lg">m</span>);
+                    const numberPart = rest.replace(/[^\d]/g, '');
+                    const textPart = rest.replace(/[\d]/g, '');
+                    artParts.push(' ' + numberPart);
+                    artParts.push(<span key="m" className="text-2xl">{textPart}</span>);
                 } else {
                     artParts.push(' ' + rest);
                 }
             }
         } else if (formattedArt.includes('m')) {
-            artParts.push(formattedArt.replace('m', ''));
-            artParts.push(<span key="m" className="text-lg">m</span>);
+            const numberPart = formattedArt.replace(/[^\d]/g, '');
+            const textPart = formattedArt.replace(/[\d]/g, '');
+            artParts.push(numberPart);
+            artParts.push(<span key="m" className="text-2xl">{textPart}</span>);
         } else {
             artParts.push(formattedArt);
         }
@@ -190,22 +194,25 @@ const LightChartDigital = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8 flex justify-center items-start font-sans">
-            <div className="bg-[#fcf8ef] rounded-lg shadow-2xl w-full max-w-[800px] relative" style={{ border: '2px solid #d3c09b', outline: '4px solid #fcf8ef', outlineOffset: '-6px' }}>
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-8 flex justify-start md:justify-center items-start font-sans overflow-x-auto w-full">
+            <div className="bg-[#fcf8ef] rounded-lg shadow-2xl w-full min-w-[780px] max-w-[800px] relative" style={{ border: '2px solid #d3c09b', outline: '4px solid #fcf8ef', outlineOffset: '-6px' }}>
                 
                 {/* Top Section */}
                 <div className="p-6 pb-2">
                     <div className="flex justify-between items-start">
                         
                         {/* Logo Left */}
-                        <div className="flex flex-col items-center">
-                            <div className="relative w-20 h-24 flex items-center justify-center">
-                                <svg viewBox="0 0 100 115" className="absolute inset-0 w-full h-full drop-shadow-md">
-                                    <polygon points="50,5 95,30 95,85 50,110 5,85 5,30" fill="#0B2149" stroke="#d3c09b" strokeWidth="4" />
+                        <div className="flex flex-col items-center mt-1">
+                            <div className="relative w-24 h-28 flex items-center justify-center mb-1">
+                                <svg viewBox="0 0 100 115" className="absolute inset-0 w-full h-full" style={{ filter: 'drop-shadow(3px 5px 5px rgba(0,0,0,0.4))' }}>
+                                    <polygon points="50,5 94,30 94,85 50,110 6,85 6,30" fill="#0B2149" stroke="#d3c09b" strokeWidth="8" strokeLinejoin="round" />
                                 </svg>
-                                <span className="relative text-5xl text-[#d3c09b]" style={{ fontFamily: "'Algerian', serif" }}>D</span>
+                                <span className="relative text-[3.8rem] text-[#d3c09b] transform -translate-y-1" style={{ 
+                                    fontFamily: "'Algerian', serif",
+                                    textShadow: '1px 1px 0px #b09c73, 2px 2px 0px #9d8960, 3px 3px 0px #8a774e, 4px 4px 0px #75633c, 5px 5px 0px #63522f, 7px 7px 10px rgba(0,0,0,0.6)'
+                                }}>D</span>
                             </div>
-                            <div className="text-[10px] font-bold text-[#0B2149] text-center mt-2 leading-tight tracking-widest">
+                            <div className="text-[10px] font-bold text-[#0B2149] text-center leading-tight tracking-widest">
                                 LIGHT CHART<br/>DIGITAL
                             </div>
                         </div>
@@ -226,18 +233,20 @@ const LightChartDigital = () => {
                         </div>
 
                         {/* Stats Right */}
-                        <div className="flex shrink-0 bg-[#fcf8ef] border-2 border-[#d3c09b] rounded shadow-md overflow-hidden h-24">
-                            <div className="flex flex-col items-center justify-center px-4 border-r border-[#d3c09b]">
-                                <span className="text-2xl text-[#a67c00]" style={{ fontFamily: "Georgia, serif" }}>5</span>
-                                <span className="text-[8px] font-bold text-[#0B2149] tracking-widest">MODULES</span>
+                        <div className="flex shrink-0 border-2 border-[#d3c09b] rounded-lg shadow-md overflow-hidden h-24 w-36">
+                            <div className="flex flex-col w-1/2 bg-[#fcf8ef]">
+                                <div className="flex-1 flex flex-col items-center justify-center border-b-2 border-[#d3c09b]">
+                                    <span className="text-xl text-[#a67c00] leading-none mb-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{globalStats.modules}</span>
+                                    <span className="text-[8px] font-bold text-[#0B2149] tracking-widest">MODULES</span>
+                                </div>
+                                <div className="flex-1 flex flex-col items-center justify-center">
+                                    <span className="text-xl text-[#a67c00] leading-none mb-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{globalStats.facets}</span>
+                                    <span className="text-[8px] font-bold text-[#0B2149] tracking-widest">FACETS</span>
+                                </div>
                             </div>
-                            <div className="flex flex-col items-center justify-center px-4 border-r border-[#d3c09b]">
-                                <span className="text-2xl text-[#a67c00]" style={{ fontFamily: "Georgia, serif" }}>40</span>
-                                <span className="text-[8px] font-bold text-[#0B2149] tracking-widest">FACETS</span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center px-6 bg-[#0B2149]">
-                                <span className="text-2xl text-[#d3c09b]" style={{ fontFamily: "Georgia, serif" }}>153</span>
-                                <span className="text-[8px] font-bold text-[#d3c09b] tracking-widest">PHASES</span>
+                            <div className="w-1/2 flex flex-col items-center justify-center bg-[#0B2149] border-l-2 border-[#d3c09b]">
+                                <span className="text-3xl text-[#d3c09b] leading-none mb-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{globalStats.phases}</span>
+                                <span className="text-[9px] font-bold text-[#d3c09b] tracking-widest mt-1">PHASES</span>
                             </div>
                         </div>
                     </div>
@@ -248,22 +257,22 @@ const LightChartDigital = () => {
                     {/* Subtitle */}
                     <div className="text-center mb-4 flex flex-col items-center">
                         {/* Equation row */}
-                        <div className="flex items-center justify-center gap-4 mb-4">
+                        <div className="flex items-center justify-center gap-10 mb-4">
                             <span 
-                                className="text-[#d3c09b] font-bold text-3xl cursor-pointer hover:text-[#b5a07c] transition-colors" 
+                                className="text-[#d3c09b] font-bold text-[42px] cursor-pointer hover:text-[#b5a07c] transition-colors leading-none" 
                                 onClick={handleDecMdl}
                             >-</span>
-                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-24 h-16 shadow-inner">
-                                <span className="text-[10px] font-bold text-[#0B2149] tracking-widest">MODULE</span>
-                                <span className="text-3xl text-[#5a6b5a]" style={{ fontFamily: "Georgia, serif" }}>{mdl}</span>
+                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-32 h-24 shadow-inner">
+                                <span className="text-[16px] font-bold text-[#0B2149] tracking-widest">MODULE</span>
+                                <span className="text-[42px] text-[#5a6b5a] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{mdl}</span>
                             </div>
                             <span 
-                                className="text-[#d3c09b] font-bold text-3xl cursor-pointer hover:text-[#b5a07c] transition-colors"
+                                className="text-[#d3c09b] font-bold text-[42px] cursor-pointer hover:text-[#b5a07c] transition-colors leading-none"
                                 onClick={handleIncMdl}
                             >+</span>
-                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-24 h-16 shadow-inner">
-                                <span className="text-[10px] font-bold text-[#0B2149] tracking-widest">DAYS</span>
-                                <span className="text-3xl text-[#5a6b5a]" style={{ fontFamily: "Georgia, serif" }}>{modStats.days}</span>
+                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-32 h-24 shadow-inner">
+                                <span className="text-[16px] font-bold text-[#0B2149] tracking-widest">DAYS</span>
+                                <span className="text-[42px] text-[#5a6b5a] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{modStats.days}</span>
                             </div>
                         </div>
 
@@ -313,8 +322,8 @@ const LightChartDigital = () => {
                                                 setPhs(num);
                                                 if (mdl === 5) setBookModalVisible(true);
                                             }}
-                                            className={`border-[0.5px] border-[#e8dcb9] flex items-center justify-center shadow-sm cursor-pointer transition-all ${fctStats.maxPhase === 1 ? 'w-full h-full text-3xl' : 'text-xl'} ${phs === num ? 'bg-[#c7a96b] text-white font-bold' : 'bg-[#fcf8ef] text-[#5a6b5a] hover:bg-[#f0e4cd]'}`} 
-                                            style={{ fontFamily: "Georgia, serif", minHeight: fctStats.maxPhase === 1 ? '64px' : '40px' }}
+                                            className={`border-[0.5px] border-[#e8dcb9] flex items-center justify-center shadow-sm cursor-pointer transition-all ${fctStats.maxPhase === 1 ? 'w-full h-full text-5xl md:text-6xl font-bold' : 'text-xl'} ${phs === num ? 'bg-[#c7a96b] text-white font-bold' : 'bg-[#fcf8ef] text-[#5a6b5a] hover:bg-[#f0e4cd]'}`} 
+                                            style={{ fontFamily: "Georgia, serif", minHeight: fctStats.maxPhase === 1 ? '96px' : '40px' }}
                                         >
                                             {num}
                                         </div>
@@ -339,17 +348,17 @@ const LightChartDigital = () => {
                             <i className="pi pi-sun text-6xl text-[#a67c00]"></i>
                         </div>
 
-                        <div className="flex-1 flex flex-col items-center py-2 border-r border-[#e8dcb9] z-10">
-                            <span className="text-[10px] font-bold text-[#0B2149] tracking-widest mb-1">WEEKS/PHASE</span>
-                            <span className="text-2xl text-[#a67c00]" style={{ fontFamily: "Georgia, serif" }}>{selectedPhaseStats.weeks}</span>
+                        <div className="flex-1 flex flex-col items-center py-4 border-r border-[#e8dcb9] z-10">
+                            <span className="text-[16px] font-bold text-[#0B2149] tracking-widest mb-1">WEEKS/PHASE</span>
+                            <span className="text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.weeks}</span>
                         </div>
-                        <div className="flex-1 flex flex-col items-center py-2 border-r border-[#e8dcb9] z-10">
-                            <span className="text-[10px] font-bold text-[#0B2149] tracking-widest mb-1">DAYS/PHASE</span>
-                            <span className="text-2xl text-[#a67c00]" style={{ fontFamily: "Georgia, serif" }}>{selectedPhaseStats.days}</span>
+                        <div className="flex-1 flex flex-col items-center py-4 border-r border-[#e8dcb9] z-10">
+                            <span className="text-[16px] font-bold text-[#0B2149] tracking-widest mb-1">DAYS/PHASE</span>
+                            <span className="text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.days}</span>
                         </div>
-                        <div className="flex-1 flex flex-col items-center py-2 z-10">
-                            <span className="text-[10px] font-bold text-[#0B2149] tracking-widest mb-1">ART.</span>
-                            <span className="text-2xl text-[#a67c00]" style={{ fontFamily: "Georgia, serif" }}>{selectedPhaseStats.artParts}</span>
+                        <div className="flex-1 flex flex-col items-center py-4 z-10">
+                            <span className="text-[16px] font-bold text-[#8b2b2b] tracking-widest mb-1">ART.</span>
+                            <span className="text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.artParts}</span>
                         </div>
                     </div>
                 </div>
@@ -357,42 +366,42 @@ const LightChartDigital = () => {
                 {/* Stats Row 2 (Icons) */}
                 <div className="px-6 mt-4">
                     <div className="bg-[#fdfbf6] border-2 border-[#d3c09b] rounded flex shadow-sm divide-x divide-[#e8dcb9]">
-                        <div className="flex-1 flex flex-col items-center justify-center py-2">
-                            <span className="text-[9px] font-bold text-[#0B2149] tracking-wider mb-1">OT BKS</span>
-                            <span className="text-[#2d5a3c] font-bold text-lg">{selectedPhaseStats.ot_bks}</span>
+                        <div className="flex-1 flex flex-col items-center justify-center py-3">
+                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">OT BKS</span>
+                            <span className="text-[#2d5a3c] font-bold text-2xl">{selectedPhaseStats.ot_bks}</span>
                         </div>
-                        <div className="flex-1 flex flex-col items-center justify-center py-2">
-                            <span className="text-[9px] font-bold text-[#0B2149] tracking-wider mb-1">NT BKS</span>
-                            <span className="text-[#0B2149] font-bold text-lg">{selectedPhaseStats.nt_bks}</span>
+                        <div className="flex-1 flex flex-col items-center justify-center py-3">
+                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">NT BKS</span>
+                            <span className="text-[#0B2149] font-bold text-2xl">{selectedPhaseStats.nt_bks}</span>
                         </div>
-                        <div className="flex-1 flex flex-col items-center justify-center py-2">
-                            <span className="text-[9px] font-bold text-[#0B2149] tracking-wider mb-1">CHAP</span>
-                            <span className="text-[#8b2b2b] font-bold text-lg">{selectedPhaseStats.chp}</span>
+                        <div className="flex-1 flex flex-col items-center justify-center py-3">
+                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">CHAP</span>
+                            <span className="text-[#0B2149] font-bold text-2xl">{selectedPhaseStats.chp}</span>
                         </div>
-                        <div className="flex-1 flex flex-col items-center justify-center py-2">
-                            <span className="text-[9px] font-bold text-[#0B2149] tracking-wider mb-1">VRS</span>
-                            <span className="text-[#2d5a3c] font-bold text-lg">{selectedPhaseStats.ver}</span>
+                        <div className="flex-1 flex flex-col items-center justify-center py-3">
+                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">VRS</span>
+                            <span className="text-[#2d5a3c] font-bold text-2xl">{selectedPhaseStats.ver}</span>
                         </div>
                         <div className="flex-[1.5] flex flex-col items-center justify-center py-3 bg-[#fdfbf6]">
-                            <i className="pi pi-book text-[#0B2149] text-xl mb-1"></i>
-                            <span className="text-[9px] font-bold text-[#0B2149] tracking-wider">ENGLISH WORDS</span>
-                            <span className="text-[#0B2149] font-bold text-lg mt-1">{selectedPhaseStats.english_words}</span>
+                            <i className="pi pi-book text-[#0B2149] text-2xl mb-1"></i>
+                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider">ENGLISH WORDS</span>
+                            <span className="text-[#0B2149] font-bold text-2xl mt-1">{selectedPhaseStats.english_words}</span>
                         </div>
                         
                         <div className="flex-[2] flex flex-col">
-                            <div className="flex-1 flex flex-col items-center justify-center border-b border-[#e8dcb9] py-1">
+                            <div className="flex-1 flex flex-col items-center justify-center border-b border-[#e8dcb9] py-2">
                                 <div className="flex items-center gap-2">
-                                    <i className="pi pi-pencil text-[#8b2b2b]"></i>
-                                    <span className="text-[9px] font-bold text-[#0B2149] tracking-wider">HEB - WORDS</span>
+                                    <i className="pi pi-pencil text-[#8b2b2b] text-[16px]"></i>
+                                    <span className="text-[14px] font-bold text-[#0B2149] tracking-wider">HEB - WORDS</span>
                                 </div>
-                                <span className="text-[#8b2b2b] font-bold text-lg leading-none mt-1">{selectedPhaseStats.hebrew_words}</span>
+                                <span className="text-[#8b2b2b] font-bold text-2xl leading-none mt-1">{selectedPhaseStats.hebrew_words}</span>
                             </div>
-                            <div className="flex-1 flex flex-col items-center justify-center py-1">
+                            <div className="flex-1 flex flex-col items-center justify-center py-2">
                                 <div className="flex items-center gap-2">
-                                    <i className="pi pi-building text-[#8b2b2b]"></i>
-                                    <span className="text-[9px] font-bold text-[#0B2149] tracking-wider">GK. WORDS</span>
+                                    <i className="pi pi-building text-[#8b2b2b] text-[16px]"></i>
+                                    <span className="text-[14px] font-bold text-[#0B2149] tracking-wider">GK. WORDS</span>
                                 </div>
-                                <span className="text-[#8b2b2b] font-bold text-lg leading-none mt-1">{selectedPhaseStats.greek_words}</span>
+                                <span className="text-[#8b2b2b] font-bold text-2xl leading-none mt-1">{selectedPhaseStats.greek_words}</span>
                             </div>
                         </div>
                     </div>

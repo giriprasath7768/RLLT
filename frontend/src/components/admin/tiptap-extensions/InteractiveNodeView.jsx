@@ -487,6 +487,33 @@ const InteractiveNodeView = ({ node, updateAttributes, getPos, selected, editor,
                             <i className="pi pi-images text-xs"></i>
                         </button>
 
+                        {/* Convert to A4 */}
+                        {(isImage || isTextBox) && (
+                            <button 
+                                className="w-8 h-8 flex items-center justify-center bg-white border rounded shadow text-indigo-600 hover:bg-indigo-50"
+                                onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    const attrs = {
+                                        position: 'absolute',
+                                        left: 0,
+                                        top: 0,
+                                        width: '100%',
+                                        height: '100%'
+                                    };
+                                    if (isTextBox) {
+                                        attrs.textConfig = {
+                                            ...textConfig,
+                                            fontSize: 28 // Enlarge text to A4 size
+                                        };
+                                    }
+                                    updateAttributes(attrs);
+                                }}
+                                title="Convert to A4 Size"
+                            >
+                                <i className="pi pi-expand text-xs font-bold"></i>
+                            </button>
+                        )}
+
                         {/* Puzzle Icon */}
                         {!isShape && (
                             <button 

@@ -225,7 +225,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                     wisdomItems.map((item, idx) => (
                         <div
                             key={item.key}
-                            className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all`}
+                            className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all mr-8`}
                             style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
                         >
                             <span style={{ color: item.color }} className="text-[12px] sm:text-[14px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>

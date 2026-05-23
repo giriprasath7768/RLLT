@@ -82,17 +82,40 @@ const GlobalPDFPageOverrides = () => (
             object-fit: contain !important;
         }
         .pdf-page-content {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
             user-select: text !important;
             cursor: text !important;
             z-index: 50 !important;
             line-height: 1 !important;
         }
         .react-pdf__Page__textContent span {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
             user-select: text !important;
         }
         .pdf-selectable-paragraph {
             display: inline;
             position: relative;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+        }
+        @media (max-width: 768px) {
+            .bookindex-reader-bg,
+            .bookindex-reader-bg *,
+            .pdf-page-content,
+            .pdf-page-content *,
+            .pdf-selectable-paragraph,
+            .pdf-selectable-paragraph * {
+                -webkit-user-select: text !important;
+                -moz-user-select: text !important;
+                -ms-user-select: text !important;
+                user-select: text !important;
+            }
         }
         .tier1-scroll::-webkit-scrollbar {
             width: 6px;
@@ -317,7 +340,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                     wisdomItems.map((item, idx) => (
                         <div
                             key={item.key}
-                            className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all`}
+                            className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all mr-8`}
                             style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
                         >
                             <span style={{ color: item.color }} className="text-[12px] sm:text-[14px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
@@ -466,17 +489,40 @@ const GlobalPDFPageOverridesSMT = () => (
             object-fit: contain !important;
         }
         .react-pdf__Page__textContent {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
             user-select: text !important;
             cursor: text !important;
             z-index: 50 !important;
             line-height: 1 !important;
         }
         .react-pdf__Page__textContent span {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
             user-select: text !important;
         }
         .pdf-selectable-paragraph {
             display: inline;
             position: relative;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+        }
+        @media (max-width: 768px) {
+            .bookindex-reader-bg,
+            .bookindex-reader-bg *,
+            .pdf-page-content,
+            .pdf-page-content *,
+            .pdf-selectable-paragraph,
+            .pdf-selectable-paragraph * {
+                -webkit-user-select: text !important;
+                -moz-user-select: text !important;
+                -ms-user-select: text !important;
+                user-select: text !important;
+            }
         }
 
         @keyframes unrollScroll {
@@ -618,6 +664,7 @@ const HighlightOverlay = ({ h }) => {
 };
 
 const PDFPageRender = React.forwardRef((props, ref) => {
+    const { isMobile = false } = props;
     const isRightPage = props.pageNumber % 2 !== 0;
 
     const rightSpineObj = { background: 'linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.2) 3%, rgba(0,0,0,0.05) 8%, rgba(0,0,0,0) 25%)' };
@@ -627,9 +674,9 @@ const PDFPageRender = React.forwardRef((props, ref) => {
     const lightingObj = { background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%)' };
 
     return (
-        <div className={`page bg-[#e5e7eb] shadow-2xl`} ref={ref} data-density="soft">
-            <div className={`page-content w-full h-full bg-[#ffffff] flex flex-col justify-center items-center relative overflow-hidden`}>
-                <div className="pdf-page-content absolute inset-0 p-[8%] pt-[10%] flex flex-col z-50 text-left" style={{ gap: `${props.width * 0.016}px` }} data-page-number={props.pageNumber}>
+        <div className={`${isMobile ? 'bg-[#e5e7eb] shadow-2xl w-full min-h-full h-auto flex flex-col relative' : 'page bg-[#e5e7eb] shadow-2xl w-full h-full'}`} ref={ref} data-density="soft">
+            <div className={`${isMobile ? 'w-full bg-[#ffffff] flex flex-col relative overflow-hidden min-h-full h-auto justify-start items-stretch' : 'page-content w-full bg-[#ffffff] flex flex-col relative overflow-hidden h-full justify-center items-center'}`}>
+                <div className={`${isMobile ? 'relative w-full h-auto' : 'absolute inset-0'} pdf-page-content p-[8%] pt-[10%] flex flex-col z-50 text-left`} style={{ gap: `${props.width * 0.016}px` }} data-page-number={props.pageNumber}>
                     {props.pageData && props.pageData.paragraphs.map((para, i) => (
                         <span key={i} className="pdf-selectable-paragraph leading-relaxed font-serif text-[#1a1a1a]" style={{ fontSize: `${Math.max(12, props.width * 0.0185)}px` }} id={`para-${props.pageNumber}-${i}`}>
                             {para}
@@ -642,15 +689,19 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                     <HighlightOverlay key={h.id} h={h} />
                 ))}
                 
-                <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />
-                <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
-                <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-30" style={isRightPage ? rightEdgeObj : leftEdgeObj} />
+                {!isMobile && <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />}
+                {!isMobile && <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />}
+                {!isMobile && <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-30" style={isRightPage ? rightEdgeObj : leftEdgeObj} />}
 
                 {/* Explicit Corner Hover Zones - reduced size to prevent blocking text selection */}
-                <div className="absolute top-0 left-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
-                <div className="absolute top-0 right-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
-                <div className="absolute bottom-0 left-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
-                <div className="absolute bottom-0 right-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
+                {!isMobile && (
+                    <>
+                        <div className="absolute top-0 left-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
+                        <div className="absolute top-0 right-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
+                        <div className="absolute bottom-0 left-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
+                        <div className="absolute bottom-0 right-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
+                    </>
+                )}
             </div>
         </div>
     );
@@ -682,6 +733,7 @@ const getBiblicalOrder = (bookName) => {
 const BookIndex = () => {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
@@ -817,46 +869,70 @@ const BookIndex = () => {
         let lastValidRange = null;
 
         const handleStopPropagation = (e) => {
+            if (window.innerWidth < 768) {
+                return;
+            }
             if (e.target.closest('.pdf-page-content')) {
                 e.stopPropagation();
             }
         };
 
         const handleTextSelectionComplete = (e) => {
-            if (e.target.closest('.ancient-scroll-bg')) return;
-            const textContentNode = e.target.closest('.pdf-page-content');
+            if (e.target && e.target.closest('.scroll-menu-modal')) return;
+
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed || selection.toString().trim().length === 0) {
+                if (e.target && e.target.closest('.scroll-menu-modal')) return;
+                setSelectionMenu(null);
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+            const commonAncestor = range.commonAncestorContainer;
+            const textContentNode = commonAncestor ? (commonAncestor.nodeType === 3 ? commonAncestor.parentElement : commonAncestor).closest('.pdf-page-content') : null;
+
             if (!textContentNode) {
                 setSelectionMenu(null);
                 return;
             }
 
-            const selection = window.getSelection();
-            if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
-                const range = selection.getRangeAt(0);
-                const rects = Array.from(range.getClientRects());
-                const pageNode = textContentNode;
+            const rects = Array.from(range.getClientRects());
+            const pageNode = textContentNode;
 
-                const pageRect = pageNode.getBoundingClientRect();
-                const pageNumberStr = pageNode.getAttribute('data-page-number');
-                const pageNumber = pageNumberStr ? parseInt(pageNumberStr) : 1;
+            const pageRect = pageNode.getBoundingClientRect();
+            const pageNumberStr = pageNode.getAttribute('data-page-number');
+            const pageNumber = pageNumberStr ? parseInt(pageNumberStr) : 1;
 
-                const mappedRects = rects.map(r => ({
-                    top: ((r.top - pageRect.top) / pageRect.height) * 100,
-                    left: ((r.left - pageRect.left) / pageRect.width) * 100,
-                    width: (r.width / pageRect.width) * 100,
-                    height: (r.height / pageRect.height) * 100,
-                }));
+            const mappedRects = rects.map(r => ({
+                top: ((r.top - pageRect.top) / pageRect.height) * 100,
+                left: ((r.left - pageRect.left) / pageRect.width) * 100,
+                width: (r.width / pageRect.width) * 100,
+                height: (r.height / pageRect.height) * 100,
+            }));
 
-                setSelectionMenu({
-                    x: e.clientX,
-                    y: e.clientY,
-                    rects: mappedRects,
-                    pageNumber: pageNumber,
-                    text: selection.toString().trim()
-                });
-            } else {
-                setSelectionMenu(null);
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if (!clientX && e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
             }
+
+            let menuX = clientX;
+            let menuY = clientY;
+
+            if (rects.length > 0) {
+                const firstRect = rects[0];
+                menuX = firstRect.left + firstRect.width / 2;
+                menuY = firstRect.top;
+            }
+
+            setSelectionMenu({
+                x: menuX || window.innerWidth / 2,
+                y: menuY || window.innerHeight / 2,
+                rects: mappedRects,
+                pageNumber: pageNumber,
+                text: selection.toString().trim()
+            });
         };
 
         const handleMouseDown = (e) => {
@@ -904,6 +980,7 @@ const BookIndex = () => {
         document.addEventListener('touchstart', handleStopPropagation, true);
         document.addEventListener('pointerdown', handleStopPropagation, true);
         document.addEventListener('mouseup', handleTextSelectionComplete);
+        document.addEventListener('touchend', handleTextSelectionComplete);
 
         document.addEventListener('mousedown', handleMouseDown);
         document.addEventListener('mousemove', handleMouseMove);
@@ -914,6 +991,7 @@ const BookIndex = () => {
             document.removeEventListener('touchstart', handleStopPropagation, true);
             document.removeEventListener('pointerdown', handleStopPropagation, true);
             document.removeEventListener('mouseup', handleTextSelectionComplete);
+            document.removeEventListener('touchend', handleTextSelectionComplete);
 
             document.removeEventListener('mousedown', handleMouseDown);
             document.removeEventListener('mousemove', handleMouseMove);
@@ -1030,8 +1108,8 @@ const BookIndex = () => {
             // Revert or show error (optimistic update optional, here we just don't add if failed)
         });
         
-        // Touch count for transformation (pencil used)
-        StudentService.updateMyTouchCounts({ transformation: 1, team_transformation: 0, klt_reading_plan: 0 })
+        // Touch count for team transformation (scroll/team transformation used)
+        StudentService.updateMyTouchCounts({ transformation: 0, team_transformation: 1, klt_reading_plan: 0 })
             .catch(err => console.log('Touch count update skipped:', err?.response?.status));
 
         // Selection menu is closed by the onClose callback of ScrollMenuPopup,
@@ -1218,6 +1296,8 @@ const BookIndex = () => {
                     width: Math.max(250, Math.floor(singlePageWidth)),
                     height: Math.max(350, Math.floor(singlePageHeight))
                 });
+
+                setIsMobile(window.innerWidth < 768);
             }
         };
 
@@ -1251,7 +1331,7 @@ const BookIndex = () => {
             {/* Static SMT-Style Top Navigation Bar */}
             <div className="w-full shrink-0 h-[68px] bg-[#0b0f19] border-b border-gray-800 flex items-center px-4 justify-between z-50 shadow-[0_15px_30px_rgba(0,0,0,0.6)] relative pointer-events-auto">
                 {/* Left Controls */}
-                <div className="flex items-center gap-4 w-1/3 justify-start">
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                     <button onClick={() => navigate(-1)} className="bg-gray-800 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all border border-gray-600 shrink-0">
                         <i className="pi pi-arrow-left text-lg"></i>
                     </button>
@@ -1261,13 +1341,15 @@ const BookIndex = () => {
                 </div>
 
                 {/* Center Flipping & Tracking Controls */}
-                <div className="flex items-center justify-center w-1/3">
+                <div className="flex-1 flex items-center justify-center min-w-0 px-2 sm:px-4">
                     {numPages && (
-                        <div className="flex justify-center items-center flex-1 w-full max-w-4xl min-w-[300px]">
-                            <button onClick={() => flipBookRef.current?.pageFlip().flipPrev()} className="bg-[#1a2234] hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-2xl border border-gray-600 transition-all shrink-0">
-                                <i className="pi pi-angle-left text-lg font-bold -ml-1"></i>
-                            </button>
-                            <div className="bg-[#1a2234] border border-gray-600 px-4 py-2 rounded-full flex items-center justify-between shadow-2xl shrink-0 flex-1 mx-2 h-10 min-w-[280px]">
+                        <div className="flex justify-center items-center w-full max-w-4xl min-w-0">
+                            {!isMobile && (
+                                <button onClick={() => flipBookRef.current?.pageFlip().flipPrev()} className="bg-[#1a2234] hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-2xl border border-gray-600 transition-all shrink-0">
+                                    <i className="pi pi-angle-left text-lg font-bold -ml-1"></i>
+                                </button>
+                            )}
+                            <div className="bg-[#1a2234] border border-gray-600 px-3 sm:px-4 py-2 rounded-full flex items-center justify-between shadow-2xl shrink-0 flex-grow-0 w-full max-w-[280px] h-10 min-w-0 mx-2">
                                 {(() => {
                                     // Local Chapter navigation logic
                                     const currentBookChapters = selectedBook ? chaptersDB.filter(c => c.book_id === selectedBook.id).sort((a, b) => a.chapter_number - b.chapter_number) : [];
@@ -1286,8 +1368,8 @@ const BookIndex = () => {
                                                 <i className="pi pi-step-backward text-[10px]"></i>
                                             </button>
 
-                                            <div className="flex-1 flex justify-between items-center mx-2 px-2 overflow-hidden">
-                                                <span className="text-white font-black tracking-[0.15em] text-[13px] uppercase text-center truncate mx-2 leading-none flex-1">
+                                            <div className="flex-1 flex justify-between items-center mx-1 sm:mx-2 px-1 sm:px-2 overflow-hidden min-w-0">
+                                                <span className="text-white font-black tracking-[0.1em] sm:tracking-[0.15em] text-[11px] sm:text-[13px] uppercase text-center truncate mx-1 sm:mx-2 leading-none flex-1">
                                                     {selectedBook ? `${selectedBook.name.toUpperCase()} ${selectedChapter?.chapter_number || ''}` : 'Select a Book'}
                                                 </span>
                                                 <span className="text-gray-400 font-bold tracking-widest text-[10px] uppercase whitespace-nowrap pb-[1px] hidden md:inline-block">{numPages} TOTAL PAGES</span>
@@ -1305,15 +1387,17 @@ const BookIndex = () => {
                                     );
                                 })()}
                             </div>
-                            <button onClick={() => flipBookRef.current?.pageFlip().flipNext()} className="bg-[#1a2234] hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-2xl border border-gray-600 transition-all shrink-0">
-                                <i className="pi pi-angle-right text-lg font-bold -mr-1"></i>
-                            </button>
+                            {!isMobile && (
+                                <button onClick={() => flipBookRef.current?.pageFlip().flipNext()} className="bg-[#1a2234] hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-2xl border border-gray-600 transition-all shrink-0">
+                                    <i className="pi pi-angle-right text-lg font-bold -mr-1"></i>
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
 
-                {/* Right Placeholder to balance flex w-1/3 */}
-                <div className="flex w-1/3 justify-end items-center relative gap-2 pr-2">
+                {/* Right Placeholder to balance flex */}
+                <div className="flex justify-end items-center relative gap-2 pr-2 shrink-0">
                     {/* The Player slides horizontally leftward out from behind the Wrench icon when it focuses! */}
                     <div className={`absolute right-12 flex items-center pr-2 gap-2 transition-all duration-300 ${showToolMenu ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
                         <button
@@ -1573,91 +1657,124 @@ const BookIndex = () => {
                         {activePdfUrl ? (
                             <div className="w-full h-full flex justify-center items-center">
                                     {numPages && aspectReady && (
-                                        <div
-                                            className="relative mx-auto flex items-center justify-center"
-                                            style={{
-                                                width: `${baseWidth * 2}px`,
-                                                height: `${baseHeight}px`,
-                                            }}
-                                        >
-                                            <div
-                                                style={{ width: `${baseWidth * 2}px`, height: `${baseHeight}px` }}
-                                                className="shadow-[0_45px_100px_rgba(0,0,0,0.8)] ring-1 ring-[#5c3a21]/50 flex flex-col justify-center items-center bg-[#ffffff] mt-0"
-                                            >
-                                                <HTMLFlipBook
-                                                    width={1000}
-                                                    height={Math.floor(1000 * aspectRatio)}
-                                                    size="stretch"
-                                                    minWidth={100}
-                                                    maxWidth={9000}
-                                                    minHeight={100}
-                                                    maxHeight={9000}
-                                                    drawShadow={true}
-                                                    maxShadowOpacity={0.8}
-                                                    showCover={false}
-                                                    mobileScrollSupport={true}
-                                                    disableFlipByClick={true}
-                                                    showPageCorners={false}
-                                                    className="mx-auto"
-                                                    flippingTime={900}
-                                                    usePortrait={false}
-                                                    onFlip={onPageFlip}
-                                                    ref={flipBookRef}
-                                                >
-                                                    {Array.from(new Array(totalPagesToRender), (_, index) => {
-                                                        const isRightPage = index % 2 !== 0;
-
-                                                        let pageToRender = null;
-                                                        let isBlank = false;
-
-                                                        if (numPages % 2 !== 0) {
-                                                            if (index < numPages - 1) {
-                                                                pageToRender = index + 1;
-                                                            } else if (index === numPages - 1) {
-                                                                isBlank = true;
-                                                            } else if (index === numPages) {
-                                                                pageToRender = numPages;
-                                                            } else {
-                                                                isBlank = true;
-                                                            }
-                                                        } else {
-                                                            if (index < numPages) {
-                                                                pageToRender = index + 1;
-                                                            } else {
-                                                                isBlank = true;
-                                                            }
-                                                        }
-
-                                                        if (!isBlank && pageToRender !== null) {
-                                                            return (
-                                                                <PDFPageRender
-                                                                    key={index}
-                                                                    pageNumber={pageToRender}
-                                                                    width={baseWidth}
-                                                                    pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
-                                                                    pageData={bookData ? bookData.pages[pageToRender - 1] : null}
-                                                                    onDeleteHighlight={deleteHighlight}
-                                                                />
-                                                            );
-                                                        } else {
-                                                            const rightSpineObj = { background: 'linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.4) 3%, rgba(0,0,0,0.1) 8%, rgba(0,0,0,0) 25%)' };
-                                                            const leftSpineObj = { background: 'linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.4) 3%, rgba(0,0,0,0.1) 8%, rgba(0,0,0,0) 25%)' };
-                                                            const lightingObj = { background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%)' };
-
-                                                            return (
-                                                                <div key={index} className={`page bg-[#ffffff] shadow-2xl`} data-density="soft">
-                                                                    <div className={`page-content w-full h-full bg-[#e5e7eb] flex flex-col justify-center items-center relative`}>
-                                                                        <i className="pi pi-book text-8xl text-gray-400 opacity-20"></i>
-                                                                        <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />
-                                                                        <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        }
-                                                    })}
-                                                </HTMLFlipBook>
+                                        isMobile ? (
+                                            /* Mobile Single-Page Scrollable View */
+                                            <div className="w-full flex flex-col items-center gap-6 py-4 px-2 select-text">
+                                                {Array.from(new Array(numPages), (_, index) => {
+                                                    const pageToRender = index + 1;
+                                                    const containerWidth = bookContainerRef.current ? bookContainerRef.current.offsetWidth : window.innerWidth;
+                                                    const mWidth = Math.min(600, containerWidth * 0.92);
+                                                    const mHeight = mWidth * aspectRatio;
+                                                    return (
+                                                        <div
+                                                            key={index}
+                                                            style={{
+                                                                width: `${mWidth}px`,
+                                                                minHeight: `${mHeight}px`,
+                                                            }}
+                                                            className="shadow-[0_15px_40px_rgba(0,0,0,0.5)] ring-1 ring-[#5c3a21]/30 bg-[#ffffff] rounded-md overflow-hidden relative flex flex-col h-auto"
+                                                        >
+                                                            <PDFPageRender
+                                                                pageNumber={pageToRender}
+                                                                width={mWidth}
+                                                                pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
+                                                                pageData={bookData ? bookData.pages[pageToRender - 1] : null}
+                                                                onDeleteHighlight={deleteHighlight}
+                                                                isMobile={true}
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
-                                        </div>
+                                        ) : (
+                                            /* Desktop FlipBook View */
+                                            <div
+                                                className="relative mx-auto flex items-center justify-center"
+                                                style={{
+                                                    width: `${baseWidth * 2}px`,
+                                                    height: `${baseHeight}px`,
+                                                }}
+                                            >
+                                                <div
+                                                    style={{ width: `${baseWidth * 2}px`, height: `${baseHeight}px` }}
+                                                    className="shadow-[0_45px_100px_rgba(0,0,0,0.8)] ring-1 ring-[#5c3a21]/50 flex flex-col justify-center items-center bg-[#ffffff] mt-0"
+                                                >
+                                                    <HTMLFlipBook
+                                                        width={1000}
+                                                        height={Math.floor(1000 * aspectRatio)}
+                                                        size="stretch"
+                                                        minWidth={100}
+                                                        maxWidth={9000}
+                                                        minHeight={100}
+                                                        maxHeight={9000}
+                                                        drawShadow={true}
+                                                        maxShadowOpacity={0.8}
+                                                        showCover={false}
+                                                        mobileScrollSupport={true}
+                                                        disableFlipByClick={true}
+                                                        showPageCorners={false}
+                                                        className="mx-auto"
+                                                        flippingTime={900}
+                                                        usePortrait={false}
+                                                        onFlip={onPageFlip}
+                                                        ref={flipBookRef}
+                                                    >
+                                                        {Array.from(new Array(totalPagesToRender), (_, index) => {
+                                                            const isRightPage = index % 2 !== 0;
+
+                                                            let pageToRender = null;
+                                                            let isBlank = false;
+
+                                                            if (numPages % 2 !== 0) {
+                                                                if (index < numPages - 1) {
+                                                                    pageToRender = index + 1;
+                                                                } else if (index === numPages - 1) {
+                                                                    isBlank = true;
+                                                                } else if (index === numPages) {
+                                                                    pageToRender = numPages;
+                                                                } else {
+                                                                    isBlank = true;
+                                                                }
+                                                            } else {
+                                                                if (index < numPages) {
+                                                                    pageToRender = index + 1;
+                                                                } else {
+                                                                    isBlank = true;
+                                                                }
+                                                            }
+
+                                                            if (!isBlank && pageToRender !== null) {
+                                                                return (
+                                                                    <PDFPageRender
+                                                                        key={index}
+                                                                        pageNumber={pageToRender}
+                                                                        width={baseWidth}
+                                                                        pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
+                                                                        pageData={bookData ? bookData.pages[pageToRender - 1] : null}
+                                                                        onDeleteHighlight={deleteHighlight}
+                                                                        isMobile={false}
+                                                                    />
+                                                                );
+                                                            } else {
+                                                                const rightSpineObj = { background: 'linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.4) 3%, rgba(0,0,0,0.1) 8%, rgba(0,0,0,0) 25%)' };
+                                                                const leftSpineObj = { background: 'linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.4) 3%, rgba(0,0,0,0.1) 8%, rgba(0,0,0,0) 25%)' };
+                                                                const lightingObj = { background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%)' };
+
+                                                                return (
+                                                                    <div key={index} className={`page bg-[#ffffff] shadow-2xl`} data-density="soft">
+                                                                        <div className={`page-content w-full h-full bg-[#e5e7eb] flex flex-col justify-center items-center relative`}>
+                                                                            <i className="pi pi-book text-8xl text-gray-400 opacity-20"></i>
+                                                                            <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />
+                                                                            <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        })}
+                                                    </HTMLFlipBook>
+                                                </div>
+                                            </div>
+                                        )
                                     )}
                                         </div>
                         ) : (

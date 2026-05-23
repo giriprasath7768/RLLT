@@ -544,9 +544,10 @@ const VCardChart = () => {
 
                 {/* Bordered Box covering everything per user instruction */}
                 <div id="printable-vcard" className="w-full bg-white p-6 border-4 border-black relative" style={{ minHeight: '800px', pageBreakInside: 'avoid' }}>
-
-                    {/* Header Part Same as Main Chart */}
-                    {renderMainHeaderBlock()}
+                    <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                        <div className="min-w-[1024px] flex flex-col w-full" style={{ minWidth: '1024px' }}>
+                            {/* Header Part Same as Main Chart */}
+                            {renderMainHeaderBlock()}
 
                     {/* V-Cards Grid */}
                     {vCards.length > 0 ? (
@@ -568,6 +569,8 @@ const VCardChart = () => {
                             Please select a chart or add a new card to begin designing V-Cards.
                         </div>
                     )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

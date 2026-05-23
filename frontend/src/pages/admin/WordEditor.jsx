@@ -28,6 +28,29 @@ const PAGE_SIZES = {
     'Legal': { name: 'Legal', width: '8.5in', height: '14in', padding: '1in', linePx: 1344 }
 };
 
+const BIBLICAL_ORDER = {
+    "GENESIS": 1, "EXODUS": 2, "LEVITICUS": 3, "NUMBERS": 4, "DEUTERONOMY": 5,
+    "JOSHUA": 6, "JUDGES": 7, "RUTH": 8, "1SAMUEL": 9, "2SAMUEL": 10,
+    "1KINGS": 11, "2KINGS": 12, "1CHRONICLES": 13, "2CHRONICLES": 14, "EZRA": 15,
+    "NEHEMIAH": 16, "ESTHER": 17, "JOB": 18, "PSALMS": 19, "PSALM": 19, "PROVERBS": 20, "PROVERB": 20,
+    "ECCLESIASTES": 21, "SONGOFSOLOMON": 22, "SONGOFSONGS": 22, "SONG": 22, "ISAIAH": 23, "JEREMIAH": 24, "LAMENTATIONS": 25,
+    "EZEKIEL": 26, "DANIEL": 27, "HOSEA": 28, "JOEL": 29, "AMOS": 30,
+    "OBADIAH": 31, "JONAH": 32, "MICAH": 33, "NAHUM": 34, "HABAKKUK": 35,
+    "ZEPHANIAH": 36, "HAGGAI": 37, "ZECHARIAH": 38, "MALACHI": 39,
+    "MATTHEW": 40, "MARK": 41, "LUKE": 42, "JOHN": 43, "ACTS": 44,
+    "ROMANS": 45, "1CORINTHIANS": 46, "2CORINTHIANS": 47, "GALATIANS": 48, "EPHESIANS": 49,
+    "PHILIPPIANS": 50, "COLOSSIANS": 51, "1THESSALONIANS": 52, "2THESSALONIANS": 53, "1TIMOTHY": 54,
+    "2TIMOTHY": 55, "TITUS": 56, "PHILEMON": 57, "HEBREWS": 58, "JAMES": 59,
+    "1PETER": 60, "2PETER": 61, "1JOHN": 62, "2JOHN": 63, "3JOHN": 64,
+    "JUDE": 65, "REVELATION": 66
+};
+
+const getBiblicalOrder = (bookName) => {
+    if (!bookName) return 999;
+    const clean = bookName.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return BIBLICAL_ORDER[clean] || 999;
+};
+
 const WordEditor = () => {
     const quillRef = useRef(null);
     const [title, setTitle] = useState('Untitled Document');
@@ -54,7 +77,12 @@ const WordEditor = () => {
         // Throttle to max 1 touch every 2 seconds while typing
         if (now - lastTouchRef.current < 2000) return;
         lastTouchRef.current = now;
-        StudentService.updateMyTouchCounts({ transformation: 1, team_transformation: 0, klt_reading_plan: 0 })
+        StudentService.updateMyTouchCounts({ transformation: 0, word_editor: 1, team_transformation: 0, klt_reading_plan: 0 })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+    };
+
+    const incrementKltTouch = () => {
+        StudentService.updateMyTouchCounts({ transformation: 0, word_editor: 0, team_transformation: 0, klt_reading_plan: 1 })
             .catch(err => console.log('Touch count update skipped:', err?.response?.status));
     };
 
@@ -67,11 +95,17 @@ const WordEditor = () => {
     const [chaptersDB, setChaptersDB] = useState([]);
     const [expandedBookId, setExpandedBookId] = useState(null);
     const [expandedChapterId, setExpandedChapterId] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         axios.get('http://' + window.location.hostname + ':8000/api/books', { withCredentials: true })
             .then(res => {
-                const sorted = res.data.sort((a, b) => a.name.localeCompare(b.name));
+                const sorted = res.data.sort((a, b) => {
+                    const orderA = getBiblicalOrder(a.name);
+                    const orderB = getBiblicalOrder(b.name);
+                    if (orderA !== orderB) return orderA - orderB;
+                    return a.name.localeCompare(b.name);
+                });
                 setBooksDB(sorted);
             })
             .catch(console.error);
@@ -171,13 +205,15 @@ const WordEditor = () => {
 
     const groupedBooks = React.useMemo(() => {
         const groups = {};
+        const query = searchQuery.toLowerCase().trim();
         booksDB.forEach(book => {
+            if (query && !book.name.toLowerCase().includes(query)) return;
             const type = book.book_type || 'Uncategorized';
             if (!groups[type]) groups[type] = [];
             groups[type].push(book);
         });
         return groups;
-    }, [booksDB]);
+    }, [booksDB, searchQuery]);
 
     const expandedBookChapters = React.useMemo(() => {
         if (!expandedBookId) return [];
@@ -492,9 +528,13 @@ const WordEditor = () => {
                 <DailyISIModal
                     isOpen={dailyISIOpen}
                     onClose={() => setDailyISIOpen(false)}
-                    onInsertImage={(dataUrl) => {
+                    onInsert={(data, isText) => {
                         if (editor) {
-                            editor.chain().focus().setImage({ src: dataUrl }).run();
+                            if (isText) {
+                                editor.chain().focus().insertContent(data).run();
+                            } else {
+                                editor.chain().focus().setImage({ src: data }).run();
+                            }
                         }
                     }}
                 />
@@ -673,17 +713,29 @@ const WordEditor = () => {
 
             {/* TIER 1: Book List (Sidebar) Drawer */}
             <div className={`fixed top-0 left-0 h-full w-64 sm:w-72 md:w-80 bg-[#1e2433] text-gray-300 shadow-2xl z-[360] flex flex-col overflow-hidden transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="px-6 py-5 border-b border-[#2a3045] bg-[#151a26] flex justify-between items-start">
-                    <div>
-                        <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
-                            <i className="pi pi-book text-[#c8a165]"></i>
-                            Book Index
-                        </h2>
-                        <p className="text-xs text-gray-400 mt-2 tracking-wider">Navigate & Insert Scriptures</p>
+                <div className="px-6 py-5 border-b border-[#2a3045] bg-[#151a26] flex flex-col justify-start">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
+                                <i className="pi pi-book text-[#c8a165]"></i>
+                                Book Index
+                            </h2>
+                            <p className="text-xs text-gray-400 mt-2 tracking-wider">Navigate & Insert Scriptures</p>
+                        </div>
+                        <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-white p-1">
+                            <i className="pi pi-times text-xl"></i>
+                        </button>
                     </div>
-                    <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-white p-1">
-                        <i className="pi pi-times text-xl"></i>
-                    </button>
+                    <div className="relative">
+                        <i className="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input
+                            type="text"
+                            placeholder="Search books..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-[#1e2433] text-white text-sm rounded-md py-2 pl-9 pr-3 border border-gray-600 focus:outline-none focus:border-[#3b82f6] transition-colors placeholder-gray-500"
+                        />
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-3 py-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4b5563 #1f2937' }}>
@@ -697,6 +749,7 @@ const WordEditor = () => {
                                             onClick={() => {
                                                 setExpandedBookId(prev => prev === book.id ? null : book.id);
                                                 setExpandedChapterId(null);
+                                                incrementKltTouch();
                                             }}
                                             className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-semibold tracking-wide flex justify-between items-center ${expandedBookId === book.id
                                                 ? 'bg-[#547395] text-white shadow-md border-l-4 border-[#c8a165]'
@@ -721,6 +774,7 @@ const WordEditor = () => {
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             setExpandedChapterId(chapter.id);
+                                                                            incrementKltTouch();
                                                                         }}
                                                                         className={`flex items-center justify-center w-full aspect-square rounded font-bold text-sm transition-all duration-200 bg-[#1e2433] text-gray-400 hover:bg-[#2d3748] hover:text-white`}
                                                                         title={`Chapter ${chapter.chapter_number} (${chapter.verse_count || 0} Verses)`}

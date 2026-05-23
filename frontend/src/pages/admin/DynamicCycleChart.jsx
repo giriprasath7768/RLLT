@@ -862,7 +862,9 @@ const DynamicCycleChart = () => {
                         }
                     `}</style>
                     {/* NEW OUTER BORDER WRAPPER */}
-                    <div id="printable-chart-area" className="w-full border-[3px] border-black p-3 flex flex-col bg-white overflow-hidden relative">
+                    <div id="printable-chart-area" className="w-full bg-white pb-6 rounded-b-2xl pt-6 px-6 relative overflow-hidden">
+                        <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                            <div className="min-w-[1024px] border-[3px] border-black p-3 flex flex-col bg-white overflow-hidden" style={{ minWidth: '1024px' }}>
                         {/* TOP HEADER BLOCK - MATCHING SCREENSHOT EXACTLY */}
                         <div className="flex flex-col w-full mb-2">
                             {/* ROW 1: T | REAL LIFE... | PH */}
@@ -1231,6 +1233,8 @@ const DynamicCycleChart = () => {
                                         MODULE {mdl} - FACET {fct}/{maxFacets}: PHASE - {phs}/{maxPhases}
                                     </span>
                                 </div>
+                            </div>
+                            </div>
                             </div>
                         </div>
                     </div> {/* END OF OUTER BORDER WRAPPER */}

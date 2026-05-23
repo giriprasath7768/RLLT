@@ -914,6 +914,10 @@ const SMTPlayer = () => {
             styleOption: styleOption
         }]);
 
+        // Touch count for team transformation (scroll/team transformation used)
+        StudentService.updateMyTouchCounts({ transformation: 0, team_transformation: 1, klt_reading_plan: 0 })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+
         setSelectionMenu(null);
         setTimeout(() => window.getSelection().removeAllRanges(), 0);
     };

@@ -472,7 +472,8 @@ const OilChart = () => {
 
                     {/* Printable Chart Area Wrapper */}
                     <div className="p-4 pb-4 pt-6">
-                        <div id="printable-oilchart" className="chart-print-container border-[3px] border-black p-3 flex flex-col transition-all duration-300 mx-auto bg-white overflow-hidden w-full">
+                        <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                            <div id="printable-oilchart" className="min-w-[1024px] chart-print-container border-[3px] border-black p-3 flex flex-col transition-all duration-300 mx-auto bg-white overflow-hidden w-full" style={{ minWidth: '1024px' }}>
 
                             {/* NEW HEADER LAYOUT */}
                             <div className="flex flex-col w-full bg-white border-[3px] border-black">
@@ -672,6 +673,7 @@ const OilChart = () => {
                                 </div>
                             </div>
 
+                            </div>
                         </div>
                         {/* End of Printable Chart Area Wrapper */}
                     </div>

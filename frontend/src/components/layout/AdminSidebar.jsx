@@ -308,11 +308,17 @@ const AdminSidebar = ({ visible, onHide }) => {
 
     return (
         <>
+            <style>{`
+                .scrollbar-hide::-webkit-scrollbar,
+                .p-sidebar-content::-webkit-scrollbar { display: none; }
+                .scrollbar-hide,
+                .p-sidebar-content { -ms-overflow-style: none; scrollbar-width: none; }
+            `}</style>
             {/* Desktop Sidebar Wrapper */}
             <div className="hidden lg:block w-72 flex-grow border-r transition-colors duration-300"
                  style={{ backgroundColor: themeConfig?.sidebarBg || '#1F2937', borderColor: themeConfig?.sidebarBg || '#1F2937' }}>
                 {/* Sticky Content inside wrapper */}
-                <aside className="w-full sticky top-20 h-[calc(100vh-80px)] overflow-y-auto">
+                <aside className="w-full sticky top-20 h-[calc(100vh-80px)] overflow-y-auto scrollbar-hide">
                     {renderSidebarContent()}
                 </aside>
             </div>

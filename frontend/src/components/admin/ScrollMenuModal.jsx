@@ -20,6 +20,10 @@ const SEVEN_MOUNTAIN_SPHERES = [
 
 const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
     const [selectedCategory, setSelectedCategory] = useState(null);
+    
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 600;
+    const scale = screenWidth < 550 ? (screenWidth * 0.94) / 550 : 1;
+
     const handleCategoryClick = (e, cat) => {
         if (e) {
             e.preventDefault();
@@ -47,13 +51,17 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
         <>
             {/* Modal Overlay */}
             <div
-                className={`fixed inset-0 bg-black/60 z-[400] transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`scroll-menu-modal fixed inset-0 bg-black/60 z-[400] transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={onClose}
             ></div>
 
             {/* Modal Content */}
             <div
-                className={`fixed top-[55%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[410] transition-all duration-300 ease-in-out shrink-0 overflow-visible flex flex-col print:hidden bg-transparent ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`scroll-menu-modal fixed top-[55%] left-1/2 z-[410] transition-all duration-300 ease-in-out shrink-0 overflow-visible flex flex-col print:hidden bg-transparent ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                style={{
+                    transform: `translate(-50%, -50%) scale(${scale})`,
+                    transformOrigin: 'center center'
+                }}
             >
                 <style>{`
                     .scroll-container {
@@ -117,7 +125,11 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                     <div className="font-cinzel font-black text-[18px] leading-tight w-full text-center drop-shadow-sm tracking-wide text-stroke-1">
                                         THE POWER OF GOD AND THE-
                                     </div>
-                                    <button onMouseDown={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#8A2BE2" })} className="font-cinzel font-black leading-tight hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full text-center drop-shadow-sm flex justify-center items-baseline tracking-wide text-stroke-1">
+                                    <button 
+                                        onMouseDown={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#8A2BE2" })} 
+                                        onTouchStart={(e) => handleCategoryClick(e, { label: "The Wisdom of God", color: "#8A2BE2" })}
+                                        className="font-cinzel font-black leading-tight hover:text-[#8b5a2b] hover:scale-105 transition-all transform cursor-pointer w-full text-center drop-shadow-sm flex justify-center items-baseline tracking-wide text-stroke-1"
+                                    >
                                         <span className="text-[26px]">W</span>
                                         <span className="text-[18px] ml-[2px]">ISDOM OF GOD</span>
                                     </button>
@@ -128,6 +140,7 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                         <button
                                             key={cat.label}
                                             onMouseDown={(e) => handleCategoryClick(e, cat)}
+                                            onTouchStart={(e) => handleCategoryClick(e, cat)}
                                             className="w-full text-center transform transition-all hover:text-[#8b5a2b] hover:scale-105 cursor-pointer leading-none flex justify-center items-baseline drop-shadow-sm font-bold"
                                         >
                                             <span className="font-cinzel font-black text-[26px] text-stroke-1">{cat.label.charAt(0)}</span>
@@ -144,7 +157,12 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
 
                                 <div className="w-[90%] flex flex-wrap justify-center gap-x-3 gap-y-3 mb-3 leading-none drop-shadow-sm">
                                     {SEVEN_MOUNTAIN_SPHERES.slice(0, 4).map(cat => (
-                                        <button key={cat.label} onMouseDown={(e) => handleCategoryClick(e, cat)} className="hover:text-[#8b5a2b] transition-colors hover:scale-110 transform flex items-baseline font-bold">
+                                        <button 
+                                            key={cat.label} 
+                                            onMouseDown={(e) => handleCategoryClick(e, cat)} 
+                                            onTouchStart={(e) => handleCategoryClick(e, cat)}
+                                            className="hover:text-[#8b5a2b] transition-colors hover:scale-110 transform flex items-baseline font-bold"
+                                        >
                                             <span className="font-cinzel font-black text-[20px] text-stroke-1">{cat.label.charAt(0)}</span>
                                             <span className="font-times font-black text-[16px] tracking-wide ml-[1px] text-stroke-sm">{cat.label.slice(1)}</span>
                                         </button>
@@ -152,7 +170,12 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                 </div>
                                 <div className="w-[90%] flex flex-wrap justify-center gap-x-3 gap-y-3 mb-3 leading-none drop-shadow-sm">
                                     {SEVEN_MOUNTAIN_SPHERES.slice(4).map(cat => (
-                                        <button key={cat.label} onMouseDown={(e) => handleCategoryClick(e, cat)} className="hover:text-[#8b5a2b] transition-colors hover:scale-110 transform flex items-baseline font-bold">
+                                        <button 
+                                            key={cat.label} 
+                                            onMouseDown={(e) => handleCategoryClick(e, cat)} 
+                                            onTouchStart={(e) => handleCategoryClick(e, cat)}
+                                            className="hover:text-[#8b5a2b] transition-colors hover:scale-110 transform flex items-baseline font-bold"
+                                        >
                                             <span className="font-cinzel font-black text-[20px] text-stroke-1">{cat.label.charAt(0)}</span>
                                             <span className="font-times font-black text-[16px] tracking-wide ml-[1px] text-stroke-sm">{cat.label.slice(1)}</span>
                                         </button>
@@ -171,6 +194,11 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                             if (onSelect) onSelect({ label: 'Remove', color: 'transparent' }, 'remove', null);
                                             if (onClose) onClose();
                                         }}
+                                        onTouchStart={(e) => {
+                                            if (e) { e.preventDefault(); e.stopPropagation(); }
+                                            if (onSelect) onSelect({ label: 'Remove', color: 'transparent' }, 'remove', null);
+                                            if (onClose) onClose();
+                                        }}
                                         className="text-black hover:text-red-600 font-bold transition-all hover:scale-110 flex flex-col items-center gap-1 drop-shadow-md cursor-pointer"
                                     >
                                         <i className="pi pi-eraser text-xl"></i>
@@ -183,6 +211,11 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                             if (onSelect) onSelect({ label: 'Underline', color: '#8b5a2b' }, 'underline', 'solid-2px');
                                             if (onClose) onClose();
                                         }}
+                                        onTouchStart={(e) => {
+                                            if (e) { e.preventDefault(); e.stopPropagation(); }
+                                            if (onSelect) onSelect({ label: 'Underline', color: '#8b5a2b' }, 'underline', 'solid-2px');
+                                            if (onClose) onClose();
+                                        }}
                                         className="text-black hover:text-blue-600 font-bold transition-all hover:scale-110 flex flex-col items-center gap-1 drop-shadow-md cursor-pointer"
                                     >
                                         <i className="pi pi-minus text-xl"></i>
@@ -191,6 +224,11 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                     
                                     <button 
                                         onMouseDown={(e) => {
+                                            if (e) { e.preventDefault(); e.stopPropagation(); }
+                                            if (onSelect) onSelect({ label: 'Copy', color: 'transparent' }, 'copy', null);
+                                            if (onClose) onClose();
+                                        }}
+                                        onTouchStart={(e) => {
                                             if (e) { e.preventDefault(); e.stopPropagation(); }
                                             if (onSelect) onSelect({ label: 'Copy', color: 'transparent' }, 'copy', null);
                                             if (onClose) onClose();

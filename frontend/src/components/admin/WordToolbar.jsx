@@ -1373,6 +1373,20 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                             className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600"
                             title="Lowercase"
                         ><span className="font-bold text-sm leading-none pt-0.5">aa</span></button>
+
+                        <button 
+                            onClick={() => {
+                                if (!tiptapEditor) return;
+                                const { empty } = tiptapEditor.state.selection;
+                                if (!empty) {
+                                    tiptapEditor.chain().focus().setFontSize(28).run();
+                                }
+                            }}
+                            className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-indigo-600 hover:text-indigo-700 transition-colors"
+                            title="Convert Selected Text to A4 Size (Enlarge)"
+                        >
+                            <i className="pi pi-expand text-xs font-bold"></i>
+                        </button>
                     </span>
                 </div>
 
@@ -1981,7 +1995,12 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                 isOpen={!!viewerScript}
                 onClose={() => setViewerScript(null)}
                 scriptData={viewerScript}
-                onInsert={(glyph) => { insertCountry(glyph); setViewerScript(null); }}
+                onInsert={(glyph) => { 
+                    safeInsert(() => {
+                        tiptapEditor.chain().focus().insertContent({ type: 'textbox', attrs: { text: glyph } }).run();
+                        setViewerScript(null);
+                    });
+                }}
             />
 
             <DocumentNotesModal

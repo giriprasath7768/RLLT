@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toPng } from 'html-to-image';
 
-const DailyISIModal = ({ isOpen, onClose, onInsertImage }) => {
+const DailyISIModal = ({ isOpen, onClose, onInsert }) => {
     const [ableCounter, setAbleCounter] = useState(0);
     const [mdl, setMdl] = useState(1);
     const [fct, setFct] = useState(1);
@@ -18,6 +18,7 @@ const DailyISIModal = ({ isOpen, onClose, onInsertImage }) => {
     
     const stickerRef = useRef(null);
     const [isCapturing, setIsCapturing] = useState(false);
+    const [insertTextOnly, setInsertTextOnly] = useState(false);
 
     const savedSelection = useRef(null);
 
@@ -133,12 +134,21 @@ const DailyISIModal = ({ isOpen, onClose, onInsertImage }) => {
     const handleSubmit = async () => {
         if (!stickerRef.current) return;
         try {
+            if (insertTextOnly) {
+                const text = bannerRef.current ? bannerRef.current.innerText : '';
+                if (onInsert) {
+                    onInsert(text, true);
+                }
+                onClose();
+                return;
+            }
+
             setIsCapturing(true);
             // wait a tick for state update
             await new Promise(r => setTimeout(r, 50)); 
             const dataUrl = await toPng(stickerRef.current, { cacheBust: true, quality: 0.95 });
-            if (onInsertImage) {
-                onInsertImage(dataUrl);
+            if (onInsert) {
+                onInsert(dataUrl, false);
             }
             setIsCapturing(false);
             onClose();
@@ -232,7 +242,18 @@ const DailyISIModal = ({ isOpen, onClose, onInsertImage }) => {
                         </div>
                     </div>
 
-
+                    <div className="w-full flex justify-end mb-2 pr-2">
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="checkbox" 
+                                id="textOnly" 
+                                checked={insertTextOnly} 
+                                onChange={(e) => setInsertTextOnly(e.target.checked)} 
+                                className="cursor-pointer w-4 h-4 text-[#10b981] rounded border-gray-300 focus:ring-[#10b981]" 
+                            />
+                            <label htmlFor="textOnly" className="text-xs text-gray-600 font-bold uppercase cursor-pointer">Text Only</label>
+                        </div>
+                    </div>
 
                     {/* Grid Controls */}
                     <div className="w-full border border-gray-200 rounded-2xl p-3 mb-4">
@@ -266,7 +287,7 @@ const DailyISIModal = ({ isOpen, onClose, onInsertImage }) => {
                             </div>
                             {!isCapturing && (
                                 <button onClick={handleSubmit} className="bg-[#10b981] text-white font-bold text-[10px] px-3 py-2 rounded-lg w-20 hover:bg-[#059669]">
-                                    SUBMITTED
+                                    APPLY
                                 </button>
                             )}
                         </div>

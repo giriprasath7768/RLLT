@@ -609,8 +609,9 @@ const MainChartView = () => {
 
                 {/* PDF CAPTURE TARGET */}
                 <div id="printable-chart-area" className="w-full bg-white pb-6 rounded-b-2xl pt-6 px-6">
-                    {/* NEW OUTER BORDER WRAPPER */}
-                    <div className="w-full border-[3px] border-black p-3 flex flex-col bg-white">
+                    <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                        {/* NEW OUTER BORDER WRAPPER */}
+                        <div className="min-w-[1024px] border-[3px] border-black p-3 flex flex-col bg-white" style={{ minWidth: '1024px' }}>
                         {/* TOP HEADER BLOCK - MATCHING SCREENSHOT EXACTLY */}
                         <div className="flex flex-col w-full mb-2">
                             {/* ROW 1: T | REAL LIFE... | PH */}
@@ -872,6 +873,7 @@ const MainChartView = () => {
                             </div>
                         </div> {/* END OF DATA TABLE WRAPPER */}
                     </div> {/* END OF OUTER BORDER WRAPPER */}
+                    </div> {/* END OF SCROLL WRAPPER */}
                 </div> {/* END OF PRINTABLE CHART AREA */}
             </div>
         </div>

@@ -71,6 +71,7 @@ class StudentTouchCount(Base):
     transformation_touches = Column(Integer, default=0)
     team_transformation_touches = Column(Integer, default=0)
     klt_reading_plan_touches = Column(Integer, default=0)
+    word_editor_touches = Column(Integer, default=0)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user = relationship("User", backref="touch_counts")

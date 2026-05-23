@@ -278,11 +278,66 @@ const EvaluateAssignments = () => {
                 </DataTable>
             </div>
 
-            {/* Mobile friendly view could be added here if necessary */}
-            <div className="block md:hidden">
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center text-gray-500">
-                    Table view is optimized for desktop. Please use a larger screen to grade assignments.
-                </div>
+            {/* Mobile View */}
+            <div className="block md:hidden mt-4 space-y-4">
+                {!selectedLocation ? (
+                    <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        Please select a location first.
+                    </div>
+                ) : submissions.length > 0 ? (
+                    submissions
+                        .filter(item => {
+                            if (!globalFilter) return true;
+                            const query = globalFilter.toLowerCase();
+                            return (
+                                item.student_name?.toLowerCase().includes(query) ||
+                                item.assignment_title?.toLowerCase().includes(query) ||
+                                item.status?.toLowerCase().includes(query)
+                            );
+                        })
+                        .map((item, index) => (
+                            <div key={item.id || index} className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h4 className="font-bold text-base text-gray-800 m-0">{item.student_name}</h4>
+                                        <div className="text-xs text-gray-500 font-medium mt-0.5">{item.assignment_title}</div>
+                                    </div>
+                                    <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">#{index + 1}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-xs border-t border-gray-50 pt-3">
+                                    <div>
+                                        <div className="text-gray-400 font-medium mb-0.5">Submitted On</div>
+                                        <div className="text-gray-700 font-bold">{dateTemplate(item)}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-gray-400 font-medium mb-0.5">Status</div>
+                                        <div>{statusTemplate(item)}</div>
+                                    </div>
+                                    <div className="col-span-2 flex items-center justify-between bg-gray-50 p-2.5 rounded-lg border border-gray-100 gap-2">
+                                        <span className="text-xs font-bold text-gray-600">Grade:</span>
+                                        <InputText 
+                                            type="number" 
+                                            placeholder="Grade" 
+                                            defaultValue={item.grade || ''} 
+                                            onBlur={(e) => {
+                                                if (e.target.value !== '' && e.target.value !== String(item.grade)) {
+                                                    gradeSubmission(item, e.target.value);
+                                                }
+                                            }}
+                                            className="w-24 bg-white text-black border-gray-300 text-right focus:border-blue-500 shadow-sm rounded-md px-2 py-1"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="border-t border-gray-50 pt-3 mt-1 flex flex-col gap-2">
+                                    {actionTemplate(item)}
+                                </div>
+                            </div>
+                        ))
+                ) : (
+                    <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        No submissions found for this location.
+                    </div>
+                )}
             </div>
 
             <Dialog visible={answersDialogVisible} modal className="p-fluid max-w-2xl w-full" onHide={() => setAnswersDialogVisible(false)} header={`Student Answers: ${selectedAssignmentTitle}`}>

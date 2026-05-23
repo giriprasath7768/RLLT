@@ -173,12 +173,57 @@ const AssessmentSummary = () => {
                     <Button label="Add Summary Settings" icon="pi pi-plus" className="bg-blue-600 text-white font-bold border-none" onClick={openNew} />
                 </div>
 
-                <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden w-full p-4">
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden w-full p-4 hidden md:block">
                     <DataTable value={summaries} loading={loading} emptyMessage="No summary settings found." className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines>
                         <Column field="location_name" header="Location" sortable headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
                         <Column field="created_at" header="Last Updated" sortable body={(rowData) => formatDate(rowData.created_at)} headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
                         <Column body={actionBodyTemplate} exportable={false} style={{ width: '8rem' }} headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
                     </DataTable>
+                </div>
+
+                {/* Mobile View */}
+                <div className="block md:hidden mt-4 space-y-4">
+                    {loading ? (
+                        <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
+                            Loading summaries...
+                        </div>
+                    ) : summaries.length > 0 ? (
+                        summaries.map((item, index) => (
+                            <div key={item.id || index} className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="font-bold text-base text-gray-800 m-0">{item.location_name}</h4>
+                                    <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">#{index + 1}</span>
+                                </div>
+                                <div className="text-xs text-gray-500 font-bold border-t border-gray-50 pt-3 flex justify-between">
+                                    <span>Last Updated:</span>
+                                    <span className="text-gray-700">{formatDate(item.created_at)}</span>
+                                </div>
+                                <div className="border-t border-gray-50 pt-3 mt-1 flex justify-end gap-2">
+                                    <Button 
+                                        label="Edit Settings" 
+                                        icon="pi pi-pencil" 
+                                        outlined 
+                                        size="small" 
+                                        className="text-xs font-bold" 
+                                        onClick={() => editSummary(item)} 
+                                    />
+                                    <Button 
+                                        label="Delete" 
+                                        icon="pi pi-trash" 
+                                        outlined 
+                                        severity="danger" 
+                                        size="small" 
+                                        className="text-xs font-bold" 
+                                        onClick={() => confirmDeleteSummary(item)} 
+                                    />
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
+                            No summary settings found.
+                        </div>
+                    )}
                 </div>
             </div>
 

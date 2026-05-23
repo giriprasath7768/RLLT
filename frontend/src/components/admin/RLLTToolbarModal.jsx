@@ -146,9 +146,9 @@ const RLLTToolbarModal = ({ isOpen, onClose, onInsertText }) => {
     }, [isSliderMode, activeSquare, currentSlideIndex, isHovered, isMenuOpen]);
     return (
         <div
-            className={`transition-all duration-300 ease-in-out shrink-0 overflow-hidden flex flex-col bg-white border-r border-gray-300 shadow-[2px_0_10px_rgba(0,0,0,0.1)] print:hidden ${isOpen ? 'w-full sm:w-[430px]' : 'w-0'}`}
+            className={`transition-all duration-300 ease-in-out shrink-0 overflow-hidden flex flex-col bg-white border-r border-gray-300 shadow-[2px_0_10px_rgba(0,0,0,0.1)] print:hidden ${isOpen ? 'w-full sm:w-[435px]' : 'w-0'}`}
         >
-            <div className="w-[100vw] sm:w-[430px] h-full flex flex-col shrink-0 min-w-[350px] sm:min-w-[430px]">
+            <div className="w-[100vw] sm:w-[435px] h-full flex flex-col shrink-0 min-w-[350px] sm:min-w-[435px]">
                 {/* Header */}
                 <div className="bg-[#1a2234] text-white px-4 py-1.5 flex justify-between items-center shrink-0">
                     <h2 className="text-sm font-bold tracking-widest uppercase mt-0.5">RLLT Toolbar</h2>
@@ -189,7 +189,7 @@ const RLLTToolbarModal = ({ isOpen, onClose, onInsertText }) => {
                     </div>
 
                     {/* Content Area */}
-                    <div className="px-3 pt-2 pb-2 flex flex-col justify-between font-bold font-serif whitespace-nowrap bg-white overflow-hidden w-full min-h-[150px] shrink gap-0 relative">
+                    <div className="px-3 pt-2 pb-4 flex flex-col justify-between font-bold font-serif whitespace-nowrap bg-white overflow-visible w-full min-h-[150px] shrink gap-0 relative">
                         {/* List Header Options / Menu and I AM button */}
                         <div className="absolute top-1 right-2 z-30 flex flex-col items-center gap-3">
                             <div className="relative flex justify-end w-full">
@@ -227,29 +227,45 @@ const RLLTToolbarModal = ({ isOpen, onClose, onInsertText }) => {
                             </div>
                             
                             <button
-                                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-black text-xs shadow-[0_5px_0_#5a1a58,0_5px_5px_rgba(0,0,0,0.4)] active:shadow-[0_0px_0_#5a1a58,0_0px_0px_rgba(0,0,0,0.4)] active:translate-y-[5px] transition-all duration-100 cursor-pointer"
-                                style={{ backgroundColor: '#8e2b8c' }}
+                                className="w-12 h-12 rounded-full flex items-center justify-center border-none p-0 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-100 cursor-pointer focus:outline-none"
+                                style={{ backgroundColor: '#1a2234', boxSizing: 'border-box' }}
                                 title="Insert I AM"
                                 onClick={() => onInsertText("I AM", "#8e2b8c")}
                             >
-                                <span style={{ textShadow: '1px 1px 0px #000, 2px 2px 0px rgba(0,0,0,0.5)' }}>I AM</span>
+                                <span
+                                    style={{
+                                        fontFamily: '"Times New Roman", Times, serif',
+                                        fontSize: '15px',
+                                        fontWeight: 'bold',
+                                        letterSpacing: '0.5px',
+                                        color: '#f5b041',
+                                        textShadow: '1px 1px 0px #000, 2px 2px 0px #000, 3px 3px 2px rgba(0,0,0,0.6)'
+                                    }}
+                                >
+                                    I AM
+                                </span>
                             </button>
                         </div>
                         {!isSliderMode ? (
                             wisdomItems.map((item, idx) => (
                                 <div
                                     key={item.key}
-                                    className={`flex items-center gap-2 border-2 rounded py-1 px-2 transition-all cursor-pointer hover:bg-gray-50 mb-1`}
+                                    className={`flex items-center gap-2 border-2 rounded py-1 px-2 transition-all cursor-pointer hover:bg-gray-50 mb-1 ${
+                                        idx === 0 ? 'mr-8' : [1, 2].includes(idx) ? 'mr-14' : 'mr-2'
+                                    }`}
                                     style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
                                     onClick={(e) => {
                                         // Insert the full text associated with this letter into the document
                                         onInsertText(texts[item.key], item.color);
                                     }}
                                 >
-                                    <span style={{ color: item.color }} className="text-[14px] sm:text-[16px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
+                                    <span style={{ color: '#000000' }} className="text-[14px] sm:text-[16px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
                                     <span
-                                        style={{ color: item.color }}
-                                        className="text-[15px] sm:text-[18px] font-black leading-none drop-shadow-sm flex-shrink-0 px-2"
+                                        style={{ 
+                                            color: item.color,
+                                            textShadow: '1px 1px 0px rgba(0,0,0,0.25), 2px 2px 0px rgba(0,0,0,0.15)'
+                                        }}
+                                        className="text-[15px] sm:text-[18px] font-black leading-none flex-shrink-0 px-2"
                                     >
                                         {item.letter}
                                     </span>
@@ -258,7 +274,7 @@ const RLLTToolbarModal = ({ isOpen, onClose, onInsertText }) => {
                                         value={texts[item.key]}
                                         onChange={(e) => updateText(item.key, e.target.value)}
                                         onClick={(e) => e.stopPropagation()} // prevent triggering insert on typing
-                                        className="text-black text-[12px] sm:text-[14px] font-black uppercase tracking-wider bg-transparent border-b border-transparent focus:border-gray-300 outline-none flex-grow min-w-0 leading-none py-1"
+                                        className="text-black text-[12px] sm:text-[13px] font-black uppercase tracking-normal bg-transparent border-b border-transparent focus:border-gray-300 outline-none flex-grow min-w-0 leading-none py-1 pr-3"
                                     />
                                 </div>
                             ))

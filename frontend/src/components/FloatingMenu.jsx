@@ -188,11 +188,19 @@ const FloatingMenu = () => {
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                className={`absolute w-14 h-14 rounded-full shadow-2xl active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer border-2 ${isOpen ? 'bg-white text-blue-600 border-white' : 'bg-blue-600 hover:bg-blue-700 text-white border-transparent'}`}
+                className={`absolute w-14 h-14 rounded-full shadow-2xl active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer border-2 overflow-hidden ${isOpen ? 'bg-white text-blue-600 border-white' : 'bg-blue-600 hover:bg-blue-700 text-white border-transparent'}`}
                 style={{ left: '0px', top: '0px', transform: 'translate(-50%, -50%)', userSelect: 'none' }}
                 title="Drag to move, click to open favorites"
             >
-                <i className={`pi ${isOpen ? 'pi-times' : 'pi-bars'} text-2xl pointer-events-none transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`}></i>
+                {isOpen ? (
+                    <i className="pi pi-times text-2xl pointer-events-none transition-transform duration-300 rotate-90"></i>
+                ) : (
+                    <img 
+                        src="/custom-logo.png" 
+                        alt="Logo Icon" 
+                        className="w-full h-full object-cover pointer-events-none"
+                    />
+                )}
             </button>
         </div>
     );

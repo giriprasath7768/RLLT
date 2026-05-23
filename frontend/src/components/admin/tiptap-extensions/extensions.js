@@ -206,7 +206,7 @@ export const WisdomMark = Mark.create({
         if (mode === 'highlight') {
             style = `background-color: ${color}; color: #fff; padding: 2px 4px; border-radius: 2px;`;
         } else if (mode === 'square') {
-            style = `border: 2px solid ${color}; padding: 2px 4px;`;
+            style = `border: 2px solid ${color}; padding: 1px 2px; border-radius: 3px;`;
         } else if (mode === 'round') {
             style = `border: 2px solid ${color}; padding: 2px 6px; border-radius: 12px;`;
         } else if (mode === 'underline') {

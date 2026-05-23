@@ -550,8 +550,9 @@ const TwentyFourSevenMorningEveningChart = () => {
                 </div>
 
                 <div id="printable-chart-area" className="w-full bg-white pb-6 rounded-b-2xl pt-6 px-6">
-                    <div className="w-full border-[3px] border-black p-3 flex flex-col bg-white">
-                        <div className="flex flex-col w-full mb-2">
+                    <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
+                        <div className="min-w-[1024px] border-[3px] border-black p-3 flex flex-col bg-white" style={{ minWidth: '1024px' }}>
+                            <div className="flex flex-col w-full mb-2">
                             <table className="w-full bg-white table-fixed border-collapse border-2 border-black" style={{ borderSpacing: 0 }}>
                                 <tbody>
                                     <tr className="h-[55px]">
@@ -829,6 +830,7 @@ const TwentyFourSevenMorningEveningChart = () => {
                                     </span>
                                 </div>
                             </div>
+                        </div>
                         </div>
                     </div>
                 </div>
