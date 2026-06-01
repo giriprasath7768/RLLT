@@ -24,7 +24,8 @@ export const defaultThemeConfig = {
     topbarText: '#333333',
     appTitle: 'Real Life Leadership Training',
     logoText: 'RLLT Web App',
-    floatingMenuItems: [],
+    showFloatingMenu: true,
+    floatingMenuItems: ['Dashboard', 'Manage Leaders', 'Manage Students', 'System Settings'],
 };
 
 export const generateTheme = (config) => {

@@ -72,7 +72,7 @@ const getIconForScreen = (screenName) => {
 };
 
 const FloatingMenu = () => {
-    const { themeConfig } = useThemeContext();
+    const { themeConfig, updateTheme } = useThemeContext();
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     
@@ -132,8 +132,9 @@ const FloatingMenu = () => {
         }
     };
 
+    const showFloatingMenu = themeConfig.showFloatingMenu !== false;
     const shortcuts = themeConfig.floatingMenuItems || [];
-    if (shortcuts.length === 0) return null;
+    if (!showFloatingMenu || shortcuts.length === 0) return null;
 
     // Determine positioning based on screen quadrant so the menu always opens inward
     const isLeft = position.x < window.innerWidth / 2;
@@ -180,6 +181,17 @@ const FloatingMenu = () => {
                             <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">{screen}</span>
                         </div>
                     ))}
+                    <div className="border-t border-blue-500/50 my-1"></div>
+                    <div 
+                        className="flex items-center gap-4 px-5 py-3 text-blue-200 cursor-pointer hover:bg-blue-700 hover:text-white transition-colors"
+                        onClick={() => {
+                            setIsOpen(false);
+                            updateTheme({ showFloatingMenu: false });
+                        }}
+                    >
+                        <i className="pi pi-eye-slash text-lg w-6 text-center opacity-90"></i>
+                        <span className="text-sm font-medium whitespace-nowrap">Hide Menu Button</span>
+                    </div>
                 </div>
             </div>
 

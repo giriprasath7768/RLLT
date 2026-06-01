@@ -35,6 +35,7 @@ class User(Base):
     assessment_marks = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     group_id = Column(UUID(as_uuid=True), ForeignKey("student_groups.id"), nullable=True)
+    theme_config = Column(JSON, nullable=True)
 
     group = relationship("StudentGroup", back_populates="members")
     media = relationship("Media", back_populates="owner")

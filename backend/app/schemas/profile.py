@@ -6,6 +6,7 @@ class ProfileUpdate(BaseModel):
     mobile_number: Optional[str] = None
     address: Optional[str] = None
     profile_image_url: Optional[str] = None
+    theme_config: Optional[dict] = None
 
 class PasswordUpdate(BaseModel):
     current_password: str
@@ -18,3 +19,4 @@ class ProfileResponse(BaseModel):
     mobile_number: Optional[str] = None
     address: Optional[str] = None
     profile_image_url: Optional[str] = None
+    theme_config: Optional[dict] = None

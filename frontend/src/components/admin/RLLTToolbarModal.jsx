@@ -250,8 +250,8 @@ const RLLTToolbarModal = ({ isOpen, onClose, onInsertText }) => {
                             wisdomItems.map((item, idx) => (
                                 <div
                                     key={item.key}
-                                    className={`flex items-center gap-2 border-2 rounded py-1 px-2 transition-all cursor-pointer hover:bg-gray-50 mb-1 ${
-                                        idx === 0 ? 'mr-8' : [1, 2].includes(idx) ? 'mr-14' : 'mr-2'
+                                    className={`flex items-center gap-2 border-2 rounded-[2px] py-1 px-2 transition-all cursor-pointer hover:bg-gray-50 mb-1 ${
+                                        [0, 1, 2].includes(idx) ? 'mr-16' : 'mr-2'
                                     }`}
                                     style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
                                     onClick={(e) => {
@@ -299,7 +299,7 @@ const RLLTToolbarModal = ({ isOpen, onClose, onInsertText }) => {
                                         >
                                             <div className="flex items-center justify-center w-full max-w-full">
                                                 <div
-                                                    className="flex items-center justify-center w-max max-w-full border-2 rounded py-2 px-4 transition-colors duration-300 hover:bg-gray-50"
+                                                    className="flex items-center justify-center w-max max-w-full border-2 rounded-[2px] py-2 px-4 transition-colors duration-300 hover:bg-gray-50"
                                                     style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
                                                 >
                                                     <div

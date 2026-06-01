@@ -374,6 +374,23 @@ const Settings = () => {
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Floating Menu Shortcuts</h3>
                 <p className="text-sm text-gray-500 mb-6">Select your favorite screens to appear as shortcuts in the global floating menu.</p>
 
+                {/* Enable/Disable Toggle */}
+                <div className="mb-6 p-5 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between shadow-sm">
+                    <div className="flex flex-col gap-1 pr-4">
+                        <span className="text-sm font-bold text-gray-800">Enable Floating Menu</span>
+                        <span className="text-xs text-gray-500">Show or hide the floating menu button globally. You can also hide it directly from the menu itself.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            className="sr-only peer" 
+                            checked={themeConfig.showFloatingMenu !== false}
+                            onChange={(e) => updateTheme({ showFloatingMenu: e.target.checked })}
+                        />
+                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+
                 <div className="bg-white p-6 rounded-xl border border-gray-100 max-h-[600px] overflow-y-auto shadow-inner">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {Object.entries(menuGroups).map(([groupName, groupItems]) => (

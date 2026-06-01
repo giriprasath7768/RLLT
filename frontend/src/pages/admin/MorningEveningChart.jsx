@@ -89,7 +89,10 @@ const MorningEveningChart = () => {
 
     const fetchChartList = () => {
         axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
-            .then(res => setChartsList(res.data))
+            .then(res => {
+                const filteredCharts = res.data.filter(c => c.chart_type === 'Main Chart' && (!c.banner_text || !c.banner_text.includes('3-5-7')));
+                setChartsList(filteredCharts);
+            })
             .catch(err => console.error("Could not fetch charts list", err));
 
         axios.get('http://' + window.location.hostname + ':8000/api/rllt_lookup', { withCredentials: true })

@@ -1000,7 +1000,7 @@ const TTomTPlayer = () => {
                                         </div>
                                         <div className="flex justify-between items-center w-full text-black font-bold text-[11px]">
                                             <span className="flex-shrink-0 font-black">{formatTrackTime(audioProgress)}</span>
-                                            <span className="text-center font-bold uppercase tracking-widest text-[#1a2234] text-[12px] overflow-hidden whitespace-nowrap overflow-ellipsis leading-none px-2">
+                                            <span className="text-center font-black uppercase tracking-widest text-black text-[12px] overflow-hidden whitespace-nowrap overflow-ellipsis leading-none px-2">
                                                 {activeTrackName || (playlistBooks[0] && playlistBooks[0].name) || 'PROVERBS 1'}
                                             </span>
                                             <span className="flex-shrink-0 font-black">{formatTrackTime(audioDuration)}</span>

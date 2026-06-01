@@ -309,7 +309,8 @@ const SevenTNTPlayer = () => {
     const [isVideoAutoPlay, setIsVideoAutoPlay] = useState(false);
     const [playerBorderColor, setPlayerBorderColor] = useState('#000000');
     const [playerBgColor, setPlayerBgColor] = useState('#516a87');
-    const [editableTitle, setEditableTitle] = useState(location.state?.chartName || "7 TNT MAIN CHART");
+    const initialChartName = location.state?.chartName === '7 TNT Main Chart' ? '7 TNT' : (location.state?.chartName || "7 TNT");
+    const [editableTitle, setEditableTitle] = useState(initialChartName);
     const [chunks, setChunks] = useState([]);
     const [sevenTntContents, setSevenTntContents] = useState([]);
     const searchParams = new URLSearchParams(location.search);
@@ -645,7 +646,8 @@ const SevenTNTPlayer = () => {
                         {(() => {
                             const chunkIdx = Math.floor((selectedDay - 1) / 5);
                             const currentChunk = chunks[chunkIdx];
-                            const bookName = currentChunk?.bookNameHeader || "CONFORMED TO HIS IMAGE";
+                            const rawBookName = currentChunk?.bookNameHeader || "CONFORMED TO HIS IMAGE";
+                            const bookName = rawBookName.replace(/\s*\(.*?\)\s*/g, '').trim();
                             return (
                                 <div className="text-center w-full">
                                     <h2 className="text-white font-bold text-xs tracking-widest uppercase mt-0">
@@ -669,31 +671,36 @@ const SevenTNTPlayer = () => {
                 {/* Content Area */}
                 <div className="bg-[#243144] px-4 py-2 flex gap-3 min-h-[80px] items-center">
                     <div className="flex-1 flex flex-col justify-center">
-                        <div className="flex gap-2 items-start mb-0">
-                            <div className="flex-shrink-0 mt-0.5">
-                                <input type="radio" readOnly checked className="accent-black w-4 h-4" />
-                            </div>
-                            <div className="text-white text-[14px] font-bold leading-tight flex-1 flex flex-col gap-1 -mt-0.5">
-                                {(() => {
-                                    const chunkIdx = Math.floor((selectedDay - 1) / 5);
-                                    let contentStr = `Content for Day ${selectedDay}`;
-                                    if (chunks && chunks[chunkIdx]) {
-                                        const dayObj = chunks[chunkIdx].days.find(d => d.day === selectedDay);
-                                        if (dayObj?.content) contentStr = dayObj.content;
-                                    }
+                        <div className="text-white text-[14px] font-bold leading-tight flex-1 flex flex-col gap-1 mt-0.5">
+                            {(() => {
+                                const chunkIdx = Math.floor((selectedDay - 1) / 5);
+                                let contentStr = `Content for Day ${selectedDay}`;
+                                if (chunks && chunks[chunkIdx]) {
+                                    const dayObj = chunks[chunkIdx].days.find(d => d.day === selectedDay);
+                                    if (dayObj?.content) contentStr = dayObj.content;
+                                }
 
-                                    if (contentStr.includes('Text:')) {
-                                        const parts = contentStr.split('Text:');
-                                        return (
-                                            <>
-                                                <span>{parts[0].trim()}</span>
-                                                <span className="text-[13px] font-normal">Text: {parts[1].trim()}</span>
-                                            </>
-                                        );
-                                    }
-                                    return <span className="text-[13px] font-normal">{contentStr}</span>;
-                                })()}
-                            </div>
+                                if (contentStr.includes('Text:')) {
+                                    const parts = contentStr.split('Text:');
+                                    let titlePart = parts[0].trim().replace(/Verse:\s*/i, '').replace(/enesis/i, 'Genesis');
+                                    return (
+                                        <>
+                                            <span className="pl-6">{titlePart}</span>
+                                            <div className="flex gap-2 items-start">
+                                                <input type="radio" readOnly checked className="accent-black w-4 h-4 mt-[2px] flex-shrink-0" />
+                                                <span className="text-[13px] font-normal">{parts[1].trim()}</span>
+                                            </div>
+                                        </>
+                                    );
+                                }
+                                let cleanContent = contentStr.replace(/Verse:\s*/i, '').replace(/enesis/i, 'Genesis');
+                                return (
+                                    <div className="flex gap-2 items-start">
+                                        <input type="radio" readOnly checked className="accent-black w-4 h-4 mt-[2px] flex-shrink-0" />
+                                        <span className="text-[13px] font-normal">{cleanContent}</span>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
                     <div className="w-[80px] sm:w-[90px] flex-shrink-0 relative flex items-center">

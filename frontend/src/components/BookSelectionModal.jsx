@@ -211,22 +211,31 @@ export default function BookSelectionModal({ visible, onHide, onConfirm }) {
                 <div className="border border-[#69512a] rounded-lg shadow-sm overflow-hidden flex gap-2 p-2 bg-[#fcf8ef]">
                     <div 
                         className={`flex-1 border border-[#7a9e7a] rounded-[4px] flex flex-col items-center justify-center text-center text-sm font-bold uppercase cursor-pointer transition-all ${
-                            p119Selected ? 'bg-[#e2efe2] text-[#1c3a1c] ring-1 ring-[#1c3a1c]' : 'bg-[#f0f7f0] text-[#3b603b]'
+                            p119Selected ? 'bg-[#007020] text-white border-transparent shadow-inner' : 'bg-[#f0f7f0] text-[#3b603b]'
                         }`}
                         onClick={() => p119Book && toggleBook(p119Book.id)}
                     >
                         <span>PSALMS</span><span>CHP 119</span>
                     </div>
                     <div className="flex-[1.2] border border-[#e8dcb9] bg-white rounded-[4px] flex justify-evenly items-center px-1">
-                        <button onClick={() => setCycle(3)} className={`font-bold text-xs ${cycle === 3 ? 'text-[#0B2149]' : 'text-gray-400'}`}>3 DAYS</button>
+                        <button onClick={() => setCycle(3)} className="font-bold text-xs transition-colors flex items-center gap-1">
+                            <span className="text-[#c00000] text-lg">3</span>
+                            <span className={cycle === 3 ? 'text-[#0B2149]' : 'text-gray-400'}>DAYS</span>
+                        </button>
                         <div className="h-6 w-px bg-[#e8dcb9]"></div>
-                        <button onClick={() => setCycle(5)} className={`font-bold text-xs ${cycle === 5 ? 'text-[#0B2149]' : 'text-gray-400'}`}>5 DAYS</button>
+                        <button onClick={() => setCycle(5)} className="font-bold text-xs transition-colors flex items-center gap-1">
+                            <span className="text-[#c00000] text-lg">5</span>
+                            <span className={cycle === 5 ? 'text-[#0B2149]' : 'text-gray-400'}>DAYS</span>
+                        </button>
                         <div className="h-6 w-px bg-[#e8dcb9]"></div>
-                        <button onClick={() => setCycle(7)} className={`font-bold text-xs ${cycle === 7 ? 'text-[#0B2149]' : 'text-gray-400'}`}>7 DAYS</button>
+                        <button onClick={() => setCycle(7)} className="font-bold text-xs transition-colors flex items-center gap-1">
+                            <span className="text-[#c00000] text-lg">7</span>
+                            <span className={cycle === 7 ? 'text-[#0B2149]' : 'text-gray-400'}>DAYS</span>
+                        </button>
                     </div>
                     <div 
                         className={`flex-1 border border-[#7a9e7a] rounded-[4px] flex flex-col items-center justify-center text-center text-sm font-bold uppercase cursor-pointer transition-all ${
-                            p75Selected ? 'bg-[#e2efe2] text-[#1c3a1c] ring-1 ring-[#1c3a1c]' : 'bg-[#f0f7f0] text-[#3b603b]'
+                            p75Selected ? 'bg-[#007020] text-white border-transparent shadow-inner' : 'bg-[#f0f7f0] text-[#3b603b]'
                         }`}
                         onClick={() => p75Book && toggleBook(p75Book.id)}
                     >

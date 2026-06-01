@@ -214,7 +214,7 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
             <div className={`w-[97%] h-[12%] flex items-center justify-center relative rounded-b-md shadow-md z-10 overflow-hidden ${bodyColorClass} border-t border-black/50`}>
                 {/* Cylindrical shading to match 3D volume but not sharp hexagonal */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/30"></div>
-                <span className="font-extrabold text-[15px] sm:text-[18px] text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] z-10 relative">
+                <span className="font-extrabold text-[15px] sm:text-[18px] text-black drop-shadow-sm z-10 relative">
                     {baseNum}
                 </span>
             </div>
@@ -266,7 +266,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
     ];
 
     return (
-        <div className="bg-white flex-grow flex flex-col pt-2 pb-4 px-1 rounded-t-lg overflow-hidden border border-gray-400 w-full h-[400px]">
+        <div className="bg-white flex-grow flex flex-col pt-2 pb-4 px-1 rounded-t-lg overflow-hidden border border-gray-400 w-full h-[450px]">
             {/* Pencils Row */}
             <div className="flex px-1 gap-1 h-[210px] pb-2 w-full justify-between items-stretch">
                 <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00c0ff]" tipColorClass="text-[#00c0ff]" textColor={pencilTextColor} onClick={onPencilClick} />
@@ -298,7 +298,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
             </div>
 
             {/* Content Area */}
-            <div className="px-3 pt-2 pb-2 flex flex-col justify-between font-bold font-serif whitespace-nowrap bg-white overflow-hidden w-full h-[150px] shrink gap-0 relative">
+            <div className="px-3 pt-2 pb-2 flex flex-col justify-between font-bold font-serif whitespace-nowrap bg-white overflow-hidden w-full h-[180px] shrink gap-0 relative">
 
                 {/* List Header Options / Menu */}
                 <div className="absolute top-1 right-2 z-30">
@@ -343,11 +343,11 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                             className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all mr-8`}
                             style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
                         >
-                            <span style={{ color: item.color }} className="text-[12px] sm:text-[14px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
+                            <span className="text-black text-[13px] sm:text-[15px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
                             <span
                                 onClick={() => { setActiveSquare(item.key); onLetterClick(item.color); }}
                                 style={{ color: item.color }}
-                                className="text-[13px] sm:text-[14px] font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
+                                className="text-[17px] sm:text-[19px] font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
                             >
                                 {item.letter}
                             </span>
@@ -355,7 +355,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                                 type="text"
                                 value={texts[item.key]}
                                 onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
-                                className="text-black text-[10px] sm:text-[12px] font-black uppercase tracking-wider bg-transparent outline-none flex-grow min-w-0 leading-none"
+                                className="text-black text-[11px] sm:text-[13px] font-black uppercase tracking-normal bg-transparent outline-none flex-grow min-w-0 leading-none"
                             />
                         </div>
                     ))
@@ -389,7 +389,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                                                 type="text"
                                                 value={texts[item.key]}
                                                 onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
-                                                className={`text-black font-black uppercase bg-transparent outline-none leading-tight text-left transition-all ${['M', 'D'].includes(item.key) ? 'text-[8.5px] sm:text-[10px] tracking-normal' : 'text-[12px] sm:text-[14px] tracking-widest'}`}
+                                                className={`text-black font-black uppercase bg-transparent outline-none leading-tight text-left transition-all ${['M', 'D'].includes(item.key) ? 'text-[12px] sm:text-[14px] tracking-normal' : 'text-[14px] sm:text-[16px] tracking-widest'}`}
                                                 style={{ width: `calc(${texts[item.key].length * 1.4}ch + 3rem)`, minWidth: '50px', maxWidth: '90%' }}
                                             />
                                         </div>
@@ -420,6 +420,7 @@ const DraggableWrapper = ({ children, initialX = 0, initialY = 0, className = ""
     const [isDragging, setIsDragging] = useState(false);
     const dragRef = useRef(null);
     const offset = useRef({ x: 0, y: 0 });
+    const [direction, setDirection] = useState('top');
 
     const handleMouseDown = (e) => {
         if (e.target.closest('button, input, [data-nodrag="true"]')) return;
@@ -453,6 +454,18 @@ const DraggableWrapper = ({ children, initialX = 0, initialY = 0, className = ""
         };
     }, [isDragging]);
 
+    useEffect(() => {
+        if (dragRef.current) {
+            const rect = dragRef.current.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            if (rect.top < viewportHeight * 0.35) {
+                setDirection('down');
+            } else {
+                setDirection('top');
+            }
+        }
+    }, [position]);
+
     return (
         <div
             ref={dragRef}
@@ -463,7 +476,7 @@ const DraggableWrapper = ({ children, initialX = 0, initialY = 0, className = ""
             }}
             className={className}
         >
-            {children}
+            {typeof children === 'function' ? children({ direction }) : children}
         </div>
     );
 };
@@ -648,10 +661,10 @@ const HighlightOverlay = ({ h }) => {
                         style.opacity = 0.75;
                         style.mixBlendMode = 'multiply';
                         
-                        const pct = (hlLvl / 5) * 100;
+                        const pct = (hlLvl / 5) * 70;
                         const baseHeight = rect.height + expandTop + expandBottom;
                         style.height = `${(baseHeight * pct) / 100}%`;
-                        style.top = `${Math.max(0, rect.top - expandTop) + (baseHeight * (100 - pct) / 100)}%`;
+                        style.top = `${Math.max(0, rect.top - expandTop) + (baseHeight * (100 - pct) / 200)}%`;
                     }
 
                     return <div key={`${h.id}_${i}`} style={style} />;
@@ -1398,8 +1411,7 @@ const BookIndex = () => {
 
                 {/* Right Placeholder to balance flex */}
                 <div className="flex justify-end items-center relative gap-2 pr-2 shrink-0">
-                    {/* The Player slides horizontally leftward out from behind the Wrench icon when it focuses! */}
-                    <div className={`absolute right-12 flex items-center pr-2 gap-2 transition-all duration-300 ${showToolMenu ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={undoHighlight}
                             className="bg-gray-800 hover:bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
@@ -1420,11 +1432,6 @@ const BookIndex = () => {
                             <span className="text-[11px] font-black tracking-widest uppercase">PLAYER</span>
                         </button>
                     </div>
-                    <button
-                        onClick={() => setShowToolMenu(!showToolMenu)}
-                        className={`bg-gray-800 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all border border-gray-600 shrink-0 shadow-lg relative z-10 ${showToolMenu ? 'bg-blue-600 border-blue-400 text-white' : 'hover:bg-gray-700'}`}>
-                        <i className="pi pi-wrench text-lg"></i>
-                    </button>
                 </div>
             </div>
 
@@ -1443,7 +1450,6 @@ const BookIndex = () => {
                                 <i className="pi pi-book text-[#c8a165]"></i>
                                 Book Index
                             </h2>
-                            <p className="text-xs text-gray-400 mt-2 tracking-wider">Navigate Scriptures</p>
                         </div>
                         <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-white p-1">
                             <i className="pi pi-times text-xl"></i>
@@ -1592,7 +1598,9 @@ const BookIndex = () => {
                     ) : (
                         Object.keys(groupedBooks).map(type => (
                             <div key={type} className="mb-6">
-                                <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">{type}</h3>
+                                <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">
+                                    {type.replace(/-?\s*OT\s*BKS/gi, '').replace(/-?\s*NT\s*BKS/gi, '').trim()}
+                                </h3>
                                 <ul className="space-y-1">
                                     {groupedBooks[type].map(book => (
                                         <li key={book.id}>
@@ -1809,84 +1817,102 @@ const BookIndex = () => {
                         initialY={0}
                         className="fixed bottom-[15vh] left-1/2 w-[90%] max-w-[450px] z-[200]"
                     >
-                        {/* Wrapper for children to inherit drag position correctly */}
-                        <div className="flex flex-col items-center gap-1.5 w-full relative group">
+                        {({ direction }) => (
+                            <div className="flex flex-col items-center gap-1.5 w-full relative group">
+                                {/* Wrapper for children to inherit drag position correctly */}
 
-                            {/* Player UI */}
-                            <div
-                                className="w-full h-[60px] border-[3px] shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex items-center px-4 transition-all duration-300 rounded-[2px]"
-                                style={{ backgroundColor: playerBgColor, borderColor: playerBorderColor }}
-                            >
-                                {/* Left Side: Play Button */}
-                                <button onClick={() => { togglePlay(); incrementKltTouch(); }} className="text-black hover:scale-110 active:scale-95 transition-all outline-none mr-3">
-                                    <i className={`pi ${isPlaying ? 'pi-pause' : 'pi-play'} text-[32px]`}></i>
-                                </button>
-
-                                {/* Center Column: Scrubber & Text Row */}
-                                <div className="flex-1 flex flex-col justify-center gap-1 mx-2 relative top-0.5">
+                                {/* Wisdom Overlay Popup rendered based on direction */}
+                                {showWisdomOverlay && (
                                     <div
-                                        className="w-[96%] mx-auto h-[5px] bg-[#e4baaf]/50 cursor-pointer rounded-full relative hover:h-[6px] transition-all"
-                                        onClick={handleSeek}
+                                        className={`absolute w-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] rounded-[4px] overflow-hidden ${
+                                            direction === 'down' 
+                                                ? 'top-[calc(100%+8px)] animate-slide-down-fade' 
+                                                : 'bottom-[calc(100%+8px)] animate-slide-up-fade'
+                                        }`}
                                         data-nodrag="true"
                                     >
-                                        <div
-                                            className="absolute top-0 left-0 h-full bg-[#fe8b80] rounded-full drop-shadow-sm transition-all pointer-events-none"
-                                            style={{ width: `${audioDuration ? (audioProgress / audioDuration) * 100 : 0}%` }}
+                                        <WisdomOverlay
+                                            onPencilClick={(color) => {
+                                                setPlayerBgColor(color);
+                                            }}
+                                            onLetterClick={(color) => {
+                                                setPlayerBorderColor(color);
+                                            }}
                                         />
                                     </div>
+                                )}
 
-                                    {/* Text row */}
-                                    <div className="flex justify-between items-center w-full text-black font-black text-[12px] tracking-wide mt-1 select-none pointer-events-none">
-                                        <span>{formatTrackTime(audioProgress)}</span>
-                                        <span className="text-[14px] uppercase tracking-widest leading-none drop-shadow-sm">{selectedBook ? `${selectedBook.name} ${selectedChapter.chapter_number}` : 'Audio'}</span>
-                                        <span>{formatTrackTime(audioDuration)}</span>
-                                    </div>
-                                </div>
+                                 {/* Player UI */}
+                                 <div
+                                     className="w-full h-[50px] border-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex items-center px-3.5 transition-all duration-300 rounded-[8px]"
+                                     style={{ backgroundColor: playerBgColor, borderColor: playerBorderColor }}
+                                 >
+                                     {/* Left Side: Play Button */}
+                                     <button
+                                         onClick={() => { togglePlay(); incrementKltTouch(); }}
+                                         className="outline-none mr-2.5 flex items-center shrink-0"
+                                         style={{ color: '#000000' }}
+                                     >
+                                         {isPlaying ? (
+                                             <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" style={{ fill: '#000000', stroke: '#000000' }}>
+                                                 <rect x="6" y="4" width="4" height="16" rx="0.5" style={{ fill: '#000000', stroke: '#000000' }} />
+                                                 <rect x="14" y="4" width="4" height="16" rx="0.5" style={{ fill: '#000000', stroke: '#000000' }} />
+                                             </svg>
+                                         ) : (
+                                             <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" style={{ fill: '#000000', stroke: '#000000' }}>
+                                                 <path d="M6 4l14 8-14 8z" style={{ fill: '#000000', stroke: '#000000' }} />
+                                             </svg>
+                                         )}
+                                     </button>
 
-                                {/* Right Side: Cog Icon & Close */}
-                                <div className="flex items-center gap-1 ml-4" data-nodrag="true">
-                                    <button
-                                        onClick={() => setShowWisdomOverlay(!showWisdomOverlay)}
-                                        className="text-black hover:rotate-90 transition-all duration-300 outline-none w-8 h-8 flex items-center justify-center relative top-[1px]"
-                                    >
-                                        <i className="pi pi-cog text-[24px]"></i>
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (audioRef.current && !audioRef.current.paused) {
-                                                audioRef.current.pause();
-                                            }
-                                            setShowAudioPlayer(false);
-                                            setIsPlaying(false);
-                                            setShowWisdomOverlay(false);
-                                        }}
-                                        className="text-black hover:text-red-500 hover:scale-110 active:scale-95 transition-all duration-300 outline-none w-8 h-8 flex items-center justify-center ml-1"
-                                    >
-                                        <i className="pi pi-times-circle text-[22px]"></i>
-                                    </button>
-                                </div>
+                                     {/* Center Column: Scrubber & Text Row */}
+                                     <div className="flex-1 flex flex-col justify-center gap-0.5 mx-2 relative top-0">
+                                         <div
+                                             className="w-[98%] mx-auto h-[3px] bg-[#e4baaf]/50 cursor-pointer rounded-full relative hover:h-[4px] transition-all"
+                                             onClick={handleSeek}
+                                             data-nodrag="true"
+                                         >
+                                             <div
+                                                 className="absolute top-0 left-0 h-full bg-[#fe8b80] rounded-full drop-shadow-sm transition-all pointer-events-none"
+                                                 style={{ width: `${audioDuration ? (audioProgress / audioDuration) * 100 : 0}%` }}
+                                             />
+                                         </div>
+
+                                         {/* Text row */}
+                                         <div className="flex justify-between items-center w-full text-black font-bold text-[12px] tracking-wide mt-0.5 select-none pointer-events-none leading-none">
+                                             <span>{formatTrackTime(audioProgress)}</span>
+                                             <span className="text-[12px] uppercase tracking-widest leading-none drop-shadow-sm truncate px-1 flex-1 text-center font-black">{selectedBook ? `${selectedBook.name} ${selectedChapter.chapter_number}` : 'Audio'}</span>
+                                             <span>{formatTrackTime(audioDuration)}</span>
+                                         </div>
+                                     </div>
+
+                                     {/* Right Side: Settings & Close */}
+                                     <div className="flex items-center gap-0.5 ml-2.5 shrink-0" data-nodrag="true">
+                                         <button
+                                             onClick={() => setShowWisdomOverlay(!showWisdomOverlay)}
+                                             className="hover:rotate-90 transition-all duration-300 outline-none w-7 h-7 flex items-center justify-center relative"
+                                             style={{ color: '#000000' }}
+                                         >
+                                             <i className="pi pi-cog text-[18px]" style={{ color: '#000000' }}></i>
+                                         </button>
+                                         <button
+                                             onClick={() => {
+                                                 if (audioRef.current && !audioRef.current.paused) {
+                                                     audioRef.current.pause();
+                                                 }
+                                                 setShowAudioPlayer(false);
+                                                 setIsPlaying(false);
+                                                 setShowWisdomOverlay(false);
+                                             }}
+                                             className="text-black outline-none w-7 h-7 flex items-center justify-center ml-0.5"
+                                         >
+                                             <i className="pi pi-times-circle text-[18px]"></i>
+                                         </button>
+                                     </div>
+                                 </div>
+
                             </div>
-
-                            {/* Wisdom Overlay Popup rendered directly below the player inside wrapper */}
-                            {showWisdomOverlay && (
-                                <div
-                                    className="absolute bottom-[calc(100%+8px)] w-full shadow-[0_-10px_30px_rgba(0,0,0,0.5)] rounded-[4px] overflow-hidden animate-slide-up-fade"
-                                    data-nodrag="true"
-                                >
-                                    <WisdomOverlay
-                                        onPencilClick={(color) => {
-                                            setPlayerBgColor(color);
-                                            incrementTransformationTouch();
-                                        }}
-                                        onLetterClick={(color) => {
-                                            setPlayerBorderColor(color);
-                                            incrementTransformationTouch();
-                                        }}
-                                    />
-                                </div>
-                            )}
-
-                        </div>
+                        )}
                     </DraggableWrapper>
                 )}
             </div>

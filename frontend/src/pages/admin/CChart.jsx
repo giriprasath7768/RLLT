@@ -82,6 +82,40 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
     const [tableFontSize, setTableFontSize] = useState(8);
     const getFS = (base) => (base + (tableFontSize - 12)) + 'px';
 
+    const [checkedDays, setCheckedDays] = useState([]);
+
+    const toggleDayCheckbox = (dayNum) => {
+        setCheckedDays(prev => {
+            if (prev.includes(dayNum)) {
+                return prev.filter(x => x !== dayNum);
+            } else {
+                return [...prev, dayNum];
+            }
+        });
+    };
+
+    const totalDaysCount = useMemo(() => {
+        let count = 0;
+        chunks.forEach(chunk => {
+            count += chunk.days.length;
+        });
+        return count;
+    }, [chunks]);
+
+    const toggleSelectAllDays = () => {
+        if (checkedDays.length > 0 && checkedDays.length === totalDaysCount) {
+            setCheckedDays([]);
+        } else {
+            const allDays = [];
+            chunks.forEach(chunk => {
+                chunk.days.forEach(d => {
+                    allDays.push(d.day);
+                });
+            });
+            setCheckedDays(allDays);
+        }
+    };
+
     const fetchChartList = () => {
         axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
             .then(res => setChartsList(res.data))
@@ -102,6 +136,7 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
     }, []);
 
     useEffect(() => {
+        setCheckedDays([]);
         const preloadData = location.state?.chartData;
         if ((!preloadData && !selectedChart) || booksDB.length === 0 || chaptersDB.length === 0) {
             setChunks([]);
@@ -348,9 +383,42 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
     };
 
     const handleInsertToEditor = async () => {
+        if (checkedDays.length > 0) {
+            if (onInsert) {
+                // Find all day objects from chunks that are checked
+                const selectedDaysData = [];
+                chunks.forEach(chunk => {
+                    chunk.days.forEach(d => {
+                        if (checkedDays.includes(d.day)) {
+                            selectedDaysData.push(d);
+                        }
+                    });
+                });
+                
+                // Sort selected days in ascending order of day number
+                selectedDaysData.sort((a, b) => parseInt(a.day) - parseInt(b.day));
+                
+                // Construct HTML string with zero carriage returns to prevent TipTap spacing issues
+                let htmlString = "";
+                selectedDaysData.forEach((d) => {
+                    const parsedLines = processDayData(d);
+                    const dayLabel = `<span style="color: #dc2626; font-weight: bold; font-size: 22px;">DAY-${d.day}</span>`;
+                    const bibleLines = parsedLines.map(line => `<span style="color: #000000; font-weight: bold; font-size: 19px;">${line}</span>`).join('<br/>');
+                    
+                    htmlString += `<p style="line-height: 1.3; margin-top: 0px; margin-bottom: 12px; font-family: 'Arial Narrow', Arial, sans-serif;">${dayLabel}<br/>${bibleLines}</p>`;
+                });
+                
+                onInsert(htmlString);
+                // Clear checked days after insertion
+                setCheckedDays([]);
+                toast.current?.show({ severity: 'success', summary: 'Inserted', detail: 'Selected Day data successfully moved to Page!', life: 2000 });
+            }
+            return;
+        }
+
         const selectedText = window.getSelection().toString().trim();
         if (!selectedText) {
-            toast.current?.show({ severity: 'warn', summary: 'No Selection', detail: 'Please highlight some text in the chart first.', life: 3000 });
+            toast.current?.show({ severity: 'warn', summary: 'No Selection', detail: 'Please check days or highlight some text in the chart first.', life: 3000 });
             return;
         }
 
@@ -443,12 +511,33 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
                                     const d = chunk.days[rowIndex];
                                     if (!d) return <td key={colIndex} className="p-3"></td>;
                                     const parsedLines = processDayData(d);
+                                    const isChecked = checkedDays.includes(d.day);
                                     return (
                                         <td key={chunk.id || colIndex} className="align-top px-5">
                                             <div className={`flex ${rowIndex < 4 ? 'mb-5' : ''}`} style={{ fontFamily: '"Arial Narrow", Arial, sans-serif' }}>
-                                                <div className="flex-shrink-0 font-bold text-red-600 tracking-wider mr-4" style={{ fontSize: getFS(25) }}>
-                                                    DAY-{d.day}
-                                                </div>
+                                                {isEmbedMode ? (
+                                                    <div 
+                                                        className="flex-shrink-0 flex items-center mr-4 cursor-pointer group select-none"
+                                                        onClick={() => toggleDayCheckbox(d.day)}
+                                                    >
+                                                        <div 
+                                                            className={`w-6 h-6 rounded border-2 flex items-center justify-center mr-3 transition-all duration-200 ${
+                                                                isChecked 
+                                                                    ? 'bg-red-600 border-red-600 text-white scale-110 shadow-md' 
+                                                                    : 'border-gray-400 bg-white group-hover:border-red-500'
+                                                            }`}
+                                                        >
+                                                            {isChecked && <i className="pi pi-check text-[10px] font-black"></i>}
+                                                        </div>
+                                                        <span className={`font-bold tracking-wider transition-colors duration-200 ${isChecked ? 'text-red-600' : 'text-red-500 group-hover:text-red-600'}`} style={{ fontSize: getFS(25) }}>
+                                                            DAY-{d.day}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex-shrink-0 font-bold text-red-600 tracking-wider mr-4" style={{ fontSize: getFS(25) }}>
+                                                        DAY-{d.day}
+                                                    </div>
+                                                )}
                                                 <div className="flex-1 flex flex-col font-black text-black leading-tight" style={{ fontSize: getFS(23) }}>
                                                     {parsedLines.map((line, lIdx) => (
                                                         <div key={lIdx}>{line}</div>
@@ -533,12 +622,20 @@ const CChart = ({ isEmbedMode = false, onInsert = null }) => {
 
                 <div className="flex gap-3">
                     {isEmbedMode ? (
-                        <Button
-                            icon="pi pi-file-import"
-                            label="Move to Page"
-                            className="p-button-warning border-2 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg font-bold px-4 tracking-wider"
-                            onClick={handleInsertToEditor}
-                        />
+                        <>
+                            <Button
+                                icon={checkedDays.length > 0 && checkedDays.length === totalDaysCount ? "pi pi-circle-off" : "pi pi-check-square"}
+                                label={checkedDays.length > 0 && checkedDays.length === totalDaysCount ? "Deselect All" : "Select All Days"}
+                                className="p-button-secondary border-2 h-11 bg-transparent text-[#a0aec0] border-[#a0aec0] hover:bg-[#a0aec0] hover:text-[#051220] transition-all shadow-md font-bold px-4 tracking-wider"
+                                onClick={toggleSelectAllDays}
+                            />
+                            <Button
+                                icon="pi pi-file-import"
+                                label="Move to Page"
+                                className="p-button-warning border-2 h-11 bg-transparent text-[#f1c40f] border-[#f1c40f] hover:bg-[#f1c40f] hover:text-[#051220] transition-all shadow-lg font-bold px-4 tracking-wider"
+                                onClick={handleInsertToEditor}
+                            />
+                        </>
                     ) : (
                         <>
                             <Button

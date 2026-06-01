@@ -89,6 +89,38 @@ async def sync_chart(
         )
         
         await db.execute(on_conflict_stmt)
+        
+        # Update RLLT table data with the exact number of days
+        from app.db.models import RlltLookup
+        try:
+            if state_payload:
+                chunks = json.loads(state_payload)
+                total_days = sum(len(c.get('days', [])) for c in chunks)
+                
+                if total_days > 0:
+                    rllt_result = await db.execute(select(RlltLookup).filter(
+                        RlltLookup.module == module,
+                        RlltLookup.facet == facet,
+                        RlltLookup.phase == phase
+                    ))
+                    existing_rllt = rllt_result.scalars().first()
+                    
+                    if existing_rllt:
+                        existing_rllt.scheduled_value_days = total_days
+                        existing_rllt.day = total_days
+                    else:
+                        new_rllt = RlltLookup(
+                            module=module,
+                            facet=facet,
+                            phase=phase,
+                            day=total_days,
+                            art="30m",
+                            scheduled_value_days=total_days
+                        )
+                        db.add(new_rllt)
+        except Exception as update_err:
+            print("Failed to update rllt_lookup:", update_err)
+            
         await db.commit()
         
         return {"status": "success", "logo_url": final_logo_url}

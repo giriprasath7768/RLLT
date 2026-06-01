@@ -5,8 +5,10 @@ import { Dialog } from 'primereact/dialog';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import ForgotPasswordModal from './auth/ForgotPasswordModal';
+import { useThemeContext } from '../context/ThemeContext';
 
 const Login = () => {
+    const { syncThemeFromBackend } = useThemeContext();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
@@ -38,6 +40,8 @@ const Login = () => {
             const userResponse = await axios.get('http://' + window.location.hostname + ':8000/api/me', {
                 withCredentials: true
             });
+
+            await syncThemeFromBackend();
 
             const role = userResponse.data.role;
             if (role === 'super_admin') navigate('/dashboard/super-admin');

@@ -191,6 +191,7 @@ const AdminSidebar = ({ visible, onHide }) => {
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'T-Tom-T Registered Users', icon: 'pi pi-user-plus', to: '/admin/ttom-users' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: '7 TNT Players', icon: 'pi pi-play', to: '/admin/7tnt-players' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'Players', icon: 'pi pi-play', to: '/admin/players' }] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'TtoMT 357 Player', icon: 'pi pi-play', to: '/admin/ttomt-357-player' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Recordings', icon: 'pi pi-microphone', to: '/admin/recordings' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Screen Recorder', icon: 'pi pi-desktop', to: '/admin/screen-recorder' }] : [])
             ]
@@ -221,7 +222,7 @@ const AdminSidebar = ({ visible, onHide }) => {
         }] : [])
     ];
 
-    const { themeConfig } = useThemeContext();
+    const { themeConfig, updateTheme } = useThemeContext();
 
     const flattenMenu = (items, parentLabel = '') => {
         let flat = [];
@@ -302,6 +303,25 @@ const AdminSidebar = ({ visible, onHide }) => {
                 {menuItems.map((item, index) => (
                     <SidebarItem key={index} item={item} onClick={onItemClick} />
                 ))}
+
+                {/* Global Floating Menu Enable Toggle */}
+                <div className="mt-auto pt-6 px-6 border-t border-white/10">
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-200">
+                        <div className="flex items-center gap-3">
+                            <i className="pi pi-compass text-lg opacity-85"></i>
+                            <span className="text-sm font-medium tracking-wide">Floating Menu</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer" 
+                                checked={themeConfig.showFloatingMenu !== false}
+                                onChange={(e) => updateTheme({ showFloatingMenu: e.target.checked })}
+                            />
+                            <div className="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                        </label>
+                    </div>
+                </div>
             </div>
         );
     };

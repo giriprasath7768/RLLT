@@ -145,6 +145,8 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
     }, [tiptapEditor]);
 
     const [isListening, setIsListening] = useState(false);
+    const [dictationStatus, setDictationStatus] = useState('idle');
+    const [liveTranscript, setLiveTranscript] = useState('');
     const recognitionRef = useRef(null);
     const interimRangeRef = useRef(null);
 
@@ -234,6 +236,7 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
     const handleCChartInsert = (selectedText) => {
         safeInsert(() => {
             tiptapEditor.chain().focus().insertContent(selectedText + "<br>").run();
+            setCChartModalOpen(false);
         });
     };
 
@@ -284,12 +287,61 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
 
     const applyWisdom = (color) => {
         if (!tiptapEditor) return;
-        tiptapEditor.chain().focus().setWisdom({ color, mode: wisdomMode }).run();
+        
+        const { state } = tiptapEditor;
+        const { from, to } = state.selection;
+        let blockCount = 0;
+        state.doc.nodesBetween(from, to, (node) => {
+            if (node.isBlock && (node.type.name === 'paragraph' || node.type.name === 'heading')) {
+                blockCount++;
+            }
+        });
+
+        if (wisdomMode === 'highlight') {
+            tiptapEditor.chain().focus().setWisdom({ color, mode: 'highlight' }).run();
+        } else {
+            if (blockCount > 1) {
+                const { view } = tiptapEditor;
+                let tr = state.tr;
+                let splitTo = false;
+                let $to = tr.doc.resolve(to);
+                if ($to.parentOffset < $to.parent.content.size && $to.parent.isBlock) {
+                    tr.split(to);
+                    splitTo = true;
+                }
+                let splitFrom = false;
+                let $from = tr.doc.resolve(from);
+                let newFrom = from;
+                let newTo = to;
+                if ($from.parentOffset > 0 && $from.parent.isBlock) {
+                    tr.split(from);
+                    splitFrom = true;
+                    newFrom += 2;
+                    newTo += 2;
+                }
+
+                if (splitTo || splitFrom) {
+                    view.dispatch(tr);
+                    setTimeout(() => {
+                        if (tiptapEditor) {
+                            tiptapEditor.chain().focus()
+                                .setTextSelection({ from: newFrom, to: newTo })
+                                .setWisdomBlock({ color, mode: wisdomMode })
+                                .run();
+                        }
+                    }, 10);
+                } else {
+                    tiptapEditor.chain().focus().setWisdomBlock({ color, mode: wisdomMode }).run();
+                }
+            } else {
+                tiptapEditor.chain().focus().setWisdomBorder({ color, mode: wisdomMode }).run();
+            }
+        }
     };
 
     const clearWisdom = () => {
         if (!tiptapEditor) return;
-        tiptapEditor.chain().focus().unsetWisdom().run();
+        tiptapEditor.chain().focus().unsetWisdom().unsetWisdomBorder().unsetWisdomBlock().run();
         setWisdomOpen(false);
     };
 
@@ -314,6 +366,7 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
 
         recognition.onstart = () => {
             setIsListening(true);
+            setDictationStatus('listening');
             interimRangeRef.current = null;
         };
 
@@ -334,18 +387,25 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
             if (finalTranscript !== '') {
                 const textToInsert = finalTranscript.trim() + ' ';
                 tiptapEditor.chain().focus().insertContent(textToInsert).run();
+                setLiveTranscript('');
+                setDictationStatus('listening');
+            } else if (interimTranscript !== '') {
+                setLiveTranscript(interimTranscript);
+                setDictationStatus('transcribing');
             }
-
-            // Simplified interim transcript for Phase 2 since cursor positions differ in Tiptap
         };
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
             setIsListening(false);
+            setDictationStatus('idle');
+            setLiveTranscript('');
         };
 
         recognition.onend = () => {
             setIsListening(false);
+            setDictationStatus('idle');
+            setLiveTranscript('');
             interimRangeRef.current = null;
         };
 
@@ -433,9 +493,11 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                 if (tiptapEditor) {
                     tiptapEditor.commands.focus();
                 }
+                setDictationStatus('connecting');
                 recognitionRef.current.start();
             } catch (e) {
                 console.error("Microphone start error:", e);
+                setDictationStatus('idle');
             }
         }
     };
@@ -1377,9 +1439,36 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                         <button 
                             onClick={() => {
                                 if (!tiptapEditor) return;
-                                const { empty } = tiptapEditor.state.selection;
+                                const { from, to, empty } = tiptapEditor.state.selection;
                                 if (!empty) {
-                                    tiptapEditor.chain().focus().setFontSize(28).run();
+                                    const text = tiptapEditor.state.doc.textBetween(from, to, ' ').trim();
+                                    const textLength = text.length;
+                                    let targetFontSize = 28;
+                                    
+                                    if (textLength > 0) {
+                                        if (textLength === 1) {
+                                            targetFontSize = 650;
+                                        } else if (textLength === 2) {
+                                            targetFontSize = 350;
+                                        } else if (textLength === 3) {
+                                            targetFontSize = 240;
+                                        } else if (textLength === 4) {
+                                            targetFontSize = 180;
+                                        } else if (textLength <= 10) {
+                                            targetFontSize = 100;
+                                        } else if (textLength <= 20) {
+                                            targetFontSize = 60;
+                                        } else if (textLength <= 50) {
+                                            targetFontSize = 40;
+                                        }
+                                    }
+                                    
+                                    tiptapEditor.chain().focus().setFontSize(targetFontSize).run();
+                                    
+                                    // Auto center single characters or short selections
+                                    if (textLength > 0 && textLength <= 10) {
+                                        tiptapEditor.chain().focus().setTextAlign('center').run();
+                                    }
                                 }
                             }}
                             className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-indigo-600 hover:text-indigo-700 transition-colors"
@@ -2008,6 +2097,7 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                 onClose={() => setNotesModalOpen(false)}
                 notes={notes}
                 setNotes={setNotes}
+                language={language}
             />
 
             <CChartModal
@@ -2105,7 +2195,66 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                     width: max-content !important;
                     padding: 6px;
                 }
+                
+                @keyframes dictation-pulse {
+                    0%, 100% { opacity: 0.6; }
+                    50% { opacity: 1; }
+                }
+                @keyframes dictation-wave {
+                    0%, 100% { height: 4px; }
+                    50% { height: 16px; }
+                }
+                .dictation-bar {
+                    width: 3px;
+                    background-color: #ef4444;
+                    border-radius: 9999px;
+                    animation: dictation-wave 0.8s ease-in-out infinite;
+                }
             `}</style>
+            
+            {dictationStatus !== 'idle' && createPortal(
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[999999] flex flex-col items-center gap-3 pointer-events-none" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <div className="backdrop-blur-md bg-slate-900/90 text-white border border-slate-700/50 px-6 py-4 rounded-2xl flex items-center gap-4 shadow-2xl max-w-lg w-[90vw] md:w-[450px] pointer-events-auto">
+                        {/* Left side: Recording status & Soundwave animation */}
+                        <div className="flex items-center gap-2.5 shrink-0">
+                            {dictationStatus === 'connecting' ? (
+                                <i className="pi pi-spin pi-spinner text-blue-400 text-lg"></i>
+                            ) : (
+                                <div className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                </div>
+                            )}
+                            
+                            {dictationStatus === 'listening' && (
+                                <div className="flex items-end gap-0.5 h-4 shrink-0">
+                                    <div className="dictation-bar" style={{ animationDelay: '0.1s', animationDuration: '0.6s' }}></div>
+                                    <div className="dictation-bar" style={{ animationDelay: '0.2s', animationDuration: '0.5s' }}></div>
+                                    <div className="dictation-bar" style={{ animationDelay: '0.3s', animationDuration: '0.7s' }}></div>
+                                </div>
+                            )}
+                            {dictationStatus === 'transcribing' && (
+                                <div className="flex items-end gap-0.5 h-4 shrink-0">
+                                    <div className="dictation-bar" style={{ animationDelay: '0.1s', animationDuration: '0.3s' }}></div>
+                                    <div className="dictation-bar" style={{ animationDelay: '0.2s', animationDuration: '0.4s' }}></div>
+                                    <div className="dictation-bar" style={{ animationDelay: '0.3s', animationDuration: '0.2s' }}></div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Right side: Real-time Transcript */}
+                        <div className="flex-grow min-w-0">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
+                                {dictationStatus === 'connecting' ? 'Connecting Microphone...' : (dictationStatus === 'listening' ? 'Listening...' : 'Transcribing...')}
+                            </div>
+                            <div className="text-sm font-semibold truncate text-slate-200">
+                                {liveTranscript || (dictationStatus === 'connecting' ? 'Initializing speech engine...' : 'Speak now...')}
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 };

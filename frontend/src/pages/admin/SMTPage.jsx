@@ -186,6 +186,23 @@ const HTMLPageOverrides = () => (
             width: max-content !important;
             min-height: auto !important;
         }
+        .smt-canvas-wrapper {
+             position: absolute !important;
+             inset: 0 !important;
+             width: 100% !important;
+             height: 100% !important;
+             display: flex !important;
+             justify-content: center !important;
+             align-items: center !important;
+             z-index: 0;
+             overflow: visible !important;
+             transform: scale(0.96) !important;
+         }
+         .smt-canvas-wrapper canvas {
+             width: 100% !important;
+             height: 100% !important;
+             object-fit: contain !important;
+         }
         .smt-html-page-content {
             width: 100%;
             height: 100%;
@@ -805,17 +822,17 @@ const SMTPage = () => {
                                                         styles.height = `calc(${rect.height}% - 4px)`;
                                                         Object.assign(styles, shadowStyle);
                                                     } else {
-                                                        let thicknessRatio = 1;
+                                                        let thicknessRatio = 0.70;
                                                         if (h.styleOption && h.styleOption.startsWith('hl-')) {
                                                             const level = parseInt(h.styleOption.split('-')[1]);
-                                                            thicknessRatio = level / 5;
+                                                            thicknessRatio = (level / 5) * 0.70;
                                                         }
                                                         styles.backgroundColor = h.color || '#ffeb3b';
                                                         styles.opacity = 0.75;
                                                         styles.mixBlendMode = 'multiply';
                                                         const currentH = parseFloat(rect.height);
                                                         const newH = currentH * thicknessRatio;
-                                                        const topOffset = currentH - newH;
+                                                        const topOffset = (currentH - newH) / 2;
                                                         styles.top = `${parseFloat(rect.top) + topOffset}%`;
                                                         styles.height = `${newH}%`;
                                                     }

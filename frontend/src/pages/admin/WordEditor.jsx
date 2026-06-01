@@ -13,8 +13,53 @@ import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import FontFamily from '@tiptap/extension-font-family';
-import { ResizableImage, ShapeNode, TextBoxNode, WisdomMark, TextEffectMark, FontSizeMark, PageNode, CustomDocument, UnderlineMark } from '../../components/admin/tiptap-extensions/extensions';
+import { ResizableImage, ShapeNode, TextBoxNode, WisdomMark, WisdomBorderMark, TextEffectMark, FontSizeMark, PageNode, CustomDocument, UnderlineMark } from '../../components/admin/tiptap-extensions/extensions';
+import { Node, mergeAttributes } from '@tiptap/core';
 import { StudentService } from '../../services/studentService';
+
+const WisdomBlockNode = Node.create({
+    name: 'wisdomBlock',
+    group: 'block',
+    content: 'block+',
+    parseHTML() {
+        return [
+            { tag: 'div[data-type="wisdomBlock"]' },
+            { tag: 'div.wisdom-block-format' }
+        ];
+    },
+    renderHTML({ HTMLAttributes }) {
+        const mode = HTMLAttributes.mode;
+        const color = HTMLAttributes.color;
+        let style = '';
+        if (mode === 'square') {
+            style = `border: 2px solid ${color}; padding: 4.5px 6.5px; border-radius: 3px; margin: 4px -8.5px;`;
+        } else if (mode === 'round') {
+            style = `border: 2px solid ${color}; padding: 4.5px 8.5px; border-radius: 12px; margin: 4px -10.5px;`;
+        } else if (mode === 'underline') {
+            style = `border-bottom: 3px solid ${color}; padding-bottom: 2px; margin: 4px 0;`;
+        }
+        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'wisdomBlock', class: 'wisdom-block-format', style }), 0];
+    },
+    addAttributes() {
+        return {
+            color: { default: '#00C0FF' },
+            mode: { default: 'square' },
+        };
+    },
+    addCommands() {
+        return {
+            setWisdomBlock: attributes => ({ commands }) => {
+                return commands.wrapIn('wisdomBlock', attributes);
+            },
+            toggleWisdomBlock: attributes => ({ commands }) => {
+                return commands.toggleWrap('wisdomBlock', attributes);
+            },
+            unsetWisdomBlock: () => ({ commands }) => {
+                return commands.lift('wisdomBlock');
+            },
+        };
+    }
+});
 
 // Phase 3 Migration: Tiptap NodeViews
 // Custom Quill Blots have been completely replaced with React-driven Tiptap NodeViews.
@@ -127,6 +172,8 @@ const WordEditor = () => {
             ShapeNode,
             TextBoxNode,
             WisdomMark,
+            WisdomBorderMark,
+            WisdomBlockNode,
             TextEffectMark,
             FontSizeMark,
             Link.configure({ openOnClick: false }),
@@ -554,7 +601,7 @@ const WordEditor = () => {
                         }
 
                         if (format === 'remove') {
-                            editor.chain().focus().unsetWisdom().run();
+                            editor.chain().focus().unsetWisdom().unsetWisdomBorder().unsetWisdomBlock().run();
                             return;
                         }
 
@@ -562,11 +609,57 @@ const WordEditor = () => {
                         let markMode = format;
                         if (format === 'circle') markMode = 'round'; // Map to WisdomMark mode
 
-                        // Instead of raw HTML which Tiptap might strip, we use the custom WisdomMark
-                        // which supports mode="highlight|square|round|underline" and "color"
-                        editor.chain().focus()
-                            .setWisdom({ color, mode: markMode })
-                            .run();
+                        const { state } = editor;
+                        const { from, to } = state.selection;
+                        let blockCount = 0;
+                        state.doc.nodesBetween(from, to, (node) => {
+                            if (node.isBlock && (node.type.name === 'paragraph' || node.type.name === 'heading')) {
+                                blockCount++;
+                            }
+                        });
+
+                        if (markMode === 'highlight') {
+                            editor.chain().focus()
+                                .setWisdom({ color, mode: markMode })
+                                .run();
+                        } else {
+                            if (blockCount > 1) {
+                                const { view } = editor;
+                                let tr = state.tr;
+                                let splitTo = false;
+                                let $to = tr.doc.resolve(to);
+                                if ($to.parentOffset < $to.parent.content.size && $to.parent.isBlock) {
+                                    tr.split(to);
+                                    splitTo = true;
+                                }
+                                let splitFrom = false;
+                                let $from = tr.doc.resolve(from);
+                                let newFrom = from;
+                                let newTo = to;
+                                if ($from.parentOffset > 0 && $from.parent.isBlock) {
+                                    tr.split(from);
+                                    splitFrom = true;
+                                    newFrom += 2;
+                                    newTo += 2;
+                                }
+
+                                if (splitTo || splitFrom) {
+                                    view.dispatch(tr);
+                                    setTimeout(() => {
+                                        if (editor) {
+                                            editor.chain().focus()
+                                                .setTextSelection({ from: newFrom, to: newTo })
+                                                .setWisdomBlock({ color, mode: markMode })
+                                                .run();
+                                        }
+                                    }, 10);
+                                } else {
+                                    editor.chain().focus().setWisdomBlock({ color, mode: markMode }).run();
+                                }
+                            } else {
+                                editor.chain().focus().setWisdomBorder({ color, mode: markMode }).run();
+                            }
+                        }
                     }}
                     onClose={() => setScrollMenuOpen(false)}
                 />
@@ -720,7 +813,6 @@ const WordEditor = () => {
                                 <i className="pi pi-book text-[#c8a165]"></i>
                                 Book Index
                             </h2>
-                            <p className="text-xs text-gray-400 mt-2 tracking-wider">Navigate & Insert Scriptures</p>
                         </div>
                         <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-white p-1">
                             <i className="pi pi-times text-xl"></i>
@@ -741,7 +833,9 @@ const WordEditor = () => {
                 <div className="flex-1 overflow-y-auto px-3 py-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4b5563 #1f2937' }}>
                     {Object.keys(groupedBooks).map(type => (
                         <div key={type} className="mb-6">
-                            <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">{type}</h3>
+                            <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">
+                                {type.replace(/-?\s*OT\s*BKS/gi, '').replace(/-?\s*NT\s*BKS/gi, '').trim()}
+                            </h3>
                             <ul className="space-y-1">
                                 {groupedBooks[type].map(book => (
                                     <li key={book.id}>

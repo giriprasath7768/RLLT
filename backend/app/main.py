@@ -8,6 +8,17 @@ from app.db.models import Base # Ensure all models are loaded
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Programmatically ensure theme_config JSON column exists in Postgres or SQLite
+        try:
+            from sqlalchemy import text
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS theme_config JSON;"))
+        except Exception as e:
+            try:
+                from sqlalchemy import text
+                await conn.execute(text("ALTER TABLE users ADD COLUMN theme_config JSON;"))
+            except Exception as e2:
+                # Column likely already exists
+                pass
     yield
 
 app = FastAPI(title="Media Platform API", lifespan=lifespan)

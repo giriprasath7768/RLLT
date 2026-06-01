@@ -21,7 +21,7 @@ const SevenTNTPlayers = () => {
     };
 
     const charts = [
-        { id: 'main', label: '7 TNT Main Chart', icon: 'pi-chart-line', color: 'bg-blue-600' },
+        { id: 'main', label: '7 TNT', icon: 'pi-chart-line', color: 'bg-blue-600' },
         { id: 'weekly', label: 'SevenTNT Weekly Chart', icon: 'pi-calendar', color: 'bg-orange-500' },
         { id: 'day_cycle', label: 'SevenTNT Day Cycle Chart', icon: 'pi-sync', color: 'bg-green-600' }
     ];

@@ -18,7 +18,8 @@ async def get_my_profile(db: AsyncSession = Depends(get_db), current_user: User 
         "name": current_user.name,
         "address": current_user.address,
         "mobile_number": current_user.mobile_number,
-        "profile_image_url": None
+        "profile_image_url": None,
+        "theme_config": current_user.theme_config
     }
     
     if current_user.role == UserRole.super_admin:
@@ -56,6 +57,10 @@ async def get_my_profile(db: AsyncSession = Depends(get_db), current_user: User 
 
 @router.put("/me", response_model=ProfileResponse)
 async def update_my_profile(profile_in: ProfileUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if profile_in.theme_config is not None:
+        current_user.theme_config = profile_in.theme_config
+        db.add(current_user)
+        await db.commit()
     if current_user.role == UserRole.super_admin:
         res = await db.execute(select(SuperAdmin).where(SuperAdmin.user_id == current_user.id))
         sa = res.scalar_one_or_none()

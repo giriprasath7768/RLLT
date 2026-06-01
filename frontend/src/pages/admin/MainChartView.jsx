@@ -109,9 +109,10 @@ const MainChartView = () => {
         // Fetch saved charts
         axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
             .then(res => {
-                setChartsList(res.data);
+                const filteredCharts = res.data.filter(c => c.chart_type === 'Main Chart' && (!c.banner_text || !c.banner_text.includes('3-5-7')));
+                setChartsList(filteredCharts);
                 if (location.state?.preselect) {
-                    const match = res.data.find(c => 
+                    const match = filteredCharts.find(c => 
                         Number(c.module) === Number(location.state.preselect.module) && 
                         Number(c.facet) === Number(location.state.preselect.facet) && 
                         Number(c.phase) === Number(location.state.preselect.phase)

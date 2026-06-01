@@ -86,12 +86,10 @@ const DynamicCycleChartView = () => {
     const fetchChartList = () => {
         axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
             .then(res => {
-                // Filter for dynamically detected 357 charts - the ones matching banner text "3-5-7 CHART"
-                // Or we can just include them all, but let's assume the user selects from all or we filter.
-                // We'll show all charts that contain 'days' in their parsed payload and have 'booksData' property
-                setChartsList(res.data);
+                const filteredCharts = res.data.filter(c => c.banner_text && c.banner_text.includes('3-5-7'));
+                setChartsList(filteredCharts);
                 if (location.state?.preselect) {
-                    const match = res.data.find(c => 
+                    const match = filteredCharts.find(c => 
                         Number(c.module) === Number(location.state.preselect.module) && 
                         Number(c.facet) === Number(location.state.preselect.facet) && 
                         Number(c.phase) === Number(location.state.preselect.phase)

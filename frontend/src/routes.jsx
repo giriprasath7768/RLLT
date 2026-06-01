@@ -44,6 +44,7 @@ import SevenTNTPlayers from './pages/admin/SevenTNTPlayers';
 import SevenTNTPlayer from './pages/admin/SevenTNTPlayer';
 import SevenTNTContentManagement from './pages/admin/SevenTNTContentManagement';
 import TTomTPlayer from './pages/admin/TTomTPlayer';
+import TtoMT357Player from './pages/admin/TtoMT357Player';
 import Players from './pages/admin/Players';
 import DashboardAdmin from './pages/admin/DashboardAdmin';
 import DashboardLeader from './pages/admin/DashboardLeader';
@@ -198,6 +199,7 @@ const AppRoutes = () => {
                     <Route path="/admin/book-index" element={<BookIndex />} />
                     <Route path="/admin/players" element={<Players />} />
                     <Route path="/admin/7tnt-players" element={<SevenTNTPlayers />} />
+                    <Route path="/admin/ttomt-357-player" element={<TtoMT357Player />} />
                 </Route>
 
                 {/* Restricted Routes (SuperAdmin, Admin only) for specific items removed from Leader */}

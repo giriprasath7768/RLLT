@@ -180,6 +180,7 @@ export const TextBoxNode = Node.create({
 
 export const WisdomMark = Mark.create({
     name: 'wisdom',
+    priority: 110,
     inclusive: false,
     addAttributes() {
         return {
@@ -204,13 +205,7 @@ export const WisdomMark = Mark.create({
         const color = HTMLAttributes.color;
         let style = '';
         if (mode === 'highlight') {
-            style = `background-color: ${color}; color: #fff; padding: 2px 4px; border-radius: 2px;`;
-        } else if (mode === 'square') {
-            style = `border: 2px solid ${color}; padding: 1px 2px; border-radius: 3px;`;
-        } else if (mode === 'round') {
-            style = `border: 2px solid ${color}; padding: 2px 6px; border-radius: 12px;`;
-        } else if (mode === 'underline') {
-            style = `border-bottom: 3px solid ${color}; padding-bottom: 2px;`;
+            style = `display: inline-block; vertical-align: middle; background-color: ${color}; color: #fff; padding: 1.5px 3.5px; border-radius: 2px;`;
         }
         return ['span', mergeAttributes(HTMLAttributes, { 'data-type': 'wisdom', style, class: 'wisdom-format' }), 0];
     },
@@ -219,6 +214,50 @@ export const WisdomMark = Mark.create({
             setWisdom: attributes => ({ commands }) => commands.setMark(this.name, attributes),
             toggleWisdom: attributes => ({ commands }) => commands.toggleMark(this.name, attributes),
             unsetWisdom: () => ({ commands }) => commands.unsetMark(this.name),
+        };
+    },
+});
+
+export const WisdomBorderMark = Mark.create({
+    name: 'wisdomBorder',
+    priority: 90,
+    inclusive: false,
+    addAttributes() {
+        return {
+            color: { default: '#00C0FF' },
+            mode: { default: 'square' },
+        };
+    },
+    parseHTML() {
+        return [
+            { tag: 'span[data-type="wisdomBorder"]' },
+            { 
+                tag: 'span.wisdom-border-format',
+                getAttrs: element => ({
+                    color: element.getAttribute('data-color'),
+                    mode: element.getAttribute('data-mode')
+                })
+            }
+        ];
+    },
+    renderHTML({ HTMLAttributes }) {
+        const mode = HTMLAttributes.mode;
+        const color = HTMLAttributes.color;
+        let style = '';
+        if (mode === 'square') {
+            style = `display: inline-block; vertical-align: middle; border: 2px solid ${color}; padding: 4.5px 6.5px; border-radius: 3px;`;
+        } else if (mode === 'round') {
+            style = `display: inline-block; vertical-align: middle; border: 2px solid ${color}; padding: 4.5px 8.5px; border-radius: 12px;`;
+        } else if (mode === 'underline') {
+            style = `border-bottom: 3px solid ${color}; padding-bottom: 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone;`;
+        }
+        return ['span', mergeAttributes(HTMLAttributes, { 'data-type': 'wisdomBorder', style, class: 'wisdom-border-format' }), 0];
+    },
+    addCommands() {
+        return {
+            setWisdomBorder: attributes => ({ commands }) => commands.setMark(this.name, attributes),
+            toggleWisdomBorder: attributes => ({ commands }) => commands.toggleMark(this.name, attributes),
+            unsetWisdomBorder: () => ({ commands }) => commands.unsetMark(this.name),
         };
     },
 });

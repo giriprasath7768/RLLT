@@ -98,9 +98,9 @@ const isBookMatch = (bookCode, book) => {
 
 const StatItem = ({ title, icon, value, color }) => (
     <div className="flex flex-col items-center justify-center flex-1 py-3">
-        <div className="text-[14px] font-bold text-[#0B2149] mb-2 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">{title}</div>
-        <i className={`${icon} ${color} text-3xl mb-2 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]`}></i>
-        <div className={`${color} font-bold text-xl leading-none [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]`}>{value}</div>
+        <div className="text-[14px] font-bold text-[#0B2149] mb-2">{title}</div>
+        <i className={`${icon} ${color} text-3xl mb-2`}></i>
+        <div className={`${color} font-bold text-xl leading-none`}>{value}</div>
     </div>
 );
 
@@ -702,7 +702,7 @@ const Shanaz357 = () => {
                     <p className="text-[#8c7355] italic text-xs font-serif">Unlocking Transformation Through</p>
                     <div className="flex items-center justify-center gap-2 my-2">
                         <div className="h-[1px] bg-[#d3c09b] w-12"></div>
-                        <span className="text-[9px] text-[#555] font-bold tracking-[0.2em] [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]">THE WORD</span>
+                        <span className="text-[9px] text-[#555] font-bold tracking-[0.2em]">THE WORD</span>
                         <div className="h-[1px] bg-[#d3c09b] w-12"></div>
                     </div>
                     <h1 className="text-4xl text-[#0B2149] tracking-wider mt-1 mb-2 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]" style={{fontFamily: "'Algerian', serif"}}>SHANAZ 357</h1>
@@ -740,27 +740,33 @@ const Shanaz357 = () => {
 
                     {/* Books Grid */}
                     <div className="calc-border-4 rounded-lg shadow-sm overflow-hidden flex flex-col mb-4">
-                        <div className="bg-[#0B2149] text-white py-1.5 flex items-center justify-center relative border-b-[3px] border-[#c7a96b]">
-                            <div className="absolute left-3 text-[#d3c09b] text-[10px]">❖</div>
-                            <div className="h-px bg-[#d3c09b] w-8 mx-2"></div>
-                            <div className="text-sm tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{fontFamily: "'Algerian', serif"}}>OLD TESTAMENT</div>
-                            <div className="h-px bg-[#d3c09b] w-8 mx-2"></div>
-                            <div className="absolute right-3 text-[#d3c09b] text-[10px]">❖</div>
-                        </div>
-                        <div className="overflow-y-auto max-h-[234px] scrollbar-hide bg-[#fcf8ef]">
-                            <div className="p-3 flex flex-wrap justify-center gap-2">
-                                {booksDB.length > 0 && renderBooks(0, 39)}
+                        <div className="overflow-y-auto max-h-[225px] scrollbar-hide bg-[#fcf8ef]">
+                            {/* Old Testament Section */}
+                            <div>
+                                <div className="sticky top-0 bg-[#0B2149] text-white py-1.5 flex items-center justify-center relative border-b-[3px] border-[#c7a96b] z-10">
+                                    <div className="absolute left-3 text-[#d3c09b] text-[10px]">❖</div>
+                                    <div className="h-px bg-[#d3c09b] w-8 mx-2"></div>
+                                    <div className="text-sm tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{fontFamily: "'Algerian', serif"}}>OLD TESTAMENT</div>
+                                    <div className="h-px bg-[#d3c09b] w-8 mx-2"></div>
+                                    <div className="absolute right-3 text-[#d3c09b] text-[10px]">❖</div>
+                                </div>
+                                <div className="p-3 flex flex-wrap justify-center gap-2">
+                                    {booksDB.length > 0 && renderBooks(0, 39)}
+                                </div>
                             </div>
                             
-                            <div className="bg-[#0B2149] text-white py-1 flex items-center justify-center relative border-y-[3px] border-[#c7a96b]">
-                                <div className="absolute left-3 text-[#d3c09b] text-[10px]">❖</div>
-                                <div className="h-px bg-[#d3c09b] w-6 mx-2"></div>
-                                <div className="text-xs tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{fontFamily: "'Algerian', serif"}}>NEW TESTAMENT</div>
-                                <div className="h-px bg-[#d3c09b] w-6 mx-2"></div>
-                                <div className="absolute right-3 text-[#d3c09b] text-[10px]">❖</div>
-                            </div>
-                            <div className="p-3 flex flex-wrap justify-center gap-2">
-                                {booksDB.length > 0 && renderBooks(39, 66)}
+                            {/* New Testament Section */}
+                            <div>
+                                <div className="sticky top-0 bg-[#0B2149] text-white py-1 flex items-center justify-center relative border-y-[3px] border-[#c7a96b] z-10">
+                                    <div className="absolute left-3 text-[#d3c09b] text-[10px]">❖</div>
+                                    <div className="h-px bg-[#d3c09b] w-6 mx-2"></div>
+                                    <div className="text-xs tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{fontFamily: "'Algerian', serif"}}>NEW TESTAMENT</div>
+                                    <div className="h-px bg-[#d3c09b] w-6 mx-2"></div>
+                                    <div className="absolute right-3 text-[#d3c09b] text-[10px]">❖</div>
+                                </div>
+                                <div className="p-3 flex flex-wrap justify-center gap-2">
+                                    {booksDB.length > 0 && renderBooks(39, 66)}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -780,7 +786,7 @@ const Shanaz357 = () => {
                                         <div 
                                             className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex flex-col items-center justify-center text-center text-sm font-bold uppercase cursor-pointer transition-all ${
                                                 p119Selected 
-                                                    ? 'bg-[#e2efe2] text-[#1c3a1c] ring-1 ring-[#1c3a1c] shadow-inner' 
+                                                    ? 'bg-[#007020] text-white border-transparent shadow-inner' 
                                                     : 'bg-[#f0f7f0] text-[#3b603b] hover:bg-[#e2efe2]'
                                             }`}
                                             onClick={() => p119Book && toggleBook(p119Book.id)}
@@ -789,16 +795,25 @@ const Shanaz357 = () => {
                                             <span>PSALMS</span><span>CHP 119</span>
                                         </div>
                                         <div className="flex-[1.5] border border-[#e8dcb9] bg-white rounded-[4px] flex justify-evenly items-center px-1">
-                                            <button onClick={() => setCycle(3)} className={`font-bold text-sm transition-colors ${cycle === 3 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}`}>3 DAYS</button>
+                                            <button onClick={() => setCycle(3)} className="font-bold text-sm transition-colors flex items-center gap-1">
+                                                <span className="text-[#c00000] text-lg">3</span>
+                                                <span className={cycle === 3 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}>DAYS</span>
+                                            </button>
                                             <div className="h-8 w-px bg-[#e8dcb9]"></div>
-                                            <button onClick={() => setCycle(5)} className={`font-bold text-sm transition-colors ${cycle === 5 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}`}>5 DAYS</button>
+                                            <button onClick={() => setCycle(5)} className="font-bold text-sm transition-colors flex items-center gap-1">
+                                                <span className="text-[#c00000] text-lg">5</span>
+                                                <span className={cycle === 5 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}>DAYS</span>
+                                            </button>
                                             <div className="h-8 w-px bg-[#e8dcb9]"></div>
-                                            <button onClick={() => setCycle(7)} className={`font-bold text-sm transition-colors ${cycle === 7 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}`}>7 DAYS</button>
+                                            <button onClick={() => setCycle(7)} className="font-bold text-sm transition-colors flex items-center gap-1">
+                                                <span className="text-[#c00000] text-lg">7</span>
+                                                <span className={cycle === 7 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}>DAYS</span>
+                                            </button>
                                         </div>
                                         <div 
                                             className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex flex-col items-center justify-center text-center text-sm font-bold uppercase cursor-pointer transition-all ${
                                                 p75Selected 
-                                                    ? 'bg-[#e2efe2] text-[#1c3a1c] ring-1 ring-[#1c3a1c] shadow-inner' 
+                                                    ? 'bg-[#007020] text-white border-transparent shadow-inner' 
                                                     : 'bg-[#f0f7f0] text-[#3b603b] hover:bg-[#e2efe2]'
                                             }`}
                                             onClick={() => p75Book && toggleBook(p75Book.id)}

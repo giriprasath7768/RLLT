@@ -46,20 +46,25 @@ const formatDateTime = (date) => {
     return `${day} ${dateNum} ${month} ${year} ${hours}:${minutes} ${ampm}`;
 };
 
-const DividerBox = ({ letter, letterColor, onClick }) => (
-    <div
-        onClick={() => {
-            const hexMatch = letterColor.match(/\[(.*?)\]/);
-            if (hexMatch && onClick) onClick(hexMatch[1]);
-        }}
-        className="flex flex-col items-center justify-between min-w-0 border-[1.5px] border-gray-400 bg-white shadow-sm pt-2 pb-2 cursor-pointer hover:bg-gray-100 transition-colors"
-        style={{ flex: 1.0 }}
-    >
-        <span className={`font-serif font-black text-xl leading-none drop-shadow-sm ${letterColor}`}>
-            {letter}
-        </span>
-    </div>
-);
+const DividerBox = ({ letter, letterColor, num, onClick }) => {
+    const hexColor = letterColor.match(/\[(.*?)\]/)[1];
+    return (
+        <div
+            onClick={() => {
+                if (onClick) onClick(hexColor);
+            }}
+            className="flex flex-col items-center justify-start min-w-0 border-[2px] bg-white shadow-sm pt-2 pb-2 cursor-pointer hover:bg-gray-100 transition-colors"
+            style={{ flex: 1.0, borderColor: hexColor }}
+        >
+            <span className={`font-serif font-black text-xl leading-none drop-shadow-sm pb-2 ${letterColor}`}>
+                {letter}
+            </span>
+            <span className={`font-black text-sm pt-2 pb-2 leading-none text-black`}>
+                {num}
+            </span>
+        </div>
+    );
+};
 
 const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onClick }) => {
     return (
@@ -68,28 +73,58 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
                 const hexMatch = bodyColorClass.match(/\[(.*?)\]/);
                 if (hexMatch && onClick) onClick(hexMatch[1]);
             }}
-            className="flex flex-col items-center min-w-0 bg-white shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
-            style={{
-                flex: 1.0,
-                clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 8px))',
-                WebkitClipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 8px))'
-            }}
+            className="flex flex-col items-center min-w-0 bg-gray-500 border-[1px] border-black cursor-pointer hover:-translate-y-1 transition-transform relative h-full drop-shadow-md pb-0"
+            style={{ flex: 1.0 }}
         >
-            <div className={`w-full h-12 sm:h-14 flex justify-center ${tipColorClass}`}>
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full drop-shadow-sm">
+            {/* Wooden Tip (Top 20%) */}
+            <div className={`w-full h-[20%] relative flex justify-center items-end ${tipColorClass}`}>
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-[97%] h-full">
+                    {/* Wood core */}
                     <polygon points="50,0 0,100 100,100" fill="#f4d1a6" />
+                    {/* Painted pointer matching body color */}
                     <polygon points="50,0 25,50 75,50" fill="currentColor" />
                 </svg>
             </div>
 
-            <div className={`w-full flex-grow ${bodyColorClass} bg-gradient-to-r from-black/10 via-transparent to-black/20 border-t border-black/20 flex flex-col justify-center items-center py-2 relative overflow-hidden min-h-[50px] h-14 sm:h-18`}>
-                <span className="transform -rotate-90 text-[0.55rem] sm:text-[0.65rem] font-black text-black tracking-tight uppercase origin-center whitespace-nowrap z-10">
-                    {label}
-                </span>
+            {/* Hexagonal Color Body (Middle 60%) */}
+            <div className={`w-[97%] h-[60%] flex relative ${bodyColorClass} overflow-hidden border-t-2 border-black/10`}>
+                {/* Left face shadow */}
+                <div className="w-[25%] h-full bg-black/20 border-r border-black/10"></div>
+
+                {/* Center face Label */}
+                <div className="w-[50%] h-full relative z-10">
+                    <span
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[13px] sm:text-[14px] font-black uppercase whitespace-nowrap"
+                        style={{
+                            color: textColor || '#ffffff',
+                            textShadow: '-0.5px 0.5px 0px #a39b8c, -1px 1px 0px #8b8374, -2px 2px 0px #635b4c, -3px 3px 0px #4a4336, -4px 4px 4px rgba(0,0,0,0.8)',
+                            letterSpacing: label.length > 8 ? '0px' : '2px'
+                        }}
+                    >
+                        {label}
+                    </span>
+                </div>
+
+                {/* Right face deep shadow */}
+                <div className="w-[25%] h-full bg-black/40 border-l border-white/10"></div>
             </div>
 
-            <div className={`w-full h-10 sm:h-12 ${bodyColorClass} bg-gradient-to-r from-black/20 via-transparent to-black/30 border-t border-black/30 flex items-center justify-center`}>
-                <span className={`font-black text-sm sm:text-base ${textColor}`}>{baseNum}</span>
+            {/* Metal Ferrule Base (Bottom 8%) */}
+            <div className="w-[100%] h-[8%] bg-gradient-to-r from-gray-500 via-gray-200 to-gray-600 flex flex-col justify-between py-[1px] sm:py-[2px] relative shadow-lg z-10 border-t-2 border-black/20 overflow-hidden">
+                <div className="w-full h-[1px] bg-black/20 shadow-sm"></div>
+                <div className="w-full h-[1px] bg-white/50"></div>
+                <div className="w-full h-[1px] bg-black/20 shadow-sm"></div>
+                <div className="w-full h-[1px] bg-white/50"></div>
+            </div>
+
+            {/* Colored Base Cap & Number (Bottom 12%) */}
+            <div className={`w-[97%] h-[12%] flex items-center justify-center relative rounded-b-md shadow-md z-10 overflow-hidden ${bodyColorClass} border-t border-black/50`}>
+                {/* Cylindrical shading to match 3D volume but not sharp hexagonal */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/30"></div>
+                {/* The tracking digit */}
+                <span className="font-extrabold text-[15px] sm:text-[18px] text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)] z-10 relative">
+                    {baseNum}
+                </span>
             </div>
         </div>
     );
@@ -97,9 +132,9 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
 
 const WisdomOverlay = ({ onPencilClick, onLetterClick, activePoint }) => {
     return (
-        <div className="bg-white flex-grow flex flex-col pt-4 pb-2 px-1 rounded-t-lg overflow-hidden border border-gray-400 w-full h-full">
+        <div className="bg-white flex flex-col pt-2 pb-2 px-1 rounded-t-lg overflow-hidden border border-gray-400 w-full h-[510px] relative">
             {/* Pencils Row */}
-            <div className="flex px-1 gap-px h-[190px] sm:h-[210px] pb-2 w-full justify-between items-stretch">
+            <div className="flex px-1 gap-1 h-[210px] pb-2 w-full justify-between items-stretch">
                 <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#86c5f7]" tipColorClass="text-[#86c5f7]" textColor="text-black" onClick={onPencilClick} />
                 <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" onClick={onLetterClick} />
 
@@ -121,42 +156,44 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick, activePoint }) => {
                 <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#e3242b]" tipColorClass="text-[#e3242b]" textColor="text-black" onClick={onPencilClick} />
             </div>
 
-            {/* TRANSFORMATION bar */}
-            <div className="bg-[#181a1f] text-white font-black text-center tracking-[0.4em] py-1.5 text-[0.75rem] border-[3px] border-gray-400 mt-1 uppercase w-full">
-                T R A N S F O R M A T I O N
+            {/* TRANSFORMATION Text Bar */}
+            <div className="w-full bg-black py-1 text-white flex justify-between items-center px-[12px] font-black text-[13px] sm:text-[15px] mx-0 drop-shadow-md z-10 shrink-0 mb-1">
+                {"TRANSFORMATION".split('').map((char, i) => (
+                    <span key={i} className="hover:scale-125 transition-transform duration-200 cursor-default">{char}</span>
+                ))}
             </div>
 
             {/* List */}
-            <div className="px-3 py-2 flex flex-col gap-1 font-bold font-serif whitespace-nowrap bg-white overflow-hidden w-full">
-                <div className="flex items-center gap-2 border-[2px] rounded p-1 transition-all" style={{ borderColor: activePoint === 1 ? '#8e2b8c' : 'transparent', backgroundColor: activePoint === 1 ? 'rgba(142,43,140,0.05)' : 'transparent' }}>
-                    <span className="text-[#8e2b8c] text-sm">1.</span>
-                    <span className="text-[#8e2b8c] text-xl font-black leading-none drop-shadow-sm px-1">W</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">ISDOM OF GOD</span>
+            <div className="px-2 py-1 flex flex-col gap-1.5 font-bold font-serif whitespace-nowrap bg-white overflow-y-auto no-scrollbar w-full h-[260px] shrink relative border-t border-gray-100">
+                <div className="flex items-center gap-1 border rounded px-1.5 py-1 transition-all mr-6" style={{ borderColor: activePoint === 1 ? '#8e2b8c' : 'transparent', backgroundColor: activePoint === 1 ? 'rgba(142,43,140,0.05)' : 'transparent' }}>
+                    <span className="text-black text-[13px] sm:text-[15px] font-black leading-none flex-shrink-0">1.</span>
+                    <span className="text-[#8e2b8c] text-xl sm:text-2xl font-black leading-none drop-shadow-sm px-1 flex-shrink-0">W</span>
+                    <span className="text-black text-[11px] sm:text-[13px] font-black uppercase tracking-normal leading-none">ISDOM OF GOD</span>
                 </div>
-                <div className="flex items-center gap-2 border-[2px] rounded p-1 transition-all" style={{ borderColor: activePoint === 2 ? '#294291' : 'transparent', backgroundColor: activePoint === 2 ? 'rgba(41,66,145,0.05)' : 'transparent' }}>
-                    <span className="text-[#294291] text-sm">2.</span>
-                    <span className="text-[#294291] text-xl font-black leading-none drop-shadow-sm px-1">I</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">MAGINATION</span>
+                <div className="flex items-center gap-1 border rounded px-1.5 py-1 transition-all mr-6" style={{ borderColor: activePoint === 2 ? '#294291' : 'transparent', backgroundColor: activePoint === 2 ? 'rgba(41,66,145,0.05)' : 'transparent' }}>
+                    <span className="text-black text-[13px] sm:text-[15px] font-black leading-none flex-shrink-0">2.</span>
+                    <span className="text-[#294291] text-xl sm:text-2xl font-black leading-none drop-shadow-sm px-1 flex-shrink-0">I</span>
+                    <span className="text-black text-[11px] sm:text-[13px] font-black uppercase tracking-normal leading-none">MAGINATION</span>
                 </div>
-                <div className="flex items-center gap-2 border-[2px] rounded p-1 transition-all" style={{ borderColor: activePoint === 3 ? '#86c5f7' : 'transparent', backgroundColor: activePoint === 3 ? 'rgba(134,197,247,0.05)' : 'transparent' }}>
-                    <span className="text-[#86c5f7] text-sm">3.</span>
-                    <span className="text-[#86c5f7] text-xl font-black leading-none drop-shadow-sm px-1">S</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">CRIPTURES TO PRAYER</span>
+                <div className="flex items-center gap-1 border rounded px-1.5 py-1 transition-all mr-6" style={{ borderColor: activePoint === 3 ? '#86c5f7' : 'transparent', backgroundColor: activePoint === 3 ? 'rgba(134,197,247,0.05)' : 'transparent' }}>
+                    <span className="text-black text-[13px] sm:text-[15px] font-black leading-none flex-shrink-0">3.</span>
+                    <span className="text-[#86c5f7] text-xl sm:text-2xl font-black leading-none drop-shadow-sm px-1 flex-shrink-0">S</span>
+                    <span className="text-black text-[11px] sm:text-[13px] font-black uppercase tracking-normal leading-none">CRIPTURES TO PRAYER</span>
                 </div>
-                <div className="flex items-center gap-2 border-[2px] rounded p-1 transition-all" style={{ borderColor: activePoint === 4 ? '#38b948' : 'transparent', backgroundColor: activePoint === 4 ? 'rgba(56,185,72,0.05)' : 'transparent' }}>
-                    <span className="text-[#38b948] text-sm">4.</span>
-                    <span className="text-[#38b948] text-xl font-black leading-none drop-shadow-sm px-1">D</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">AILY GROWING IN GODLINESS</span>
+                <div className="flex items-center gap-1 border rounded px-1.5 py-1 transition-all mr-6" style={{ borderColor: activePoint === 4 ? '#38b948' : 'transparent', backgroundColor: activePoint === 4 ? 'rgba(56,185,72,0.05)' : 'transparent' }}>
+                    <span className="text-black text-[13px] sm:text-[15px] font-black leading-none flex-shrink-0">4.</span>
+                    <span className="text-[#38b948] text-xl sm:text-2xl font-black leading-none drop-shadow-sm px-1 flex-shrink-0">D</span>
+                    <span className="text-black text-[11px] sm:text-[13px] font-black uppercase tracking-normal leading-none">AILY GROWING IN GODLINESS</span>
                 </div>
-                <div className="flex items-center gap-2 border-[2px] rounded p-1 transition-all" style={{ borderColor: activePoint === 5 ? '#e3242b' : 'transparent', backgroundColor: activePoint === 5 ? 'rgba(227,36,43,0.05)' : 'transparent' }}>
-                    <span className="text-[#e3242b] text-sm">5.</span>
-                    <span className="text-[#e3242b] text-xl font-black leading-none drop-shadow-sm px-1">O</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">BEDIENCE TO GOD'S WILL</span>
+                <div className="flex items-center gap-1 border rounded px-1.5 py-1 transition-all mr-6" style={{ borderColor: activePoint === 5 ? '#e3242b' : 'transparent', backgroundColor: activePoint === 5 ? 'rgba(227,36,43,0.05)' : 'transparent' }}>
+                    <span className="text-black text-[13px] sm:text-[15px] font-black leading-none flex-shrink-0">5.</span>
+                    <span className="text-[#e3242b] text-xl sm:text-2xl font-black leading-none drop-shadow-sm px-1 flex-shrink-0">O</span>
+                    <span className="text-black text-[11px] sm:text-[13px] font-black uppercase tracking-normal leading-none">BEDIENCE TO GOD'S WILL</span>
                 </div>
-                <div className="flex items-center gap-2 border-[2px] rounded p-1 transition-all" style={{ borderColor: activePoint === 6 ? '#ed9b26' : 'transparent', backgroundColor: activePoint === 6 ? 'rgba(237,155,38,0.05)' : 'transparent' }}>
-                    <span className="text-[#ed9b26] text-sm">6.</span>
-                    <span className="text-[#ed9b26] text-xl font-black leading-none drop-shadow-sm px-1">M</span>
-                    <span className="text-black text-xs font-black uppercase tracking-wider">EDITATING ON GOD'S CHARACTER</span>
+                <div className="flex items-center gap-1 border rounded px-1.5 py-1 transition-all mr-6" style={{ borderColor: activePoint === 6 ? '#ed9b26' : 'transparent', backgroundColor: activePoint === 6 ? 'rgba(237,155,38,0.05)' : 'transparent' }}>
+                    <span className="text-black text-[13px] sm:text-[15px] font-black leading-none flex-shrink-0">6.</span>
+                    <span className="text-[#ed9b26] text-xl sm:text-2xl font-black leading-none drop-shadow-sm px-1 flex-shrink-0">M</span>
+                    <span className="text-black text-[11px] sm:text-[13px] font-black uppercase tracking-normal leading-none">EDITATING ON GOD'S CHARACTER</span>
                 </div>
             </div>
         </div>
@@ -210,6 +247,7 @@ const DraggableWrapper = ({ children, initialX = 0, initialY = 0, className = ""
     const [isDragging, setIsDragging] = useState(false);
     const dragRef = useRef(null);
     const offset = useRef({ x: 0, y: 0 });
+    const [direction, setDirection] = useState('top');
 
     const handleMouseDown = (e) => {
         if (e.target.closest('button, input, [data-nodrag="true"]')) return;
@@ -243,6 +281,18 @@ const DraggableWrapper = ({ children, initialX = 0, initialY = 0, className = ""
         };
     }, [isDragging]);
 
+    useEffect(() => {
+        if (dragRef.current) {
+            const rect = dragRef.current.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            if (rect.top < viewportHeight * 0.35) {
+                setDirection('down');
+            } else {
+                setDirection('top');
+            }
+        }
+    }, [position]);
+
     return (
         <div
             ref={dragRef}
@@ -253,7 +303,7 @@ const DraggableWrapper = ({ children, initialX = 0, initialY = 0, className = ""
             }}
             className={className}
         >
-            {children}
+            {typeof children === 'function' ? children({ direction }) : children}
         </div>
     );
 };
@@ -284,6 +334,13 @@ const GlobalPDFPageOverrides = () => (
             z-index: 50 !important;
             line-height: 1 !important;
         }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
 
         @keyframes unrollDown {
             0% { clip-path: polygon(0 0, 100% 0, 100% 0%, 0 0%); opacity: 0; }
@@ -302,6 +359,20 @@ const GlobalPDFPageOverrides = () => (
             background-position: center;
             background-repeat: no-repeat;
             filter: drop-shadow(0 25px 30px rgba(0,0,0,0.75));
+        }
+        @keyframes slideUpFade {
+            0% { transform: translateY(10px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideDownFade {
+            0% { transform: translateY(-10px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up-fade {
+            animation: slideUpFade 0.25s ease-out forwards;
+        }
+        .animate-slide-down-fade {
+            animation: slideDownFade 0.25s ease-out forwards;
         }
     `}</style>
 );
@@ -485,17 +556,19 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                                         styles.height = isMacroBox ? `${rect.height}%` : `calc(${rect.height}% - 4px)`;
                                         Object.assign(styles, shadowStyle);
                                     } else {
-                                        let thicknessRatio = 1; // default full
+                                        let thicknessRatio = 0.70; // Sleeker max thickness ratio (70% of line height)
                                         if (h.styleOption && h.styleOption.startsWith('hl-')) {
                                             const level = parseInt(h.styleOption.split('-')[1]);
-                                            thicknessRatio = level / 5;
+                                            thicknessRatio = (level / 5) * 0.70;
                                         }
                                         
                                         styles.backgroundColor = h.color || '#dc2626';
                                         styles.opacity = 0.75;
                                         styles.mixBlendMode = 'multiply';
-                                        styles.height = `${rect.height * thicknessRatio}%`;
-                                        styles.top = `${rect.top + rect.height * (1 - thicknessRatio)}%`;
+                                        const currentH = rect.height;
+                                        const newH = currentH * thicknessRatio;
+                                        styles.height = `${newH}%`;
+                                        styles.top = `${rect.top + (currentH - newH) / 2}%`;
                                     }
 
                                     return <div key={`${h.id}_${i}`} style={styles} />;
@@ -581,8 +654,8 @@ const SMTPlayer = () => {
     const [showAudioPlayer, setShowAudioPlayer] = useState(false);
     const [audioLoadedTrackName, setAudioLoadedTrackName] = useState(null);
     const [showWisdomOverlay, setShowWisdomOverlay] = useState(false);
-    const [playerBgColor, setPlayerBgColor] = useState('#547395');
-    const [playerBorderColor, setPlayerBorderColor] = useState('#080b12');
+    const [playerBgColor, setPlayerBgColor] = useState('rgb(81, 106, 135)');
+    const [playerBorderColor, setPlayerBorderColor] = useState('#000000');
     const lastTouchRef = useRef(0);
 
     // Centralized touch count incrementer — called on every meaningful user interaction
@@ -1197,39 +1270,30 @@ const SMTPlayer = () => {
                         </div>
                     )}
 
-                    <div className="flex items-center relative">
-                        <div className={`absolute right-12 flex items-center pr-2 gap-2 transition-all duration-300 ${showToolMenu ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'}`}>
-                            <button
-                                onClick={() => {
-                                    setHighlights(prev => prev.length > 0 ? prev.slice(0, -1) : prev);
-                                    setShowToolMenu(false);
-                                }}
-                                disabled={highlights.length === 0}
-                                className={`bg-gray-800 hover:bg-red-600 text-white px-4 sm:px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap ${highlights.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                title="Undo Last Highlight"
-                            >
-                                <i className="pi pi-undo text-lg"></i>
-                                <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline-block">UNDO</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    const nextState = !showAudioPlayer;
-                                    setShowAudioPlayer(nextState);
-                                    setShowToolMenu(false);
-                                    if (nextState && activeTrackName && audioRef.current && audioRef.current.paused) {
-                                        audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
-                                    }
-                                }}
-                                className="bg-gray-800 hover:bg-blue-600 text-white px-4 sm:px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
-                            >
-                                <i className="pi pi-play-circle text-lg"></i>
-                                <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline-block">PLAYER</span>
-                            </button>
-                        </div>
+                    <div className="flex items-center gap-2">
                         <button
-                            onClick={() => setShowToolMenu(!showToolMenu)}
-                            className={`bg-gray-800 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all border border-gray-600 shrink-0 relative z-10 shadow-lg ${showToolMenu ? 'bg-blue-600 border-blue-400 text-white' : 'hover:bg-gray-700'}`}>
-                            <i className="pi pi-wrench text-lg"></i>
+                            onClick={() => {
+                                setHighlights(prev => prev.length > 0 ? prev.slice(0, -1) : prev);
+                            }}
+                            disabled={highlights.length === 0}
+                            className={`bg-gray-800 hover:bg-red-600 text-white px-4 sm:px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap ${highlights.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title="Undo Last Highlight"
+                        >
+                            <i className="pi pi-undo text-lg"></i>
+                            <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline-block">UNDO</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                const nextState = !showAudioPlayer;
+                                setShowAudioPlayer(nextState);
+                                if (nextState && activeTrackName && audioRef.current && audioRef.current.paused) {
+                                    audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
+                                }
+                            }}
+                            className="bg-gray-800 hover:bg-blue-600 text-white px-4 sm:px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
+                        >
+                            <i className="pi pi-play-circle text-lg"></i>
+                            <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline-block">PLAYER</span>
                         </button>
                     </div>
                 </div>
@@ -1394,84 +1458,91 @@ const SMTPlayer = () => {
                         initialY={0}
                         className="fixed bottom-[15vh] left-1/2 w-[90%] max-w-[450px] z-[200]"
                     >
-                        {/* Wrapper for children to inherit drag position correctly */}
-                        <div className="flex flex-col items-center gap-1.5 w-full relative group">
+                        {({ direction }) => (
+                            <div className="flex flex-col items-center gap-1.5 w-full relative group">
 
-                            {/* Player UI */}
-                            <div
-                                className="w-full h-[60px] border-[3px] shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex items-center px-4 transition-all duration-300 rounded-[2px]"
-                                style={{ backgroundColor: playerBgColor, borderColor: playerBorderColor }}
-                            >
-                                {/* Left Side: Play Button */}
-                                <button onClick={togglePlay} className="text-black hover:scale-110 active:scale-95 transition-all outline-none mr-3">
-                                    <i className={`pi ${isPlaying ? 'pi-pause' : 'pi-play'} text-[32px]`}></i>
-                                </button>
-
-                                {/* Center Column: Scrubber & Text Row */}
-                                <div className="flex-1 flex flex-col justify-center gap-1 mx-2 relative top-0.5">
-                                    {/* Scrubber - data-nodrag="true" ensures dragging the bar seeks instead of dragging the whole component */}
+                                {/* Wisdom Overlay Popup rendered based on direction */}
+                                {showWisdomOverlay && (
                                     <div
-                                        className="w-[96%] mx-auto h-[5px] bg-[#e4baaf]/50 cursor-pointer rounded-full relative hover:h-[6px] transition-all"
-                                        onClick={handleSeek}
+                                        className={`absolute w-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] rounded-[4px] overflow-hidden ${
+                                            direction === 'down' 
+                                                ? 'top-[calc(100%+8px)] animate-slide-down-fade' 
+                                                : 'bottom-[calc(100%+8px)] animate-slide-up-fade'
+                                        }`}
                                         data-nodrag="true"
                                     >
-                                        <div
-                                            className="absolute top-0 left-0 h-full bg-[#fe8b80] rounded-full drop-shadow-sm transition-all pointer-events-none"
-                                            style={{ width: `${audioDuration ? (audioProgress / audioDuration) * 100 : 0}%` }}
+                                        <WisdomOverlay
+                                            onPencilClick={(color) => {
+                                                setPlayerBgColor(color);
+                                            }}
+                                            onLetterClick={(color) => {
+                                                setPlayerBorderColor(color);
+                                            }}
                                         />
                                     </div>
+                                )}
 
-                                    {/* Text row */}
-                                    <div className="flex justify-between items-center w-full text-black font-black text-[12px] tracking-wide mt-1 select-none pointer-events-none">
-                                        <span>{formatTrackTime(audioProgress)}</span>
-                                        <span className="text-[14px] uppercase tracking-widest leading-none drop-shadow-sm">{activeTrackName || 'Pro 1'}</span>
-                                        <span>{formatTrackTime(audioDuration)}</span>
+                                {/* Player UI */}
+                                <div
+                                    className="w-full h-[50px] border-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex items-center px-3.5 transition-all duration-300 rounded-[8px]"
+                                    style={{ backgroundColor: playerBgColor, borderColor: playerBorderColor }}
+                                >
+                                    {/* Left Side: Play Button */}
+                                    <button
+                                        onClick={togglePlay}
+                                        className="outline-none mr-2.5 flex items-center shrink-0"
+                                        style={{ color: '#000000' }}
+                                    >
+                                        {isPlaying ? (
+                                            <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" style={{ fill: '#000000', stroke: '#000000' }}>
+                                                <rect x="6" y="4" width="4" height="16" rx="0.5" style={{ fill: '#000000', stroke: '#000000' }} />
+                                                <rect x="14" y="4" width="4" height="16" rx="0.5" style={{ fill: '#000000', stroke: '#000000' }} />
+                                            </svg>
+                                        ) : (
+                                            <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" style={{ fill: '#000000', stroke: '#000000' }}>
+                                                <path d="M6 4l14 8-14 8z" style={{ fill: '#000000', stroke: '#000000' }} />
+                                            </svg>
+                                        )}
+                                    </button>
+
+                                    {/* Center Column: Scrubber & Text Row */}
+                                    <div className="flex-1 flex flex-col justify-center gap-0.5 mx-2.5 relative">
+                                        {/* Scrubber - data-nodrag="true" ensures dragging the bar seeks instead of dragging the whole component */}
+                                        <div
+                                            className="w-[98%] mx-auto h-[3px] bg-white/30 cursor-pointer rounded-full relative hover:h-[4px] transition-all"
+                                            onClick={handleSeek}
+                                            data-nodrag="true"
+                                        >
+                                            <div
+                                                className="absolute top-0 left-0 h-full bg-[#fca5a5] rounded-full transition-all pointer-events-none"
+                                                style={{ width: `${audioDuration ? (audioProgress / audioDuration) * 100 : 0}%` }}
+                                            />
+                                        </div>
+
+                                        {/* Text row */}
+                                        <div className="flex justify-between items-center w-full text-black font-bold text-[12px] select-none pointer-events-none leading-none mt-0.5">
+                                            <span className="flex-shrink-0 font-black">{formatTrackTime(audioProgress)}</span>
+                                            <span className="text-center font-black uppercase tracking-widest text-black text-[12px] overflow-hidden whitespace-nowrap overflow-ellipsis leading-none px-1 flex-1">
+                                                {activeTrackName || 'PROVERBS 1'}
+                                            </span>
+                                            <span className="flex-shrink-0 font-black">{formatTrackTime(audioDuration)}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Right Side: Settings Button */}
+                                    <div className="flex items-center ml-2.5 shrink-0" data-nodrag="true">
+                                        <button
+                                            onClick={() => setShowWisdomOverlay(!showWisdomOverlay)}
+                                            className="hover:rotate-90 transition-all duration-300 outline-none w-7 h-7 flex items-center justify-center relative"
+                                            style={{ color: '#000000' }}
+                                        >
+                                            <i className="pi pi-cog text-[18px]" style={{ color: '#000000' }}></i>
+                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Right Side: Cog Icon & Close */}
-                                <div className="flex items-center gap-1 ml-4" data-nodrag="true">
-                                    <button
-                                        onClick={() => setShowWisdomOverlay(!showWisdomOverlay)}
-                                        className="text-black hover:rotate-90 transition-all duration-300 outline-none w-8 h-8 flex items-center justify-center relative top-[1px]"
-                                    >
-                                        <i className="pi pi-cog text-[24px]"></i>
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (audioRef.current && !audioRef.current.paused) {
-                                                audioRef.current.pause();
-                                            }
-                                            setShowAudioPlayer(false);
-                                            setIsPlaying(false);
-                                            setShowWisdomOverlay(false);
-                                        }}
-                                        className="text-black hover:text-red-500 hover:scale-110 active:scale-95 transition-all duration-300 outline-none w-8 h-8 flex items-center justify-center ml-1"
-                                    >
-                                        <i className="pi pi-times-circle text-[22px]"></i>
-                                    </button>
-                                </div>
                             </div>
-
-                            {/* Wisdom Overlay Popup rendered directly below the player inside wrapper */}
-                            {showWisdomOverlay && (
-                                <div
-                                    className="absolute bottom-[calc(100%+8px)] w-full shadow-[0_-10px_30px_rgba(0,0,0,0.5)] rounded-[4px] overflow-hidden animate-slide-up-fade"
-                                    data-nodrag="true"
-                                >
-                                    <WisdomOverlay
-                                        activePoint={activePoint}
-                                        onPencilClick={(color) => {
-                                            setPlayerBgColor(color);
-                                        }}
-                                        onLetterClick={(color) => {
-                                            setPlayerBorderColor(color);
-                                        }}
-                                    />
-                                </div>
-                            )}
-
-                        </div>
+                        )}
                     </DraggableWrapper>
                 )}
 

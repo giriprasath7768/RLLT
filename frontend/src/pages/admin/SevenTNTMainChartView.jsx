@@ -121,7 +121,10 @@ const SevenTNTMainChartView = () => {
     const fetchChartList = () => {
         // Fetch saved charts
         axios.get('http://' + window.location.hostname + ':8000/api/seven_tnt_charts/list', { withCredentials: true })
-            .then(res => setChartsList(res.data))
+            .then(res => {
+                const filteredCharts = res.data.filter(c => c.chart_type === '7TNT Main Chart');
+                setChartsList(filteredCharts);
+            })
             .catch(err => console.error("Could not fetch charts list", err));
 
         // Fetch RLLT Database for dynamic max facets/phases

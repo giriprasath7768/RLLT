@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useMemo, useContext } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { generateTheme, defaultThemeConfig, themePresets } from '../theme/theme';
+import axios from 'axios';
 
 const ThemeContext = createContext();
 
@@ -25,10 +26,52 @@ export const CustomThemeProvider = ({ children }) => {
         document.documentElement.style.setProperty('--font-family', themeConfig.fontFamily);
     }, [themeConfig]);
 
+    const syncThemeFromBackend = async () => {
+        try {
+            const res = await axios.get('http://' + window.location.hostname + ':8000/api/profile/me', { withCredentials: true });
+            if (res.data && res.data.theme_config) {
+                setThemeConfig(prev => ({ ...prev, ...res.data.theme_config }));
+            }
+        } catch (err) {
+            console.log("No active user session to load backend theme config from.");
+        }
+    };
+
+    useEffect(() => {
+        syncThemeFromBackend();
+    }, []);
+
     const muiTheme = useMemo(() => generateTheme(themeConfig), [themeConfig]);
 
     const updateTheme = (newConfig) => {
-        setThemeConfig(prev => ({ ...prev, ...newConfig }));
+        setThemeConfig(prev => {
+            const updated = { ...prev, ...newConfig };
+            localStorage.setItem('rllt-theme-config', JSON.stringify(updated));
+            
+            // Asynchronously sync to backend
+            axios.put('http://' + window.location.hostname + ':8000/api/profile/me', {
+                theme_config: {
+                    floatingMenuItems: updated.floatingMenuItems,
+                    showFloatingMenu: updated.showFloatingMenu,
+                    appTitle: updated.appTitle,
+                    logoText: updated.logoText,
+                    primaryColor: updated.primaryColor,
+                    secondaryColor: updated.secondaryColor,
+                    mode: updated.mode,
+                    compactMode: updated.compactMode,
+                    fontSize: updated.fontSize,
+                    borderRadius: updated.borderRadius,
+                    sidebarBg: updated.sidebarBg,
+                    sidebarText: updated.sidebarText,
+                    topbarBg: updated.topbarBg,
+                    topbarText: updated.topbarText
+                }
+            }, { withCredentials: true }).catch(err => {
+                console.log("Could not sync theme config to backend", err);
+            });
+            
+            return updated;
+        });
     };
 
     const applyPreset = (presetName) => {
@@ -48,7 +91,7 @@ export const CustomThemeProvider = ({ children }) => {
     };
 
     return (
-        <ThemeContext.Provider value={{ themeConfig, updateTheme, applyPreset, resetTheme, themePresets }}>
+        <ThemeContext.Provider value={{ themeConfig, updateTheme, applyPreset, resetTheme, themePresets, syncThemeFromBackend }}>
             <ThemeProvider theme={muiTheme}>
                 <CssBaseline />
                 {children}

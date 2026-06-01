@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Sidebar as PrimeSidebar } from 'primereact/sidebar';
 import { AutoComplete } from 'primereact/autocomplete';
+import { useThemeContext } from '../../context/ThemeContext';
 
 const SidebarItem = ({ item, onClick }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -61,6 +62,7 @@ const SidebarItem = ({ item, onClick }) => {
 };
 
 const StudentSidebar = ({ visible, onHide }) => {
+    const { themeConfig, updateTheme } = useThemeContext();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredItems, setFilteredItems] = useState([]);
@@ -170,6 +172,25 @@ const StudentSidebar = ({ visible, onHide }) => {
                 {menuItems.map((item, index) => (
                     <SidebarItem key={index} item={item} onClick={onItemClick} />
                 ))}
+
+                {/* Global Floating Menu Enable Toggle */}
+                <div className="mt-auto pt-6 px-6 border-t border-white/10">
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-200 text-gray-300">
+                        <div className="flex items-center gap-3">
+                            <i className="pi pi-compass text-lg opacity-85"></i>
+                            <span className="text-sm font-medium tracking-wide">Floating Menu</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer" 
+                                checked={themeConfig.showFloatingMenu !== false}
+                                onChange={(e) => updateTheme({ showFloatingMenu: e.target.checked })}
+                            />
+                            <div className="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                        </label>
+                    </div>
+                </div>
             </div>
         );
     };

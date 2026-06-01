@@ -8,12 +8,12 @@ const AdminLayout = () => {
     const location = useLocation();
 
     // Hide Topbar, Sidebar, and Footer when navigating to Book Index to allow immersive full-screen UX
-    const isFullScreenMode = location.pathname.includes('/book-index');
+    const isFullScreenMode = location.pathname.includes('/book-index') || location.pathname.includes('/ttomt-357-player');
 
     if (isFullScreenMode) {
         return (
             <div className="min-h-screen bg-gray-50/30 flex flex-col font-sans print:block print:min-h-0 print:h-auto">
-                <main className="flex-grow min-w-0 h-screen print:block print:h-auto print:overflow-visible">
+                <main className="flex-grow min-w-0 min-h-screen print:block print:h-auto print:overflow-visible">
                     <Outlet />
                 </main>
             </div>

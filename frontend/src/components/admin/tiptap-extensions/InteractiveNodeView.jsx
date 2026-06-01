@@ -241,6 +241,7 @@ const InteractiveNodeView = ({ node, updateAttributes, getPos, selected, editor,
                             position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5,
                             display: 'flex', flexDirection: 'column',
                             justifyContent: textConfig.verticalAlign === 'middle' ? 'center' : (textConfig.verticalAlign === 'bottom' ? 'flex-end' : 'flex-start'),
+                            alignItems: textConfig.textAlign === 'center' ? 'center' : (textConfig.textAlign === 'right' ? 'flex-end' : 'flex-start'),
                             whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                             overflow: 'hidden'
                         }}>
@@ -501,10 +502,58 @@ const InteractiveNodeView = ({ node, updateAttributes, getPos, selected, editor,
                                         height: '100%'
                                     };
                                     if (isTextBox) {
+                                        const textareaEl = containerRef.current?.querySelector('textarea');
+                                        const textVal = (textareaEl ? textareaEl.value : (node.attrs.text || '')).trim();
+                                        const textLength = textVal.length;
+                                        console.log("--- A4 CONVERSION DEBUG ---");
+                                        console.log("node.attrs:", node.attrs);
+                                        console.log("textVal (from DOM/attrs):", textVal, "length:", textLength);
+                                        
+                                        let targetFontSize = 28;
+                                        let textAlign = textConfig.textAlign || 'left';
+                                        let verticalAlign = textConfig.verticalAlign || 'top';
+                                        
+                                        if (textLength > 0) {
+                                            if (textLength === 1) {
+                                                targetFontSize = 650; // Fit a single character perfectly in A4 page height
+                                                textAlign = 'center';
+                                                verticalAlign = 'middle';
+                                            } else if (textLength === 2) {
+                                                targetFontSize = 350;
+                                                textAlign = 'center';
+                                                verticalAlign = 'middle';
+                                            } else if (textLength === 3) {
+                                                targetFontSize = 240;
+                                                textAlign = 'center';
+                                                verticalAlign = 'middle';
+                                            } else if (textLength === 4) {
+                                                targetFontSize = 180;
+                                                textAlign = 'center';
+                                                verticalAlign = 'middle';
+                                            } else if (textLength <= 10) {
+                                                targetFontSize = 100;
+                                                textAlign = 'center';
+                                                verticalAlign = 'middle';
+                                            } else if (textLength <= 20) {
+                                                targetFontSize = 60;
+                                            } else if (textLength <= 50) {
+                                                targetFontSize = 40;
+                                            }
+                                        }
+                                        
+                                        console.log("Calculated targetFontSize:", targetFontSize, "textAlign:", textAlign, "verticalAlign:", verticalAlign);
+                                        
                                         attrs.textConfig = {
                                             ...textConfig,
-                                            fontSize: 28 // Enlarge text to A4 size
+                                            fontSize: targetFontSize,
+                                            textAlign,
+                                            verticalAlign
                                         };
+                                        
+                                        // Also update the node view state directly so the change is visually instant without waiting for Tiptap
+                                        if (textareaEl) {
+                                            textareaEl.value = textVal;
+                                        }
                                     }
                                     updateAttributes(attrs);
                                 }}

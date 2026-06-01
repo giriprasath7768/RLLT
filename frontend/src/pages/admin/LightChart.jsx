@@ -34,8 +34,191 @@ const ImageUploadPlaceholder = ({ state, setState, label }) => {
 
 const LightChartTable = ({ moduleNum, rlltDB, tableFontSize }) => {
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
-    // Calculate totals from database or local data
     const dbRows = (rlltDB || []).filter(r => r.module === moduleNum);
+
+    if (moduleNum === 5) {
+        const tableRows5 = Array.from({ length: 5 }).map((_, idx) => {
+            const currentFacet = idx + 1;
+            const dbRow = dbRows.find(r => r.facet === currentFacet) || {};
+
+            if (currentFacet === 1) {
+                return {
+                    sno: 36,
+                    fct: 1,
+                    dayPpl: '30',
+                    bks: '66',
+                    phs: '4',
+                    we5: '6',
+                    ot: '1',
+                    nt: '1',
+                    pro: '4',
+                    psa: '1',
+                    psa119: '-',
+                    dpsa: '-',
+                    chp: '-',
+                    ver: '-',
+                    art: '-',
+                    ppl: '-'
+                };
+            } else {
+                // Display facets 2, 3, 4, 5 from dbRow
+                return {
+                    sno: 36 + idx,
+                    fct: currentFacet,
+                    dayPpl: dbRow.day || '',
+                    bks: dbRow.bks || '',
+                    phs: dbRow.phase || '',
+                    we5: dbRow.we5 || '',
+                    ot: dbRow.ot_bks || '',
+                    nt: dbRow.nt_bks || '',
+                    pro: dbRow.pro || '',
+                    psa: dbRow.psa || '',
+                    psa119: dbRow.psa119 || '',
+                    dpsa: dbRow.dpsa || '',
+                    chp: dbRow.chp || '',
+                    ver: dbRow.ver || '',
+                    art: dbRow.art || '',
+                    ppl: dbRow.ppl || ''
+                };
+            }
+        });
+
+        return (
+            <div className="mb-2 mx-auto max-w-6xl w-full">
+                <h2 className="text-center font-bold text-xs mb-1 uppercase" style={{ color: '#00A859' }}>
+                    MODULE 5: <span className="text-black">5 FACETS: 24 PHASES - CROWN IS OPTIONAL / 3.5.7 Days - EACH PHASE 30 DAYS</span>
+                </h2>
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full border-collapse border-2 border-black text-center font-bold" style={{ fontFamily: '"Arial Narrow", Arial, sans-serif', fontSize: getFS(14) }}>
+                        <thead>
+                            <tr className="bg-white leading-none">
+                                <th className="border-2 border-black p-0 align-middle bg-black text-white w-10">
+                                    <div className="flex h-[22px] w-full items-center justify-center">S.NO</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">FCT</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">DAY/PPL</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">BKS</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">PHS</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">WE5</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">O.T</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">N.T</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">PRO</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">PSA</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">PSA 119</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">D.PSA</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">CHP</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">VER</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">ART</div>
+                                </th>
+                                <th className="border-2 border-black p-0 align-middle">
+                                    <div className="flex h-[22px] w-full items-center justify-center">PPL</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {tableRows5.map((row, idx) => {
+                                const isFirstRow = idx === 0;
+                                const snoColor = isFirstRow ? '#00E84D' : '#5b9bd5';
+
+                                return (
+                                    <React.Fragment key={idx}>
+                                        <tr className="border border-black leading-none">
+                                            <td className="border-2 border-black p-0 align-middle font-bold bg-white" style={{ backgroundColor: snoColor }}>
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.sno}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.fct}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.dayPpl}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.bks}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.phs}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.we5}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.ot}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.nt}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.pro}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.psa}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.psa119}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.dpsa}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.chp}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.ver}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.art}</div>
+                                            </td>
+                                            <td className="border-2 border-black p-0 align-middle bg-white">
+                                                <div className="flex h-[22px] w-full items-center justify-center">{row.ppl}</div>
+                                            </td>
+                                        </tr>
+                                        {idx === 0 && (
+                                            <tr className="border border-black leading-none bg-[#f8cbad]">
+                                                <td colSpan={16} className="border-2 border-black p-0 align-middle font-bold text-black bg-[#f8cbad]">
+                                                    <div className="flex h-[22px] w-full items-center justify-center text-[13px] tracking-wide">
+                                                        WEEKLY READING RHYTHM PLAN - <span className="text-red-600 mx-1">3</span> DAY <span className="text-red-600 mx-1">5</span> DAY <span className="text-red-600 mx-1">7</span> DAY CYCLES
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    }
+
+    // Calculate totals from database or local data
     const totalFacets = dbRows.length > 0 ? dbRows.length : 10;
     const uniquePhases = new Set(dbRows.map(r => r.phase));
     const totalPhases = dbRows.length > 0 ? uniquePhases.size : 1;
