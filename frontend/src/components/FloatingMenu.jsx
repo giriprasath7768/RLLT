@@ -50,6 +50,8 @@ const screenPaths = {
     'Honeycomb Report': '/admin/reports/honeycomb-report',
     'Light Digital Chart': '/admin/light-chart-digital',
     'T-Tom-T Registered Users': '/admin/ttom-users',
+    'T-TOMT 357': '/admin/ttomt-357-player',
+    'T-TOMT 357 White Player': '/admin/ttomt-357-white-player',
     '7 TNT Players': '/admin/7tnt-players',
     'Players': '/admin/players',
     'System Settings': '/admin/settings'

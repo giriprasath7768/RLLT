@@ -22,7 +22,7 @@ const parseTime = (t) => {
     return 0;
 };
 
-const TtoMT357Player = () => {
+const TtoMT357WhitePlayer = () => {
     const [activeTrack, setActiveTrack] = useState('PROVERBS 1');
     const [selectedDay, setSelectedDay] = useState(3);
     const [facet, setFacet] = useState(2);
@@ -405,10 +405,7 @@ const TtoMT357Player = () => {
     };
 
     const getBookTooltip = (code) => {
-        let matchedBook;
-        if (code === 'PRO') matchedBook = booksDB.find(b => b.short_form === 'PRO');
-        else if (code === 'PSA') matchedBook = booksDB.find(b => b.short_form === 'PSA');
-        else matchedBook = booksDB.find(b => isBookMatch(code, b));
+        let matchedBook = booksDB.find(b => isBookMatch(code, b));
 
         if (!matchedBook) return '';
         const chaps = chaptersDB.filter(c => c.book_id === matchedBook.id);
@@ -875,7 +872,7 @@ const TtoMT357Player = () => {
                 <div className={`w-full relative transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'}`}>
                     
                     {/* Front Side */}
-                    <div className={`w-full [backface-visibility:hidden] bg-[url('/357playerBG.png')] bg-[length:100%_100%] bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col relative overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 ${isFlipped ? 'pointer-events-none' : ''}`}>
+                    <div className={`w-full [backface-visibility:hidden] bg-[url('/whiteleatherbg.png')] bg-[length:100%_100%] bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col relative overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 ${isFlipped ? 'pointer-events-none' : ''}`}>
 
 
 
@@ -1102,7 +1099,7 @@ const TtoMT357Player = () => {
                 {/* Combined Bible Books */}
                 <div className="mx-[16px] mb-[10px] relative">
                     <Tooltip target=".book-tooltip" position="top" className="custom-book-tooltip" showDelay={0} hideDelay={0} />
-                    <div className="overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/bookbg.png')] bg-[length:100%_205%] bg-center bg-no-repeat relative">
+                    <div className="rounded-[10px] overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/bookbg.png')] bg-[length:105%_205%] bg-center bg-no-repeat relative">
 
                         <div className="w-full relative z-10 flex flex-col gap-[2px] pt-[12px] pb-[4px]">
 
@@ -1446,7 +1443,7 @@ const TtoMT357Player = () => {
             </div>
 
             {/* Back Side */}
-            <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[url('/357playerBG.png')] bg-[length:100%_100%] bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 p-[20px] ${!isFlipped ? 'pointer-events-none' : ''}`}>
+            <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[url('/whiteleatherbg.png')] bg-[length:100%_100%] bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 p-[20px] ${!isFlipped ? 'pointer-events-none' : ''}`}>
                 
                 {/* Header / Back Button */}
                 <div className="flex justify-between items-center mb-[20px] pb-[10px] border-b border-[#5a3618]">
@@ -1535,7 +1532,7 @@ const TtoMT357Player = () => {
                         </div>
 
                         <div className="flex justify-end pt-[10px] mt-[5px]">
-                            <button 
+                            <button
                                 onClick={() => {
                                     setActiveThemeColor(themeColor);
                                     setShowSettings(false);
@@ -1552,4 +1549,4 @@ const TtoMT357Player = () => {
     );
 };
 
-export default TtoMT357Player;
+export default TtoMT357WhitePlayer;

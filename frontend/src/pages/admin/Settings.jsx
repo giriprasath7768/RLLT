@@ -34,6 +34,8 @@ const Settings = () => {
         ],
         Audio: [
             { label: 'T-Tom-T Registered Users' },
+            { label: 'T-TOMT 357' },
+            { label: 'T-TOMT 357 White Player' },
             { label: '7 TNT Players' },
             { label: 'Players' },
             { label: 'Recordings' },
