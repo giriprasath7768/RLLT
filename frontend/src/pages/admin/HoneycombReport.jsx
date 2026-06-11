@@ -311,40 +311,40 @@ const HoneycombReport = () => {
             <div className="w-full max-w-[1250px] bg-white rounded-[16px] shadow-2xl overflow-hidden border-4 border-gray-400 print-container">
 
                 {/* Top Title Bar */}
-                <div className="bg-[#0b172a] text-white text-center py-3 px-4 text-xs sm:text-sm md:text-xl font-bold tracking-widest uppercase relative">
+                <div className="bg-[#0b172a] text-white text-center py-3 px-4 text-xs sm:text-sm md:text-lg lg:text-xl font-bold tracking-widest uppercase relative">
                     REAL LIFE LEADERSHIP TRAINING - SUCCESS ROAD MAP - HONEYCOMB CHART
                 </div>
 
                 {/* Top Info Bar */}
-                <div className="flex flex-col md:flex-row border-b border-gray-300 h-auto md:h-[72px] bg-white">
-                    <div className="flex-[1.5] flex items-center p-3 px-4 border-b md:border-b-0 md:border-r border-gray-300">
-                        <i className="pi pi-building text-green-600 text-2xl md:text-3xl mr-3"></i>
+                <div className="flex flex-col lg:flex-row border-b border-gray-300 h-auto lg:h-[72px] bg-white">
+                    <div className="flex-[1.5] flex items-center p-3 px-4 border-b lg:border-b-0 lg:border-r border-gray-300">
+                        <i className="pi pi-building text-green-600 text-2xl lg:text-3xl mr-3"></i>
                         <div className="leading-tight">
                             <div className="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">ORGANIZATION</div>
                             <div className="text-sm font-black text-gray-900">NAME</div>
                         </div>
                     </div>
-                    <div className="flex-[1.5] flex items-center p-3 px-4 border-b md:border-b-0 md:border-r border-gray-300">
-                        <i className="pi pi-globe text-purple-500 text-2xl md:text-3xl mr-3 bg-purple-100 rounded-full p-1.5"></i>
+                    <div className="flex-[1.5] flex items-center p-3 px-4 border-b lg:border-b-0 lg:border-r border-gray-300">
+                        <i className="pi pi-globe text-purple-500 text-2xl lg:text-3xl mr-3 bg-purple-100 rounded-full p-1.5"></i>
                         <div className="font-black text-gray-800 text-sm tracking-wide w-full uppercase">
                             ALL LOCATIONS & STUDENTS
                         </div>
                     </div>
-                    <div className="flex-[1.5] flex items-center p-3 px-4 border-b md:border-b-0 md:border-r border-gray-300">
-                        <i className="pi pi-calendar text-[#6366f1] text-2xl md:text-3xl mr-3"></i>
+                    <div className="flex-[1.5] flex items-center p-3 px-4 border-b lg:border-b-0 lg:border-r border-gray-300">
+                        <i className="pi pi-calendar text-[#6366f1] text-2xl lg:text-3xl mr-3"></i>
                         <div className="font-black text-gray-800 text-sm tracking-wide">{formattedDate}</div>
                     </div>
-                    <div className="flex-1 flex items-center p-3 px-4 border-b md:border-b-0 md:border-r border-gray-300">
-                        <i className="pi pi-clock text-gray-700 text-2xl md:text-3xl mr-3"></i>
+                    <div className="flex-1 flex items-center p-3 px-4 border-b lg:border-b-0 lg:border-r border-gray-300">
+                        <i className="pi pi-clock text-gray-700 text-2xl lg:text-3xl mr-3"></i>
                         <div className="font-black text-gray-800 text-sm tracking-wide">{formattedTime}</div>
                     </div>
-                    <div className="flex flex-row md:flex-none md:w-72 h-16 md:h-full">
-                        <div className="flex-1 md:w-32 bg-[#22c55e] flex items-center justify-center text-white text-3xl md:text-[56px] font-bold border-r border-gray-300 shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)] leading-none">
+                    <div className="flex flex-row lg:flex-none lg:w-72 h-16 lg:h-full">
+                        <div className="flex-1 lg:w-32 bg-[#22c55e] flex items-center justify-center text-white text-3xl lg:text-[56px] font-bold border-r border-gray-300 shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)] leading-none">
                             66
                         </div>
-                        <div className="flex-1 md:w-40 bg-[#fbbf24] flex flex-col items-center justify-center py-1">
-                            <div className="font-extrabold text-xs md:text-[15px] border-b-2 border-[#b45309]/30 w-full text-center pb-0.5 md:pb-1 text-[#78350f]">BK - AR</div>
-                            <div className="font-extrabold text-base md:text-2xl pt-0.5 md:pt-1 text-[#78350f]">66 - 40+</div>
+                        <div className="flex-1 lg:w-40 bg-[#fbbf24] flex flex-col items-center justify-center py-1">
+                            <div className="font-extrabold text-xs lg:text-[15px] border-b-2 border-[#b45309]/30 w-full text-center pb-0.5 lg:pb-1 text-[#78350f]">BK - AR</div>
+                            <div className="font-extrabold text-base lg:text-2xl pt-0.5 lg:pt-1 text-[#78350f]">66 - 40+</div>
                         </div>
                     </div>
                 </div>
@@ -377,7 +377,7 @@ const HoneycombReport = () => {
                         />
                     </div>
                     <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[10px] tracking-wider uppercase font-extrabold text-center">
-                        <span className="text-white">TEAM - 7 Transformation Elective And Mandate -</span>
+                        <span className="text-white w-full sm:w-auto mb-1 sm:mb-0">TEAM - 7 Transformation Elective And Mandate -</span>
                         <span className="text-[#f87171]">FAMILY</span>
                         <span className="text-[#fbbf24]">FINANCE</span>
                         <span className="text-[#4ade80]">GOVERNMENT</span>
@@ -434,9 +434,9 @@ const HoneycombReport = () => {
                 </div>
 
                 {/* Middle Scrolls Section */}
-                <div className="flex flex-col lg:flex-row px-4 py-5 gap-4 bg-white border-b-[6px] border-gray-200">
+                <div className="flex flex-col md:flex-row px-4 py-5 gap-4 bg-white border-b-[6px] border-gray-200">
                     {/* Books Overview */}
-                    <div className="flex-1 lg:flex-[1.2] border border-gray-300 rounded-[12px] overflow-hidden flex bg-white shadow-sm relative min-h-[160px] cursor-pointer hover:shadow-md transition-shadow">
+                    <div className="flex-1 md:flex-[1.2] border border-gray-300 rounded-[12px] overflow-hidden flex bg-white shadow-sm relative min-h-[160px] cursor-pointer hover:shadow-md transition-shadow">
                         <div className="w-24 border-r border-gray-200 flex flex-col items-center justify-center p-2 bg-white z-0 pt-8 pb-2">
                             <i className="pi pi-book text-[#1d4ed8] text-[36px] mb-1"></i>
                             <div className="text-[10px] font-bold text-center leading-tight px-1 text-gray-800">BOOKS<br />OVERVIEW</div>
@@ -445,9 +445,7 @@ const HoneycombReport = () => {
                         {/* Map Image container */}
                         <div className="flex-1 bg-white relative pl-2 overflow-hidden">
                             <div className="absolute inset-y-0 right-0 w-[calc(100%-0.5rem)] flex items-center justify-center">
-                                <div className="relative w-full h-[85%]">
-                                    {/* Map Image */}
-                                    <img src="/map_scroll.png" alt="Map Scroll" className="w-full h-full object-cover rounded shadow-sm" />
+                                <div className="relative w-full h-[85%] bg-[url('/map_scroll.png')] bg-[length:100%_100%] bg-center bg-no-repeat">
                                     {/* All Student Location Markers */}
                                     {students.map((student, idx) => (
                                         <div 
@@ -472,9 +470,8 @@ const HoneycombReport = () => {
                     <div className="flex-1 border border-gray-300 rounded-[12px] overflow-hidden flex bg-white shadow-sm relative cursor-pointer hover:shadow-md transition-shadow">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-[#c2410c] text-white text-[11px] font-black tracking-widest px-10 py-1.5 rounded-b-lg z-10 shadow-md">MOTHER TONGUE</div>
                         
-                        <div className="flex-1 bg-white relative flex items-center justify-center p-4 pt-8">
+                        <div className="flex-1 bg-white relative flex items-center justify-center p-4 pt-8 bg-[url('/mothertoung.png')] bg-[length:100%_100%] bg-center bg-no-repeat">
                             <div className="relative flex items-center justify-center w-full h-full">
-                                <img src="/mothertoung.png" alt="Mother Tongue Scroll" className="w-full h-full object-contain drop-shadow-sm" />
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <span className="font-black text-[#4a2e15] tracking-widest text-[14px] lg:text-[16px] uppercase whitespace-nowrap mt-1">MOTHER TONGUE</span>
                                 </div>
@@ -491,31 +488,31 @@ const HoneycombReport = () => {
                     </div>
 
                     {/* Right Stats Box */}
-                    <div className="w-full lg:w-40 border border-gray-300 rounded-[12px] flex flex-row lg:flex-col bg-white shadow-sm overflow-hidden cursor-pointer py-1">
-                        <div className="flex-1 lg:flex-none h-12 lg:h-auto lg:flex-1 flex items-center justify-between px-5 border-r lg:border-r-0 lg:border-b border-gray-200 hover:bg-orange-50 transition-colors">
-                            <i className="pi pi-user text-[#ea580c] text-2xl"></i>
-                            <span className="font-black text-[13px] text-gray-800">40+</span>
+                    <div className="w-full md:w-40 border border-gray-300 rounded-[12px] flex flex-row md:flex-col bg-white shadow-sm overflow-hidden cursor-pointer py-1">
+                        <div className="flex-1 md:flex-none h-14 md:h-auto md:flex-1 flex flex-col sm:flex-row items-center justify-center sm:justify-between px-1 sm:px-5 border-r md:border-r-0 md:border-b border-gray-200 hover:bg-orange-50 transition-colors">
+                            <i className="pi pi-user text-[#ea580c] text-xl sm:text-2xl mb-1 sm:mb-0"></i>
+                            <span className="font-black text-[11px] sm:text-[13px] text-gray-800">40+</span>
                         </div>
-                        <div className="flex-1 lg:flex-none h-12 lg:h-auto lg:flex-1 flex items-center justify-between px-5 border-r lg:border-r-0 lg:border-b border-gray-200 hover:bg-purple-50 transition-colors">
-                            <i className="pi pi-palette text-[#7e22ce] text-2xl"></i>
-                            <span className="font-black text-[13px] text-gray-800">1189</span>
+                        <div className="flex-1 md:flex-none h-14 md:h-auto md:flex-1 flex flex-col sm:flex-row items-center justify-center sm:justify-between px-1 sm:px-5 border-r md:border-r-0 md:border-b border-gray-200 hover:bg-purple-50 transition-colors">
+                            <i className="pi pi-palette text-[#7e22ce] text-xl sm:text-2xl mb-1 sm:mb-0"></i>
+                            <span className="font-black text-[11px] sm:text-[13px] text-gray-800">1189</span>
                         </div>
-                        <div className="flex-1 lg:flex-none h-12 lg:h-auto lg:flex-1 flex items-center justify-between px-5 border-r lg:border-r-0 lg:border-b border-gray-200 hover:bg-blue-50 transition-colors">
-                            <i className="pi pi-list text-[#3b82f6] text-2xl"></i>
-                            <span className="font-black text-[13px] text-gray-800">31102</span>
+                        <div className="flex-1 md:flex-none h-14 md:h-auto md:flex-1 flex flex-col sm:flex-row items-center justify-center sm:justify-between px-1 sm:px-5 border-r md:border-r-0 md:border-b border-gray-200 hover:bg-blue-50 transition-colors">
+                            <i className="pi pi-list text-[#3b82f6] text-xl sm:text-2xl mb-1 sm:mb-0"></i>
+                            <span className="font-black text-[11px] sm:text-[13px] text-gray-800">31102</span>
                         </div>
-                        <div className="flex-1 lg:flex-none h-12 lg:h-auto lg:flex-1 flex items-center justify-between px-5 hover:bg-green-50 transition-colors">
-                            <i className="pi pi-users text-[#16a34a] text-2xl"></i>
-                            <span className="font-black text-[13px] text-gray-800">70H.11M</span>
+                        <div className="flex-1 md:flex-none h-14 md:h-auto md:flex-1 flex flex-col sm:flex-row items-center justify-center sm:justify-between px-1 sm:px-5 hover:bg-green-50 transition-colors">
+                            <i className="pi pi-users text-[#16a34a] text-xl sm:text-2xl mb-1 sm:mb-0"></i>
+                            <span className="font-black text-[10px] sm:text-[13px] text-gray-800 whitespace-nowrap">70H.11M</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Bottom Section */}
-                <div className="flex flex-col lg:flex-row px-4 py-5 gap-4 bg-white">
+                <div className="flex flex-col md:flex-row px-4 py-5 gap-4 bg-white">
 
                     {/* Col 1: TRANSFORMATION */}
-                    <div className="w-full lg:w-[32%] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm">
+                    <div className="w-full md:w-[32%] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm">
                         <div className="bg-[#16a34a] text-white py-2 px-3 flex justify-between items-center text-[12px] font-bold uppercase border-b-[4px] border-[#14532d] rounded-t-[8px]">
                             <span className="tracking-widest">TRANSFORMATION</span>
                             <div className="flex gap-2 text-[10px] font-black items-center">
@@ -526,20 +523,22 @@ const HoneycombReport = () => {
                         </div>
 
                         {/* Pencils Area */}
-                        <div className="flex px-1 gap-[2px] h-[190px] pt-[4px] pb-[4px] w-full justify-between items-stretch mt-1">
-                            <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00BFFF]" tipColorClass="text-[#00BFFF]" textColor="text-black" />
-                            <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" />
-                            <Pencil label="FINANCE" baseNum="2" bodyColorClass="bg-[#228B22]" tipColorClass="text-[#228B22]" textColor="text-white" />
-                            <DividerBox letter="I" letterColor="text-[#294291]" num="2" />
-                            <Pencil label="GOVERNMENT" baseNum="3" bodyColorClass="bg-[#3340cd]" tipColorClass="text-[#3340cd]" textColor="text-white" />
-                            <DividerBox letter="S" letterColor="text-[#86c5f7]" num="3" />
-                            <Pencil label="SPIRITUALITY" baseNum="4" bodyColorClass="bg-[#fafa33]" tipColorClass="text-[#fafa33]" textColor="text-black" />
-                            <DividerBox letter="D" letterColor="text-[#38b948]" num="4" />
-                            <Pencil label="TALENTS" baseNum="5" bodyColorClass="bg-[#bb43b1]" tipColorClass="text-[#bb43b1]" textColor="text-white" />
-                            <DividerBox letter="O" letterColor="text-[#e3242b]" num="5" />
-                            <Pencil label="TRAINING" baseNum="6" bodyColorClass="bg-[#fe6d01]" tipColorClass="text-[#fe6d01]" textColor="text-black" />
-                            <DividerBox letter="M" letterColor="text-[#ed9b26]" num="6" />
-                            <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#fe0005]" tipColorClass="text-[#fe0005]" textColor="text-white" />
+                        <div className="flex px-1 gap-[2px] h-[190px] pt-[4px] pb-[4px] w-full mt-1 overflow-x-auto custom-scrollbar">
+                            <div className="flex w-full min-w-[320px] justify-center items-stretch gap-[2px]">
+                                <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00BFFF]" tipColorClass="text-[#00BFFF]" textColor="text-black" />
+                                <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" />
+                                <Pencil label="FINANCE" baseNum="2" bodyColorClass="bg-[#228B22]" tipColorClass="text-[#228B22]" textColor="text-white" />
+                                <DividerBox letter="I" letterColor="text-[#294291]" num="2" />
+                                <Pencil label="GOVERNMENT" baseNum="3" bodyColorClass="bg-[#3340cd]" tipColorClass="text-[#3340cd]" textColor="text-white" />
+                                <DividerBox letter="S" letterColor="text-[#86c5f7]" num="3" />
+                                <Pencil label="SPIRITUALITY" baseNum="4" bodyColorClass="bg-[#fafa33]" tipColorClass="text-[#fafa33]" textColor="text-black" />
+                                <DividerBox letter="D" letterColor="text-[#38b948]" num="4" />
+                                <Pencil label="TALENTS" baseNum="5" bodyColorClass="bg-[#bb43b1]" tipColorClass="text-[#bb43b1]" textColor="text-white" />
+                                <DividerBox letter="O" letterColor="text-[#e3242b]" num="5" />
+                                <Pencil label="TRAINING" baseNum="6" bodyColorClass="bg-[#fe6d01]" tipColorClass="text-[#fe6d01]" textColor="text-black" />
+                                <DividerBox letter="M" letterColor="text-[#ed9b26]" num="6" />
+                                <Pencil label="SERVICE" baseNum="7" bodyColorClass="bg-[#fe0005]" tipColorClass="text-[#fe0005]" textColor="text-white" />
+                            </div>
                         </div>
 
                         {/* TRANSFORMATION BAR */}
@@ -568,7 +567,7 @@ const HoneycombReport = () => {
                     </div>
 
                     {/* Col 2: TEAM TRANSFORMATION */}
-                    <div className="w-full lg:flex-[1.1] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm">
+                    <div className="w-full md:flex-[1.1] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm">
                         <div className="bg-[#312e81] text-white py-2 px-3 flex justify-between items-center text-[12px] font-bold uppercase border-b-[4px] border-[#1e1b4b] rounded-t-[8px]">
                             <span className="tracking-widest">TEAM TRANSFORMATION</span>
                             <div className="flex gap-2 text-[10px] font-black items-center">
@@ -578,13 +577,13 @@ const HoneycombReport = () => {
                             </div>
                         </div>
                         <div className="flex-1 flex items-center justify-center p-2 cursor-pointer min-h-[220px]">
-                            <div className="w-[95%] h-[95%] min-h-[200px] flex items-center justify-center relative bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/scrolltext.png')" }}>
+                            <div className="w-[95%] h-[95%] min-h-[200px] flex items-center justify-center relative bg-[length:100%_100%] bg-center bg-no-repeat" style={{ backgroundImage: "url('/scrolltext.png')" }}>
                             </div>
                         </div>
                     </div>
 
                     {/* Col 3: R.L.L.T READING PLAN */}
-                    <div className="w-full lg:flex-[1.2] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm">
+                    <div className="w-full md:flex-[1.2] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm">
                         <div className="bg-[#1e3a8a] text-white py-2 px-3 flex justify-between items-center text-[12px] font-bold border-b border-blue-900 leading-tight rounded-t-[8px]">
                             <div className="flex flex-col text-left">
                                 <span className="tracking-widest">R.L.L.T - READING PLAN</span>
@@ -616,12 +615,12 @@ const HoneycombReport = () => {
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="flex items-center px-5 py-2 bg-[#f8fafc] border-b-2 border-gray-200 text-[11px] font-bold text-[#1e3a8a] cursor-pointer">
-                            <i className="pi pi-caret-right mr-3 text-lg"></i>
-                            <span className="text-blue-600 mr-auto text-sm">50%</span>
-                            <span className="tracking-[0.2em] mr-auto">PROGRESS</span>
-                            <span className="mr-4 text-sm text-gray-900">25/50</span>
-                            <i className="pi pi-refresh cursor-pointer text-lg text-gray-700 hover:rotate-180 transition-transform hover:text-blue-600"></i>
+                        <div className="flex items-center px-3 sm:px-5 py-2 bg-[#f8fafc] border-b-2 border-gray-200 text-[11px] font-bold text-[#1e3a8a] cursor-pointer">
+                            <i className="pi pi-caret-right mr-2 sm:mr-3 text-base sm:text-lg"></i>
+                            <span className="text-blue-600 text-xs sm:text-sm">50%</span>
+                            <span className="tracking-[0.1em] sm:tracking-[0.2em] flex-1 text-center">PROGRESS</span>
+                            <span className="mr-2 sm:mr-4 text-xs sm:text-sm text-gray-900">25/50</span>
+                            <i className="pi pi-refresh cursor-pointer text-base sm:text-lg text-gray-700 hover:rotate-180 transition-transform hover:text-blue-600"></i>
                         </div>
 
                         {/* Number Grid */}

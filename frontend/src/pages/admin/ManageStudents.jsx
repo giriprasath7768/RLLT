@@ -14,6 +14,8 @@ import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { Paginator } from 'primereact/paginator';
 import { MultiSelect } from 'primereact/multiselect';
+import { classNames } from 'primereact/utils';
+import { InputTextarea } from 'primereact/inputtextarea';
 import { StudentService } from '../../services/studentService';
 import MobileDataCard from '../../components/common/MobileDataCard';
 import { calculateStudentLevel } from '../../utils/studentUtils';
@@ -382,16 +384,17 @@ export default function ManageStudents() {
     );
 
     const topCardContent = (
-        <div className="flex flex-wrap gap-4 w-full justify-start items-center">
+        <div className="flex flex-wrap gap-2 w-full justify-start items-center">
+            <Button label="New Student" icon="pi pi-plus" severity="success" onClick={openNew} />
             <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg">
                 <span className="font-bold text-[#2F5597] text-sm">BULK ACTIVATE:</span>
                 <InputSwitch checked={bulkToggle} onChange={handleBulkToggle} />
             </div>
-            <Button label="Auto Group" icon="pi pi-users" severity="info" onClick={handleAutoGroup} className="hidden md:flex ml-4" />
-            <Button label="Manual Group" icon="pi pi-users" severity="success" onClick={handleOpenManualGroup} className="hidden md:flex ml-2" />
-            <Button label="Ungroup" icon="pi pi-user-minus" severity="warning" outlined onClick={handleUngroup} className="hidden md:flex ml-2" />
-            <Button label="Assign Chart" icon="pi pi-chart-line" severity="success" outlined onClick={handleOpenAssignChart} className="hidden md:flex ml-2" />
-            <Button label="Export" icon="pi pi-file-pdf" severity="help" onClick={() => setExportModalVisible(true)} className="ml-auto hidden md:flex" />
+            <Button label="Auto Group" icon="pi pi-users" severity="info" onClick={handleAutoGroup} />
+            <Button label="Manual Group" icon="pi pi-users" severity="success" onClick={handleOpenManualGroup} />
+            <Button label="Ungroup" icon="pi pi-user-minus" severity="warning" outlined onClick={handleUngroup} />
+            <Button label="Assign Chart" icon="pi pi-chart-line" severity="success" outlined onClick={handleOpenAssignChart} />
+            <Button label="Export" icon="pi pi-file-pdf" severity="help" onClick={() => setExportModalVisible(true)} className="ml-auto" />
         </div>
     );
 
@@ -470,7 +473,7 @@ export default function ManageStudents() {
                 dataKey: col.field
             }));
 
-            const data = filteredStudents.map(stu => {
+            const data = filteredStudents.slice(first, first + rows).map(stu => {
                 let row = {};
                 activeColumns.forEach(col => {
                     if (col.field === 'is_active') {
@@ -578,6 +581,20 @@ export default function ManageStudents() {
                     </DataTable>
                 </div>
 
+                
+                    {/* Mobile Paginator */}
+                    {filteredStudents.length > 0 && (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block md:hidden">
+                            <Paginator 
+                                first={first} 
+                                rows={rows} 
+                                totalRecords={filteredStudents.length} 
+                                onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                template="PrevPageLink PageLinks NextPageLink" 
+                            />
+                        </div>
+                    )}
+        
                 {/* External Paginator Card */}
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredStudents.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
@@ -588,7 +605,7 @@ export default function ManageStudents() {
                 {/* Mobile View */}
                 <div className="block md:hidden mt-4">
                     {filteredStudents.length > 0 ? (
-                        filteredStudents.map(stu => (
+                        filteredStudents.slice(first, first + rows).map(stu => (
                             <MobileDataCard
                                 key={stu.id}
                                 title={`${stu.name} (${stu.category ? `Cat: ${stu.category}` : 'Uncategorized'}, Stage: ${stu.stage || '-'})`}
@@ -624,51 +641,67 @@ export default function ManageStudents() {
 
 
 
-            <Dialog visible={studentDialog} style={{ width: '40rem' }} breakpoints={{ '960px': '75vw', '641px': '95vw' }} header="Student Profile" modal className="p-fluid" footer={studentDialogFooter} onHide={hideDialog}>
-                <div className="formgrid grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="field mb-4">
-                        <label htmlFor="name" className="font-bold block mb-2">Student Name *</label>
-                        <InputText id="name" value={student.name} onChange={(e) => onInputChange(e, 'name')} required autoFocus className={submitted && !student.name ? 'p-invalid' : ''} />
-                    </div>
-                    <div className="field mb-4">
-                        <label htmlFor="email" className="font-bold block mb-2">Email ID *</label>
-                        <InputText id="email" value={student.email} onChange={(e) => onInputChange(e, 'email')} required disabled={student.id ? true : false} className={submitted && !student.email ? 'p-invalid' : ''} />
-                    </div>
-                </div>
+            <Dialog visible={studentDialog} breakpoints={{ '960px': '75vw', '641px': '95vw' }} modal className="p-fluid custom-admin-dialog max-w-3xl w-full" onHide={hideDialog} showHeader={false} contentClassName="rounded-3xl overflow-hidden bg-[#060238] p-0">
+                <div className="p-4 sm:p-6">
+                    <div className="bg-white rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-200 p-6 sm:p-8">
+                        <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                            <h2 className="text-xl font-bold text-gray-800 m-0">Student Profile</h2>
+                            <Button icon="pi pi-times" rounded text severity="secondary" aria-label="Cancel" onClick={hideDialog} className="w-8 h-8 p-0" />
+                        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="field mb-4">
-                        <label htmlFor="mobile_number" className="font-bold block mb-2">Mobile Number</label>
-                        <InputText id="mobile_number" value={student.mobile_number} onChange={(e) => onInputChange(e, 'mobile_number')} keyfilter="num" />
-                    </div>
-                    <div className="field mb-4">
-                        <label htmlFor="enrollment_number" className="font-bold block mb-2">Enrollment Number</label>
-                        <InputText id="enrollment_number" value={student.enrollment_number} onChange={(e) => onInputChange(e, 'enrollment_number')} placeholder="Auto-generated if empty" disabled={student.id ? true : false} />
-                    </div>
-                </div>
+                        <div className="formgrid grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="field mb-4">
+                                <label htmlFor="name" className="font-semibold block mb-1 text-sm text-gray-700">Student Name *</label>
+                                <InputText id="name" value={student.name} onChange={(e) => onInputChange(e, 'name')} required autoFocus className={classNames({ 'p-invalid': submitted && !student.name })} />
+                                {submitted && !student.name && <small className="p-error block mt-1 text-red-500">Name is required.</small>}
+                            </div>
+                            <div className="field mb-4">
+                                <label htmlFor="email" className="font-semibold block mb-1 text-sm text-gray-700">Email ID *</label>
+                                <InputText id="email" value={student.email} onChange={(e) => onInputChange(e, 'email')} required disabled={student.id ? true : false} className={classNames({ 'p-invalid': submitted && !student.email })} />
+                                {submitted && !student.email && <small className="p-error block mt-1 text-red-500">Email is required.</small>}
+                            </div>
+                        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="field mb-4">
-                        <label htmlFor="dob" className="font-bold block mb-2">Date of Birth</label>
-                        <Calendar id="dob" value={student.dob} onChange={(e) => {
-                            const cal = calculateStudentLevel(e.value);
-                            setStudent({ ...student, dob: e.value, category: cal.category, stage: cal.stage });
-                        }} dateFormat="dd/mm/yy" showIcon maxDate={new Date()} />
-                        {student.category && (
-                            <small className="block mt-1 text-green-600 font-bold">
-                                Category: {student.category} | Stage: {student.stage}
-                            </small>
-                        )}
-                    </div>
-                    <div className="field mb-4">
-                        <label htmlFor="gender" className="font-bold block mb-2">Gender</label>
-                        <Dropdown id="gender" value={student.gender} options={genderOptions} onChange={(e) => setStudent({ ...student, gender: e.value })} placeholder="Select Gender" />
-                    </div>
-                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="field mb-4">
+                                <label htmlFor="mobile_number" className="font-semibold block mb-1 text-sm text-gray-700">Mobile Number</label>
+                                <InputText id="mobile_number" value={student.mobile_number} onChange={(e) => onInputChange(e, 'mobile_number')} keyfilter="num" />
+                            </div>
+                            <div className="field mb-4">
+                                <label htmlFor="enrollment_number" className="font-semibold block mb-1 text-sm text-gray-700">Enrollment Number</label>
+                                <InputText id="enrollment_number" value={student.enrollment_number} onChange={(e) => onInputChange(e, 'enrollment_number')} placeholder="Auto-generated if empty" disabled={student.id ? true : false} />
+                            </div>
+                        </div>
 
-                <div className="field mb-4">
-                    <label htmlFor="address" className="font-bold block mb-2">Address</label>
-                    <InputText id="address" value={student.address} onChange={(e) => onInputChange(e, 'address')} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="field mb-4">
+                                <label htmlFor="dob" className="font-semibold block mb-1 text-sm text-gray-700">Date of Birth</label>
+                                <Calendar id="dob" value={student.dob} onChange={(e) => {
+                                    const cal = calculateStudentLevel(e.value);
+                                    setStudent({ ...student, dob: e.value, category: cal.category, stage: cal.stage });
+                                }} dateFormat="dd/mm/yy" showIcon maxDate={new Date()} />
+                                {student.category && (
+                                    <small className="block mt-1 text-green-600 font-bold">
+                                        Category: {student.category} | Stage: {student.stage}
+                                    </small>
+                                )}
+                            </div>
+                            <div className="field mb-4">
+                                <label htmlFor="gender" className="font-semibold block mb-1 text-sm text-gray-700">Gender</label>
+                                <Dropdown id="gender" value={student.gender} options={genderOptions} onChange={(e) => setStudent({ ...student, gender: e.value })} placeholder="Select Gender" />
+                            </div>
+                        </div>
+
+                        <div className="field mb-4">
+                            <label htmlFor="address" className="font-semibold block mb-1 text-sm text-gray-700">Address</label>
+                            <InputTextarea id="address" value={student.address} onChange={(e) => onInputChange(e, 'address')} rows={3} autoResize />
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-8 border-t border-gray-100 pt-4">
+                            <Button label="Cancel" icon="pi pi-times" outlined onClick={hideDialog} className="w-auto px-4" />
+                            <Button label="Save" icon="pi pi-check" onClick={saveStudent} className="w-auto px-4" />
+                        </div>
+                    </div>
                 </div>
             </Dialog>
 

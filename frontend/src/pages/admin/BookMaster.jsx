@@ -249,9 +249,9 @@ const BookMaster = () => {
     const topCardContent = (
         <div className="flex flex-col md:flex-row gap-3 md:items-center justify-between w-full">
             <div className="flex flex-wrap gap-2">
-                <Button label="New Book" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
-                <Button label="Delete" icon="pi pi-trash" severity="danger" onClick={confirmDeleteSelected} disabled={!selectedBooks || !selectedBooks.length} className="hidden md:flex" />
-                <Button label="Import Excel" icon="pi pi-upload" severity="help" onClick={() => setImportDialog(true)} className="hidden md:flex" />
+                <Button label="New Book" icon="pi pi-plus" severity="success" onClick={openNew} />
+                <Button label="Delete" icon="pi pi-trash" severity="danger" onClick={confirmDeleteSelected} disabled={!selectedBooks || !selectedBooks.length} />
+                <Button label="Import Excel" icon="pi pi-upload" severity="help" onClick={() => setImportDialog(true)} />
             </div>
         </div>
     );
@@ -339,6 +339,20 @@ const BookMaster = () => {
                     </DataTable>
                 </div>
 
+                
+                    {/* Mobile Paginator */}
+                    {filteredBooks.length > 0 && (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block md:hidden">
+                            <Paginator 
+                                first={first} 
+                                rows={rows} 
+                                totalRecords={filteredBooks.length} 
+                                onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                template="PrevPageLink PageLinks NextPageLink" 
+                            />
+                        </div>
+                    )}
+        
                 {/* External Paginator Card */}
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredBooks.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
@@ -349,7 +363,7 @@ const BookMaster = () => {
                 {/* Mobile View */}
                 <div className="block md:hidden mt-4">
                     {filteredBooks.length > 0 ? (
-                        filteredBooks.map(book => (
+                        filteredBooks.slice(first, first + rows).map(book => (
                             <MobileDataCard
                                 key={book.id}
                                 title={book.name}
@@ -369,11 +383,6 @@ const BookMaster = () => {
                         </div>
                     )}
                 </div>
-            </div>
-
-            {/* Mobile FAB */}
-            <div className="block md:hidden fixed bottom-6 right-6 z-50">
-                <Button icon="pi pi-plus" className="p-button-rounded p-button-success shadow-lg" size="large" onClick={openNew} aria-label="Add New" />
             </div>
 
             <Dialog visible={bookDialog} style={{ width: '32rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Book Details" modal className="p-fluid" footer={bookDialogFooter} onHide={hideDialog}>
@@ -398,7 +407,7 @@ const BookMaster = () => {
                     <InputText id="book_type" value={book.book_type} onChange={(e) => onInputChange(e, 'book_type')} />
                 </div>
 
-                <div className="formgrid grid grid-cols-2 gap-4">
+                <div className="formgrid grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="field col-6">
                         <label htmlFor="total_chapters" className="font-bold block mb-2">Total Chapters</label>
                         <InputNumber id="total_chapters" value={book.total_chapters} onValueChange={(e) => onInputNumberChange(e, 'total_chapters')} useGrouping={false} />
@@ -409,7 +418,7 @@ const BookMaster = () => {
                     </div>
                 </div>
 
-                <div className="formgrid grid grid-cols-2 gap-4 mt-4">
+                <div className="formgrid grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="field col-6">
                         <label htmlFor="total_art" className="font-bold block mb-2">Total ART</label>
                         <InputNumber id="total_art" value={book.total_art} onValueChange={(e) => onInputNumberChange(e, 'total_art')} mode="decimal" minFractionDigits={2} maxFractionDigits={2} />

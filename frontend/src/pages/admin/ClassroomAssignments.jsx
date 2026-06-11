@@ -9,6 +9,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Toast } from 'primereact/toast';
+import { Paginator } from 'primereact/paginator';
 
 const ClassroomAssignments = () => {
     const [assignments, setAssignments] = useState([]);
@@ -27,6 +28,8 @@ const ClassroomAssignments = () => {
     const [globalFilter, setGlobalFilter] = useState('');
     const [first, setFirst] = useState(0);
     const [rows, setRows] = useState(10);
+    const [submissionsFirst, setSubmissionsFirst] = useState(0);
+    const [submissionsRows, setSubmissionsRows] = useState(5);
 
     const [answersDialogVisible, setAnswersDialogVisible] = useState(false);
     const [selectedAnswers, setSelectedAnswers] = useState(null);
@@ -128,6 +131,7 @@ const ClassroomAssignments = () => {
 
     const viewSubmissions = async (assignment) => {
         setSelectedAssignment(assignment);
+        setSubmissionsFirst(0);
         setSubmissionsDialogVisible(true);
         setSubmissionsLoading(true);
         try {
@@ -206,6 +210,16 @@ const ClassroomAssignments = () => {
         );
     };
 
+    const filteredAssignments = assignments.filter(item => {
+        if (!globalFilter) return true;
+        const query = globalFilter.toLowerCase();
+        return (
+            item.title?.toLowerCase().includes(query) ||
+            (item.due_date && new Date(item.due_date).toLocaleDateString().toLowerCase().includes(query)) ||
+            locationTemplate(item).toLowerCase().includes(query)
+        );
+    });
+
     return (
         <div className="p-4 sm:p-8 bg-gray-50 min-h-screen">
             <Toast ref={toast} />
@@ -227,7 +241,7 @@ const ClassroomAssignments = () => {
                 </div>
             </div>
 
-            <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden lg:block w-full p-4">
                 <DataTable value={assignments} loading={loading} paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
                     globalFilter={globalFilter}
                     className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines emptyMessage="No assignments found."
@@ -241,19 +255,18 @@ const ClassroomAssignments = () => {
                 </DataTable>
             </div>
 
+            {/* Desktop Paginator */}
+            <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden lg:block">
+                <Paginator first={first} rows={rows} totalRecords={filteredAssignments.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                    template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} assignments" />
+            </div>
+
             {/* Mobile View */}
-            <div className="block md:hidden mt-4 space-y-4">
-                {assignments.length > 0 ? (
-                    assignments
-                        .filter(item => {
-                            if (!globalFilter) return true;
-                            const query = globalFilter.toLowerCase();
-                            return (
-                                item.title?.toLowerCase().includes(query) ||
-                                (item.due_date && new Date(item.due_date).toLocaleDateString().toLowerCase().includes(query)) ||
-                                locationTemplate(item).toLowerCase().includes(query)
-                            );
-                        })
+            <div className="block lg:hidden mt-4 space-y-4">
+                {filteredAssignments.length > 0 ? (
+                    filteredAssignments
+                        .slice(first, first + rows)
                         .map((item, index) => (
                             <div key={item.id || index} className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 flex flex-col gap-3">
                                 <div className="flex justify-between items-start">
@@ -294,7 +307,21 @@ const ClassroomAssignments = () => {
                 )}
             </div>
 
-            <Dialog visible={dialogVisible} modal className="p-fluid max-w-2xl w-full" onHide={() => setDialogVisible(false)} header="Create Assignment">
+            
+            {/* Mobile Paginator */}
+            {filteredAssignments.length > 0 && (
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block lg:hidden">
+                    <Paginator 
+                        first={first} 
+                        rows={rows} 
+                        totalRecords={filteredAssignments.length} 
+                        onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                        template="PrevPageLink PageLinks NextPageLink" 
+                    />
+                </div>
+            )}
+        
+            <Dialog visible={dialogVisible} modal breakpoints={{ '960px': '75vw', '641px': '95vw' }} className="p-fluid max-w-2xl w-full" onHide={() => setDialogVisible(false)} header="Create Assignment">
                 <div className="grid grid-cols-1 gap-4 p-4">
                     <div className="field">
                         <label className="font-bold block mb-2">Title *</label>
@@ -348,7 +375,7 @@ const ClassroomAssignments = () => {
             <Dialog visible={submissionsDialogVisible} modal className="p-fluid max-w-4xl w-full" onHide={() => setSubmissionsDialogVisible(false)} header={`Submissions for: ${selectedAssignment?.title}`} breakpoints={{ '960px': '75vw', '641px': '95vw' }}>
                 <div className="p-2 sm:p-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
                     {/* Desktop View */}
-                    <div className="hidden sm:block">
+                    <div className="hidden lg:block">
                         <DataTable value={submissions} loading={submissionsLoading} paginator rows={5} showGridlines emptyMessage="No submissions yet.">
                             <Column field="student_id" header="Student ID" style={{ width: '25%' }}></Column>
                             <Column field="status" header="Status"></Column>
@@ -360,24 +387,35 @@ const ClassroomAssignments = () => {
                         {submissionsLoading ? (
                             <div className="text-center p-4 text-gray-500">Loading submissions...</div>
                         ) : submissions.length > 0 ? (
-                            submissions.map((sub, index) => (
-                                <div key={sub.id || index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex flex-col gap-2">
-                                    <div className="flex justify-between items-center">
-                                        <div className="text-xs font-bold text-gray-500">Student ID</div>
-                                        <div className="text-sm font-black text-gray-800">{sub.student_id}</div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <div className="text-xs font-bold text-gray-500">Status</div>
-                                        <div className="text-xs font-bold bg-green-50 text-green-700 px-2 py-0.5 rounded">{sub.status}</div>
-                                    </div>
-                                    <div className="border-t border-gray-200/50 pt-2 mt-1">
-                                        <div className="text-xs font-bold text-gray-500 mb-1.5">Evaluate / File</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {submissionActionTemplate(sub)}
+                            <>
+                                {submissions.slice(submissionsFirst, submissionsFirst + submissionsRows).map((sub, index) => (
+                                    <div key={sub.id || index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm flex flex-col gap-2">
+                                        <div className="flex justify-between items-center">
+                                            <div className="text-xs font-bold text-gray-500">Student ID</div>
+                                            <div className="text-sm font-black text-gray-800">{sub.student_id}</div>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <div className="text-xs font-bold text-gray-500">Status</div>
+                                            <div className="text-xs font-bold bg-green-50 text-green-700 px-2 py-0.5 rounded">{sub.status}</div>
+                                        </div>
+                                        <div className="border-t border-gray-200/50 pt-2 mt-1">
+                                            <div className="text-xs font-bold text-gray-500 mb-1.5">Evaluate / File</div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {submissionActionTemplate(sub)}
+                                            </div>
                                         </div>
                                     </div>
+                                ))}
+                                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4">
+                                    <Paginator 
+                                        first={submissionsFirst} 
+                                        rows={submissionsRows} 
+                                        totalRecords={submissions.length} 
+                                        onPageChange={(e) => { setSubmissionsFirst(e.first); setSubmissionsRows(e.rows); }}
+                                        template="PrevPageLink PageLinks NextPageLink" 
+                                    />
                                 </div>
-                            ))
+                            </>
                         ) : (
                             <div className="text-center p-4 text-gray-500">No submissions yet.</div>
                         )}

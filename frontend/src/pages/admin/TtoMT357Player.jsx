@@ -36,6 +36,50 @@ const TtoMT357Player = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isFlipped, setIsFlipped] = useState(false);
 
+    const playlistRef = useRef(null);
+    const [isPlaylistScrollActive, setIsPlaylistScrollActive] = useState(false);
+
+    useEffect(() => {
+        if (isPlaylistScrollActive) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
+    }, [isPlaylistScrollActive]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (playlistRef.current && !playlistRef.current.contains(event.target)) {
+                setIsPlaylistScrollActive(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+    useEffect(() => {
+        const el = playlistRef.current;
+        if (!el) return;
+
+        const handleWheel = (e) => {
+            if (isPlaylistScrollActive) {
+                const maxScrollTop = el.scrollHeight - el.clientHeight;
+                if (maxScrollTop > 0) {
+                    el.scrollTop += e.deltaY;
+                    e.preventDefault();
+                }
+            }
+        };
+
+        el.addEventListener('wheel', handleWheel, { passive: false });
+        return () => el.removeEventListener('wheel', handleWheel);
+    }, [isPlaylistScrollActive]);
+
     const [showSettings, setShowSettings] = useState(false);
     const [themeColor, setThemeColor] = useState(() => {
         return localStorage.getItem('playerThemeColor') || '#00C0FF';
@@ -406,9 +450,13 @@ const TtoMT357Player = () => {
 
     const getBookTooltip = (code) => {
         let matchedBook;
-        if (code === 'PRO') matchedBook = booksDB.find(b => b.short_form === 'PRO');
-        else if (code === 'PSA') matchedBook = booksDB.find(b => b.short_form === 'PSA');
-        else matchedBook = booksDB.find(b => isBookMatch(code, b));
+        if (code === 'psa119') {
+            matchedBook = booksDB.find(b => (b.name + " " + (b.short_form || "")).toUpperCase().includes("119"));
+        } else if (code === 'psa75') {
+            matchedBook = booksDB.find(b => (b.name + " " + (b.short_form || "")).toUpperCase().includes("DAVID"));
+        } else {
+            matchedBook = booksDB.find(b => isBookMatch(code, b));
+        }
 
         if (!matchedBook) return '';
         const chaps = chaptersDB.filter(c => c.book_id === matchedBook.id);
@@ -447,11 +495,25 @@ const TtoMT357Player = () => {
             }
             if (targetDayObj) {
                 const dayTracks = [];
-                if (targetDayObj.m1b) dayTracks.push(targetDayObj.m1b);
-                if (targetDayObj.m2b) dayTracks.push(targetDayObj.m2b);
-                if (targetDayObj.m3b) dayTracks.push(targetDayObj.m3b);
-                if (targetDayObj.m4b) dayTracks.push(targetDayObj.m4b);
-                if (targetDayObj.m5b) dayTracks.push(targetDayObj.m5b);
+                const addExpanded = (val) => {
+                    if (!val) return;
+                    const match = val.trim().match(/^([0-9A-Za-z]+)\s+(\d+)\s*-\s*(\d+)$/);
+                    if (match) {
+                        const book = match[1];
+                        const start = parseInt(match[2], 10);
+                        const end = parseInt(match[3], 10);
+                        for (let i = start; i <= end; i++) {
+                            dayTracks.push(`${book} ${i}`);
+                        }
+                    } else {
+                        dayTracks.push(val);
+                    }
+                };
+                addExpanded(targetDayObj.m1b);
+                addExpanded(targetDayObj.m2b);
+                addExpanded(targetDayObj.m3b);
+                addExpanded(targetDayObj.m4b);
+                addExpanded(targetDayObj.m5b);
                 return dayTracks;
             }
         }
@@ -517,15 +579,14 @@ const TtoMT357Player = () => {
     const artHours = Math.floor(totalMinutes / 60);
     const artMins = Math.floor(totalMinutes % 60);
 
-    const handleViewChart = async () => {
+    const handleViewChart = async (autoPrint = false) => {
         try {
             const listRes = await axios.get(`http://${window.location.hostname}:8000/api/charts/list`, { withCredentials: true });
             const exists = listRes.data.find(c => Number(c.module) === 5 && Number(c.facet) === Number(facet) && Number(c.phase) === Number(phase));
             
             if (exists) {
-                const payloadStr = exists.state_payload || "";
-                const is24x7 = payloadStr.includes('"m4b"');
-                const isMainChart = exists.banner_text && exists.banner_text.toLowerCase().includes('main chart');
+                const isMainChart = exists.chart_type === 'Main Chart' || (exists.banner_text && exists.banner_text.toLowerCase().includes('main chart'));
+                const is24x7 = exists.chart_type === '24x7 Chart' || (exists.banner_text && (exists.banner_text.toLowerCase().includes('24/7') || exists.banner_text.toLowerCase().includes('24x7')));
                 
                 let chartRoute = '357-chart';
                 if (is24x7) {
@@ -541,7 +602,8 @@ const TtoMT357Player = () => {
                             module: 5,
                             facet: facet,
                             phase: phase
-                        }
+                        },
+                        autoPrint: autoPrint === true
                     }
                 });
             } else {
@@ -585,16 +647,15 @@ const TtoMT357Player = () => {
             return;
         }
 
-        // This process needs 5 segments if there are more than 3 books or special books are present
-        const isSpecialProcess = allSelectedBooks.length > 3 || hasPsa119 || hasPsa75;
-        const use5Segments = isSpecialProcess;
+        const is24x7Format = hasPsa119 || hasPsa75;
+        const use5Segments = is24x7Format;
         const daysPerChunk = selectedDay; // User selected 3, 5, or 7
 
         let targetMdl = 5; // TtoMT357 is Module 5
         let targetFct = facet;
         let targetPhs = phase;
 
-        const bannerText = `3-5-7 CHART - ${chartLength} DAYS`;
+        const bannerText = is24x7Format ? `24X7 CHART - ${chartLength} DAYS` : `MAIN CHART - ${chartLength} DAYS`;
 
         const distributeBooks = (booksArr, daysOutCount) => {
             if (!booksArr || !booksArr.length) return Array.from({ length: daysOutCount }, () => null);
@@ -785,15 +846,15 @@ const TtoMT357Player = () => {
                     promiseLabel: "GOD'S PROMISES :",
                     promises: "ENTER GOD'S PROMISSES HERE",
                     promiseInput: "",
-                    h1: "",
-                    h2: "",
-                    h3: "",
+                    h1: chunkDays[0]?.m1b ? chunkDays[0].m1b.replace(/[0-9\-].*/, '').trim() : "",
+                    h2: chunkDays[0]?.m2b ? chunkDays[0].m2b.replace(/[0-9\-].*/, '').trim() : "",
+                    h3: chunkDays[0]?.m3b ? chunkDays[0].m3b.replace(/[0-9\-].*/, '').trim() : "",
                     days: chunkDays
                 };
 
                 if (use5Segments) {
-                    chunkObj.h4 = "";
-                    chunkObj.h5 = "";
+                    chunkObj.h4 = chunkDays[0]?.m4b ? chunkDays[0].m4b.replace(/[0-9\-].*/, '').trim() : "";
+                    chunkObj.h5 = chunkDays[0]?.m5b ? chunkDays[0].m5b.replace(/[0-9\-].*/, '').trim() : "";
                 }
 
                 newChunks.push(chunkObj);
@@ -805,6 +866,7 @@ const TtoMT357Player = () => {
         formData.append("facet", targetFct);
         formData.append("phase", targetPhs);
         formData.append("banner_text", bannerText);
+        formData.append("chart_type", is24x7Format ? "24x7 Chart" : "Main Chart");
         formData.append("t_label", "T");
         formData.append("state_payload", JSON.stringify(newChunks));
 
@@ -830,10 +892,10 @@ const TtoMT357Player = () => {
                 withCredentials: true
             });
 
-            if (isSpecialProcess) {
+            if (is24x7Format) {
                 navigate(`/admin/twenty-four-seven-chart?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
             } else {
-                navigate(`/admin/chart-creation/357-chart?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
+                navigate(`/admin/charts?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
             }
         } catch (err) {
             console.error(err);
@@ -868,10 +930,38 @@ const TtoMT357Player = () => {
                 .p-tooltip.custom-book-tooltip .p-tooltip-arrow {
                     border-top-color: #6195df !important;
                 }
+                @media (max-width: 380px) {
+                    .mobile-compact {
+                        width: 600px !important;
+                        max-width: 600px !important;
+                        zoom: 0.6;
+                    }
+                }
+                @media (min-width: 381px) and (max-width: 450px) {
+                    .mobile-compact {
+                        width: 600px !important;
+                        max-width: 600px !important;
+                        zoom: 0.65;
+                    }
+                }
+                @media (min-width: 451px) and (max-width: 639px) {
+                    .mobile-compact {
+                        width: 600px !important;
+                        max-width: 600px !important;
+                        zoom: 0.75;
+                    }
+                }
+                @media (min-width: 640px) and (max-width: 767px) {
+                    .mobile-compact {
+                        width: 600px !important;
+                        max-width: 600px !important;
+                        zoom: 0.85;
+                    }
+                }
             `}</style>
 
             {/* Main Player Container Wrapper for 3D Flip */}
-            <div className="w-full max-w-[600px] [perspective:1500px]">
+            <div className="w-full max-w-[600px] [perspective:1500px] mobile-compact">
                 <div className={`w-full relative transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'}`}>
                     
                     {/* Front Side */}
@@ -959,45 +1049,51 @@ const TtoMT357Player = () => {
                 </div>
 
                 {/* Tracklist & Image Panel */}
-                <div className="flex px-[21px] gap-[13px] mb-[2px] h-[240px]">
+                <div className="flex flex-col sm:flex-row px-[10px] sm:px-[21px] gap-[10px] mb-[2px] h-auto sm:h-[220px]">
                     {/* Tracks Area */}
-                    <div className="flex-1 flex flex-col border-[2px] border-[#3b1a0b] bg-[url('/357playlist.png')] bg-[length:120%_110%] bg-center bg-no-repeat rounded-xl overflow-hidden shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] p-[8px] relative h-full">
+                    <div className="w-full sm:w-[38%] h-[200px] sm:h-full shrink-0 flex flex-col border-[2px] border-[#3b1a0b] bg-[url('/357playlist.png')] bg-[length:120%_110%] bg-center bg-no-repeat rounded-xl overflow-hidden shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] p-[8px] relative">
                         <h2 className="text-[20px] font-black mb-[8px] text-[#1c0d06] drop-shadow-[0_1px_0_rgba(255,255,255,0.15)]" style={{ WebkitTextStroke: '0.5px #1c0d06' }}>DAY {selectedPreviewDay < 10 ? `0${selectedPreviewDay}` : selectedPreviewDay}/{displayDays.length < 10 ? `0${displayDays.length}` : displayDays.length}</h2>
-                        <div className="flex-1 flex flex-col gap-0 overflow-y-auto pr-1 no-scrollbar pb-2">
-                            {tracks.map((track, idx) => {
-                                const isActive = track === activeTrack;
-                                return (
-                                    <button
-                                        key={idx}
-                                        onClick={() => {
-                                            setActiveTrack(track);
-                                            setIsPlaying(true);
-                                        }}
-                                        className={`w-full flex items-center gap-[8px] py-[4px] px-[8px] rounded-lg border transition-all ${isActive
-                                            ? 'bg-gradient-to-b from-[#331508] to-[#1c0b04] border-[#1a0a03] shadow-[inset_0_3px_5px_rgba(0,0,0,0.9),0_1px_1px_rgba(255,255,255,0.1)]'
-                                            : 'bg-transparent border-transparent shadow-none hover:bg-[#4a200e]/40'
-                                            }`}
-                                    >
-                                        <div className="w-[21px] h-[21px] shrink-0 flex items-center justify-center drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]">
-                                            <img src="/pointbutton.png" alt="Play" className="w-full h-full object-contain pointer-events-none" />
-                                        </div>
-                                        <span className={`font-bold tracking-wide text-[15px] text-[#fadfc3] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]`}>
-                                            {getFullTrackName(track)}
-                                        </span>
-                                    </button>
-                                );
-                            })}
+                        <div 
+                            ref={playlistRef}
+                            onClick={() => setIsPlaylistScrollActive(true)}
+                            className={`flex-1 min-h-0 pr-1 no-scrollbar pb-2 ${isPlaylistScrollActive ? 'overflow-y-auto' : 'overflow-hidden'}`}
+                        >
+                            <div className="flex flex-col gap-0">
+                                {tracks.map((track, idx) => {
+                                    const isActive = track === activeTrack;
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => {
+                                                setActiveTrack(track);
+                                                setIsPlaying(true);
+                                            }}
+                                            className={`w-full flex items-center gap-[8px] py-[4px] px-[8px] rounded-lg border transition-all ${isActive
+                                                ? 'bg-gradient-to-b from-[#331508] to-[#1c0b04] border-[#1a0a03] shadow-[inset_0_3px_5px_rgba(0,0,0,0.9),0_1px_1px_rgba(255,255,255,0.1)]'
+                                                : 'bg-transparent border-transparent shadow-none hover:bg-[#4a200e]/40'
+                                                }`}
+                                        >
+                                            <div className="w-[21px] h-[21px] shrink-0 flex items-center justify-center drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]">
+                                                <img src="/pointbutton.png" alt="Play" className="w-full h-full object-contain pointer-events-none" />
+                                            </div>
+                                            <span className={`font-bold tracking-wide text-[15px] text-[#fadfc3] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]`}>
+                                                {getFullTrackName(track)}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
 
                     {/* Image Area */}
-                    <div className="flex-1 rounded-xl overflow-hidden border-[3px] border-[#9a7638] shadow-[inset_0_0_20px_rgba(0,0,0,0.8),0_4px_8px_rgba(0,0,0,0.2)] bg-black relative h-full">
+                    <div className="w-full sm:flex-1 h-[220px] sm:h-full rounded-xl overflow-hidden border-[3px] border-[#9a7638] shadow-[inset_0_0_20px_rgba(0,0,0,0.8),0_4px_8px_rgba(0,0,0,0.2)] bg-black relative">
                         {sliderImages.map((src, index) => (
                             <img
                                 key={index}
                                 src={src}
                                 alt="Reading"
-                                className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${index === sliderImageIndex ? 'opacity-90 z-10' : 'opacity-0 z-0'}`}
+                                className={`absolute top-0 left-0 w-full h-full object-fill transition-opacity duration-1000 ${index === sliderImageIndex ? 'opacity-90 z-10' : 'opacity-0 z-0'}`}
                             />
                         ))}
                         {/* Empty top-left corner */}
@@ -1025,7 +1121,7 @@ const TtoMT357Player = () => {
                         </audio>
 
                         {/* Play Button */}
-                        <button onClick={togglePlay} className="relative w-[75px] h-[75px] shrink-0 flex items-center justify-center transition-all active:scale-95 group hover:brightness-110 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
+                        <button onClick={togglePlay} className="relative w-[75px] h-[75px] mb-[12px] shrink-0 flex items-center justify-center transition-all active:scale-95 group hover:brightness-110 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
                             <img src={isPlaying ? "/pointbutton.png" : "/playbutton.png"} alt="Play" className="w-full h-full object-contain scale-[1.1]" />
                             {isPlaying && <div className="absolute inset-0 flex items-center justify-center text-[#2b170c] font-black text-2xl drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]">||</div>}
                         </button>
@@ -1055,15 +1151,15 @@ const TtoMT357Player = () => {
                         </div>
 
                         {/* Settings Gear */}
-                        <button onClick={() => setShowSettings(true)} className="w-[32px] h-[32px] shrink-0 flex items-center justify-center hover:brightness-125 transition-all active:translate-y-[2px] drop-shadow-[0_3px_4px_rgba(0,0,0,0.9)]">
+                        <button onClick={() => setShowSettings(true)} className="w-[32px] h-[32px] mb-[12px] shrink-0 flex items-center justify-center hover:brightness-125 transition-all active:translate-y-[2px] drop-shadow-[0_3px_4px_rgba(0,0,0,0.9)]">
                             <i className="pi pi-cog font-bold text-[24px] text-transparent bg-clip-text bg-gradient-to-b from-[#e3b586] via-[#a36338] to-[#47220d]"></i>
                         </button>
                     </div>
                 </div>
 
                 {/* Pagination */}
-                <div className="mx-[16px] mb-[13px] flex items-center justify-center pl-[54px] pr-[37px]">
-                    <div className="w-full flex items-center justify-between border-[2px] border-[#2e1d0d] bg-gradient-to-b from-[#c09d6b] via-[#a37d4c] to-[#644222] shadow-[0_4px_8px_rgba(0,0,0,0.8),inset_0_2px_3px_rgba(255,255,255,0.3)] py-[10px] px-[8px] rounded-[13px]">
+                <div className="mx-[8px] sm:mx-[16px] mb-[13px] flex items-center justify-center pl-[10px] pr-[10px] sm:pl-[54px] sm:pr-[37px]">
+                    <div className="w-full flex items-center justify-between border-[2px] border-[#2e1d0d] bg-gradient-to-b from-[#c09d6b] via-[#a37d4c] to-[#644222] shadow-[0_4px_8px_rgba(0,0,0,0.8),inset_0_2px_3px_rgba(255,255,255,0.3)] py-[10px] px-[4px] sm:px-[8px] rounded-[13px]">
                         <button
                             onClick={() => setDaysPage(prev => Math.max(0, prev - 1))}
                             disabled={daysPage === 0}
@@ -1071,7 +1167,7 @@ const TtoMT357Player = () => {
                         >
                             <i className="pi pi-angle-left text-[18px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] font-bold"></i>
                         </button>
-                        <div className="flex-1 min-w-0 flex justify-start overflow-x-auto gap-[6px] font-['Times_New_Roman',_Times,_serif] font-bold text-[16px] px-[4px] custom-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        <div className="flex-1 min-w-0 flex flex-wrap justify-center gap-[6px] gap-y-[6px] font-['Times_New_Roman',_Times,_serif] font-bold text-[16px] px-[4px]">
                             {displayDays.slice(daysPage * 10, (daysPage + 1) * 10).map(n => (
                                 <div key={n}
                                     onClick={() => setSelectedPreviewDay(n)}
@@ -1100,11 +1196,11 @@ const TtoMT357Player = () => {
                 </div>
 
                 {/* Combined Bible Books */}
-                <div className="mx-[16px] mb-[10px] relative">
+                <div className="mx-[0] mb-[10px] relative">
                     <Tooltip target=".book-tooltip" position="top" className="custom-book-tooltip" showDelay={0} hideDelay={0} />
-                    <div className="overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/bookbg.png')] bg-[length:100%_205%] bg-center bg-no-repeat relative">
+                    <div className="drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/bookbg.png')] bg-[length:100%_100%] bg-center bg-no-repeat relative">
 
-                        <div className="w-full relative z-10 flex flex-col gap-[2px] pt-[12px] pb-[4px]">
+                        <div className="w-full relative z-10 flex flex-col gap-[12px] pt-[56px] pb-[32px] px-[16px]">
 
                             {/* Old Testament Section */}
                             <div className="w-full relative flex flex-col items-center px-[13px]">
@@ -1113,7 +1209,7 @@ const TtoMT357Player = () => {
                                     <i className={`pi pi-angle-left text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${otPage > 0 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setOtPage(p => Math.max(0, p - 1))}></i>
 
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Times_New_Roman',_Times,_serif] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
+                                        <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Arial'] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
                                             <i className="pi pi-file text-[21px]"></i>
                                             <span>OLD TESTAMENT</span>
                                         </div>
@@ -1129,7 +1225,7 @@ const TtoMT357Player = () => {
                                 </div>
 
                                 {/* Content Buttons Grid */}
-                                <div className="w-full px-[24px] grid grid-cols-5 gap-x-[12px] gap-y-[6px] mb-[4px]">
+                                <div className="w-full px-[10px] sm:px-[24px] grid grid-cols-4 sm:grid-cols-5 gap-x-[8px] sm:gap-x-[12px] gap-y-[6px] mb-[4px]">
                                     {otDisplay.map((book, i) => {
                                         const isSelected = selectedBooks.includes(book);
                                         const isGold = (i === 0 || i === 2);
@@ -1145,7 +1241,7 @@ const TtoMT357Player = () => {
                                                     backgroundPosition: 'center',
                                                     backgroundRepeat: 'no-repeat'
                                                 }}
-                                                className={`book-tooltip text-center py-[6px] rounded-[8px] text-[13px] font-serif font-black tracking-wider uppercase flex items-center justify-center cursor-pointer transition-all active:scale-95 border ${isSelected
+                                                className={`book-tooltip text-center py-[6px] rounded-[8px] text-[13px] font-['Arial'] font-black tracking-wider uppercase flex items-center justify-center cursor-pointer transition-all active:scale-95 border ${isSelected
                                                     ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029] text-[#2b1212] border-[#2b1212] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_2px_4px_rgba(0,0,0,0.8)] scale-[0.98]'
                                                     : isGold
                                                         ? "border-[#45260f] text-[#3d1f08] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
@@ -1175,7 +1271,7 @@ const TtoMT357Player = () => {
                                     <i className={`pi pi-angle-left text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${ntPage > 0 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setNtPage(p => Math.max(0, p - 1))}></i>
 
                                     <div className="flex flex-col items-center flex-1">
-                                        <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Times_New_Roman',_Times,_serif] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
+                                        <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Arial'] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
                                             <i className="pi pi-file text-[21px]"></i>
                                             <span>NEW TESTAMENT</span>
                                         </div>
@@ -1191,7 +1287,7 @@ const TtoMT357Player = () => {
                                 </div>
 
                                 {/* Content Buttons Grid */}
-                                <div className="w-full px-[24px] grid grid-cols-5 gap-x-[12px] gap-y-[6px] mb-[4px]">
+                                <div className="w-full px-[10px] sm:px-[24px] grid grid-cols-4 sm:grid-cols-5 gap-x-[8px] sm:gap-x-[12px] gap-y-[6px] mb-[4px]">
                                     {ntDisplay.map((book, i) => {
                                         const isSelected = selectedBooks.includes(book);
                                         const isGold = (i === 0 || i === 2);
@@ -1207,7 +1303,7 @@ const TtoMT357Player = () => {
                                                     backgroundPosition: 'center',
                                                     backgroundRepeat: 'no-repeat'
                                                 }}
-                                                className={`book-tooltip text-center py-[6px] rounded-[8px] text-[13px] font-serif font-black tracking-wider uppercase flex items-center justify-center cursor-pointer transition-all active:scale-95 border ${isSelected
+                                                className={`book-tooltip text-center py-[6px] rounded-[8px] text-[13px] font-['Arial'] font-black tracking-wider uppercase flex items-center justify-center cursor-pointer transition-all active:scale-95 border ${isSelected
                                                     ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029] text-[#2b1212] border-[#2b1212] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_2px_4px_rgba(0,0,0,0.8)] scale-[0.98]'
                                                     : isGold
                                                         ? "border-[#45260f] text-[#3d1f08] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
@@ -1241,13 +1337,14 @@ const TtoMT357Player = () => {
                         {/* PSA 119 Button (Left) */}
                         <div
                             onClick={() => toggleSpecialBook('psa119')}
+                            data-pr-tooltip={getBookTooltip('psa119')}
                             style={{
                                 backgroundImage: "url('/PSA119.png')",
                                 backgroundSize: '170% 240%',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat'
                             }}
-                            className={`flex-1 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[12px] p-[4px] gap-[8px] ${selectedBooks.includes('psa119')
+                            className={`w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[12px] p-[4px] gap-[8px] ${selectedBooks.includes('psa119')
                                 ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
                                 : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
                                 }`}
@@ -1258,8 +1355,8 @@ const TtoMT357Player = () => {
                                 className="w-[36px] h-[36px] object-contain drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]"
                             />
                             <div className="flex flex-col items-center">
-                                <span className="text-black text-[14px] font-black tracking-widest leading-[1.1] text-center" style={{ textShadow: '1px 1px 0px rgba(255,255,255,0.4), -1px -1px 0px rgba(0,0,0,0.8), 2px 2px 4px rgba(0,0,0,0.6)' }}>PSALMS</span>
-                                <span className="text-black text-[12px] font-black tracking-widest leading-[1.1] text-center" style={{ textShadow: '1px 1px 0px rgba(255,255,255,0.4), -1px -1px 0px rgba(0,0,0,0.8), 2px 2px 4px rgba(0,0,0,0.6)' }}>CHP 119</span>
+                                <span className="text-black font-['Arial'] text-[14px] font-black tracking-widest leading-[1.1] text-center" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>PSALMS</span>
+                                <span className="text-black font-['Arial'] text-[13.5px] font-black tracking-widest leading-[1.1] text-center" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>CHP 119</span>
                             </div>
                         </div>
 
@@ -1274,7 +1371,7 @@ const TtoMT357Player = () => {
                             }}
                         >
                             <div className="flex flex-col items-center justify-center pr-[13px] relative z-10 w-full">
-                                <div className="flex justify-center gap-[13px] font-black mb-0 w-full">
+                                <div className="flex justify-center gap-[13px] font-black mb-0 w-full font-['Arial']">
                                     <span
                                         className="cursor-pointer flex items-baseline gap-1 active:scale-95 transition-transform"
                                         style={{ textShadow: '2px 2px 2px rgba(0,0,0,0.5)' }}
@@ -1297,9 +1394,9 @@ const TtoMT357Player = () => {
                                         <span className={`text-[21px] ${selectedDay === 7 ? 'text-red-600' : 'text-black'}`}>7</span> <span className="text-[13px] text-black">DAY</span>
                                     </span>
                                 </div>
-                                <div className="text-[16px] text-black font-serif font-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
+                                <div className="text-[16px] text-black font-['Arial'] font-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
                                     {selectedWeek !== null ? (
-                                        <span style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '18px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
+                                        <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '18px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
                                     ) : (
                                         "DAYS"
                                     )}
@@ -1308,7 +1405,7 @@ const TtoMT357Player = () => {
 
                             <div className="flex items-center justify-center pl-[8px] relative z-10 shrink-0">
                                 <span
-                                    className="text-black text-[14px] font-black tracking-widest"
+                                    className="text-black font-['Arial'] text-[14px] font-black tracking-widest"
                                     style={{
                                         writingMode: 'vertical-rl',
                                         transform: 'rotate(180deg)'
@@ -1322,13 +1419,14 @@ const TtoMT357Player = () => {
                         {/* PSA 75 Button (Right) */}
                         <div
                             onClick={() => toggleSpecialBook('psa75')}
+                            data-pr-tooltip={getBookTooltip('psa75')}
                             style={{
                                 backgroundImage: "url('/Davidpsa.png')",
                                 backgroundSize: '110% 200%',
                                 backgroundPosition: 'center',
                                 backgroundRepeat: 'no-repeat'
                             }}
-                            className={`flex-1 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[4px] pr-[6px] py-[4px] gap-[4px] ${selectedBooks.includes('psa75')
+                            className={`w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[4px] pr-[6px] py-[4px] gap-[4px] ${selectedBooks.includes('psa75')
                                 ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
                                 : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
                                 }`}
@@ -1339,8 +1437,8 @@ const TtoMT357Player = () => {
                                 className="w-[36px] h-[36px] object-contain drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]"
                             />
                             <div className="flex flex-col items-center">
-                                <span className="text-black text-[14px] font-black tracking-wider leading-[1.1] text-center whitespace-nowrap" style={{ textShadow: '1px 1px 0px rgba(255,255,255,0.4), -1px -1px 0px rgba(0,0,0,0.8), 2px 2px 4px rgba(0,0,0,0.6)' }}>PSA of David</span>
-                                <span className="text-black text-[12px] font-black tracking-widest leading-[1.1] text-center whitespace-nowrap" style={{ textShadow: '1px 1px 0px rgba(255,255,255,0.4), -1px -1px 0px rgba(0,0,0,0.8), 2px 2px 4px rgba(0,0,0,0.6)' }}>73/75 CHP</span>
+                                <span className="text-black font-['Arial'] text-[14px] font-black tracking-wider leading-[1.1] text-center whitespace-nowrap" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>PSA of David</span>
+                                <span className="text-black font-['Arial'] text-[13.5px] font-black tracking-widest leading-[1.1] text-center whitespace-nowrap" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>73/75 CHP</span>
                             </div>
                         </div>
                     </div>
@@ -1369,7 +1467,7 @@ const TtoMT357Player = () => {
 
                         <div className="flex items-center gap-[4px] ml-[8px]">
                             <span
-                                className="text-[14px] uppercase font-black tracking-widest text-black"
+                                className="text-[14px] uppercase font-black tracking-widest text-black font-['Arial']"
                                 style={{
                                     writingMode: 'vertical-rl',
                                     transform: 'rotate(180deg)'
@@ -1379,7 +1477,7 @@ const TtoMT357Player = () => {
                             </span>
                         </div>
 
-                        <div className="flex-1 flex items-center justify-evenly px-[4px] font-bold text-[22px] text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] font-['Times_New_Roman',_Times,_serif]">
+                        <div className="flex-1 flex flex-wrap items-center justify-evenly px-[4px] gap-y-[4px] font-bold text-[22px] text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] font-['Arial']">
                             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
                                 <button
                                     key={n}
@@ -1392,7 +1490,7 @@ const TtoMT357Player = () => {
                                             return prev + String(n);
                                         });
                                     }}
-                                    className={`cursor-pointer w-[28px] h-[28px] flex items-center justify-center rounded-full hover:bg-[#e4c995] transition-all duration-200 font-bold font-['Times_New_Roman',_Times,_serif] text-[22px] ${selectedWeek !== null && selectedWeek.includes(String(n)) ? 'scale-110 z-10 relative shadow-[inset_0_2px_3px_rgba(255,255,255,0.7),inset_0_-2px_4px_rgba(0,0,0,0.6),0_5px_5px_rgba(0,0,0,0.8)]' : ''}`}
+                                    className={`cursor-pointer w-[24px] h-[24px] sm:w-[28px] sm:h-[28px] flex items-center justify-center rounded-full hover:bg-[#e4c995] transition-all duration-200 font-bold font-['Arial'] text-[18px] sm:text-[22px] ${selectedWeek !== null && selectedWeek.includes(String(n)) ? 'scale-110 z-10 relative shadow-[inset_0_2px_3px_rgba(255,255,255,0.7),inset_0_-2px_4px_rgba(0,0,0,0.6),0_5px_5px_rgba(0,0,0,0.8)]' : ''}`}
                                     style={selectedWeek !== null && selectedWeek.includes(String(n)) ? {
                                         WebkitTextStroke: '0.3px currentColor',
                                         backgroundImage: "url('/highlight.png')",
@@ -1423,23 +1521,24 @@ const TtoMT357Player = () => {
                 <div className="px-[21px] mb-[21px] pb-[13px]">
                     <div className="flex gap-[13px]">
                         <button
+                            onClick={() => handleViewChart(true)}
                             className="flex-[0.350] h-[44px] rounded-[8px] flex items-center justify-center gap-[6px] border border-[#45260f] text-black [text-shadow:0_1px_1px_rgba(255,255,255,0.6)] font-black text-[16px] tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
                             style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', WebkitTextStroke: '0.4px currentColor' }}
                         >
-                            <i className="pi pi-print text-[20px] font-black"></i> PRINT
+                            <i className="pi pi-print text-[14px] font-black"></i> PRINT
                         </button>
                         <button
                             onClick={handleViewChart}
                             className="flex-[0.350] h-[44px] rounded-[8px] flex items-center justify-center gap-[6px] border border-[#45260f] text-black [text-shadow:0_1px_1px_rgba(255,255,255,0.6)] font-black text-[16px] tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
                             style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', WebkitTextStroke: '0.4px currentColor' }}
                         >
-                            <i className="pi pi-eye text-[20px] font-black"></i> VIEW
+                            <i className="pi pi-eye text-[14px] font-black"></i> VIEW
                         </button>
                         <button
                             className="flex-[0.350] h-[44px] rounded-[8px] flex items-center justify-center gap-[6px] border border-[#45260f] text-black [text-shadow:0_1px_1px_rgba(255,255,255,0.6)] font-black text-[16px] tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
                             style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', WebkitTextStroke: '0.4px currentColor' }}
                         >
-                            <i className="pi pi-send text-[20px] font-black"></i> SEND
+                            <i className="pi pi-send text-[14px] font-black"></i> SEND
                         </button>
                     </div>
                 </div>

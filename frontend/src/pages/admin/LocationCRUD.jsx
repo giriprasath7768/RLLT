@@ -197,7 +197,7 @@ export default function LocationCRUD() {
 
     const topCardContent = (
         <div className="flex flex-wrap gap-2 w-full justify-start">
-            <Button label="New Location" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
+            <Button label="New Location" icon="pi pi-plus" severity="success" onClick={openNew} />
             <Button label="Export" icon="pi pi-upload" severity="help" onClick={() => dt.current.exportCSV()} />
         </div>
     );
@@ -278,6 +278,20 @@ export default function LocationCRUD() {
                     </DataTable>
                 </div>
 
+                
+                    {/* Mobile Paginator */}
+                    {filteredLocations.length > 0 && (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block md:hidden">
+                            <Paginator 
+                                first={first} 
+                                rows={rows} 
+                                totalRecords={filteredLocations.length} 
+                                onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                template="PrevPageLink PageLinks NextPageLink" 
+                            />
+                        </div>
+                    )}
+        
                 {/* External Paginator Card */}
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredLocations.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
@@ -288,7 +302,7 @@ export default function LocationCRUD() {
                 {/* Mobile View */}
                 <div className="block md:hidden mt-4">
                     {filteredLocations.length > 0 ? (
-                        filteredLocations.map(loc => (
+                        filteredLocations.slice(first, first + rows).map(loc => (
                             <MobileDataCard
                                 key={loc.id}
                                 title={loc.city}
@@ -308,10 +322,7 @@ export default function LocationCRUD() {
                 </div>
             </div>
 
-            {/* Mobile FAB */}
-            <div className="block md:hidden fixed bottom-6 right-6 z-50">
-                <Button icon="pi pi-plus" className="p-button-rounded p-button-success shadow-lg" size="large" onClick={openNew} aria-label="Add New" />
-            </div>
+
 
             <Dialog visible={locationDialog} style={{ width: '32rem' }} breakpoints={{ '960px': '75vw', '641px': '95vw' }} header="Location Details" modal className="p-fluid" footer={locationDialogFooter} onHide={hideDialog}>
                 {/* Continent selection */}

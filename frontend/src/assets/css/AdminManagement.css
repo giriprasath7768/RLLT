@@ -193,3 +193,14 @@
         font-weight: bold;
     }
 }
+
+/* Accordion Styles */
+.custom-accordion .p-accordion-header-link,
+.custom-accordion .p-accordion-header-link * {
+    color: #ffffff !important;
+}
+
+.custom-accordion .p-accordion-header:not(.p-disabled) .p-accordion-header-link:hover,
+.custom-accordion .p-accordion-header:not(.p-disabled) .p-accordion-header-link:hover * {
+    color: #000000 !important;
+}

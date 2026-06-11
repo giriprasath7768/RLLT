@@ -301,8 +301,26 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
 const SevenTNTPlayer = () => {
     const navigate = useNavigate();
     const location = useLocation();
-
+    const [pencilColor, setPencilColor] = useState(null);
     const [currentTime, setCurrentTime] = useState(formatDateTime(new Date()));
+    const playerRef = useRef(null);
+    const [playerWidth, setPlayerWidth] = useState(420);
+
+    useEffect(() => {
+        if (playerRef.current) {
+            setPlayerWidth(playerRef.current.offsetWidth);
+        }
+        const handleResize = () => {
+            if (playerRef.current) {
+                setPlayerWidth(playerRef.current.offsetWidth);
+            }
+        };
+        
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const tz = playerWidth / 2;
     const [selectedDay, setSelectedDay] = useState(1);
     const [showWisdom, setShowWisdom] = useState(false);
     const [showVideoPlayer, setShowVideoPlayer] = useState(false);
@@ -326,7 +344,6 @@ const SevenTNTPlayer = () => {
     const [fullPlaylist, setFullPlaylist] = useState([]);
     const [currentRefLink, setCurrentRefLink] = useState(null);
 
-    // Drag-to-scroll state
     const playlistRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
@@ -388,7 +405,6 @@ const SevenTNTPlayer = () => {
         axios.get('http://' + window.location.hostname + ':8000/api/seven_tnt_charts/list', { withCredentials: true })
             .then(res => {
                 if (res.data && res.data.length > 0) {
-                    // Try to find a chart with a payload
                     const validChart = res.data.find(c => c.state_payload);
                     if (validChart) {
                         try {
@@ -400,7 +416,6 @@ const SevenTNTPlayer = () => {
             })
             .catch(err => console.error("Could not load charts", err));
 
-        // Fetch 7 TNT contents mapping for audio/video
         axios.get('http://' + window.location.hostname + ':8000/api/seven-tnt-contents/list', { withCredentials: true })
             .then(res => {
                 if (res.data) {
@@ -413,7 +428,6 @@ const SevenTNTPlayer = () => {
     useEffect(() => {
         if (!chunks.length || !sevenTntContents.length) return;
 
-        // Build global playlist mapping
         const newPlaylist = [];
         for (let i = 1; i <= trackingDays; i++) {
             const chunkIdx = Math.floor((i - 1) / 5);
@@ -464,7 +478,6 @@ const SevenTNTPlayer = () => {
         }
         setFullPlaylist(newPlaylist);
 
-        // Process active day
         const chunkIdx = Math.floor((selectedDay - 1) / 5);
         if (chunks[chunkIdx]) {
             const dayObj = chunks[chunkIdx].days.find(d => d.day === selectedDay);
@@ -478,7 +491,6 @@ const SevenTNTPlayer = () => {
             const targetVerse = cleanDbVerse(verseStr);
             const targetBook = cleanDbVerse(chunks[chunkIdx].bookNameHeader || "");
 
-            // Try to match book name and verse fuzzy
             const matchedContent = sevenTntContents.find(c => {
                 const dbVerse = cleanDbVerse(c.verses);
                 const dbBook = cleanDbVerse(c.book_name);
@@ -492,7 +504,6 @@ const SevenTNTPlayer = () => {
             });
 
             if (matchedContent) {
-                // Audio mapping
                 if (matchedContent.audio_url) {
                     try {
                         const audios = JSON.parse(matchedContent.audio_url);
@@ -519,7 +530,6 @@ const SevenTNTPlayer = () => {
                     audioRef.current.src = '';
                 }
 
-                // Video mapping
                 if (matchedContent.video_url) {
                     try {
                         const videos = JSON.parse(matchedContent.video_url);
@@ -537,7 +547,6 @@ const SevenTNTPlayer = () => {
                     setVideoUrls([]);
                 }
                 
-                // Reference Link mapping
                 setCurrentRefLink(matchedContent.ref_link || null);
                 
             } else {
@@ -599,15 +608,19 @@ const SevenTNTPlayer = () => {
     const progressPercent = audioDuration ? (audioProgress / audioDuration) * 100 : 0;
 
     return (
-        <div className="h-[100dvh] bg-gray-100 flex items-center justify-center sm:px-4 sm:py-0 font-sans transition-colors duration-500 overflow-hidden">
-            <div className="w-full max-w-[420px] h-full relative" style={{ perspective: '1500px' }}>
+        <div className="min-h-[100dvh] bg-gray-100 flex items-center justify-center sm:px-4 py-4 sm:py-8 font-sans transition-colors duration-500 overflow-y-auto">
+            <div 
+                className="w-full max-w-[420px] relative shrink-0" 
+                style={{ perspective: '1500px' }} 
+                ref={playerRef}
+            >
                 
                 {/* Front Face: Main Player */}
                 <div
-                    className="w-full h-full bg-[#12182b] flex flex-col shadow-2xl relative border-[5px] border-[#1a2234] rounded-none sm:rounded-lg overflow-hidden"
+                    className="w-full bg-[#12182b] flex flex-col shadow-2xl relative border-[5px] border-[#1a2234] rounded-none sm:rounded-lg overflow-hidden"
                     style={{
                         backfaceVisibility: 'hidden',
-                        transformOrigin: `50% 50% -210px`,
+                        transformOrigin: `50% 50% -${tz}px`,
                         transform: showVideoPlayer ? 'rotateY(-90deg)' : 'rotateY(0deg)',
                         transition: 'transform 0.7s ease-in-out',
                         pointerEvents: showVideoPlayer ? 'none' : 'auto',
@@ -771,10 +784,10 @@ const SevenTNTPlayer = () => {
                 </div>
 
                 {/* Lower Area Stack */}
-                <div className={`relative w-full flex-1 min-h-0`} style={{ perspective: '1000px' }}>
+                <div className={`relative w-full`} style={{ perspective: '1000px' }}>
                     {/* Front Face: Day Selection Grid */}
                     <div
-                        className="absolute inset-0 flex flex-col rounded-b-lg"
+                        className="relative flex flex-col rounded-b-lg"
                         style={{
                             backfaceVisibility: 'hidden',
                             transform: showWisdom ? 'rotateY(180deg)' : 'rotateY(0deg)',
@@ -783,7 +796,7 @@ const SevenTNTPlayer = () => {
                             zIndex: showWisdom ? 0 : 10
                         }}
                     >
-                        <div className="p-3 pb-4 bg-black w-full h-full overflow-y-auto custom-scrollbar rounded-none sm:rounded-b-lg">
+                        <div className="p-3 pb-8 bg-black w-full rounded-none sm:rounded-b-lg">
                             <div className={`grid grid-cols-5 ${trackingDays > 30 ? 'gap-y-[15px]' : 'gap-y-[30px]'} gap-x-2`}>
                                 {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => {
                                     const isCompleted = finishedDays.has(num);
@@ -824,7 +837,7 @@ const SevenTNTPlayer = () => {
 
                 {/* Back Face: Video Player */}
                 <div
-                    className="absolute inset-0 w-full h-full bg-[#1a2234] border border-gray-800 shadow-2xl rounded-none sm:rounded-lg flex flex-col overflow-hidden"
+                    className="absolute inset-0 w-full bg-[#1a2234] border border-gray-800 shadow-2xl rounded-none sm:rounded-lg flex flex-col overflow-hidden"
                     style={{
                         backfaceVisibility: 'hidden',
                         transformOrigin: `50% 50% -210px`,

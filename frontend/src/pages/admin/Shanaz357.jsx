@@ -97,10 +97,12 @@ const isBookMatch = (bookCode, book) => {
 };
 
 const StatItem = ({ title, icon, value, color }) => (
-    <div className="flex flex-col items-center justify-center flex-1 py-3">
-        <div className="text-[14px] font-bold text-[#0B2149] mb-2">{title}</div>
-        <i className={`${icon} ${color} text-3xl mb-2`}></i>
-        <div className={`${color} font-bold text-xl leading-none`}>{value}</div>
+    <div className="flex sm:flex-col items-center justify-between sm:justify-center flex-1 py-2 sm:py-3 px-3 sm:px-1">
+        <div className="flex sm:flex-col items-center gap-2 sm:gap-0">
+            <div className="text-[12px] sm:text-[14px] font-bold text-[#0B2149] sm:mb-2 w-10 sm:w-auto text-left sm:text-center">{title}</div>
+            <i className={`${icon} ${color} text-lg sm:text-3xl sm:mb-2`}></i>
+        </div>
+        <div className={`${color} font-bold text-lg sm:text-xl leading-none truncate text-right sm:text-center`}>{value}</div>
     </div>
 );
 
@@ -298,14 +300,34 @@ const Shanaz357 = () => {
         if (idx !== -1 && idx < availablePhases.length - 1) setPhs(availablePhases[idx + 1]);
     };
 
-    const handleViewClick = async () => {
+    const handleViewClick = async (autoPrint = false) => {
         setIsViewing(true);
         try {
             const listRes = await axios.get(`http://${window.location.hostname}:8000/api/charts/list`, { withCredentials: true });
-            const exists = listRes.data.some(c => Number(c.module) === Number(mdl) && Number(c.facet) === Number(fct) && Number(c.phase) === Number(phs));
+            const existsChart = listRes.data.find(c => Number(c.module) === Number(mdl) && Number(c.facet) === Number(fct) && Number(c.phase) === Number(phs));
             
-            if (exists) {
-                navigate(`/admin/charts?editMod=${mdl}&editFct=${fct}&editPhs=${phs}`);
+            if (existsChart) {
+                const isMainChart = existsChart.chart_type === 'Main Chart' || (existsChart.banner_text && existsChart.banner_text.toLowerCase().includes('main chart'));
+                const is24x7 = existsChart.chart_type === '24x7 Chart' || (existsChart.banner_text && (existsChart.banner_text.toLowerCase().includes('24/7') || existsChart.banner_text.toLowerCase().includes('24x7')));
+
+                let chartRoute = '357-chart';
+                if (is24x7) {
+                    chartRoute = 'twenty-four-seven-chart';
+                } else if (isMainChart) {
+                    chartRoute = 'main-chart';
+                }
+
+                const baseRoute = userRole === 'student' ? '/dashboard/student' : '/admin';
+                navigate(`${baseRoute}/chart-listing/${chartRoute}`, {
+                    state: {
+                        preselect: {
+                            module: mdl,
+                            facet: fct,
+                            phase: phs
+                        },
+                        autoPrint: autoPrint === true
+                    }
+                });
             } else {
                 toast.current?.show({ severity: 'warn', summary: 'Not Found', detail: `No saved chart found for Module ${mdl}, Facet ${fct}, Phase ${phs}. Please create it first.`, life: 4000 });
             }
@@ -353,19 +375,14 @@ const Shanaz357 = () => {
         const mod5Match = rlltDB.find(d => Number(d.module) === 5 && Number(d.day) === dVal);
 
         let chartLength = dVal || 0;
-        let isMainChart = false;
 
         if (mod4Match) {
-            isMainChart = true;
             targetMdl = 4;
         } else if (mod5Match) {
-            isMainChart = true;
             targetMdl = 5;
         }
 
-        const bannerText = isMainChart ? `MAIN CHART - ${chartLength} DAYS` : `3-5-7 CHART - ${chartLength} DAY CYCLE`;
-
-
+        const bannerText = isSpecialProcess ? `24X7 CHART - ${chartLength} DAYS` : `MAIN CHART - ${chartLength} DAYS`;
 
         const distributeBooks = (booksArr, daysOutCount) => {
             if (!booksArr || !booksArr.length) return Array.from({ length: daysOutCount }, () => null);
@@ -475,7 +492,8 @@ const Shanaz357 = () => {
             return daysOut;
         };
         
-        const use5Segments = isSpecialProcess;
+        const is24x7Format = isSpecialProcess;
+        const use5Segments = is24x7Format;
         const daysPerChunk = cycle;
 
         const seg1Books = validBooks.slice(0, 1);
@@ -557,15 +575,15 @@ const Shanaz357 = () => {
                     promiseLabel: "GOD'S PROMISES :",
                     promises: "ENTER GOD'S PROMISSES HERE",
                     promiseInput: "",
-                    h1: "",
-                    h2: "",
-                    h3: "",
+                    h1: chunkDays[0]?.m1b ? chunkDays[0].m1b.replace(/[0-9\-].*/, '').trim() : "",
+                    h2: chunkDays[0]?.m2b ? chunkDays[0].m2b.replace(/[0-9\-].*/, '').trim() : "",
+                    h3: chunkDays[0]?.m3b ? chunkDays[0].m3b.replace(/[0-9\-].*/, '').trim() : "",
                     days: chunkDays
                 };
 
                 if (use5Segments) {
-                    chunkObj.h4 = "";
-                    chunkObj.h5 = "";
+                    chunkObj.h4 = chunkDays[0]?.m4b ? chunkDays[0].m4b.replace(/[0-9\-].*/, '').trim() : "";
+                    chunkObj.h5 = chunkDays[0]?.m5b ? chunkDays[0].m5b.replace(/[0-9\-].*/, '').trim() : "";
                 }
 
                 newChunks.push(chunkObj);
@@ -577,6 +595,7 @@ const Shanaz357 = () => {
         formData.append("facet", targetFct);
         formData.append("phase", targetPhs);
         formData.append("banner_text", bannerText);
+        formData.append("chart_type", isSpecialProcess ? "24x7 Chart" : "Main Chart");
         formData.append("t_label", "T");
         formData.append("state_payload", JSON.stringify(newChunks));
 
@@ -650,7 +669,7 @@ const Shanaz357 = () => {
                 if (isSpecialProcess) {
                     navigate(`/admin/twenty-four-seven-chart?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
                 } else {
-                    navigate(`/admin/chart-creation/357-chart?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
+                    navigate(`/admin/charts?editMod=${targetMdl}&editFct=${targetFct}&editPhs=${targetPhs}`);
                 }
             }, 1000);
         } catch (err) {
@@ -671,7 +690,7 @@ const Shanaz357 = () => {
             return (
                 <div 
                     key={bookCode} 
-                    className={`book-tooltip-item border border-[#d3c09b] rounded-[5px] flex items-center justify-center py-2 text-center text-sm font-bold font-serif tracking-widest cursor-pointer shadow-md transition-all w-[calc(20%-0.5rem)] ${isSelected ? `${colors.bg} ${colors.activeText} shadow-inner` : `bg-[#fbf6ec] hover:bg-[#f0e4cd] ${colors.text}`}`}
+                    className={`book-tooltip-item border border-[#d3c09b] rounded-[5px] flex items-center justify-center py-2 text-center text-xs sm:text-sm font-bold font-serif tracking-widest cursor-pointer shadow-md transition-all w-[calc(25%-0.5rem)] sm:w-[calc(20%-0.5rem)] ${isSelected ? `${colors.bg} ${colors.activeText} shadow-inner` : `bg-[#fbf6ec] hover:bg-[#f0e4cd] ${colors.text}`}`}
                     onClick={() => book && toggleBook(book.id)}
                     data-pr-tooltip={book ? getBookTooltip(book) : ''}
                 >
@@ -682,10 +701,10 @@ const Shanaz357 = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white p-8 flex justify-center items-start font-sans">
+        <div className="min-h-screen bg-white p-2 sm:p-8 flex justify-center items-start font-sans">
             <Toast ref={toast} />
             <Tooltip target=".book-tooltip-item" position="top" />
-            <div className="bg-[#fcf8ef] rounded-[20px] shadow-[12px_12px_30px_rgba(0,0,0,0.25)] w-full max-w-[650px] p-8 calc-border-6 relative">
+            <div className="bg-[#fcf8ef] rounded-[20px] shadow-[12px_12px_30px_rgba(0,0,0,0.25)] w-full max-w-[650px] p-4 sm:p-8 calc-border-6 relative">
                 {/* Decorative dots in corners */}
                 <div className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
                 <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
@@ -713,15 +732,15 @@ const Shanaz357 = () => {
 
                 <div className="px-1">
                     {/* Stats Section */}
-                    <div className="flex justify-between calc-border-4 rounded-lg mb-4 bg-[#fdfbf6] shadow-sm overflow-hidden py-1">
+                    <div className="flex flex-col sm:flex-row justify-between calc-border-4 rounded-lg mb-4 bg-[#fdfbf6] shadow-sm overflow-hidden py-1">
                         <StatItem title="BKS" icon="pi pi-book" value={displayStats.bks} color="text-[#1976d2]" />
-                        <div className="w-px bg-[#e8dcb9] my-1"></div>
+                        <div className="h-px w-full sm:w-px sm:h-auto bg-[#e8dcb9] my-0 sm:my-1"></div>
                         <StatItem title="CHP" icon="pi pi-file" value={displayStats.chp} color="text-[#388e3c]" />
-                        <div className="w-px bg-[#e8dcb9] my-1"></div>
+                        <div className="h-px w-full sm:w-px sm:h-auto bg-[#e8dcb9] my-0 sm:my-1"></div>
                         <StatItem title="VRS" icon="pi pi-crown" value={displayStats.vrs} color="text-[#f57c00]" />
-                        <div className="w-px bg-[#e8dcb9] my-1"></div>
+                        <div className="h-px w-full sm:w-px sm:h-auto bg-[#e8dcb9] my-0 sm:my-1"></div>
                         <StatItem title="ART" icon="pi pi-clock" value={displayStats.art} color="text-[#7b1fa2]" />
-                        <div className="w-px bg-[#e8dcb9] my-1"></div>
+                        <div className="h-px w-full sm:w-px sm:h-auto bg-[#e8dcb9] my-0 sm:my-1"></div>
                         <StatItem title="DAYS" icon="pi pi-calendar" value={eachPhsDays || 0} color="text-[#d32f2f]" />
                     </div>
 
@@ -773,7 +792,7 @@ const Shanaz357 = () => {
 
                     {/* Middle Input Section */}
                     <div className="calc-border-4 rounded-lg p-2 bg-[#fdfbf6] shadow-sm mb-4">
-                        <div className="flex gap-3 min-h-[4.5rem]">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 min-h-[4.5rem]">
                             {(() => {
                                 const p119Book = booksDB.find(b => b.name.includes('119') || (b.short_form && b.short_form.includes('119')));
                                 const p119Selected = p119Book && selectedBooks.includes(p119Book.id);
@@ -784,7 +803,7 @@ const Shanaz357 = () => {
                                 return (
                                     <>
                                         <div 
-                                            className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex flex-col items-center justify-center text-center text-sm font-bold uppercase cursor-pointer transition-all ${
+                                            className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex sm:flex-col items-center justify-center gap-1 sm:gap-0 text-center py-2 sm:py-0 text-xs sm:text-sm font-bold uppercase cursor-pointer transition-all ${
                                                 p119Selected 
                                                     ? 'bg-[#007020] text-white border-transparent shadow-inner' 
                                                     : 'bg-[#f0f7f0] text-[#3b603b] hover:bg-[#e2efe2]'
@@ -792,26 +811,26 @@ const Shanaz357 = () => {
                                             onClick={() => p119Book && toggleBook(p119Book.id)}
                                             data-pr-tooltip={p119Book ? getBookTooltip(p119Book) : 'Book Not Found'}
                                         >
-                                            <span>PSALMS</span><span>CHP 119</span>
+                                            <span>PSALMS</span><span className="hidden sm:inline"> </span><span>CHP 119</span>
                                         </div>
-                                        <div className="flex-[1.5] border border-[#e8dcb9] bg-white rounded-[4px] flex justify-evenly items-center px-1">
-                                            <button onClick={() => setCycle(3)} className="font-bold text-sm transition-colors flex items-center gap-1">
-                                                <span className="text-[#c00000] text-lg">3</span>
+                                        <div className="flex-[1.5] border border-[#e8dcb9] bg-white rounded-[4px] flex justify-evenly items-center px-1 py-2 sm:py-0">
+                                            <button onClick={() => setCycle(3)} className="font-bold text-xs sm:text-sm transition-colors flex items-center gap-1">
+                                                <span className="text-[#c00000] text-base sm:text-lg">3</span>
                                                 <span className={cycle === 3 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}>DAYS</span>
                                             </button>
-                                            <div className="h-8 w-px bg-[#e8dcb9]"></div>
-                                            <button onClick={() => setCycle(5)} className="font-bold text-sm transition-colors flex items-center gap-1">
-                                                <span className="text-[#c00000] text-lg">5</span>
+                                            <div className="h-6 sm:h-8 w-px bg-[#e8dcb9]"></div>
+                                            <button onClick={() => setCycle(5)} className="font-bold text-xs sm:text-sm transition-colors flex items-center gap-1">
+                                                <span className="text-[#c00000] text-base sm:text-lg">5</span>
                                                 <span className={cycle === 5 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}>DAYS</span>
                                             </button>
-                                            <div className="h-8 w-px bg-[#e8dcb9]"></div>
-                                            <button onClick={() => setCycle(7)} className="font-bold text-sm transition-colors flex items-center gap-1">
-                                                <span className="text-[#c00000] text-lg">7</span>
+                                            <div className="h-6 sm:h-8 w-px bg-[#e8dcb9]"></div>
+                                            <button onClick={() => setCycle(7)} className="font-bold text-xs sm:text-sm transition-colors flex items-center gap-1">
+                                                <span className="text-[#c00000] text-base sm:text-lg">7</span>
                                                 <span className={cycle === 7 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}>DAYS</span>
                                             </button>
                                         </div>
                                         <div 
-                                            className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex flex-col items-center justify-center text-center text-sm font-bold uppercase cursor-pointer transition-all ${
+                                            className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex sm:flex-col items-center justify-center gap-1 sm:gap-0 text-center py-2 sm:py-0 text-xs sm:text-sm font-bold uppercase cursor-pointer transition-all ${
                                                 p75Selected 
                                                     ? 'bg-[#007020] text-white border-transparent shadow-inner' 
                                                     : 'bg-[#f0f7f0] text-[#3b603b] hover:bg-[#e2efe2]'
@@ -819,7 +838,7 @@ const Shanaz357 = () => {
                                             onClick={() => p75Book && toggleBook(p75Book.id)}
                                             data-pr-tooltip={p75Book ? getBookTooltip(p75Book) : 'Book Not Found'}
                                         >
-                                            <span>PSA OF DAVID</span><span>75 CHP</span>
+                                            <span>PSA OF DAVID</span><span className="hidden sm:inline"> </span><span>75 CHP</span>
                                         </div>
                                     </>
                                 );
@@ -863,12 +882,12 @@ const Shanaz357 = () => {
                             </button>
                         </div>
                         
-                        <div className="flex justify-between items-center bg-[#f7eedc] rounded px-3 py-3 calc-border-4">
+                        <div className="flex flex-wrap justify-center sm:justify-between items-center gap-2 sm:gap-0 bg-[#f7eedc] rounded px-2 py-3 sm:px-3 sm:py-3 calc-border-4">
                             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                                 <button 
                                     key={num} 
                                     onClick={() => handleNumberClick(num)} 
-                                    className="text-[#0B2149] font-bold text-2xl w-8 h-8 flex items-center justify-center hover:bg-[#ebd8b7] rounded transition-colors"
+                                    className="text-[#0B2149] font-bold text-xl sm:text-2xl w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-[#ebd8b7] rounded transition-colors"
                                 >
                                     {num}
                                 </button>
@@ -926,10 +945,10 @@ const Shanaz357 = () => {
 
                         {/* Action Buttons */}
                         <div className="grid grid-cols-3 gap-2">
-                            <button className="flex items-center justify-center gap-1.5 border border-[#4a5e78] text-[#4a5e78] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-gray-50 transition-colors">
+                            <button onClick={() => handleViewClick(true)} className="flex items-center justify-center gap-1.5 border border-[#4a5e78] text-[#4a5e78] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-gray-50 transition-colors">
                                 <i className="pi pi-print text-sm"></i> PRINT
                             </button>
-                            <button onClick={handleViewClick} disabled={isViewing} className="flex items-center justify-center gap-1.5 border border-[#2e532e] text-[#2e532e] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-green-50 transition-colors">
+                            <button onClick={() => handleViewClick(false)} disabled={isViewing} className="flex items-center justify-center gap-1.5 border border-[#2e532e] text-[#2e532e] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-green-50 transition-colors">
                                 <i className={`pi ${isViewing ? 'pi-spin pi-spinner' : 'pi-eye'} text-sm`}></i> VIEW
                             </button>
                             <button className="flex items-center justify-center gap-1.5 border border-[#6b3582] text-[#6b3582] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-purple-50 transition-colors">

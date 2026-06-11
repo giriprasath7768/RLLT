@@ -366,6 +366,21 @@ const DynamicCycleChartView = () => {
         }
     };
 
+    useEffect(() => {
+        if (location.state?.autoPrint && chunks && chunks.length > 0 && selectedChart) {
+            // Need a brief moment to ensure DOM is fully rendered for html2canvas
+            const timer = setTimeout(() => {
+                handlePrint();
+                
+                // Remove autoPrint from history state so it doesn't fire again on refresh
+                const newState = { ...location.state };
+                delete newState.autoPrint;
+                window.history.replaceState({ ...window.history.state, usr: newState }, '');
+            }, 800);
+            return () => clearTimeout(timer);
+        }
+    }, [location.state?.autoPrint, chunks, selectedChart]);
+
     return (
         <div className="p-8 w-full max-w-full overflow-x-auto bg-gray-50 min-h-screen print:bg-white print:p-0 print:overflow-visible">
             <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet" />

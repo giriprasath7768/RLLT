@@ -71,7 +71,7 @@ const Pencil = ({ label, baseNum, bodyColorClass, tipColorClass, textColor, onCl
                 {/* Center face Label */}
                 <div className="w-[50%] h-full relative z-10">
                     <span
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[13px] sm:text-[14px] font-black uppercase whitespace-nowrap"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[10px] sm:text-[13px] font-black uppercase whitespace-nowrap"
                         style={{
                             color: textColor || '#ffffff',
                             textShadow: '-0.5px 0.5px 0px #a39b8c, -1px 1px 0px #8b8374, -2px 2px 0px #635b4c, -3px 3px 0px #4a4336, -4px 4px 4px rgba(0,0,0,0.8)',
@@ -122,25 +122,6 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
     const [isSliderMode, setIsSliderMode] = React.useState(false);
     const [currentSlideIndex, setCurrentSlideIndex] = React.useState(0);
 
-    React.useEffect(() => {
-        if (isSliderMode && activeSquare) {
-            const idx = wisdomItems.findIndex(i => i.key === activeSquare);
-            if (idx !== -1 && idx !== currentSlideIndex) {
-                setCurrentSlideIndex(idx);
-            }
-        }
-    }, [activeSquare, isSliderMode]);
-
-    React.useEffect(() => {
-        let interval;
-        if (isSliderMode && !activeSquare) {
-            interval = setInterval(() => {
-                setCurrentSlideIndex((prev) => (prev < wisdomItems.length - 1 ? prev + 1 : 0));
-            }, 3000);
-        }
-        return () => clearInterval(interval);
-    }, [isSliderMode, activeSquare, currentSlideIndex]);
-
     const wisdomItems = [
         { letter: 'W', color: '#8e2b8c', key: 'W' },
         { letter: 'I', color: '#294291', key: 'I' },
@@ -153,7 +134,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
     return (
         <div className="bg-white flex-grow flex flex-col pt-2 pb-4 px-1 rounded-b-lg overflow-y-auto custom-scrollbar border-t-4 border-[#12182b] w-full h-full relative">
             {/* Pencils Row */}
-            <div className="flex p-1 gap-1 h-[450px] sm:h-[450px] w-full justify-between items-stretch">
+            <div className="flex p-1 gap-1 flex-1 min-h-[220px] max-h-[450px] w-full justify-between items-stretch">
                 <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00c0ff]" tipColorClass="text-[#00c0ff]" textColor={pencilTextColor} onClick={onPencilClick} />
                 <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" onClick={(c) => { onLetterClick(c); setActiveSquare(prev => prev === 'W' ? null : 'W'); }} />
 
@@ -176,7 +157,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
             </div>
 
             {/* TRANSFORMATION Text Bar */}
-            <div className="w-full bg-black py-0 text-white flex justify-between items-center px-[12px] font-black text-[14px] sm:text-[16px] mx-0 drop-shadow-md z-10 shrink-0 mb-0">
+            <div className="w-full bg-black py-0 text-white flex justify-between items-center px-[12px] font-black text-[16px] mx-0 drop-shadow-md z-10 shrink-0 mb-0">
                 {"TRANSFORMATION".split('').map((char, i) => (
                     <span key={i}>{char}</span>
                 ))}
@@ -228,11 +209,11 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                             className={`flex items-center gap-1 border-2 rounded py-0 px-1 transition-all mr-8`}
                             style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
                         >
-                            <span style={{ color: item.color }} className="text-[12px] sm:text-[14px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
+                            <span style={{ color: item.color }} className="text-[14px] font-black flex-shrink-0 leading-none">{idx + 1}.</span>
                             <span
                                 onClick={() => { setActiveSquare(item.key); onLetterClick(item.color); }}
                                 style={{ color: item.color }}
-                                className="text-[13px] sm:text-[14px] font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
+                                className="text-[14px] font-black leading-none drop-shadow-sm cursor-pointer flex-shrink-0 px-1"
                             >
                                 {item.letter}
                             </span>
@@ -240,7 +221,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                                 type="text"
                                 value={texts[item.key]}
                                 onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
-                                className="text-black text-[10px] sm:text-[12px] font-black uppercase tracking-wider bg-transparent outline-none flex-grow min-w-0 leading-none"
+                                className="text-black text-[12px] font-black uppercase tracking-wider bg-transparent outline-none flex-grow min-w-0 leading-none"
                             />
                         </div>
                     ))
@@ -264,7 +245,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                                             style={{ borderColor: activeSquare === item.key ? item.color : 'transparent' }}
                                         >
                                             <div
-                                                className="text-[40px] sm:text-[50px] font-black drop-shadow-md cursor-pointer transition-transform hover:scale-105 leading-none pr-[2px]"
+                                                className="text-[50px] font-black drop-shadow-md cursor-pointer transition-transform hover:scale-105 leading-none pr-[2px]"
                                                 style={{ color: item.color }}
                                                 onClick={() => { onLetterClick(item.color); setActiveSquare(prev => prev === item.key ? null : item.key); }}
                                             >
@@ -274,7 +255,7 @@ const WisdomOverlay = ({ onPencilClick, onLetterClick }) => {
                                                 type="text"
                                                 value={texts[item.key]}
                                                 onChange={(e) => setTexts({ ...texts, [item.key]: e.target.value })}
-                                                className={`text-black font-black uppercase bg-transparent outline-none leading-tight text-left transition-all ${['M', 'D'].includes(item.key) ? 'text-[8.5px] sm:text-[10px] tracking-normal' : 'text-[12px] sm:text-[14px] tracking-widest'}`}
+                                                className={`text-black font-black uppercase bg-transparent outline-none leading-tight text-left transition-all ${['M', 'D'].includes(item.key) ? 'text-[10px] tracking-normal' : 'text-[14px] tracking-widest'}`}
                                                 style={{ width: `calc(${texts[item.key].length * 1.4}ch + 3rem)`, minWidth: '50px', maxWidth: '90%' }}
                                             />
                                         </div>
@@ -360,7 +341,6 @@ const TTomTPlayer = () => {
         navigate('/');
     };
 
-    // Parse the ?days= parameter, defaulting to 30 if not provided
     const searchParams = new URLSearchParams(location.search);
     const trackingDays = parseInt(searchParams.get('days')) || 30;
 
@@ -383,7 +363,7 @@ const TTomTPlayer = () => {
     const [contentDB, setContentDB] = useState([]);
     const [userRole, setUserRole] = useState(null);
 
-    const [playerBorderColor, setPlayerBorderColor] = useState('#000000'); // default black top border
+    const [playerBorderColor, setPlayerBorderColor] = useState('#000000');
     const [playerBgColor, setPlayerBgColor] = useState('rgb(81, 106, 135)');
 
     const [activeTrackName, setActiveTrackName] = useState('');
@@ -399,7 +379,6 @@ const TTomTPlayer = () => {
     const lastTouchRef = useRef(0);
     const lastReadingTouchRef = useRef(0);
 
-    // Pencils + Wisdom Letters → transformation count
     const incrementTransformationTouch = () => {
         const now = Date.now();
         if (now - lastTouchRef.current < 500) return;
@@ -408,7 +387,6 @@ const TTomTPlayer = () => {
             .catch(err => console.log('Touch count update skipped:', err?.response?.status));
     };
 
-    // Play, Playlist, Progress bar, Day selection → klt_reading_plan count
     const incrementReadingPlanTouch = () => {
         const now = Date.now();
         if (now - lastReadingTouchRef.current < 500) return;
@@ -417,7 +395,6 @@ const TTomTPlayer = () => {
             .catch(err => console.log('Touch count update skipped:', err?.response?.status));
     };
 
-    // Local Completion Tracking
     const [finishedDays, setFinishedDays] = useState(() => {
         try {
             return new Set(JSON.parse(localStorage.getItem('finished_days_ttomt') || '[]'));
@@ -430,11 +407,9 @@ const TTomTPlayer = () => {
         localStorage.setItem('finished_days_ttomt', JSON.stringify([...finishedDays]));
     }, [finishedDays]);
 
-    // Core Refs for Cube Math
     const playerRef = useRef(null);
     const [playerWidth, setPlayerWidth] = useState(420);
 
-    // Horizontal Scroll Drag Logic for Desktop Compatibility
     const playlistScrollRef = useRef(null);
     const isDragging = useRef(false);
     const startX = useRef(0);
@@ -525,7 +500,6 @@ const TTomTPlayer = () => {
             .then(res => setContentDB(res.data))
             .catch(err => console.error("Contents DB fetch error", err));
 
-        // Audio Events
         const ad = audioRef.current;
         const updateTime = () => setAudioProgress(ad.currentTime);
         const updateDuration = () => setAudioDuration(ad.duration);
@@ -538,7 +512,6 @@ const TTomTPlayer = () => {
 
             const currentIndex = currPlaylist.findIndex(b => b.name === currTrack);
             if (currentIndex !== -1 && currentIndex < currPlaylist.length - 1) {
-                // Find next valid track with audio
                 let foundNext = false;
                 for (let i = currentIndex + 1; i < currPlaylist.length; i++) {
                     const nextTrackName = currPlaylist[i].name;
@@ -589,7 +562,6 @@ const TTomTPlayer = () => {
         ad.addEventListener('loadedmetadata', updateDuration);
         ad.addEventListener('ended', onEnd);
 
-        // Resize tracking for perfect Cube proportions
         if (playerRef.current) setPlayerWidth(playerRef.current.offsetWidth);
         const handleResize = () => {
             if (playerRef.current) setPlayerWidth(playerRef.current.offsetWidth);
@@ -623,7 +595,6 @@ const TTomTPlayer = () => {
             }
 
             if (parsedAudios.length > 0) {
-                // If a track index isn't directly passed, try to match current language
                 let targetIdx = trackIndex;
                 if (targetIdx === 0 && playerStateRef.current?.activeLanguage && !showAudioSelector) {
                     const matchIdx = parsedAudios.findIndex(a => a.language === playerStateRef.current.activeLanguage);
@@ -638,7 +609,6 @@ const TTomTPlayer = () => {
                 setActiveVideoIndex(0);
                 setIsPlaying(true);
 
-                // Increment RLLT reading plan touch count when audio plays
                 incrementReadingPlanTouch();
             }
             return;
@@ -649,7 +619,6 @@ const TTomTPlayer = () => {
 
     const togglePlay = () => {
         if (!activeTrackName) {
-            // Pick first playable track from the playlist
             for (const bookObj of playlistBooks) {
                 const bookStr = bookObj.name;
                 const parts = bookStr.trim().split(' ');
@@ -716,7 +685,6 @@ const TTomTPlayer = () => {
         }
 
         if (filter === 'morning_evening' && p && p.length > 0 && booksDB.length > 0 && chaptersDB.length > 0) {
-            // Apply standard S3 Split logic converting native chart to M/E schema safely!
             const is24x7 = JSON.stringify(p).includes('"m4b"');
             if (is24x7) {
                 const { morningEveningChunks } = splitS4Data(p, booksDB, chaptersDB);
@@ -747,7 +715,7 @@ const TTomTPlayer = () => {
     const playlistBooks = React.useMemo(() => {
         if (!activeDayNode) return [{ name: "PROVERBS 1", type: "default" }];
         const dayNode = activeDayNode;
-        const filter = location.state?.filter || 'main'; // default standard
+        const filter = location.state?.filter || 'main';
 
         let fullList = [];
 
@@ -756,24 +724,19 @@ const TTomTPlayer = () => {
 
         if (filter === 'morning_evening') {
             if (is24x7) {
-                // 24x7 Morning
                 const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b_morning].filter(Boolean);
                 morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
 
-                // 24x7 Evening
                 const eveningRaw = [dayNode.m4b_evening].filter(Boolean);
                 eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
             } else {
-                // Standard Morning
                 const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b_morning].filter(Boolean);
-                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
+                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: 'morning' })));
 
-                // Standard Evening
                 const eveningRaw = [dayNode.m3b_evening].filter(Boolean);
-                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
+                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: 'evening' })));
             }
         } else {
-            // Default Main
             const defaultRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b].filter(Boolean);
             defaultRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'default' })));
         }
@@ -785,7 +748,6 @@ const TTomTPlayer = () => {
         playerStateRef.current = { activeTrackName, playlistBooks, contentDB, activeLanguage, selectedDay };
     }, [activeTrackName, playlistBooks, contentDB, activeLanguage, selectedDay]);
 
-    // Completed Days Logic is now handled by finishedDays
     const completedDays = finishedDays;
 
     useEffect(() => {
@@ -794,22 +756,45 @@ const TTomTPlayer = () => {
         }
     }, [playlistBooks, activeTrackName]);
 
-    // Placeholder image since we don't have the exact image
-    const placeholderImg = "https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?w=500&auto=format&fit=crop&q=60"; // A generic open book with light
+    const placeholderImg = "https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?w=500&auto=format&fit=crop&q=60";
 
-    // Calculate Z translation for the Cube
     const tz = playerWidth / 2;
 
     return (
-        <div className="h-[100dvh] bg-gray-100 flex items-center justify-center sm:px-4 sm:py-0 font-sans transition-colors duration-500 overflow-hidden">
-            {/* The Player Container - Mobile Sized */}
-            <div className="w-full max-w-[420px] h-full relative" style={{ perspective: '1500px' }} ref={playerRef}>
-                <div
-                    className="w-full h-full relative"
-                >
+        <div className="min-h-[100dvh] bg-gray-100 flex items-center justify-center sm:px-4 py-4 sm:py-8 font-sans transition-colors duration-500 overflow-y-auto">
+            <style>{`
+                @media (max-width: 380px) {
+                    .mobile-compact {
+                        width: 420px !important;
+                        max-width: 420px !important;
+                        zoom: 0.85;
+                    }
+                }
+                @media (min-width: 381px) and (max-width: 450px) {
+                    .mobile-compact {
+                        width: 420px !important;
+                        max-width: 420px !important;
+                        zoom: 0.95;
+                    }
+                }
+                @media (min-width: 451px) and (max-width: 639px) {
+                    .mobile-compact {
+                        width: 420px !important;
+                        max-width: 420px !important;
+                        zoom: 1;
+                    }
+                }
+            `}</style>
+            {/* The Player Container - Shrink Wrapped */}
+            <div 
+                className="w-full max-w-[420px] relative shrink-0 mobile-compact" 
+                style={{ perspective: '1500px' }} 
+                ref={playerRef}
+            >
+                <div className="w-full relative">
                     {/* Front Face: Audio Player */}
                     <div
-                        className="w-full h-full bg-[#37475a] border-[5px] border-[#1a2234] shadow-2xl rounded-none sm:rounded-lg flex flex-col overflow-hidden relative"
+                        className="w-full bg-[#37475a] border-[5px] border-[#1a2234] shadow-2xl rounded-none sm:rounded-lg flex flex-col overflow-hidden relative"
                         style={{
                             backfaceVisibility: 'hidden',
                             transformOrigin: `50% 50% -${tz}px`,
@@ -890,7 +875,6 @@ const TTomTPlayer = () => {
                                             }
                                         }
 
-                                        // Standard text coloring logic preventing "disabled" unreadable look when audio is missing!
                                         let textColor = hasAudio ? 'text-white hover:text-blue-200' : 'text-white/80';
                                         if (type === 'morning') textColor = hasAudio ? 'text-green-400 hover:text-green-200' : 'text-green-400';
                                         if (type === 'evening') textColor = hasAudio ? 'text-blue-400 hover:text-blue-200' : 'text-blue-400';
@@ -919,12 +903,10 @@ const TTomTPlayer = () => {
                                         alt="Proverbs Artwork"
                                         className={`w-full h-full object-cover rounded-sm border-2 border-black transition-opacity ${showAudioSelector ? 'opacity-20' : 'opacity-100 group-hover:opacity-80'}`}
                                     />
-                                    {/* Headphones icon overlay */}
                                     <div className="absolute top-2 right-2 text-yellow-500 drop-shadow-md z-10 transition-transform group-hover:scale-110">
                                         <i className="pi pi-headphones text-4xl"></i>
                                     </div>
 
-                                    {/* Audio Selector Overlay */}
                                     {showAudioSelector && (
                                         <div className="absolute inset-0 flex flex-col p-2 bg-black/70 rounded-sm overflow-y-auto custom-scrollbar z-20" onClick={(e) => e.stopPropagation()}>
                                             <div className="flex justify-between items-center mb-2 border-b border-white/20 pb-1">
@@ -958,7 +940,6 @@ const TTomTPlayer = () => {
                                 style={{
                                     backgroundColor: playerBgColor,
                                     borderColor: playerBorderColor
-
                                 }}
                             >
                                 <div className="flex items-center justify-between gap-2">
@@ -1018,10 +999,10 @@ const TTomTPlayer = () => {
                         </div>
 
                         {/* Lower Area Stack */}
-                        <div className={`relative w-full flex-1 min-h-0`} style={{ perspective: '1000px' }}>
+                        <div className={`relative w-full`} style={{ perspective: '1000px' }}>
                             {/* Front Face: Day Selection Grid */}
                             <div
-                                className="absolute inset-0 flex flex-col rounded-none sm:rounded-b-lg"
+                                className="relative flex flex-col rounded-none sm:rounded-b-lg"
                                 style={{
                                     backfaceVisibility: 'hidden',
                                     transform: showWisdom ? 'rotateY(180deg)' : 'rotateY(0deg)',
@@ -1030,7 +1011,7 @@ const TTomTPlayer = () => {
                                     zIndex: showWisdom ? 0 : 10
                                 }}
                             >
-                                <div className="p-3 pb-4 bg-black w-full h-full overflow-y-auto custom-scrollbar rounded-none sm:rounded-b-lg">
+                                <div className="p-3 pb-8 bg-black w-full rounded-none sm:rounded-b-lg">
                                     <div className={`grid grid-cols-5 ${trackingDays > 30 ? 'gap-y-[15px]' : 'gap-y-[30px]'} gap-x-2`}>
                                         {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => {
                                             const isCompleted = completedDays.has(num);
@@ -1074,7 +1055,7 @@ const TTomTPlayer = () => {
 
                     {/* Back Face: Video Player */}
                     <div
-                        className="absolute inset-0 w-full h-full bg-[#1a2234] border border-gray-800 shadow-2xl rounded-none sm:rounded-lg flex flex-col overflow-hidden"
+                        className="absolute inset-0 w-full bg-[#1a2234] border border-gray-800 shadow-2xl rounded-lg flex flex-col overflow-hidden"
                         style={{
                             backfaceVisibility: 'hidden',
                             transformOrigin: `50% 50% -${tz}px`,

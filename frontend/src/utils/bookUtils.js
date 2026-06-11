@@ -94,3 +94,42 @@ export const extractBooksAndAuthors = (inputData) => {
 
     return { bks: bksStr, art: artStr };
 };
+
+export const countActualBooks = (inputStr) => {
+    if (!inputStr) return '';
+    const str = String(inputStr).trim();
+    if (str === '0' || str === '-') return '';
+
+    const uniqueBooks = new Set();
+    const words = str.toUpperCase().replace(/[^A-Z0-9\s]/g, ' ').split(/\s+/);
+    
+    let recognizedAny = false;
+    for (const word of words) {
+        if (!word) continue;
+        if (BIBLE_BOOKS_AUTHORS[word]) {
+            uniqueBooks.add(word);
+            recognizedAny = true;
+        } else if (BIBLE_BOOKS_ALIASES[word]) {
+            uniqueBooks.add(BIBLE_BOOKS_ALIASES[word]);
+            recognizedAny = true;
+        } else {
+            for (const alias in BIBLE_BOOKS_ALIASES) {
+                if (word === alias) {
+                    uniqueBooks.add(BIBLE_BOOKS_ALIASES[alias]);
+                    recognizedAny = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (recognizedAny) {
+        return uniqueBooks.size.toString();
+    }
+
+    if (!isNaN(parseInt(str))) {
+        return parseInt(str).toString();
+    }
+    
+    return '';
+};

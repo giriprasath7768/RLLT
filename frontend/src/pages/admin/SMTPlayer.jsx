@@ -415,24 +415,7 @@ const PDFPageRender = React.forwardRef((props, ref) => {
     const isRightPage = props.pageNumber % 2 !== 0;
 
     React.useEffect(() => {
-        const el = contentRef.current;
-        if (!el) return;
-
-        const stopFlip = (e) => {
-            // Unconditionally stop flip events from reaching react-pageflip
-            // This disables all swipe/peel interactions, allowing 100% reliable text selection.
-            e.stopPropagation();
-        };
-
-        el.addEventListener('pointerdown', stopFlip);
-        el.addEventListener('touchstart', stopFlip, { passive: false });
-        el.addEventListener('mousedown', stopFlip);
-
-        return () => {
-            el.removeEventListener('pointerdown', stopFlip);
-            el.removeEventListener('touchstart', stopFlip);
-            el.removeEventListener('mousedown', stopFlip);
-        };
+        // We rely on useMouseEvents and the overlay to control interactions instead of unconditionally stopping flip
     }, []);
 
     const rightSpineObj = { background: 'linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.2) 3%, rgba(0,0,0,0.05) 8%, rgba(0,0,0,0) 25%)' };
@@ -582,6 +565,11 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-30" style={isRightPage ? rightEdgeObj : leftEdgeObj} />
 
+                <div 
+                    className="absolute inset-0 z-[70]" 
+                    style={{ pointerEvents: props.isTextSelectionMode ? 'none' : 'auto' }}
+                    onDoubleClick={props.onDoubleClick}
+                />
             </div>
         </div>
     );
@@ -591,6 +579,7 @@ const PDFPageRender = React.forwardRef((props, ref) => {
 const SMTPlayer = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [isTextSelectionMode, setIsTextSelectionMode] = useState(false);
 
     const searchParams = new URLSearchParams(location.search);
     const trackingDays = parseInt(searchParams.get('days')) || 30;
@@ -1328,7 +1317,7 @@ const SMTPlayer = () => {
                             <div
                                 className="relative mx-auto flex items-center justify-center"
                                 style={{
-                                    width: `${baseWidth * 2}px`,
+                                    width: `${baseWidth}px`,
                                     height: `${baseHeight}px`,
                                 }}
                             >
@@ -1344,19 +1333,20 @@ const SMTPlayer = () => {
                                 <button 
                                     className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 bg-[#1e2433]/80 hover:bg-[#8b5a2b] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm transition-all z-[100] disabled:opacity-0 disabled:pointer-events-none hover:scale-110"
                                     onClick={() => flipBookRef.current?.pageFlip().flipNext()}
-                                    disabled={currentPage >= totalPagesToRender - 2}
+                                    disabled={currentPage >= numPages - 1}
                                     title="Next Page"
                                 >
                                     <i className="pi pi-angle-right text-lg sm:text-xl"></i>
                                 </button>
                                 <div
-                                    style={{ width: `${baseWidth * 2}px`, height: `${baseHeight}px` }}
+                                    style={{ width: `${baseWidth}px`, height: `${baseHeight}px` }}
                                     className="shadow-[0_45px_100px_rgba(0,0,0,1)] ring-1 ring-gray-700/50 flex flex-col justify-center items-center bg-[#ffffff]"
                                 >
                                     <HTMLFlipBook
-                                        width={1000}
-                                        height={Math.floor(1000 * aspectRatio)}
-                                        size="stretch"
+                                        width={window.innerWidth < 768 ? baseWidth : 1000}
+                                        height={window.innerWidth < 768 ? baseHeight : Math.floor(1000 * aspectRatio)}
+                                        style={{ width: '100%', height: '100%' }}
+                                        size={window.innerWidth < 768 ? "fixed" : "stretch"}
                                         minWidth={100}
                                         maxWidth={9000}
                                         minHeight={100}
@@ -1366,61 +1356,32 @@ const SMTPlayer = () => {
                                         showCover={false}
                                         mobileScrollSupport={true}
                                         disableFlipByClick={true}
-                                        useMouseEvents={false}
+                                        useMouseEvents={!isTextSelectionMode}
+                                        swipeDistance={isTextSelectionMode ? 0 : 30}
                                         showPageCorners={false}
                                         className="mx-auto"
                                         flippingTime={900}
-                                        usePortrait={false}
+                                        usePortrait={true}
                                         onFlip={onPageFlip}
                                         ref={flipBookRef}
                                     >
-                                        {Array.from(new Array(totalPagesToRender), (_, index) => {
-                                            const isHardCover = false;
-                                            const isRightPage = index % 2 !== 0;
-
-                                            let pageToRender = null;
-                                            let isBlank = false;
-
-                                            if (numPages % 2 !== 0) {
-                                                if (index < numPages - 1) {
-                                                    pageToRender = index + 1;
-                                                } else if (index === numPages - 1) {
-                                                    isBlank = true;
-                                                } else if (index === numPages) {
-                                                    pageToRender = numPages;
-                                                } else {
-                                                    isBlank = true;
-                                                }
-                                            } else {
-                                                if (index < numPages) {
-                                                    pageToRender = index + 1;
-                                                } else {
-                                                    isBlank = true;
-                                                }
-                                            }
-
-                                            if (!isBlank && pageToRender !== null) {
-                                                return (
-                                                    <PDFPageRender
-                                                        key={index}
-                                                        pageNumber={pageToRender}
-                                                        width={baseWidth}
-                                                        isCover={isHardCover}
-                                                        pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
-                                                    />
-                                                );
-                                            } else {
-                                                return (
-                                                    <div key={index} className={`page ${isHardCover ? 'bg-[#1e2433]' : 'bg-[#ffffff]'} shadow-2xl`} data-density={isHardCover ? "hard" : "soft"}>
-                                                        <div className={`page-content w-full h-full ${isHardCover ? 'bg-[#2a3045] border-[3px] border-[#151a26]' : 'bg-[#e5e7eb]'} flex flex-col justify-center items-center relative`}>
-                                                            <i className="pi pi-book text-8xl text-gray-400 opacity-20"></i>
-                                                            <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />
-                                                            <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
-                                                            <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-30" style={isRightPage ? rightEdgeObj : leftEdgeObj} />
-                                                        </div>
-                                                    </div>
-                                                );
-                                            }
+                                        {Array.from(new Array(numPages), (_, index) => {
+                                            const pageToRender = index + 1;
+                                            return (
+                                                <PDFPageRender
+                                                    key={index}
+                                                    pageNumber={pageToRender}
+                                                    width={baseWidth}
+                                                    isCover={false}
+                                                    pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
+                                                    isTextSelectionMode={isTextSelectionMode}
+                                                    onDoubleClick={() => {
+                                                        if (window.innerWidth < 768) {
+                                                            setIsTextSelectionMode(prev => !prev);
+                                                        }
+                                                    }}
+                                                />
+                                            );
                                         })}
                                     </HTMLFlipBook>
                                 </div>

@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import BookSelectionModal from '../../components/BookSelectionModal';
-
 const LightChartDigital = () => {
     const [rlltDB, setRlltDB] = useState([]);
     const [mdl, setMdl] = useState(1);
     const [fct, setFct] = useState(1);
     const [phs, setPhs] = useState(1);
-    const [bookModalVisible, setBookModalVisible] = useState(false);
-    const [mod5Overrides, setMod5Overrides] = useState({});
 
     useEffect(() => {
         setFct(1);
@@ -32,8 +28,10 @@ const LightChartDigital = () => {
     }, []);
 
     const uniqueModules = React.useMemo(() => {
-        const unique = [...new Set(rlltDB.map(d => Number(d.module)))].filter(m => !isNaN(m) && m > 0);
-        return unique.sort((a, b) => a - b);
+        const unique = new Set(rlltDB.map(d => Number(d.module)).filter(m => !isNaN(m) && m > 0));
+        // Always include modules 1 to 5 as they are core modules, even if empty in DB
+        [1, 2, 3, 4, 5].forEach(m => unique.add(m));
+        return Array.from(unique).sort((a, b) => a - b);
     }, [rlltDB]);
 
     const globalStats = React.useMemo(() => {
@@ -54,17 +52,6 @@ const LightChartDigital = () => {
             days = Number(modRecords[0].scheduled_value_days);
         }
 
-        if (mdl === 5) {
-            const currentOverride = mod5Overrides[`${fct}-${phs}`];
-            return {
-                days: currentOverride ? currentOverride.days : 0,
-                totalFacetsCount: 5,
-                totalPhasesCount: 5,
-                maxFacet: 5,
-                maxPhase: 5
-            };
-        }
-
         const facetsSet = new Set(modRecords.map(d => Number(d.facet)).filter(f => !isNaN(f) && f > 0));
         const phasesSet = new Set(modRecords.map(d => Number(d.phase)).filter(p => !isNaN(p) && p > 0));
         
@@ -77,12 +64,9 @@ const LightChartDigital = () => {
         const maxPhase = phasesSet.size > 0 ? Math.max(...Array.from(phasesSet)) : 12;
 
         return { days, totalFacetsCount, totalPhasesCount, maxFacet, maxPhase };
-    }, [rlltDB, mdl, fct, phs, mod5Overrides]);
+    }, [rlltDB, mdl, fct, phs]);
 
     const fctStats = React.useMemo(() => {
-        if (mdl === 5) {
-            return { maxPhase: 5 };
-        }
         const fctRecords = rlltDB.filter(d => Number(d.module) === mdl && Number(d.facet) === fct);
         const phasesSet = new Set(fctRecords.map(d => Number(d.phase)).filter(p => !isNaN(p) && p > 0));
         const maxPhase = phasesSet.size > 0 ? Math.max(...Array.from(phasesSet)) : 12;
@@ -105,32 +89,7 @@ const LightChartDigital = () => {
         let hebrew_words = "-";
         let greek_words = "-";
 
-        if (mdl === 5) {
-            if (mod5Overrides[`${fct}-${phs}`]) {
-                const override = mod5Overrides[`${fct}-${phs}`];
-                days = override.days || 0;
-                art = override.art || "0m";
-                weeks = override.we5 || "0";
-                ot_bks = override.ot_bks || "0";
-                nt_bks = override.nt_bks || "0";
-                chp = override.chp || "0";
-                ver = override.ver || "0";
-                english_words = override.english_words || "0";
-                hebrew_words = override.hebrew_words || "0";
-                greek_words = override.greek_words || "0";
-            } else {
-                days = 0;
-                art = "0m";
-                weeks = "0";
-                ot_bks = "0";
-                nt_bks = "0";
-                chp = "0";
-                ver = "0";
-                english_words = "0";
-                hebrew_words = "0";
-                greek_words = "0";
-            }
-        } else if (currentData) {
+        if (currentData) {
             days = Number(currentData.scheduled_value_days) || 30;
             art = currentData.art || "0m";
             weeks = currentData.we5 || "0";
@@ -181,7 +140,7 @@ const LightChartDigital = () => {
             hebrew_words,
             greek_words
         };
-    }, [rlltDB, mdl, fct, phs, mod5Overrides]);
+    }, [rlltDB, mdl, fct, phs]);
 
     const handleDecMdl = () => {
         const idx = uniqueModules.indexOf(mdl);
@@ -194,12 +153,12 @@ const LightChartDigital = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 sm:p-8 flex justify-start md:justify-center items-start font-sans overflow-x-auto w-full">
-            <div className="bg-[#fcf8ef] rounded-lg shadow-2xl w-full min-w-[780px] max-w-[800px] relative" style={{ border: '2px solid #d3c09b', outline: '4px solid #fcf8ef', outlineOffset: '-6px' }}>
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-8 flex justify-center items-start font-sans overflow-x-hidden w-full">
+            <div className="bg-[#fcf8ef] rounded-lg shadow-2xl w-full max-w-[800px] relative" style={{ border: '2px solid #d3c09b', outline: '4px solid #fcf8ef', outlineOffset: '-6px' }}>
                 
                 {/* Top Section */}
-                <div className="p-6 pb-2">
-                    <div className="flex justify-between items-start">
+                <div className="p-4 sm:p-6 pb-2">
+                    <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-4 md:gap-0">
                         
                         {/* Logo Left */}
                         <div className="flex flex-col items-center mt-1">
@@ -253,26 +212,26 @@ const LightChartDigital = () => {
                 </div>
 
                 {/* Module Selection Card Wrapper */}
-                <div className="mx-6 mt-4 p-4 bg-[#fcf8ef] border-2 border-[#d3c09b] rounded-lg shadow-sm">
+                <div className="mx-4 sm:mx-6 mt-4 p-2 sm:p-4 bg-[#fcf8ef] border-2 border-[#d3c09b] rounded-lg shadow-sm">
                     {/* Subtitle */}
                     <div className="text-center mb-4 flex flex-col items-center">
                         {/* Equation row */}
-                        <div className="flex items-center justify-center gap-10 mb-4">
+                        <div className="flex items-center justify-center gap-2 sm:gap-10 mb-4 w-full">
                             <span 
-                                className="text-[#d3c09b] font-bold text-[42px] cursor-pointer hover:text-[#b5a07c] transition-colors leading-none" 
+                                className="text-[#d3c09b] font-bold text-3xl sm:text-[42px] cursor-pointer hover:text-[#b5a07c] transition-colors leading-none" 
                                 onClick={handleDecMdl}
                             >-</span>
-                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-32 h-24 shadow-inner">
-                                <span className="text-[16px] font-bold text-[#0B2149] tracking-widest">MODULE</span>
-                                <span className="text-[42px] text-[#5a6b5a] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{mdl}</span>
+                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-24 h-20 sm:w-32 sm:h-24 shadow-inner">
+                                <span className="text-xs sm:text-[16px] font-bold text-[#0B2149] tracking-widest">MODULE</span>
+                                <span className="text-3xl sm:text-[42px] text-[#5a6b5a] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{mdl}</span>
                             </div>
                             <span 
-                                className="text-[#d3c09b] font-bold text-[42px] cursor-pointer hover:text-[#b5a07c] transition-colors leading-none"
+                                className="text-[#d3c09b] font-bold text-3xl sm:text-[42px] cursor-pointer hover:text-[#b5a07c] transition-colors leading-none"
                                 onClick={handleIncMdl}
                             >+</span>
-                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-32 h-24 shadow-inner">
-                                <span className="text-[16px] font-bold text-[#0B2149] tracking-widest">DAYS</span>
-                                <span className="text-[42px] text-[#5a6b5a] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{modStats.days}</span>
+                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-24 h-20 sm:w-32 sm:h-24 shadow-inner">
+                                <span className="text-xs sm:text-[16px] font-bold text-[#0B2149] tracking-widest">DAYS</span>
+                                <span className="text-3xl sm:text-[42px] text-[#5a6b5a] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{modStats.days}</span>
                             </div>
                         </div>
 
@@ -284,10 +243,10 @@ const LightChartDigital = () => {
                     </div>
 
                     {/* Grid Section */}
-                    <div className="flex gap-4">
+                    <div className="flex flex-col md:flex-row gap-4">
                         {/* FACETS Grid */}
-                        <div className="flex-1 bg-gradient-to-r from-[#1e4620] to-[#2d5a3c] rounded-lg flex relative shadow-lg overflow-hidden p-1 pl-0">
-                            <div className="w-20 flex items-center justify-center relative overflow-hidden">
+                        <div className="flex-1 bg-gradient-to-r from-[#1e4620] to-[#2d5a3c] rounded-lg flex relative shadow-lg overflow-hidden p-1 md:pl-0">
+                            <div className="hidden md:flex w-20 items-center justify-center relative overflow-hidden">
                             </div>
                             <div className="flex-1 bg-[#fdfbf6] rounded border-[2px] border-[#d3c09b] flex flex-col shadow-[0_0_15px_rgba(0,0,0,0.6)] z-10 overflow-hidden">
                                 <div className="text-center text-white bg-gradient-to-b from-[#1e4620] to-[#112a13] py-1 font-bold tracking-[0.3em] text-sm border-b-2 border-[#d3c09b]" style={{ fontFamily: "'Algerian', serif" }}>
@@ -309,7 +268,7 @@ const LightChartDigital = () => {
                         </div>
 
                         {/* PHASES Grid */}
-                        <div className="flex-1 bg-gradient-to-l from-[#8b2b2b] to-[#6b151a] rounded-lg flex relative shadow-lg overflow-hidden p-1 pr-0">
+                        <div className="flex-1 bg-gradient-to-l from-[#8b2b2b] to-[#6b151a] rounded-lg flex relative shadow-lg overflow-hidden p-1 md:pr-0">
                             <div className="flex-1 bg-[#fdfbf6] rounded border-[2px] border-[#d3c09b] flex flex-col shadow-[0_0_15px_rgba(0,0,0,0.6)] z-10 overflow-hidden">
                                 <div className="text-center text-white bg-gradient-to-b from-[#8b2b2b] to-[#591414] py-1 font-bold tracking-[0.3em] text-sm border-b-2 border-[#d3c09b]" style={{ fontFamily: "'Algerian', serif" }}>
                                     P H A S E S
@@ -320,7 +279,6 @@ const LightChartDigital = () => {
                                             key={num} 
                                             onClick={() => {
                                                 setPhs(num);
-                                                if (mdl === 5) setBookModalVisible(true);
                                             }}
                                             className={`border-[0.5px] border-[#e8dcb9] flex items-center justify-center shadow-sm cursor-pointer transition-all ${fctStats.maxPhase === 1 ? 'w-full h-full text-5xl md:text-6xl font-bold' : 'text-xl'} ${phs === num ? 'bg-[#c7a96b] text-white font-bold' : 'bg-[#fcf8ef] text-[#5a6b5a] hover:bg-[#f0e4cd]'}`} 
                                             style={{ fontFamily: "Georgia, serif", minHeight: fctStats.maxPhase === 1 ? '96px' : '40px' }}
@@ -330,102 +288,97 @@ const LightChartDigital = () => {
                                     ))}
                                 </div>
                             </div>
-                            <div className="w-20 flex items-center justify-center relative overflow-hidden">
+                            <div className="hidden md:flex w-20 items-center justify-center relative overflow-hidden">
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Stats Row 1 */}
-                <div className="px-6 mt-4">
-                    <div className="bg-[#fdfbf6] border-2 border-[#d3c09b] rounded flex justify-between items-center shadow-sm relative overflow-hidden">
+                <div className="px-4 sm:px-6 mt-4">
+                    <div className="bg-[#fdfbf6] border-2 border-[#d3c09b] rounded flex flex-col sm:flex-row justify-between items-center shadow-sm relative overflow-hidden">
                         {/* Decorative watermark left */}
-                        <div className="absolute left-0 top-0 bottom-0 w-20 opacity-10 flex items-center justify-center pointer-events-none">
+                        <div className="absolute left-0 top-0 bottom-0 w-20 opacity-10 hidden sm:flex items-center justify-center pointer-events-none">
                             <i className="pi pi-sun text-6xl text-[#a67c00]"></i>
                         </div>
                         {/* Decorative watermark right */}
-                        <div className="absolute right-0 top-0 bottom-0 w-20 opacity-10 flex items-center justify-center pointer-events-none">
+                        <div className="absolute right-0 top-0 bottom-0 w-20 opacity-10 hidden sm:flex items-center justify-center pointer-events-none">
                             <i className="pi pi-sun text-6xl text-[#a67c00]"></i>
                         </div>
 
-                        <div className="flex-1 flex flex-col items-center py-4 border-r border-[#e8dcb9] z-10">
-                            <span className="text-[16px] font-bold text-[#0B2149] tracking-widest mb-1">WEEKS/PHASE</span>
-                            <span className="text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.weeks}</span>
+                        <div className="flex-1 w-full flex flex-col items-center py-4 border-b sm:border-b-0 sm:border-r border-[#e8dcb9] z-10">
+                            <span className="text-xs sm:text-[16px] font-bold text-[#0B2149] tracking-widest mb-1">WEEKS/PHASE</span>
+                            <span className="text-3xl sm:text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.weeks}</span>
                         </div>
-                        <div className="flex-1 flex flex-col items-center py-4 border-r border-[#e8dcb9] z-10">
-                            <span className="text-[16px] font-bold text-[#0B2149] tracking-widest mb-1">DAYS/PHASE</span>
-                            <span className="text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.days}</span>
+                        <div className="flex-1 w-full flex flex-col items-center py-4 border-b sm:border-b-0 sm:border-r border-[#e8dcb9] z-10">
+                            <span className="text-xs sm:text-[16px] font-bold text-[#0B2149] tracking-widest mb-1">DAYS/PHASE</span>
+                            <span className="text-3xl sm:text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.days}</span>
                         </div>
-                        <div className="flex-1 flex flex-col items-center py-4 z-10">
-                            <span className="text-[16px] font-bold text-[#8b2b2b] tracking-widest mb-1">ART.</span>
-                            <span className="text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.artParts}</span>
+                        <div className="flex-1 w-full flex flex-col items-center py-4 z-10">
+                            <span className="text-xs sm:text-[16px] font-bold text-[#8b2b2b] tracking-widest mb-1">ART.</span>
+                            <span className="text-3xl sm:text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.artParts}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Stats Row 2 (Icons) */}
-                <div className="px-6 mt-4">
-                    <div className="bg-[#fdfbf6] border-2 border-[#d3c09b] rounded flex shadow-sm divide-x divide-[#e8dcb9]">
-                        <div className="flex-1 flex flex-col items-center justify-center py-3">
-                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">OT BKS</span>
-                            <span className="text-[#2d5a3c] font-bold text-2xl">{selectedPhaseStats.ot_bks}</span>
-                        </div>
-                        <div className="flex-1 flex flex-col items-center justify-center py-3">
-                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">NT BKS</span>
-                            <span className="text-[#0B2149] font-bold text-2xl">{selectedPhaseStats.nt_bks}</span>
-                        </div>
-                        <div className="flex-1 flex flex-col items-center justify-center py-3">
-                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">CHAP</span>
-                            <span className="text-[#0B2149] font-bold text-2xl">{selectedPhaseStats.chp}</span>
-                        </div>
-                        <div className="flex-1 flex flex-col items-center justify-center py-3">
-                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">VRS</span>
-                            <span className="text-[#2d5a3c] font-bold text-2xl">{selectedPhaseStats.ver}</span>
-                        </div>
-                        <div className="flex-[1.5] flex flex-col items-center justify-center py-3 bg-[#fdfbf6]">
-                            <i className="pi pi-book text-[#0B2149] text-2xl mb-1"></i>
-                            <span className="text-[14px] font-bold text-[#0B2149] tracking-wider">ENGLISH WORDS</span>
-                            <span className="text-[#0B2149] font-bold text-2xl mt-1">{selectedPhaseStats.english_words}</span>
-                        </div>
-                        
-                        <div className="flex-[2] flex flex-col">
-                            <div className="flex-1 flex flex-col items-center justify-center border-b border-[#e8dcb9] py-2">
-                                <div className="flex items-center gap-2">
-                                    <i className="pi pi-pencil text-[#8b2b2b] text-[16px]"></i>
-                                    <span className="text-[14px] font-bold text-[#0B2149] tracking-wider">HEB - WORDS</span>
-                                </div>
-                                <span className="text-[#8b2b2b] font-bold text-2xl leading-none mt-1">{selectedPhaseStats.hebrew_words}</span>
+                <div className="px-4 sm:px-6 mt-4">
+                    <div className="bg-[#fdfbf6] border-2 border-[#d3c09b] rounded flex flex-col shadow-sm">
+                        {/* Top half: 2x2 grid */}
+                        <div className="grid grid-cols-2 border-b border-[#e8dcb9]">
+                            <div className="flex flex-col items-center justify-center py-3 border-r border-b border-[#e8dcb9]">
+                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">OT BKS</span>
+                                <span className="text-[#2d5a3c] font-bold text-xl sm:text-2xl">{selectedPhaseStats.ot_bks}</span>
                             </div>
-                            <div className="flex-1 flex flex-col items-center justify-center py-2">
-                                <div className="flex items-center gap-2">
-                                    <i className="pi pi-building text-[#8b2b2b] text-[16px]"></i>
-                                    <span className="text-[14px] font-bold text-[#0B2149] tracking-wider">GK. WORDS</span>
+                            <div className="flex flex-col items-center justify-center py-3 border-b border-[#e8dcb9]">
+                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">NT BKS</span>
+                                <span className="text-[#0B2149] font-bold text-xl sm:text-2xl">{selectedPhaseStats.nt_bks}</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center py-3 border-r border-[#e8dcb9]">
+                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">CHAP</span>
+                                <span className="text-[#0B2149] font-bold text-xl sm:text-2xl">{selectedPhaseStats.chp}</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center py-3">
+                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">VRS</span>
+                                <span className="text-[#2d5a3c] font-bold text-xl sm:text-2xl">{selectedPhaseStats.ver}</span>
+                            </div>
+                        </div>
+
+                        {/* Bottom half: English Words and Original Languages */}
+                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-[#e8dcb9]">
+                            <div className="flex-1 sm:flex-[1.5] flex flex-col items-center justify-center py-3 bg-[#fdfbf6]">
+                                <i className="pi pi-book text-[#0B2149] text-xl sm:text-2xl mb-1"></i>
+                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider">ENGLISH WORDS</span>
+                                <span className="text-[#0B2149] font-bold text-xl sm:text-2xl mt-1">{selectedPhaseStats.english_words}</span>
+                            </div>
+                            
+                            <div className="flex-1 sm:flex-[2] flex flex-col">
+                                <div className="flex-1 flex flex-col items-center justify-center border-b border-[#e8dcb9] py-2">
+                                    <div className="flex items-center gap-2">
+                                        <i className="pi pi-pencil text-[#8b2b2b] text-[14px] sm:text-[16px]"></i>
+                                        <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider">HEB - WORDS</span>
+                                    </div>
+                                    <span className="text-[#8b2b2b] font-bold text-xl sm:text-2xl leading-none mt-1">{selectedPhaseStats.hebrew_words}</span>
                                 </div>
-                                <span className="text-[#8b2b2b] font-bold text-2xl leading-none mt-1">{selectedPhaseStats.greek_words}</span>
+                                <div className="flex-1 flex flex-col items-center justify-center py-2">
+                                    <div className="flex items-center gap-2">
+                                        <i className="pi pi-building text-[#8b2b2b] text-[14px] sm:text-[16px]"></i>
+                                        <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider">GK. WORDS</span>
+                                    </div>
+                                    <span className="text-[#8b2b2b] font-bold text-xl sm:text-2xl leading-none mt-1">{selectedPhaseStats.greek_words}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Footer Image Area */}
-                <div className="px-6 mt-4 mb-6">
+                <div className="px-4 sm:px-6 mt-4 mb-6">
                     <div className="rounded-lg overflow-hidden border-2 border-[#d3c09b] shadow-md">
                         <img src="/footer-image.png" alt="Discover More Footer" className="w-full object-cover" />
                     </div>
                 </div>
             </div>
-            
-            <BookSelectionModal 
-                visible={bookModalVisible} 
-                onHide={() => setBookModalVisible(false)} 
-                onConfirm={(stats) => {
-                    setMod5Overrides(prev => ({
-                        ...prev,
-                        [`${fct}-${phs}`]: stats
-                    }));
-                    setBookModalVisible(false);
-                }}
-            />
         </div>
     );
 };

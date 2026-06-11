@@ -211,31 +211,31 @@ const ClassroomResources = () => {
                 ) : resources.length > 0 ? (
                     <div className="divide-y divide-gray-100">
                         {resources.map(resource => (
-                            <div key={resource.id} className="p-6 hover:bg-gray-50 transition-colors flex items-center justify-between group">
-                                <div className="flex items-center gap-5">
-                                    <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md">
-                                        <i className={`${getIconForType(resource.resource_type)} text-2xl`}></i>
+                            <div key={resource.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between group gap-4">
+                                <div className="flex items-center gap-4 sm:gap-5 w-full sm:w-auto">
+                                    <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md">
+                                        <i className={`${getIconForType(resource.resource_type)} text-xl sm:text-2xl`}></i>
                                     </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-[#051220]">{resource.title}</h3>
-                                        <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 font-medium">
-                                            <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-bold text-gray-600">{getLabelForType(resource.resource_type)}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-base sm:text-lg font-bold text-[#051220] truncate">{resource.title}</h3>
+                                        <div className="flex items-center gap-2 mt-1 text-xs sm:text-sm text-gray-500 font-medium">
+                                            <span className="bg-gray-100 px-2 py-0.5 rounded font-bold text-gray-600">{getLabelForType(resource.resource_type)}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 w-full sm:w-auto justify-end mt-2 sm:mt-0">
                                     <a 
                                         href={resource.url.startsWith('/') ? `http://${window.location.hostname}:8000${resource.url}` : resource.url} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
-                                        className="h-10 px-4 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center transition-colors font-bold text-sm"
+                                        className="h-9 sm:h-10 px-4 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center transition-colors font-bold text-xs sm:text-sm w-full sm:w-auto"
                                     >
                                         <i className="pi pi-external-link mr-2"></i> Open
                                     </a>
                                     {isAdmin && (
                                         <button 
                                             onClick={() => handleDelete(resource.id)}
-                                            className="h-10 w-10 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+                                            className="h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100"
                                             title="Delete Resource"
                                         >
                                             <i className="pi pi-trash"></i>

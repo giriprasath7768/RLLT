@@ -7,6 +7,7 @@ import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
 import { InputSwitch } from 'primereact/inputswitch';
 import { Paginator } from 'primereact/paginator';
+import { Checkbox } from 'primereact/checkbox';
 import { StudentService } from '../../services/studentService';
 import { AssessmentService } from '../../services/assessmentService';
 import MobileDataCard from '../../components/common/MobileDataCard';
@@ -159,6 +160,30 @@ export default function ManageAssessmentResults() {
         );
     });
 
+    const onMobileStudentSelect = (e, student) => {
+        let _selectedStudents = [...(selectedStudents || [])];
+        if (e.checked) {
+            _selectedStudents.push(student);
+        } else {
+            _selectedStudents = _selectedStudents.filter(s => s.id !== student.id);
+        }
+        setSelectedStudents(_selectedStudents);
+    };
+
+    const isStudentSelected = (student) => {
+        return (selectedStudents || []).some(s => s.id === student.id);
+    };
+
+    const toggleAllMobile = (e) => {
+        if (e.checked) {
+            setSelectedStudents(filteredStudents);
+        } else {
+            setSelectedStudents([]);
+        }
+    };
+
+    const isAllSelected = filteredStudents.length > 0 && (selectedStudents || []).length === filteredStudents.length;
+
     return (
         <div className="p-4 sm:p-8 bg-white min-h-screen">
             <Toast ref={toast} />
@@ -188,6 +213,20 @@ export default function ManageAssessmentResults() {
                     </DataTable>
                 </div>
 
+                
+                    {/* Mobile Paginator */}
+                    {filteredStudents.length > 0 && (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block md:hidden">
+                            <Paginator 
+                                first={first} 
+                                rows={rows} 
+                                totalRecords={filteredStudents.length} 
+                                onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                template="PrevPageLink PageLinks NextPageLink" 
+                            />
+                        </div>
+                    )}
+        
                 {/* External Paginator Card */}
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredStudents.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
@@ -200,33 +239,49 @@ export default function ManageAssessmentResults() {
                     <div className="mb-4">
                         {tableHeader}
                     </div>
+
+                    {filteredStudents.length > 0 && (
+                        <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <Checkbox inputId="mobileSelectAll" checked={isAllSelected} onChange={toggleAllMobile} />
+                            <label htmlFor="mobileSelectAll" className="font-semibold text-gray-700 text-sm">Select All (For Bulk Approval)</label>
+                        </div>
+                    )}
+
                     {filteredStudents.length > 0 ? (
-                        filteredStudents.map(stu => (
-                            <MobileDataCard
-                                key={stu.id}
-                                title={`${stu.name} (${stu.category ? `Cat: ${stu.category}` : 'Uncategorized'}, Stage: ${stu.stage || '-'})`}
-                                data={[
-                                    { label: 'Email', value: stu.email },
-                                    { label: 'Location', value: stu.location_name || '-' },
-                                    { label: 'Total Grade', value: stu.assessment_marks ?? '-' },
-                                    {
-                                        label: 'Activity',
-                                        value: (
-                                            <Button icon="pi pi-eye" rounded outlined size="small" onClick={() => openActivityModal(stu)} />
-                                        )
-                                    },
-                                    {
-                                        label: 'Approval',
-                                        value: (
-                                            <InputSwitch
-                                                checked={stu.assessment_status === 'approved'}
-                                                disabled={!stu.assessment_status || stu.assessment_status === 'pending'}
-                                                onChange={(e) => onApproveToggle(e, stu)}
-                                            />
-                                        )
+                        filteredStudents.slice(first, first + rows).map(stu => (
+                            <div key={stu.id} className="relative mb-4">
+                                <div className="absolute top-4 right-4 z-10">
+                                    <Checkbox checked={isStudentSelected(stu)} onChange={(e) => onMobileStudentSelect(e, stu)} />
+                                </div>
+                                <MobileDataCard
+                                    title={
+                                        <span className="block pr-8">
+                                            {`${stu.name} (${stu.category ? `Cat: ${stu.category}` : 'Uncategorized'}, Stage: ${stu.stage || '-'})`}
+                                        </span>
                                     }
-                                ]}
-                            />
+                                    data={[
+                                        { label: 'Email', value: stu.email },
+                                        { label: 'Location', value: stu.location_name || '-' },
+                                        { label: 'Total Grade', value: stu.assessment_marks ?? '-' },
+                                        {
+                                            label: 'Activity',
+                                            value: (
+                                                <Button icon="pi pi-eye" rounded outlined size="small" onClick={() => openActivityModal(stu)} />
+                                            )
+                                        },
+                                        {
+                                            label: 'Approval',
+                                            value: (
+                                                <InputSwitch
+                                                    checked={stu.assessment_status === 'approved'}
+                                                    disabled={!stu.assessment_status || stu.assessment_status === 'pending'}
+                                                    onChange={(e) => onApproveToggle(e, stu)}
+                                                />
+                                            )
+                                        }
+                                    ]}
+                                />
+                            </div>
                         ))
                     ) : (
                         <div className="text-center p-4 text-gray-500 bg-gray-50 rounded-xl border border-gray-100">

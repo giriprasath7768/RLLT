@@ -8,6 +8,7 @@ import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Toast } from 'primereact/toast';
 import { FilterMatchMode } from 'primereact/api';
+import { Paginator } from 'primereact/paginator';
 
 const EvaluateAssignments = () => {
     const [locations, setLocations] = useState([]);
@@ -231,6 +232,16 @@ const EvaluateAssignments = () => {
         return rowData.created_at ? new Date(rowData.created_at).toLocaleString() : 'N/A';
     };
 
+    const filteredSubmissions = submissions.filter(item => {
+        if (!globalFilter) return true;
+        const query = globalFilter.toLowerCase();
+        return (
+            item.student_name?.toLowerCase().includes(query) ||
+            item.assignment_title?.toLowerCase().includes(query) ||
+            item.status?.toLowerCase().includes(query)
+        );
+    });
+
     return (
         <div className="p-4 sm:p-8 bg-gray-50 min-h-screen">
             <Toast ref={toast} />
@@ -263,7 +274,7 @@ const EvaluateAssignments = () => {
                 </div>
             </div>
 
-            <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden lg:block w-full p-4">
                 <DataTable value={submissions} loading={loading} paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
                     globalFilter={globalFilter} globalFilterFields={['student_name', 'assignment_title', 'status']}
                     className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines emptyMessage={selectedLocation ? "No submissions found for this location." : "Please select a location first."}
@@ -278,23 +289,22 @@ const EvaluateAssignments = () => {
                 </DataTable>
             </div>
 
+            {/* Desktop Paginator */}
+            <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden lg:block">
+                <Paginator first={first} rows={rows} totalRecords={filteredSubmissions.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                    template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} submissions" />
+            </div>
+
             {/* Mobile View */}
-            <div className="block md:hidden mt-4 space-y-4">
+            <div className="block lg:hidden mt-4 space-y-4">
                 {!selectedLocation ? (
                     <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
                         Please select a location first.
                     </div>
-                ) : submissions.length > 0 ? (
-                    submissions
-                        .filter(item => {
-                            if (!globalFilter) return true;
-                            const query = globalFilter.toLowerCase();
-                            return (
-                                item.student_name?.toLowerCase().includes(query) ||
-                                item.assignment_title?.toLowerCase().includes(query) ||
-                                item.status?.toLowerCase().includes(query)
-                            );
-                        })
+                ) : filteredSubmissions.length > 0 ? (
+                    filteredSubmissions
+                        .slice(first, first + rows)
                         .map((item, index) => (
                             <div key={item.id || index} className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 flex flex-col gap-3">
                                 <div className="flex justify-between items-start">
@@ -340,7 +350,21 @@ const EvaluateAssignments = () => {
                 )}
             </div>
 
-            <Dialog visible={answersDialogVisible} modal className="p-fluid max-w-2xl w-full" onHide={() => setAnswersDialogVisible(false)} header={`Student Answers: ${selectedAssignmentTitle}`}>
+            
+            {/* Mobile Paginator */}
+            {filteredSubmissions.length > 0 && (
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block lg:hidden">
+                    <Paginator 
+                        first={first} 
+                        rows={rows} 
+                        totalRecords={filteredSubmissions.length} 
+                        onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                        template="PrevPageLink PageLinks NextPageLink" 
+                    />
+                </div>
+            )}
+        
+            <Dialog visible={answersDialogVisible} modal breakpoints={{ '960px': '75vw', '641px': '95vw' }} className="p-fluid max-w-2xl w-full" onHide={() => setAnswersDialogVisible(false)} header={`Student Answers: ${selectedAssignmentTitle}`}>
                 <div className="p-4 space-y-4">
                     {selectedAnswers && Object.keys(selectedAnswers).length > 0 ? (
                         Object.keys(selectedAnswers).map((qId, index) => (

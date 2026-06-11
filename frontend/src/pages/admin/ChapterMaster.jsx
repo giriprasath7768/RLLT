@@ -279,10 +279,10 @@ const ChapterMaster = () => {
 
     const topCardContent = (
         <div className="flex flex-col md:flex-row gap-3 md:items-center justify-between w-full">
-            <div className="flex flex-wrap gap-2">
-                <Button label="New Chapter" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
-                <Button label="Import Excel" icon="pi pi-upload" severity="help" onClick={() => setImportDialog(true)} className="hidden md:flex" />
-                <Button label="Delete Selected" icon="pi pi-trash" severity="danger" onClick={confirmDeleteSelected} disabled={!selectedChapters || !selectedChapters.length} className="hidden md:flex" />
+            <div className="flex flex-wrap gap-2 w-full md:w-auto justify-start">
+                <Button label="New Chapter" icon="pi pi-plus" severity="success" onClick={openNew} />
+                <Button label="Import Excel" icon="pi pi-upload" severity="help" onClick={() => setImportDialog(true)} />
+                <Button label="Delete Selected" icon="pi pi-trash" severity="danger" onClick={confirmDeleteSelected} disabled={!selectedChapters || !selectedChapters.length} />
             </div>
         </div>
     );
@@ -363,6 +363,20 @@ const ChapterMaster = () => {
                     </DataTable>
                 </div>
 
+                
+                    {/* Mobile Paginator */}
+                    {filteredChapters.length > 0 && (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block md:hidden">
+                            <Paginator 
+                                first={first} 
+                                rows={rows} 
+                                totalRecords={filteredChapters.length} 
+                                onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                template="PrevPageLink PageLinks NextPageLink" 
+                            />
+                        </div>
+                    )}
+        
                 {/* External Paginator Card */}
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredChapters.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
@@ -373,7 +387,7 @@ const ChapterMaster = () => {
                 {/* Mobile View */}
                 <div className="block md:hidden mt-4">
                     {filteredChapters.length > 0 ? (
-                        filteredChapters.map(chap => (
+                        filteredChapters.slice(first, first + rows).map(chap => (
                             <MobileDataCard
                                 key={chap.id}
                                 title={chap.book_name}
@@ -397,10 +411,7 @@ const ChapterMaster = () => {
                 </div>
             </div>
 
-            {/* Mobile FAB */}
-            <div className="block md:hidden fixed bottom-6 right-6 z-50">
-                <Button icon="pi pi-plus" className="p-button-rounded p-button-success shadow-lg" size="large" onClick={openNew} aria-label="Add New" />
-            </div>
+
 
             <Dialog visible={chapterDialog} style={{ width: '32rem' }} breakpoints={{ '960px': '75vw', '641px': '90vw' }} header="Chapter Details" modal className="p-fluid" footer={chapterDialogFooter} onHide={hideDialog}>
 
@@ -432,7 +443,7 @@ const ChapterMaster = () => {
                     {submitted && chapter.chapter_number <= 0 && <small className="p-error text-red-500 block mt-1">Valid Chapter Number is required.</small>}
                 </div>
 
-                <div className="formgrid grid grid-cols-2 gap-4 mt-4">
+                <div className="formgrid grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="field col-6">
                         <label htmlFor="verse_count" className="font-bold block mb-2">Total Verses</label>
                         <InputNumber id="verse_count" value={chapter.verse_count} onValueChange={(e) => onInputNumberChange(e, 'verse_count')} useGrouping={false} />
@@ -443,7 +454,7 @@ const ChapterMaster = () => {
                     </div>
                 </div>
 
-                <div className="formgrid grid grid-cols-3 gap-4 mt-4">
+                <div className="formgrid grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div className="field">
                         <label htmlFor="english_words" className="font-bold block mb-2">English Words</label>
                         <InputNumber id="english_words" value={chapter.english_words} onValueChange={(e) => onInputNumberChange(e, 'english_words')} useGrouping={false} />

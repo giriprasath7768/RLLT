@@ -6,7 +6,7 @@ import { FileUpload } from 'primereact/fileupload';
 import { Toast } from 'primereact/toast';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
-import { extractBooksAndAuthors } from '../../utils/bookUtils';
+import { extractBooksAndAuthors, countActualBooks } from '../../utils/bookUtils';
 
 const ImageUploadPlaceholder = ({ state, setState, label }) => {
     const imageUrl = typeof state === 'object' && state !== null ? state.url : state;
@@ -32,18 +32,165 @@ const ImageUploadPlaceholder = ({ state, setState, label }) => {
 };
 
 
-const LightChartTable = ({ moduleNum, rlltDB, tableFontSize }) => {
+const OT_BOOKS = ["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","EST","JOB","ECC","SOS","ISA","JER","LAM","EZE","DAN","HOS","JOE","AMO","OBA","JON","MIC","NAH","HAB","ZEP","HAG","ZEC","MAL"];
+const NT_BOOKS = ["MAT","MAR","LUK","JOH","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAM","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
+const PRO_BOOKS = ["PRO"];
+const PSA_BOOKS = ["PSA"];
+
+const parseChartPhase = (statePayloadStr) => {
+    let ot = new Set(), nt = new Set(), pro = new Set(), psa = new Set(), psa119 = new Set(), dpsa = new Set();
+    let chap = 0, ver = 0, artMins = 0, daysCount = 0;
+    try {
+        const payload = JSON.parse(statePayloadStr);
+        if (Array.isArray(payload)) {
+            payload.forEach(chunk => {
+                if(chunk.days) {
+                    chunk.days.forEach(d => {
+                        daysCount++;
+                        chap += Number(d.chap) || 0;
+                        ver += Number(d.verse) || 0;
+                        if(d.art) {
+                            let t = d.art.toString().toLowerCase();
+                            if (t.includes('h')) {
+                                const match = t.match(/(\d+)h\.?(\d+)m?/);
+                                if (match) { artMins += (parseInt(match[1] || 0) * 60) + parseInt(match[2] || 0); }
+                            } else if (t.includes('.')) {
+                                const parts = t.split('.');
+                                let sStr = parts[1] || "0";
+                                if (sStr.length === 1) sStr += '0';
+                                artMins += parseInt(parts[0] || 0) + (parseInt(sStr.substring(0, 2)) / 60);
+                            } else {
+                                artMins += parseInt(t) || 0;
+                            }
+                        }
+                        ['m1b','m2b','m3b','m4b','m5b'].forEach(key => {
+                            if(d[key]) {
+                                const bksStr = d[key].toString().toUpperCase();
+                                const match = bksStr.match(/^(\d?[A-Z]+)\b/);
+                                if(match) {
+                                    let bk = match[1];
+                                    if(bk === 'PSA' && bksStr.includes('119')) { psa119.add('PSA119'); }
+                                    else if (OT_BOOKS.includes(bk)) { ot.add(bk); }
+                                    else if (NT_BOOKS.includes(bk)) { nt.add(bk); }
+                                    else if (PRO_BOOKS.includes(bk)) { pro.add(bk); }
+                                    else if (PSA_BOOKS.includes(bk)) { psa.add(bk); }
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+        }
+    } catch(e) {}
+    return { ot_bks: ot.size, nt_bks: nt.size, pro: pro.size, psa: psa.size, psa119: psa119.size, dpsa: dpsa.size, chp: chap, ver: ver, artMins: artMins, day: daysCount };
+};
+
+
+const LightChartTable = ({ moduleNum, rlltDB, chartsDB, tableFontSize }) => {
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px';
     const dbRows = (rlltDB || []).filter(r => r.module === moduleNum);
 
     if (moduleNum === 5) {
-        const tableRows5 = Array.from({ length: 5 }).map((_, idx) => {
-            const currentFacet = idx + 1;
-            const dbRow = dbRows.find(r => r.facet === currentFacet) || {};
+        const facet1Data = dbRows.find(r => r.facet === 1) || {};
+        let dynamicFormat = 3;
+        const m2f1 = (rlltDB || []).find(r => r.module === 2 && r.facet === 1);
+        if (m2f1 && Number(m2f1.day) > 0 && Number(m2f1.we5) > 0) {
+            dynamicFormat = Math.round(Number(m2f1.day) / Number(m2f1.we5));
+        } else {
+            const m1f1 = (rlltDB || []).find(r => r.module === 1 && r.facet === 1);
+            if (m1f1 && Number(m1f1.day) > 0 && Number(m1f1.we5) > 0) {
+                dynamicFormat = Math.round(Number(m1f1.day) / Number(m1f1.we5));
+            }
+        }
+
+        const allOTStr = (rlltDB || []).filter(r => r.module !== 5).map(r => r.ot_bks).join(' ');
+        const allNTStr = (rlltDB || []).filter(r => r.module !== 5).map(r => r.nt_bks).join(' ');
+        const totalOT = countActualBooks(allOTStr) || '';
+        const totalNT = countActualBooks(allNTStr) || '';
+        const tableRows5 = [];
+        let snoCounter = 36;
+        for (let currentFacet = 1; currentFacet <= 5; currentFacet++) {
+            let facetRows = dbRows.filter(r => r.facet === currentFacet).sort((a, b) => a.phase - b.phase);
+            if (facetRows.length === 0) {
+                if (currentFacet === 1) {
+                    facetRows = [
+                        { facet: 1, phase: 1 },
+                        { facet: 1, phase: 2 },
+                        { facet: 1, phase: 3 },
+                        { facet: 1, phase: 4 },
+                        { facet: 1, phase: 5 }
+                    ];
+                } else {
+                    facetRows = [{ facet: currentFacet, phase: 1 }];
+                }
+            }
+
+            let cumulativeOT = 0;
+            let cumulativeNT = 0;
+            let cumulativePro = 0;
+            let cumulativePsa = 0;
+            let cumulativePsa119 = 0;
+            let cumulativeDpsa = 0;
+            let cumulativeChp = 0;
+            let cumulativeVer = 0;
+            let cumulativeArtMins = 0;
+
+            let lastDay = '';
+            let lastWe5 = '';
+            let lastArt = '';
+            let lastPpl = '';
+            let lastPhs = '';
+
+            let relevantCharts = (chartsDB || []).filter(c => c.module === 5 && c.facet === currentFacet);
+            if (relevantCharts.length > 0) {
+                relevantCharts.forEach(chart => {
+                    let p = parseChartPhase(chart.state_payload);
+                    cumulativeOT += p.ot_bks;
+                    cumulativeNT += p.nt_bks;
+                    cumulativePro += p.pro;
+                    cumulativePsa += p.psa;
+                    cumulativePsa119 += p.psa119;
+                    cumulativeDpsa += p.dpsa;
+                    cumulativeChp += p.chp;
+                    cumulativeVer += p.ver;
+                    cumulativeArtMins += p.artMins;
+                    if (p.day > 0) lastDay = p.day;
+                    lastWe5 = 6;
+                    lastPpl = 30;
+                });
+                
+                if (cumulativeArtMins > 0) {
+                    let h = Math.floor(cumulativeArtMins / 60);
+                    let m = Math.round(cumulativeArtMins % 60);
+                    lastArt = h > 0 ? (m > 0 ? `${h}h.${m}m` : `${h}h`) : `${m}m`;
+                }
+            } else {
+                facetRows.forEach(dbRow => {
+                    cumulativeOT += Number(dbRow.ot_bks) || 0;
+                    cumulativeNT += Number(dbRow.nt_bks) || 0;
+                    cumulativePro += Number(dbRow.pro) || 0;
+                    cumulativePsa += Number(dbRow.psa) || 0;
+                    cumulativePsa119 += Number(dbRow.psa119) || 0;
+                    cumulativeDpsa += Number(dbRow.dpsa) || 0;
+                    cumulativeChp += Number(dbRow.chp) || 0;
+                    cumulativeVer += Number(dbRow.ver) || 0;
+
+                    if (dbRow.day) lastDay = dbRow.day;
+                    if (dbRow.we5) lastWe5 = dbRow.we5;
+                    if (dbRow.art) lastArt = dbRow.art;
+                    if (dbRow.ppl) lastPpl = dbRow.ppl;
+                    if (dbRow.phase) lastPhs = dbRow.phase;
+                });
+            }
+
+            const parsedDay = Number(lastDay) || 0;
+            const calculatedWe5 = lastDay ? (parsedDay / dynamicFormat).toString() : '';
+
+            let defaultPhs = '5';
 
             if (currentFacet === 1) {
-                return {
-                    sno: 36,
+                tableRows5.push({
+                    sno: snoCounter++,
                     fct: 1,
                     dayPpl: '30',
                     bks: '66',
@@ -58,30 +205,31 @@ const LightChartTable = ({ moduleNum, rlltDB, tableFontSize }) => {
                     chp: '-',
                     ver: '-',
                     art: '-',
-                    ppl: '-'
-                };
+                    ppl: '30',
+                    isLastOfFacet1: true
+                });
             } else {
-                // Display facets 2, 3, 4, 5 from dbRow
-                return {
-                    sno: 36 + idx,
+                tableRows5.push({
+                    sno: snoCounter++,
                     fct: currentFacet,
-                    dayPpl: dbRow.day || '',
-                    bks: dbRow.bks || '',
-                    phs: dbRow.phase || '',
-                    we5: dbRow.we5 || '',
-                    ot: dbRow.ot_bks || '',
-                    nt: dbRow.nt_bks || '',
-                    pro: dbRow.pro || '',
-                    psa: dbRow.psa || '',
-                    psa119: dbRow.psa119 || '',
-                    dpsa: dbRow.dpsa || '',
-                    chp: dbRow.chp || '',
-                    ver: dbRow.ver || '',
-                    art: dbRow.art || '',
-                    ppl: dbRow.ppl || ''
-                };
+                    dayPpl: lastDay || '30',
+                    bks: '66',
+                    phs: defaultPhs,
+                    we5: lastWe5 || '-',
+                    ot: cumulativeOT > 0 ? cumulativeOT.toString() : '-',
+                    nt: cumulativeNT > 0 ? cumulativeNT.toString() : '-',
+                    pro: cumulativePro > 0 ? cumulativePro.toString() : '-',
+                    psa: cumulativePsa > 0 ? cumulativePsa.toString() : '-',
+                    psa119: cumulativePsa119 > 0 ? cumulativePsa119.toString() : '-',
+                    dpsa: cumulativeDpsa > 0 ? cumulativeDpsa.toString() : '-',
+                    chp: cumulativeChp > 0 ? cumulativeChp.toString() : '-',
+                    ver: cumulativeVer > 0 ? cumulativeVer.toString() : '-',
+                    art: lastArt || '-',
+                    ppl: lastPpl || '-',
+                    isLastOfFacet1: false
+                });
             }
-        });
+        }
 
         return (
             <div className="mb-2 mx-auto max-w-6xl w-full">
@@ -199,7 +347,7 @@ const LightChartTable = ({ moduleNum, rlltDB, tableFontSize }) => {
                                                 <div className="flex h-[22px] w-full items-center justify-center">{row.ppl}</div>
                                             </td>
                                         </tr>
-                                        {idx === 0 && (
+                                        {row.isLastOfFacet1 && (
                                             <tr className="border border-black leading-none bg-[#f8cbad]">
                                                 <td colSpan={16} className="border-2 border-black p-0 align-middle font-bold text-black bg-[#f8cbad]">
                                                     <div className="flex h-[22px] w-full items-center justify-center text-[13px] tracking-wide">
@@ -385,24 +533,28 @@ const LightChart = () => {
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
     const [rlltDB, setRlltDB] = useState([]);
+    const [chartsDB, setChartsDB] = useState([]);
 
     useEffect(() => {
         const fetchRefs = async () => {
             try {
                 const baseUrl = `http://${window.location.hostname}:8000`;
-                const [booksRes, chaptersRes, rlltRes] = await Promise.all([
+                const [booksRes, chaptersRes, rlltRes, chartsRes] = await Promise.all([
                     axios.get(`${baseUrl}/api/books`, { withCredentials: true }),
                     axios.get(`${baseUrl}/api/chapters`, { withCredentials: true }),
-                    axios.get(`${baseUrl}/api/rllt_lookup`, { withCredentials: true })
+                    axios.get(`${baseUrl}/api/rllt_lookup`, { withCredentials: true }),
+                    axios.get(`${baseUrl}/api/charts/list`, { withCredentials: true })
                 ]);
                 setBooksDB(Array.isArray(booksRes.data) ? booksRes.data : []);
                 setChaptersDB(Array.isArray(chaptersRes.data) ? chaptersRes.data : []);
                 setRlltDB(Array.isArray(rlltRes.data) ? rlltRes.data : []);
+                setChartsDB(Array.isArray(chartsRes.data) ? chartsRes.data : []);
             } catch (err) {
                 console.error("Failed to fetch references:", err);
                 setBooksDB([]);
                 setChaptersDB([]);
                 setRlltDB([]);
+                setChartsDB([]);
             }
         };
         fetchRefs();
@@ -867,7 +1019,7 @@ const LightChart = () => {
 
                     <div className="flex flex-col gap-2 sm:gap-3 w-full items-center justify-center pt-1">
                         {[1, 2, 3, 4, 5].map((moduleNum) => (
-                            <LightChartTable key={moduleNum} moduleNum={moduleNum} rlltDB={rlltDB} tableFontSize={tableFontSize} />
+                            <LightChartTable key={moduleNum} moduleNum={moduleNum} rlltDB={rlltDB} chartsDB={chartsDB} tableFontSize={tableFontSize} />
                         ))}
                     </div>
                 </div>

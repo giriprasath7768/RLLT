@@ -350,7 +350,7 @@ const ClassroomQnA = () => {
                     {topCardContent}
                 </div>
 
-                <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden md:block w-full p-4">
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hidden lg:block w-full p-4">
                     <DataTable value={filteredQnas} selection={selectedQnas} onSelectionChange={(e) => setSelectedQnas(e.value)}
                         dataKey="id" paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
                         globalFilter={globalFilter}
@@ -368,7 +368,7 @@ const ClassroomQnA = () => {
                 </div>
 
                 {/* Mobile View */}
-                <div className="block md:hidden mt-4 space-y-4">
+                <div className="block lg:hidden mt-4 space-y-4">
                     {loading ? (
                         <div className="text-center p-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
                             Loading Q&A items...
@@ -428,7 +428,7 @@ const ClassroomQnA = () => {
 
                     {/* Mobile Paginator */}
                     {filteredQnas.length > 0 && (
-                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4">
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block lg:hidden">
                             <Paginator 
                                 first={first} 
                                 rows={rows} 
@@ -441,7 +441,7 @@ const ClassroomQnA = () => {
                 </div>
 
                 {/* External Paginator Card */}
-                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden lg:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredQnas.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
                         template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                         currentPageReportTemplate="Showing {first} to {last} of {totalRecords} Q&A" />

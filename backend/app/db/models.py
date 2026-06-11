@@ -234,6 +234,8 @@ class RlltLookup(Base):
     we5 = Column(String, nullable=True)
     pro = Column(String, nullable=True)
     psa = Column(String, nullable=True)
+    psa119 = Column(String, nullable=True)
+    dpsa = Column(String, nullable=True)
     chp = Column(Integer, nullable=True)
     ver = Column(Integer, nullable=True)
     ppl = Column(String, nullable=True)

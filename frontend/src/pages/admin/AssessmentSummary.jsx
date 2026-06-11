@@ -10,6 +10,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { InputText } from 'primereact/inputtext';
 import { AssessmentService } from '../../services/assessmentService';
 import { LocationService } from '../../services/locations';
+import '../../assets/css/AdminManagement.css';
 
 const TRANSFORMATIONS = ['family', 'finance', 'government', 'spirituality', 'talent', 'training', 'service'];
 
@@ -168,16 +169,16 @@ const AssessmentSummary = () => {
             <Toast ref={toast} />
 
             <div className="card border border-gray-100 rounded-xl p-4 sm:p-6 shadow-sm">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 mb-6">
                     <h1 className="text-2xl font-bold text-gray-800 m-0">Assessment Summary</h1>
-                    <Button label="Add Summary Settings" icon="pi pi-plus" className="bg-blue-600 text-white font-bold border-none" onClick={openNew} />
+                    <Button label="Add Summary Settings" icon="pi pi-plus" className="bg-blue-600 hover:bg-blue-700 text-white font-bold border-none px-4 py-2 rounded-lg transition-colors shadow-sm w-full sm:w-auto" onClick={openNew} />
                 </div>
 
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden w-full p-4 hidden md:block">
-                    <DataTable value={summaries} loading={loading} emptyMessage="No summary settings found." className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines>
-                        <Column field="location_name" header="Location" sortable headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
-                        <Column field="created_at" header="Last Updated" sortable body={(rowData) => formatDate(rowData.created_at)} headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
-                        <Column body={actionBodyTemplate} exportable={false} style={{ width: '8rem' }} headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
+                    <DataTable value={summaries} loading={loading} emptyMessage="No summary settings found." className="p-datatable-sm w-full custom-admin-table" responsiveLayout="stack" breakpoint="768px" showGridlines rowClassName={() => 'bg-white text-black'}>
+                        <Column field="location_name" header="Location" sortable headerClassName="admin-table-header"></Column>
+                        <Column field="created_at" header="Last Updated" sortable body={(rowData) => formatDate(rowData.created_at)} headerClassName="admin-table-header"></Column>
+                        <Column body={actionBodyTemplate} exportable={false} style={{ width: '8rem' }} headerClassName="admin-table-header"></Column>
                     </DataTable>
                 </div>
 
@@ -247,8 +248,8 @@ const AssessmentSummary = () => {
                                     <AccordionTab key={t} header={t.charAt(0).toUpperCase() + t.slice(1)}>
                                         <div className="flex flex-col gap-4">
                                             <div className="field">
-                                                <label className="font-semibold block mb-1 text-sm text-gray-700">Main Description</label>
-                                                <InputTextarea rows={2} value={summarySettings[t]?.description || ''} onChange={(e) => handleSettingChange(t, 'description', e.target.value)} className="w-full" />
+                                                <label className="font-semibold block mb-1 text-sm text-white">Main Description</label>
+                                                <InputTextarea rows={3} value={summarySettings[t]?.description || ''} onChange={(e) => handleSettingChange(t, 'description', e.target.value)} className="w-full" />
                                             </div>
                                             
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
@@ -260,7 +261,7 @@ const AssessmentSummary = () => {
                                                     </div>
                                                     <div className="field flex-1 flex flex-col">
                                                         <label className="text-xs font-semibold text-gray-600">Description</label>
-                                                        <InputTextarea rows={3} value={summarySettings[t]?.low?.desc || ''} onChange={(e) => handleSettingChange(t, 'low', e.target.value, 'desc')} className="w-full flex-1" />
+                                                        <InputTextarea rows={4} value={summarySettings[t]?.low?.desc || ''} onChange={(e) => handleSettingChange(t, 'low', e.target.value, 'desc')} className="w-full flex-1" />
                                                     </div>
                                                 </div>
                                                 
@@ -272,7 +273,7 @@ const AssessmentSummary = () => {
                                                     </div>
                                                     <div className="field flex-1 flex flex-col">
                                                         <label className="text-xs font-semibold text-gray-600">Description</label>
-                                                        <InputTextarea rows={3} value={summarySettings[t]?.moderate?.desc || ''} onChange={(e) => handleSettingChange(t, 'moderate', e.target.value, 'desc')} className="w-full flex-1" />
+                                                        <InputTextarea rows={4} value={summarySettings[t]?.moderate?.desc || ''} onChange={(e) => handleSettingChange(t, 'moderate', e.target.value, 'desc')} className="w-full flex-1" />
                                                     </div>
                                                 </div>
                                                 
@@ -284,7 +285,7 @@ const AssessmentSummary = () => {
                                                     </div>
                                                     <div className="field flex-1 flex flex-col">
                                                         <label className="text-xs font-semibold text-gray-600">Description</label>
-                                                        <InputTextarea rows={3} value={summarySettings[t]?.high?.desc || ''} onChange={(e) => handleSettingChange(t, 'high', e.target.value, 'desc')} className="w-full flex-1" />
+                                                        <InputTextarea rows={4} value={summarySettings[t]?.high?.desc || ''} onChange={(e) => handleSettingChange(t, 'high', e.target.value, 'desc')} className="w-full flex-1" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -300,9 +301,9 @@ const AssessmentSummary = () => {
                             </div>
                         )}
 
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-                            <Button label="Close" onClick={hideDialog} className="bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 w-auto px-6 h-10 shadow-sm transition-colors" />
-                            <Button label="Save Settings" severity="success" onClick={handleSave} disabled={!selectedLocationId || isSaving} className="bg-blue-600 text-white hover:bg-blue-700 border border-blue-600 w-auto px-6 h-10 shadow-sm transition-colors" />
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                            <Button label="Close" onClick={hideDialog} className="bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 w-full sm:w-auto px-6 h-10 shadow-sm transition-colors" />
+                            <Button label="Save Settings" severity="success" onClick={handleSave} disabled={!selectedLocationId || isSaving} className="bg-blue-600 text-white hover:bg-blue-700 border border-blue-600 w-full sm:w-auto px-6 h-10 shadow-sm transition-colors" />
                         </div>
                     </div>
                 </div>

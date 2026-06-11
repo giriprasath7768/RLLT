@@ -263,6 +263,8 @@ const RLLTTableData = () => {
                             we5: getStr(['we5', 'we']),
                             pro: getStr(['pro']),
                             psa: getStr(['psa']),
+                            psa119: getStr(['psa119', 'psalm119', 'psa 119']),
+                            dpsa: getStr(['dpsa', 'd.psa', 'david', 'davidpsalms', 'david of psalms']),
                             chp: getInt(['chp', 'chapter', 'chapters']),
                             ver: getInt(['ver', 'verse', 'verses']),
                             ppl: getStr(['ppl'])
@@ -401,6 +403,20 @@ const RLLTTableData = () => {
                     </DataTable>
                 </div>
 
+                
+                    {/* Mobile Paginator */}
+                    {filteredData.length > 0 && (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block md:hidden">
+                            <Paginator 
+                                first={first} 
+                                rows={rows} 
+                                totalRecords={filteredData.length} 
+                                onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                template="PrevPageLink PageLinks NextPageLink" 
+                            />
+                        </div>
+                    )}
+        
                 {/* External Paginator Card */}
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredData.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
@@ -411,7 +427,7 @@ const RLLTTableData = () => {
                 {/* Mobile View */}
                 <div className="block md:hidden mt-4">
                     {filteredData.length > 0 ? (
-                        filteredData.map(rec => (
+                        filteredData.slice(first, first + rows).map(rec => (
                             <MobileDataCard
                                 key={rec.id}
                                 title={`Module ${rec.module} - Facet ${rec.facet}`}

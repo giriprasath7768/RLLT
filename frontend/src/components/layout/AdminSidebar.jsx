@@ -193,6 +193,7 @@ const AdminSidebar = ({ visible, onHide }) => {
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'Players', icon: 'pi pi-play', to: '/admin/players' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'TtoMT 357 Player', icon: 'pi pi-play', to: '/admin/ttomt-357-player' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'T-Tom-T 357 White Player', icon: 'pi pi-play', to: '/admin/ttomt-357-white-player' }] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'T-Tom-T 357 White Green Player', icon: 'pi pi-play', to: '/admin/ttomt-357-white-green-player' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Recordings', icon: 'pi pi-microphone', to: '/admin/recordings' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' ? [{ label: 'Screen Recorder', icon: 'pi pi-desktop', to: '/admin/screen-recorder' }] : [])
             ]

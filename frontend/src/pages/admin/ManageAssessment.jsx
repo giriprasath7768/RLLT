@@ -91,7 +91,7 @@ const ManageAssessment = () => {
 
             // FilteredAssessments will be defined below in the component sequence
             // but is available at runtime when this button is clicked
-            const data = filteredAssessments.map(item => {
+            const data = filteredAssessments.slice(first, first + rows).map(item => {
                 let row = {};
                 activeColumns.forEach(col => {
                     const val = item[col.field] || '';
@@ -512,13 +512,12 @@ const ManageAssessment = () => {
                             <Button label={testMode ? "Exit Test Mode" : "Test Format Mode"} icon="pi pi-eye" text className="font-bold" style={{ color: testMode || filterName ? '#2F5597' : '#9CA3AF' }} disabled={!filterName && !testMode} onClick={() => setTestMode(!testMode)} />
                         </div>
                     </div>
-                    <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch scrollbar-thin">
-                        <div className="min-w-[1600px] w-full">
+                    <div className="w-full">
                             <DataTable value={assessments} selection={selectedAssessments} onSelectionChange={(e) => setSelectedAssessments(e.value)}
                                 dataKey="id" paginator rows={rows} first={first} onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
                                 globalFilter={globalFilter}
                                 emptyMessage="No questions found. Try importing an Excel file or adjusting the filters." loading={loading}
-                                header={tableHeader} className="p-datatable-sm w-full custom-admin-table" responsiveLayout="scroll" showGridlines
+                                header={tableHeader} className="p-datatable-sm w-full custom-admin-table min-w-[1200px]" responsiveLayout="scroll" showGridlines
                                 rowClassName={() => 'bg-white text-black'}>
                         <Column selectionMode="multiple" exportable={false} headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
                         <Column field="question_number" header="S.No" sortable headerStyle={{ backgroundColor: '#2F5597', color: 'white' }} style={{ width: '5%', minWidth: '60px' }}></Column>
@@ -540,12 +539,24 @@ const ManageAssessment = () => {
 
                         <Column body={actionBodyTemplate} exportable={false} style={{ width: '8rem' }} headerStyle={{ backgroundColor: '#2F5597', color: 'white' }}></Column>
                             </DataTable>
-                        </div>
                     </div>
                 </div>
 
-                {/* External Paginator Card */}
-                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 w-full">
+                {/* Mobile Paginator */}
+                {filteredAssessments.length > 0 && (
+                    <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block md:hidden">
+                        <Paginator 
+                            first={first} 
+                            rows={rows} 
+                            totalRecords={filteredAssessments.length} 
+                            onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                            template="PrevPageLink PageLinks NextPageLink" 
+                        />
+                    </div>
+                )}
+
+                {/* Desktop Paginator */}
+                <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredAssessments.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
                         template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                         currentPageReportTemplate="Showing {first} to {last} of {totalRecords} questions" />
@@ -560,7 +571,7 @@ const ManageAssessment = () => {
                             <Button icon="pi pi-times" rounded text severity="secondary" aria-label="Cancel" onClick={hideDialog} className="w-8 h-8 p-0" />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div className="field">
                                 <label htmlFor="assignment_name" className="font-semibold block mb-1 text-sm text-gray-700">Assignment Name</label>
                                 <AutoComplete id="assignment_name" value={assessment.name} suggestions={filteredNames} completeMethod={searchNames} onChange={(e) => setAssessment({ ...assessment, name: e.value })} dropdown className="w-full p-autocomplete-custom" inputClassName="w-full px-3 py-2 border rounded border-gray-300 text-gray-800 h-10" />
@@ -575,7 +586,7 @@ const ManageAssessment = () => {
                             <label htmlFor="question_text" className="font-semibold block mb-1 text-sm text-gray-700">Question</label>
                             <InputText id="question_text" value={assessment.question_text} onChange={(e) => setAssessment({ ...assessment, question_text: e.target.value })} required autoFocus />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="field mb-4">
                                 <label htmlFor="question_number" className="font-semibold block mb-1 text-sm text-gray-700">Q Number (Auto)</label>
                                 <InputText id="question_number" value={assessment.question_number} readOnly disabled className="bg-gray-100" />
@@ -585,7 +596,7 @@ const ManageAssessment = () => {
                                 <InputText id="seven_tnt" value={assessment.seven_tnt} onChange={(e) => setAssessment({ ...assessment, seven_tnt: e.target.value })} />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="field mb-4">
                                 <label htmlFor="category" className="font-semibold block mb-1 text-sm text-gray-700">Category</label>
                                 <InputText id="category" value={assessment.category} onChange={(e) => setAssessment({ ...assessment, category: e.target.value })} />
@@ -596,7 +607,7 @@ const ManageAssessment = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
                             <div className="field">
                                 <label htmlFor="choice_1" className="font-semibold block mb-1 text-sm text-gray-700">Choice 1</label>
                                 <InputText id="choice_1" value={assessment.choice_1} onChange={(e) => setAssessment({ ...assessment, choice_1: e.target.value })} />
@@ -607,7 +618,7 @@ const ManageAssessment = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
                             <div className="field">
                                 <label htmlFor="choice_2" className="font-semibold block mb-1 text-sm text-gray-700">Choice 2</label>
                                 <InputText id="choice_2" value={assessment.choice_2} onChange={(e) => setAssessment({ ...assessment, choice_2: e.target.value })} />
@@ -618,7 +629,7 @@ const ManageAssessment = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
                             <div className="field">
                                 <label htmlFor="choice_3" className="font-semibold block mb-1 text-sm text-gray-700">Choice 3</label>
                                 <InputText id="choice_3" value={assessment.choice_3} onChange={(e) => setAssessment({ ...assessment, choice_3: e.target.value })} />
@@ -629,7 +640,7 @@ const ManageAssessment = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
                             <div className="field">
                                 <label htmlFor="choice_4" className="font-semibold block mb-1 text-sm text-gray-700">Choice 4</label>
                                 <InputText id="choice_4" value={assessment.choice_4} onChange={(e) => setAssessment({ ...assessment, choice_4: e.target.value })} />
@@ -640,7 +651,7 @@ const ManageAssessment = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
                             <div className="field">
                                 <label htmlFor="choice_5" className="font-semibold block mb-1 text-sm text-gray-700">Choice 5</label>
                                 <InputText id="choice_5" value={assessment.choice_5} onChange={(e) => setAssessment({ ...assessment, choice_5: e.target.value })} />
@@ -724,7 +735,7 @@ const ManageAssessment = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAssessments.map((item, index) => (
+                                {filteredAssessments.slice(first, first + rows).map((item, index) => (
                                     <tr key={item.id || index}>
                                         {printColumns
                                             .filter(col => selectedPrintColumns.includes(col.field))

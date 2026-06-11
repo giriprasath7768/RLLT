@@ -14,6 +14,8 @@ class RlltLookupBase(BaseModel):
     we5: Optional[str] = None
     pro: Optional[str] = None
     psa: Optional[str] = None
+    psa119: Optional[str] = None
+    dpsa: Optional[str] = None
     chp: Optional[int] = None
     ver: Optional[int] = None
     ppl: Optional[str] = None
@@ -33,6 +35,8 @@ class RlltLookupUpdate(BaseModel):
     we5: Optional[str] = None
     pro: Optional[str] = None
     psa: Optional[str] = None
+    psa119: Optional[str] = None
+    dpsa: Optional[str] = None
     chp: Optional[int] = None
     ver: Optional[int] = None
     ppl: Optional[str] = None

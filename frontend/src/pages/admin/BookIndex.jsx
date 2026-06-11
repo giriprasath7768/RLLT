@@ -687,9 +687,9 @@ const PDFPageRender = React.forwardRef((props, ref) => {
     const lightingObj = { background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%)' };
 
     return (
-        <div className={`${isMobile ? 'bg-[#e5e7eb] shadow-2xl w-full min-h-full h-auto flex flex-col relative' : 'page bg-[#e5e7eb] shadow-2xl w-full h-full'}`} ref={ref} data-density="soft">
-            <div className={`${isMobile ? 'w-full bg-[#ffffff] flex flex-col relative overflow-hidden min-h-full h-auto justify-start items-stretch' : 'page-content w-full bg-[#ffffff] flex flex-col relative overflow-hidden h-full justify-center items-center'}`}>
-                <div className={`${isMobile ? 'relative w-full h-auto' : 'absolute inset-0'} pdf-page-content p-[8%] pt-[10%] flex flex-col z-50 text-left`} style={{ gap: `${props.width * 0.016}px` }} data-page-number={props.pageNumber}>
+        <div className={`page bg-[#e5e7eb] shadow-2xl w-full h-full`} ref={ref} data-density="soft">
+            <div className={`page-content w-full bg-[#ffffff] flex flex-col relative overflow-hidden h-full justify-center items-center`}>
+                <div className={`absolute inset-0 pdf-page-content p-[8%] pt-[10%] flex flex-col z-50 text-left`} style={{ gap: `${props.width * 0.016}px` }} data-page-number={props.pageNumber}>
                     {props.pageData && props.pageData.paragraphs.map((para, i) => (
                         <span key={i} className="pdf-selectable-paragraph leading-relaxed font-serif text-[#1a1a1a]" style={{ fontSize: `${Math.max(12, props.width * 0.0185)}px` }} id={`para-${props.pageNumber}-${i}`}>
                             {para}
@@ -715,6 +715,11 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                         <div className="absolute bottom-0 right-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
                     </>
                 )}
+                <div 
+                    className="absolute inset-0 z-[70]" 
+                    style={{ pointerEvents: props.isTextSelectionMode ? 'none' : 'auto' }}
+                    onDoubleClick={props.onDoubleClick}
+                />
             </div>
         </div>
     );
@@ -747,6 +752,7 @@ const BookIndex = () => {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [isTextSelectionMode, setIsTextSelectionMode] = useState(false);
 
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
@@ -1300,7 +1306,8 @@ const BookIndex = () => {
 
                 // Allow the book width to span the majority of the screen width securely
                 const maxAvailableWidth = containerWidth; // Size of book to 100%
-                let singlePageWidth = maxAvailableWidth / 2;
+                const isMob = window.innerWidth < 768;
+                let singlePageWidth = isMob ? maxAvailableWidth * 0.95 : maxAvailableWidth / 2;
                 let singlePageHeight = singlePageWidth * aspectRatio;
 
                 // Vertical limits are removed to allow full native scrolling, enabling max legibility.
@@ -1310,7 +1317,7 @@ const BookIndex = () => {
                     height: Math.max(350, Math.floor(singlePageHeight))
                 });
 
-                setIsMobile(window.innerWidth < 768);
+                setIsMobile(isMob);
             }
         };
 
@@ -1342,9 +1349,9 @@ const BookIndex = () => {
             <GlobalPDFPageOverridesSMT />
 
             {/* Static SMT-Style Top Navigation Bar */}
-            <div className="w-full shrink-0 h-[68px] bg-[#0b0f19] border-b border-gray-800 flex items-center px-4 justify-between z-50 shadow-[0_15px_30px_rgba(0,0,0,0.6)] relative pointer-events-auto">
+            <div className="w-full shrink-0 min-h-[68px] py-2 md:py-0 bg-[#0b0f19] border-b border-gray-800 flex flex-wrap md:flex-nowrap items-center px-2 sm:px-4 justify-between z-50 shadow-[0_15px_30px_rgba(0,0,0,0.6)] relative pointer-events-auto gap-y-2">
                 {/* Left Controls */}
-                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0 order-1">
                     <button onClick={() => navigate(-1)} className="bg-gray-800 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all border border-gray-600 shrink-0">
                         <i className="pi pi-arrow-left text-lg"></i>
                     </button>
@@ -1354,15 +1361,13 @@ const BookIndex = () => {
                 </div>
 
                 {/* Center Flipping & Tracking Controls */}
-                <div className="flex-1 flex items-center justify-center min-w-0 px-2 sm:px-4">
+                <div className="w-full md:w-auto md:flex-1 flex items-center justify-center min-w-0 px-2 order-3 md:order-2 basis-full md:basis-auto mt-1 md:mt-0 pb-1 md:pb-0">
                     {numPages && (
                         <div className="flex justify-center items-center w-full max-w-4xl min-w-0">
-                            {!isMobile && (
-                                <button onClick={() => flipBookRef.current?.pageFlip().flipPrev()} className="bg-[#1a2234] hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-2xl border border-gray-600 transition-all shrink-0">
-                                    <i className="pi pi-angle-left text-lg font-bold -ml-1"></i>
-                                </button>
-                            )}
-                            <div className="bg-[#1a2234] border border-gray-600 px-3 sm:px-4 py-2 rounded-full flex items-center justify-between shadow-2xl shrink-0 flex-grow-0 w-full max-w-[280px] h-10 min-w-0 mx-2">
+                            <button onClick={() => flipBookRef.current?.pageFlip().flipPrev()} className="bg-[#1a2234] hover:bg-blue-600 text-white w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shadow-2xl border border-gray-600 transition-all shrink-0">
+                                <i className="pi pi-angle-left text-base sm:text-lg font-bold -ml-0.5 sm:-ml-1"></i>
+                            </button>
+                            <div className="bg-[#1a2234] border border-gray-600 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center justify-between shadow-2xl shrink-1 flex-grow-0 w-full max-w-[280px] h-9 sm:h-10 min-w-0 mx-2">
                                 {(() => {
                                     // Local Chapter navigation logic
                                     const currentBookChapters = selectedBook ? chaptersDB.filter(c => c.book_id === selectedBook.id).sort((a, b) => a.chapter_number - b.chapter_number) : [];
@@ -1400,25 +1405,23 @@ const BookIndex = () => {
                                     );
                                 })()}
                             </div>
-                            {!isMobile && (
-                                <button onClick={() => flipBookRef.current?.pageFlip().flipNext()} className="bg-[#1a2234] hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full shadow-2xl border border-gray-600 transition-all shrink-0">
-                                    <i className="pi pi-angle-right text-lg font-bold -mr-1"></i>
-                                </button>
-                            )}
+                            <button onClick={() => flipBookRef.current?.pageFlip().flipNext()} className="bg-[#1a2234] hover:bg-blue-600 text-white w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shadow-2xl border border-gray-600 transition-all shrink-0">
+                                <i className="pi pi-angle-right text-base sm:text-lg font-bold -mr-0.5 sm:-mr-1"></i>
+                            </button>
                         </div>
                     )}
                 </div>
 
                 {/* Right Placeholder to balance flex */}
-                <div className="flex justify-end items-center relative gap-2 pr-2 shrink-0">
+                <div className="flex justify-end items-center relative gap-2 pr-0 sm:pr-2 shrink-0 order-2 md:order-3">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={undoHighlight}
-                            className="bg-gray-800 hover:bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
+                            className="bg-gray-800 hover:bg-red-600 text-white w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-full flex items-center justify-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
                             title="Undo Last Highlight"
                         >
                             <i className="pi pi-undo text-lg"></i>
-                            <span className="text-[11px] font-black tracking-widest uppercase">UNDO</span>
+                            <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline">UNDO</span>
                         </button>
                         <button
                             onClick={() => {
@@ -1426,10 +1429,10 @@ const BookIndex = () => {
                                 setShowToolMenu(false);
                                 incrementTransformationTouch();
                             }}
-                            className="bg-gray-800 hover:bg-blue-600 text-white px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
+                            className="bg-gray-800 hover:bg-blue-600 text-white w-10 h-10 sm:w-auto sm:h-auto sm:px-5 sm:py-2 rounded-full flex items-center justify-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
                         >
                             <i className="pi pi-play-circle text-lg"></i>
-                            <span className="text-[11px] font-black tracking-widest uppercase">PLAYER</span>
+                            <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline">PLAYER</span>
                         </button>
                     </div>
                 </div>
@@ -1665,124 +1668,63 @@ const BookIndex = () => {
                         {activePdfUrl ? (
                             <div className="w-full h-full flex justify-center items-center">
                                     {numPages && aspectReady && (
-                                        isMobile ? (
-                                            /* Mobile Single-Page Scrollable View */
-                                            <div className="w-full flex flex-col items-center gap-6 py-4 px-2 select-text">
-                                                {Array.from(new Array(numPages), (_, index) => {
-                                                    const pageToRender = index + 1;
-                                                    const containerWidth = bookContainerRef.current ? bookContainerRef.current.offsetWidth : window.innerWidth;
-                                                    const mWidth = Math.min(600, containerWidth * 0.92);
-                                                    const mHeight = mWidth * aspectRatio;
-                                                    return (
-                                                        <div
-                                                            key={index}
-                                                            style={{
-                                                                width: `${mWidth}px`,
-                                                                minHeight: `${mHeight}px`,
-                                                            }}
-                                                            className="shadow-[0_15px_40px_rgba(0,0,0,0.5)] ring-1 ring-[#5c3a21]/30 bg-[#ffffff] rounded-md overflow-hidden relative flex flex-col h-auto"
-                                                        >
+                                        <div
+                                            className="relative mx-auto flex items-center justify-center my-4 md:my-0"
+                                            style={{
+                                                width: `${baseWidth}px`,
+                                                height: `${baseHeight}px`,
+                                            }}
+                                        >
+                                            <div
+                                                style={{ width: `${baseWidth}px`, height: `${baseHeight}px` }}
+                                                className="shadow-[0_45px_100px_rgba(0,0,0,0.8)] ring-1 ring-[#5c3a21]/50 flex flex-col justify-center items-center bg-[#ffffff] mt-0"
+                                            >
+                                                <HTMLFlipBook
+                                                    width={isMobile ? baseWidth : 1000}
+                                                    height={isMobile ? baseHeight : Math.floor(1000 * aspectRatio)}
+                                                    style={{ width: '100%', height: '100%' }}
+                                                    size={isMobile ? "fixed" : "stretch"}
+                                                    minWidth={100}
+                                                    maxWidth={9000}
+                                                    minHeight={100}
+                                                    maxHeight={9000}
+                                                    drawShadow={true}
+                                                    maxShadowOpacity={0.8}
+                                                    showCover={false}
+                                                    mobileScrollSupport={true}
+                                                    disableFlipByClick={true}
+                                                    useMouseEvents={!isTextSelectionMode}
+                                                    swipeDistance={isTextSelectionMode ? 0 : 30}
+                                                    showPageCorners={false}
+                                                    className="mx-auto"
+                                                    flippingTime={900}
+                                                    usePortrait={true}
+                                                    onFlip={onPageFlip}
+                                                    ref={flipBookRef}
+                                                >
+                                                    {Array.from(new Array(numPages), (_, index) => {
+                                                        const pageToRender = index + 1;
+                                                        return (
                                                             <PDFPageRender
+                                                                key={index}
                                                                 pageNumber={pageToRender}
-                                                                width={mWidth}
+                                                                width={baseWidth}
                                                                 pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
                                                                 pageData={bookData ? bookData.pages[pageToRender - 1] : null}
                                                                 onDeleteHighlight={deleteHighlight}
                                                                 isMobile={true}
+                                                                isTextSelectionMode={isTextSelectionMode}
+                                                                onDoubleClick={() => {
+                                                                    if (window.innerWidth < 768) {
+                                                                        setIsTextSelectionMode(prev => !prev);
+                                                                    }
+                                                                }}
                                                             />
-                                                        </div>
-                                                    );
-                                                })}
+                                                        );
+                                                    })}
+                                                </HTMLFlipBook>
                                             </div>
-                                        ) : (
-                                            /* Desktop FlipBook View */
-                                            <div
-                                                className="relative mx-auto flex items-center justify-center"
-                                                style={{
-                                                    width: `${baseWidth * 2}px`,
-                                                    height: `${baseHeight}px`,
-                                                }}
-                                            >
-                                                <div
-                                                    style={{ width: `${baseWidth * 2}px`, height: `${baseHeight}px` }}
-                                                    className="shadow-[0_45px_100px_rgba(0,0,0,0.8)] ring-1 ring-[#5c3a21]/50 flex flex-col justify-center items-center bg-[#ffffff] mt-0"
-                                                >
-                                                    <HTMLFlipBook
-                                                        width={1000}
-                                                        height={Math.floor(1000 * aspectRatio)}
-                                                        size="stretch"
-                                                        minWidth={100}
-                                                        maxWidth={9000}
-                                                        minHeight={100}
-                                                        maxHeight={9000}
-                                                        drawShadow={true}
-                                                        maxShadowOpacity={0.8}
-                                                        showCover={false}
-                                                        mobileScrollSupport={true}
-                                                        disableFlipByClick={true}
-                                                        showPageCorners={false}
-                                                        className="mx-auto"
-                                                        flippingTime={900}
-                                                        usePortrait={false}
-                                                        onFlip={onPageFlip}
-                                                        ref={flipBookRef}
-                                                    >
-                                                        {Array.from(new Array(totalPagesToRender), (_, index) => {
-                                                            const isRightPage = index % 2 !== 0;
-
-                                                            let pageToRender = null;
-                                                            let isBlank = false;
-
-                                                            if (numPages % 2 !== 0) {
-                                                                if (index < numPages - 1) {
-                                                                    pageToRender = index + 1;
-                                                                } else if (index === numPages - 1) {
-                                                                    isBlank = true;
-                                                                } else if (index === numPages) {
-                                                                    pageToRender = numPages;
-                                                                } else {
-                                                                    isBlank = true;
-                                                                }
-                                                            } else {
-                                                                if (index < numPages) {
-                                                                    pageToRender = index + 1;
-                                                                } else {
-                                                                    isBlank = true;
-                                                                }
-                                                            }
-
-                                                            if (!isBlank && pageToRender !== null) {
-                                                                return (
-                                                                    <PDFPageRender
-                                                                        key={index}
-                                                                        pageNumber={pageToRender}
-                                                                        width={baseWidth}
-                                                                        pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
-                                                                        pageData={bookData ? bookData.pages[pageToRender - 1] : null}
-                                                                        onDeleteHighlight={deleteHighlight}
-                                                                        isMobile={false}
-                                                                    />
-                                                                );
-                                                            } else {
-                                                                const rightSpineObj = { background: 'linear-gradient(to right, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.4) 3%, rgba(0,0,0,0.1) 8%, rgba(0,0,0,0) 25%)' };
-                                                                const leftSpineObj = { background: 'linear-gradient(to left, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.4) 3%, rgba(0,0,0,0.1) 8%, rgba(0,0,0,0) 25%)' };
-                                                                const lightingObj = { background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%)' };
-
-                                                                return (
-                                                                    <div key={index} className={`page bg-[#ffffff] shadow-2xl`} data-density="soft">
-                                                                        <div className={`page-content w-full h-full bg-[#e5e7eb] flex flex-col justify-center items-center relative`}>
-                                                                            <i className="pi pi-book text-8xl text-gray-400 opacity-20"></i>
-                                                                            <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />
-                                                                            <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            }
-                                                        })}
-                                                    </HTMLFlipBook>
-                                                </div>
-                                            </div>
-                                        )
+                                        </div>
                                     )}
                                         </div>
                         ) : (

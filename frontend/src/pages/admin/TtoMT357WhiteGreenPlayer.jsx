@@ -22,7 +22,7 @@ const parseTime = (t) => {
     return 0;
 };
 
-const TtoMT357WhitePlayer = () => {
+const TtoMT357WhiteGreenPlayer = () => {
     const [activeTrack, setActiveTrack] = useState('PROVERBS 1');
     const [selectedDay, setSelectedDay] = useState(3);
     const [facet, setFacet] = useState(2);
@@ -906,6 +906,11 @@ const TtoMT357WhitePlayer = () => {
     return (
         <div className="min-h-screen bg-white flex flex-col items-center justify-start py-2 font-['Times_New_Roman',_Times,_serif] text-black">
             <style>{`
+                /* Hide global layout elements for full-screen immersive view */
+                header, aside, .w-72.flex-grow.border-r, .p-sidebar {
+                    display: none !important;
+                }
+                
                 .no-scrollbar::-webkit-scrollbar {
                     display: none;
                 }
@@ -965,7 +970,7 @@ const TtoMT357WhitePlayer = () => {
                 <div className={`w-full relative transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'}`}>
 
                     {/* Front Side */}
-                    <div className={`w-full [backface-visibility:hidden] bg-[url('/whiteleatherbg.png')] bg-[length:100%_100%] bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col relative overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 ${isFlipped ? 'pointer-events-none' : ''}`}>
+                    <div className={`w-full [backface-visibility:hidden] bg-[url('/GreenwhiteBG.png')] bg-[length:100%_100%] bg-center bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col relative overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 ${isFlipped ? 'pointer-events-none' : ''}`}>
 
 
 
@@ -987,22 +992,22 @@ const TtoMT357WhitePlayer = () => {
                                     <i className="pi pi-bars font-bold"></i>
                                 </button>
                                 <div className="flex items-center gap-[8px] text-[13px] font-black leading-tight">
-                                    <i className="pi pi-calendar text-[26px] bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]"></i>
-                                    <div className="flex flex-col items-start bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e] leading-[1.2]">
-                                        <span className="whitespace-nowrap">{`${getOrdinalNum(currentTime.getDate())} ${fullDays[currentTime.getDay()]} ${months[currentTime.getMonth()]}`}</span>
-                                        <span className="whitespace-nowrap">{`${currentTime.getHours() % 12 || 12}:${currentTime.getMinutes().toString().padStart(2, '0')} ${currentTime.getHours() >= 12 ? 'PM' : 'AM'}`}</span>
+                                    <i className="pi pi-calendar text-[26px] bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e]"></i>
+                                    <div className="flex flex-col items-start leading-[1.2]">
+                                        <span className="whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e]">{`${getOrdinalNum(currentTime.getDate())} ${fullDays[currentTime.getDay()]} ${months[currentTime.getMonth()]}`}</span>
+                                        <span className="whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e]">{`${currentTime.getHours() % 12 || 12}:${currentTime.getMinutes().toString().padStart(2, '0')} ${currentTime.getHours() >= 12 ? 'PM' : 'AM'}`}</span>
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-center ml-auto">
                                     <div className="flex items-center text-[26px] font-black tracking-widest">
-                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">T</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e]">T</span>
                                         <span className="text-[#FF0000]">t</span>
-                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">o</span>
-                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">m</span>
-                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">T</span>
-                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e] ml-[8px]">3</span>
-                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e] mx-[4px]">5</span>
-                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">7</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e]">o</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e]">m</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e]">T</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e] ml-[8px]">3</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e] mx-[4px]">5</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#c47b52] to-[#753b1e]">7</span>
                                     </div>
 
                                 </div>
@@ -1158,55 +1163,56 @@ const TtoMT357WhitePlayer = () => {
                         </div>
 
                         {/* Pagination */}
-                        <div className="mx-[16px] mb-[13px] flex items-center justify-center pl-[54px] pr-[37px]">
-                            <div className="w-full flex items-center justify-between border-[2px] border-[#2e1d0d] bg-gradient-to-b from-[#c09d6b] via-[#a37d4c] to-[#644222] shadow-[0_4px_8px_rgba(0,0,0,0.8),inset_0_2px_3px_rgba(255,255,255,0.3)] py-[10px] px-[8px] rounded-[13px]">
-                                <button
+                        <div className="ml-[70px] mr-[96px] mb-[13px] flex items-center relative z-20">
+                            <div className="w-full h-[42px] flex items-center justify-between px-[4px] rounded-[10px] shadow-[0_4px_6px_rgba(0,0,0,0.6)] bg-[url('/Pagenation.png')] bg-[length:104%_280%] bg-center bg-no-repeat">
+
+                                <div
                                     onClick={() => setDaysPage(prev => Math.max(0, prev - 1))}
-                                    disabled={daysPage === 0}
-                                    className={`cursor-pointer w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[6px] bg-gradient-to-b from-[#b48663] via-[#8c5f3e] to-[#54301c] border border-[#2e190d] shadow-[0_3px_5px_rgba(0,0,0,0.7),inset_0_1px_2px_rgba(255,255,255,0.4)] transition-transform text-[#efd9c5] ${daysPage === 0 ? 'opacity-50 cursor-not-allowed' : 'active:scale-95 hover:brightness-110'}`}
+                                    className={`w-[32px] h-[32px] flex items-center justify-center cursor-pointer rounded-[8px] bg-gradient-to-b from-[#6b4226] to-[#3a200f] border-[1.5px] border-[#e8c37d] shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_2px_4px_rgba(0,0,0,0.6)] transition-all ${daysPage === 0 ? 'opacity-50 pointer-events-none' : 'hover:brightness-110 active:scale-95'}`}
                                 >
-                                    <i className="pi pi-angle-left text-[18px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] font-bold"></i>
-                                </button>
-                                <div className="flex-1 min-w-0 flex justify-start overflow-x-auto gap-[6px] font-['Times_New_Roman',_Times,_serif] font-bold text-[16px] px-[4px] custom-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                    <i className="pi pi-angle-left text-[#f2cd79] font-black text-[18px] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"></i>
+                                </div>
+
+                                <div className="flex justify-center items-center gap-[10px]">
                                     {displayDays.slice(daysPage * 10, (daysPage + 1) * 10).map(n => (
                                         <div key={n}
                                             onClick={() => setSelectedPreviewDay(n)}
-                                            className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center cursor-pointer transition-colors ${n === selectedPreviewDay
-                                                ? 'rounded-[6px] bg-gradient-to-b from-[#967041] via-[#7a572c] to-[#473016] border border-[#3b2512] shadow-[0_1px_1px_rgba(255,255,255,0.2)] p-[2px]'
-                                                : 'rounded-[6px] bg-gradient-to-b from-[#f3e5d0] via-[#deccb1] to-[#bda380] border border-[#5a422d] shadow-[0_3px_4px_rgba(0,0,0,0.6),inset_0_2px_3px_rgba(255,255,255,0.9)] hover:brightness-105'
+                                            className={`w-[26px] h-[26px] flex items-center justify-center font-['Times_New_Roman',_Times,_serif] font-black text-[16px] cursor-pointer transition-all ${n === selectedPreviewDay
+                                                ? 'text-[#f2cd79] border-[1.5px] border-[#e8c37d] rounded-[6px] bg-gradient-to-b from-[#4a2c11] to-[#2b1204] shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_2px_rgba(255,255,255,0.2)]'
+                                                : 'text-[#2b170c] hover:text-[#f2cd79] hover:scale-110 drop-shadow-[0_1px_0_rgba(255,255,255,0.3)]'
                                                 }`}>
-                                            {n === selectedPreviewDay ? (
-                                                <div className="w-full h-full rounded-[4px] bg-gradient-to-b from-[#1a0a03] to-[#3a1d0d] shadow-[inset_0_4px_6px_rgba(0,0,0,0.9)] flex items-center justify-center text-[#fdf0d5]">
-                                                    <span className="drop-shadow-[0_2px_2px_rgba(0,0,0,1)] text-[15px] font-black tracking-widest">{n}</span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-[#331c0a] drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] text-[16px]">{n}</span>
-                                            )}
+                                            {n}
                                         </div>
                                     ))}
                                 </div>
-                                <button
+
+                                <div
                                     onClick={() => setDaysPage(prev => Math.min(Math.ceil(displayDays.length / 10) - 1, prev + 1))}
-                                    disabled={daysPage >= Math.ceil(displayDays.length / 10) - 1}
-                                    className={`cursor-pointer w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[6px] bg-gradient-to-b from-[#b48663] via-[#8c5f3e] to-[#54301c] border border-[#2e190d] shadow-[0_3px_5px_rgba(0,0,0,0.7),inset_0_1px_2px_rgba(255,255,255,0.4)] transition-transform text-[#efd9c5] ${daysPage >= Math.ceil(displayDays.length / 10) - 1 ? 'opacity-50 cursor-not-allowed' : 'active:scale-95 hover:brightness-110'}`}
+                                    className={`w-[32px] h-[32px] flex items-center justify-center cursor-pointer rounded-[8px] bg-gradient-to-b from-[#6b4226] to-[#3a200f] border-[1.5px] border-[#e8c37d] shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_2px_4px_rgba(0,0,0,0.6)] transition-all ${daysPage >= Math.ceil(displayDays.length / 10) - 1 ? 'opacity-50 pointer-events-none' : 'hover:brightness-110 active:scale-95'}`}
                                 >
-                                    <i className="pi pi-angle-right text-[18px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] font-bold"></i>
-                                </button>
+                                    <i className="pi pi-angle-right text-[#f2cd79] font-black text-[18px] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"></i>
+                                </div>
                             </div>
                         </div>
 
                         {/* Combined Bible Books */}
-                        <div className="mx-[0] mb-[10px] relative">
+                        <div className="mx-[16px] -mt-[60px] -mb-[50px] relative flex flex-col z-10">
                             <Tooltip target=".book-tooltip" position="top" className="custom-book-tooltip" showDelay={0} hideDelay={0} />
-                            <div className="drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/bookbg.png')] bg-[length:100%_100%] bg-center bg-no-repeat relative">
 
-                                <div className="w-full relative z-10 flex flex-col gap-[12px] pt-[56px] pb-[32px] px-[16px]">
+                            {/* Old Testament Container */}
+                            <div className="drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/GreenBK.png')] bg-[length:100%_100%] bg-center bg-no-repeat relative z-10">
+                                <div className="w-full relative z-10 flex flex-col pt-[110px] pb-[95px] px-[16px]">
 
                                     {/* Old Testament Section */}
                                     <div className="w-full relative flex flex-col items-center px-[13px]">
                                         {/* Top Header Bar */}
                                         <div className="flex items-center justify-between w-full relative mb-[2px] px-[24px]">
-                                            <i className={`pi pi-angle-left text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${otPage > 0 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setOtPage(p => Math.max(0, p - 1))}></i>
+                                            <div className="w-[26px] flex items-center justify-center">
+                                                <i
+                                                    className={`pi pi-angle-left text-[#e3c598] font-black text-[24px] cursor-pointer drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] transition-all ${otPage > 0 ? 'hover:scale-110 active:scale-95' : 'opacity-50 pointer-events-none'}`}
+                                                    onClick={() => setOtPage(p => Math.max(0, p - 1))}
+                                                ></i>
+                                            </div>
 
                                             <div className="flex flex-col items-center flex-1">
                                                 <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Arial'] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
@@ -1221,22 +1227,27 @@ const TtoMT357WhitePlayer = () => {
                                                 </div>
                                             </div>
 
-                                            <i className={`pi pi-angle-right text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${otPage < otTotalPages - 1 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setOtPage(p => Math.min(otTotalPages - 1, p + 1))}></i>
+                                            <div className="w-[26px] flex items-center justify-center">
+                                                <i
+                                                    className={`pi pi-angle-right text-[#e3c598] font-black text-[24px] cursor-pointer drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] transition-all ${otPage < otTotalPages - 1 ? 'hover:scale-110 active:scale-95' : 'opacity-50 pointer-events-none'}`}
+                                                    onClick={() => setOtPage(p => Math.min(otTotalPages - 1, p + 1))}
+                                                ></i>
+                                            </div>
                                         </div>
 
                                         {/* Content Buttons Grid */}
                                         <div className="w-full px-[24px] grid grid-cols-5 gap-x-[12px] gap-y-[6px] mb-[4px]">
                                             {otDisplay.map((book, i) => {
                                                 const isSelected = selectedBooks.includes(book);
-                                                const isGold = (i === 0 || i === 2);
-                                                const isCopper = (i === 4 || i === 6 || i === 8);
+                                                const isGold = (i % 10 === 0 || i % 10 === 2);
+                                                const isCopper = (i % 10 === 4 || i % 10 === 6 || i % 10 === 8);
                                                 return (
                                                     <div
                                                         key={i}
                                                         onClick={() => toggleBook(book)}
                                                         data-pr-tooltip={getBookTooltip(book)}
                                                         style={{
-                                                            backgroundImage: isSelected ? undefined : (isGold ? "url('/glodenbuttonbg.png')" : (isCopper ? "url('/copperbuttonbg.png')" : "url('/woodenbuttonbg.png')")),
+                                                            backgroundImage: isSelected ? undefined : (isGold ? "url('/Ggoldenbutton.png')" : "url('/Ggreenbutton.png')"),
                                                             backgroundSize: isGold ? '108% 195%' : (isCopper ? '110% 170%' : '112% 172%'),
                                                             backgroundPosition: 'center',
                                                             backgroundRepeat: 'no-repeat'
@@ -1257,18 +1268,35 @@ const TtoMT357WhitePlayer = () => {
                                         </div>
 
                                         {/* Pagination Dots */}
-                                        <div className="flex justify-center gap-[8px] shrink-0 pb-[2px]">
+                                        <div className="w-full flex justify-center items-center gap-[6px] mt-[14px]">
                                             {Array.from({ length: otTotalPages }).map((_, i) => (
-                                                <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === otPage ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]' : 'bg-[#291010]'}`}></div>
+                                                <div
+                                                    key={i}
+                                                    onClick={() => setOtPage(i)}
+                                                    className={`w-[8px] h-[8px] rounded-full cursor-pointer transition-all ${i === otPage
+                                                        ? 'bg-[#f2cd79] shadow-[0_0_4px_#f2cd79]'
+                                                        : 'bg-[#2b1204] shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)] hover:bg-[#a67c38]'}`}
+                                                ></div>
                                             ))}
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* New Testament Container */}
+                            <div className="drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/GreenmeroonBK.png')] bg-[length:100%_100%] bg-center bg-no-repeat relative z-0 mt-[-140px]">
+                                <div className="w-full relative z-10 flex flex-col pt-[115px] pb-[95px] px-[16px]">
 
                                     {/* New Testament Section */}
-                                    <div className="w-full relative flex flex-col items-center px-[13px] mt-[0]">
+                                    <div className="w-full relative flex flex-col items-center px-[13px]">
                                         {/* Top Header Bar */}
                                         <div className="flex items-center justify-between w-full relative mb-[2px] px-[24px]">
-                                            <i className={`pi pi-angle-left text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${ntPage > 0 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setNtPage(p => Math.max(0, p - 1))}></i>
+                                            <div className="w-[26px] flex items-center justify-center">
+                                                <i
+                                                    className={`pi pi-angle-left text-[#e3c598] font-black text-[24px] cursor-pointer drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] transition-all ${ntPage > 0 ? 'hover:scale-110 active:scale-95' : 'opacity-50 pointer-events-none'}`}
+                                                    onClick={() => setNtPage(p => Math.max(0, p - 1))}
+                                                ></i>
+                                            </div>
 
                                             <div className="flex flex-col items-center flex-1">
                                                 <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Arial'] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
@@ -1283,45 +1311,53 @@ const TtoMT357WhitePlayer = () => {
                                                 </div>
                                             </div>
 
-                                            <i className={`pi pi-angle-right text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${ntPage < ntTotalPages - 1 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setNtPage(p => Math.min(ntTotalPages - 1, p + 1))}></i>
+                                            <div className="w-[26px] flex items-center justify-center">
+                                                <i
+                                                    className={`pi pi-angle-right text-[#e3c598] font-black text-[24px] cursor-pointer drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] transition-all ${ntPage < ntTotalPages - 1 ? 'hover:scale-110 active:scale-95' : 'opacity-50 pointer-events-none'}`}
+                                                    onClick={() => setNtPage(p => Math.min(ntTotalPages - 1, p + 1))}
+                                                ></i>
+                                            </div>
                                         </div>
 
                                         {/* Content Buttons Grid */}
                                         <div className="w-full px-[24px] grid grid-cols-5 gap-x-[12px] gap-y-[6px] mb-[4px]">
                                             {ntDisplay.map((book, i) => {
                                                 const isSelected = selectedBooks.includes(book);
-                                                const isGold = (i === 0 || i === 2);
-                                                const isCopper = (i === 4 || i === 6 || i === 8);
+                                                const isNtCopper = [0, 2, 3, 5, 8].includes(i % 10);
                                                 return (
                                                     <div
                                                         key={i}
                                                         onClick={() => toggleBook(book)}
                                                         data-pr-tooltip={getBookTooltip(book)}
                                                         style={{
-                                                            backgroundImage: isSelected ? undefined : (isGold ? "url('/glodenbuttonbg.png')" : (isCopper ? "url('/copperbuttonbg.png')" : "url('/woodenbuttonbg.png')")),
-                                                            backgroundSize: isGold ? '108% 195%' : (isCopper ? '110% 170%' : '112% 172%'),
+                                                            backgroundImage: isSelected ? undefined : (isNtCopper ? "url('/Gcopperbutton.png')" : "url('/Gblackbutton.png')"),
+                                                            backgroundSize: '110% 170%',
                                                             backgroundPosition: 'center',
                                                             backgroundRepeat: 'no-repeat'
                                                         }}
                                                         className={`book-tooltip text-center py-[6px] rounded-[8px] text-[13px] font-['Arial'] font-black tracking-wider uppercase flex items-center justify-center cursor-pointer transition-all active:scale-95 border ${isSelected
                                                             ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029] text-[#2b1212] border-[#2b1212] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_2px_4px_rgba(0,0,0,0.8)] scale-[0.98]'
-                                                            : isGold
-                                                                ? "border-[#45260f] text-[#3d1f08] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
-                                                                : isCopper
-                                                                    ? "border-[#45260f] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
-                                                                    : "border-[#140a05] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.15),inset_0_-2px_2px_rgba(0,0,0,0.5),inset_0_0_0_2px_rgba(90,55,35,0.4),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-125"
+                                                            : isNtCopper
+                                                                ? "border-[#45260f] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
+                                                                : "border-[#140a05] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.15),inset_0_-2px_2px_rgba(0,0,0,0.5),inset_0_0_0_2px_rgba(90,55,35,0.4),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-125"
                                                             }`}
                                                     >
-                                                        <span className={isSelected ? 'drop-shadow-[0_1px_0_rgba(255,255,255,0.4)]' : (isGold ? 'drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]' : 'drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]')}>{book}</span>
+                                                        <span className={isSelected ? 'drop-shadow-[0_1px_0_rgba(255,255,255,0.4)]' : 'drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]'}>{book}</span>
                                                     </div>
                                                 );
                                             })}
                                         </div>
 
                                         {/* Pagination Dots */}
-                                        <div className="flex justify-center gap-[8px] shrink-0 pb-[2px]">
+                                        <div className="w-full flex justify-center items-center gap-[6px] mt-[12px]">
                                             {Array.from({ length: ntTotalPages }).map((_, i) => (
-                                                <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === ntPage ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]' : 'bg-[#291010]'}`}></div>
+                                                <div
+                                                    key={i}
+                                                    onClick={() => setNtPage(i)}
+                                                    className={`w-[8px] h-[8px] rounded-full cursor-pointer transition-all ${i === ntPage
+                                                        ? 'bg-[#f2cd79] shadow-[0_0_4px_#f2cd79]'
+                                                        : 'bg-[#2b1204] shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)] hover:bg-[#a67c38]'}`}
+                                                ></div>
                                             ))}
                                         </div>
                                     </div>
@@ -1545,7 +1581,7 @@ const TtoMT357WhitePlayer = () => {
                     </div>
 
                     {/* Back Side */}
-                    <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[url('/whiteleatherbg.png')] bg-[length:100%_100%] bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 p-[20px] ${!isFlipped ? 'pointer-events-none' : ''}`}>
+                    <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[url('/GreenwhiteBG.png')] bg-[length:105%_107%] bg-center bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 p-[20px] ${!isFlipped ? 'pointer-events-none' : ''}`}>
 
                         {/* Header / Back Button */}
                         <div className="flex justify-between items-center mb-[20px] pb-[10px] border-b border-[#5a3618]">
@@ -1651,4 +1687,4 @@ const TtoMT357WhitePlayer = () => {
     );
 };
 
-export default TtoMT357WhitePlayer;
+export default TtoMT357WhiteGreenPlayer;

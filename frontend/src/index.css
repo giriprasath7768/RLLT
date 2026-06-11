@@ -56,3 +56,9 @@ body:not(.pdf-is-generating) .printable-chart-area tbody textarea {
     padding: 0 !important;
   }
 }
+
+/* Custom Scrollbar for Playlist */
+.playlist-scroll::-webkit-scrollbar { width: 6px; }
+.playlist-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+.playlist-scroll::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #c28e71, #59341f); border-radius: 4px; }
+.playlist-scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(to bottom, #d19c7f, #6b4027); }

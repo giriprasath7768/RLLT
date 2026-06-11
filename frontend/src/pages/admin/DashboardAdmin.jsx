@@ -170,7 +170,7 @@ export default function DashboardAdmin() {
                     <h1 className="text-2xl font-extrabold text-[#051220] tracking-tight">Admin Dashboard</h1>
                     <p className="text-gray-500 text-sm mt-1">Welcome back, Admin! <span role="img" aria-label="wave">👋</span></p>
                 </div>
-                <div className="flex items-center space-x-4 mt-4 md:mt-0">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-4 md:mt-0 w-full md:w-auto">
                     <div className="flex items-center border border-gray-200 bg-white rounded-lg px-4 py-2 text-sm text-gray-600 shadow-sm font-medium cursor-pointer hover:bg-gray-50">
                         <i className="pi pi-map-marker mr-2 text-gray-400"></i>
                         All Locations
@@ -344,9 +344,9 @@ export default function DashboardAdmin() {
             {/* Row 4 */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Activities */}
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 lg:col-span-2 overflow-x-auto flex flex-col h-full">
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 lg:col-span-2 flex flex-col h-full overflow-hidden">
                     <h3 className="font-bold text-gray-800 mb-4">Recent Activities</h3>
-                    <div className="flex-1">
+                    <div className="flex-1 w-full overflow-x-auto">
                         <table className="w-full text-left text-sm min-w-[600px]">
                             <thead>
                                 <tr className="text-gray-500 font-semibold border-b border-gray-100">

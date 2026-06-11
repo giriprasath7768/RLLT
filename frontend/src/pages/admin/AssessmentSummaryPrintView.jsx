@@ -451,10 +451,10 @@ const AssessmentSummaryPrintView = ({ student, results, summarySettings, applica
                 
                 <table className="w-full text-left border-collapse border border-gray-300">
                     <thead>
-                        <tr className="bg-[#0B152A] text-white text-base">
-                            <th className="p-4 font-bold border-r border-gray-600">Domain</th>
-                            <th className="p-4 font-bold border-r border-gray-600 text-center">Score</th>
-                            <th className="p-4 font-bold border-r border-gray-600 text-center">Level</th>
+                        <tr className="bg-[#2F5597] text-white text-base">
+                            <th className="p-4 font-bold border-r border-[#2F5597]">Domain</th>
+                            <th className="p-4 font-bold border-r border-[#2F5597] text-center">Score</th>
+                            <th className="p-4 font-bold border-r border-[#2F5597] text-center">Level</th>
                             <th className="p-4 font-bold w-1/2">Visual</th>
                         </tr>
                     </thead>

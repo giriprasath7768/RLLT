@@ -285,7 +285,7 @@ export default function AdminManagement() {
                 dataKey: col.field
             }));
 
-            const data = filteredAdmins.map(adm => {
+            const data = filteredAdmins.slice(first, first + rows).map(adm => {
                 let row = {};
                 activeColumns.forEach(col => {
                     if (col.field === 'is_active') {
@@ -383,7 +383,7 @@ export default function AdminManagement() {
     const topCardContent = (
         <div className="flex flex-col md:flex-row gap-3 md:items-center justify-between w-full">
             <div className="flex flex-wrap gap-2">
-                <Button label="New Admin" icon="pi pi-plus" severity="success" onClick={openNew} className="hidden md:flex" />
+                <Button label="New Admin" icon="pi pi-plus" severity="success" onClick={openNew} />
             </div>
             <div className="flex flex-wrap gap-2">
                 <Button label="Print" icon="pi pi-print" severity="secondary" outlined onClick={printTable} />
@@ -475,6 +475,20 @@ export default function AdminManagement() {
                     </DataTable>
                 </div>
 
+                
+                    {/* Mobile Paginator */}
+                    {filteredAdmins.length > 0 && (
+                        <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 block md:hidden">
+                            <Paginator 
+                                first={first} 
+                                rows={rows} 
+                                totalRecords={filteredAdmins.length} 
+                                onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
+                                template="PrevPageLink PageLinks NextPageLink" 
+                            />
+                        </div>
+                    )}
+        
                 {/* External Paginator Card */}
                 <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-2 mt-4 hidden md:block">
                     <Paginator first={first} rows={rows} totalRecords={filteredAdmins.length} rowsPerPageOptions={[5, 10, 25]} onPageChange={(e) => { setFirst(e.first); setRows(e.rows); }}
@@ -485,7 +499,7 @@ export default function AdminManagement() {
                 {/* Mobile View */}
                 <div className="block md:hidden mt-4">
                     {filteredAdmins.length > 0 ? (
-                        filteredAdmins.map(admin => (
+                        filteredAdmins.slice(first, first + rows).map(admin => (
                             <MobileDataCard
                                 key={admin.id}
                                 title={admin.name}
@@ -507,10 +521,6 @@ export default function AdminManagement() {
                 </div>
             </div>
 
-            {/* Mobile FAB */}
-            <div className="block md:hidden fixed bottom-6 right-6 z-50">
-                <Button icon="pi pi-plus" className="p-button-rounded p-button-success shadow-lg" size="large" onClick={openNew} aria-label="Add New" />
-            </div>
 
             <Dialog visible={adminDialog} breakpoints={{ '960px': '75vw', '641px': '95vw' }} modal className="p-fluid custom-admin-dialog max-w-3xl w-full" onHide={hideDialog} showHeader={false} contentClassName="rounded-3xl overflow-hidden bg-[#060238] p-0">
                 <div className="p-4 sm:p-6">
@@ -593,12 +603,14 @@ export default function AdminManagement() {
                             </div>
                         </div>
 
-                        <div className="field flex items-center justify-between mb-4">
-                            <div>
+                        <div className="field flex items-start sm:items-center justify-between gap-4 mb-4">
+                            <div className="flex-1">
                                 <label htmlFor="is_active" className="font-semibold block text-sm text-gray-800 m-0">Active Status</label>
                                 <small className="text-gray-500 mt-1 block">Toggle to enable or disable this admin account globally.</small>
                             </div>
-                            <InputSwitch id="is_active" checked={admin.is_active} onChange={(e) => onSwitchChange(e, 'is_active')} />
+                            <div className="pt-1 sm:pt-0 shrink-0">
+                                <InputSwitch id="is_active" checked={admin.is_active} onChange={(e) => onSwitchChange(e, 'is_active')} />
+                            </div>
                         </div>
 
                         <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
@@ -650,7 +662,7 @@ export default function AdminManagement() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAdmins.map((adm, index) => (
+                                {filteredAdmins.slice(first, first + rows).map((adm, index) => (
                                     <tr key={adm.id || index}>
                                         {printColumns
                                             .filter(col => selectedPrintColumns.includes(col.field))
