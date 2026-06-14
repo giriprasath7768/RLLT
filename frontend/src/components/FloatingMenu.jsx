@@ -210,7 +210,7 @@ const FloatingMenu = () => {
                     <i className="pi pi-times text-2xl pointer-events-none transition-transform duration-300 rotate-90"></i>
                 ) : (
                     <img 
-                        src="/custom-logo.png" 
+                        src="/Floatingmenuicon.jpg" 
                         alt="Logo Icon" 
                         className="w-full h-full object-cover pointer-events-none"
                     />

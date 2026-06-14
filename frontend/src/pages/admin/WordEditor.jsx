@@ -845,9 +845,9 @@ const WordEditor = () => {
                                                 setExpandedChapterId(null);
                                                 incrementKltTouch();
                                             }}
-                                            className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-semibold tracking-wide flex justify-between items-center ${expandedBookId === book.id
-                                                ? 'bg-[#547395] text-white shadow-md border-l-4 border-[#c8a165]'
-                                                : 'hover:bg-[#2a3045] text-gray-400 hover:text-white border-l-4 border-transparent'
+                                            className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-bold tracking-wide flex justify-between items-center text-white ${expandedBookId === book.id
+                                                ? 'bg-[#547395] shadow-md border-l-4 border-[#c8a165]'
+                                                : 'hover:bg-[#2a3045] border-l-4 border-transparent'
                                                 }`}
                                         >
                                             <span className="truncate pr-2">{book.name}</span>

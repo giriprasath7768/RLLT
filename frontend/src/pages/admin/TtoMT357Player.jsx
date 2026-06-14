@@ -449,14 +449,13 @@ const TtoMT357Player = () => {
     };
 
     const getBookTooltip = (code) => {
-        let matchedBook;
         if (code === 'psa119') {
-            matchedBook = booksDB.find(b => (b.name + " " + (b.short_form || "")).toUpperCase().includes("119"));
+            return 'PSALM 119 - 22 Chapters';
         } else if (code === 'psa75') {
-            matchedBook = booksDB.find(b => (b.name + " " + (b.short_form || "")).toUpperCase().includes("DAVID"));
-        } else {
-            matchedBook = booksDB.find(b => isBookMatch(code, b));
+            return 'PSALM of David - 75 Chapters';
         }
+
+        let matchedBook = booksDB.find(b => isBookMatch(code, b));
 
         if (!matchedBook) return '';
         const chaps = chaptersDB.filter(c => c.book_id === matchedBook.id);
@@ -473,7 +472,7 @@ const TtoMT357Player = () => {
             const list = [];
             selectedBooks.forEach(code => {
                 if (code === 'psa119') list.push('PSALMS 119');
-                else if (code === 'psa75') list.push('DAVID 75');
+                else if (code === 'psa75') list.push('PSALMS of David 75');
                 else {
                     const match = booksDB.find(b => isBookMatch(code, b));
                     list.push(match ? match.name.toUpperCase() : code.toUpperCase());
@@ -583,11 +582,11 @@ const TtoMT357Player = () => {
         try {
             const listRes = await axios.get(`http://${window.location.hostname}:8000/api/charts/list`, { withCredentials: true });
             const exists = listRes.data.find(c => Number(c.module) === 5 && Number(c.facet) === Number(facet) && Number(c.phase) === Number(phase));
-            
+
             if (exists) {
                 const isMainChart = exists.chart_type === 'Main Chart' || (exists.banner_text && exists.banner_text.toLowerCase().includes('main chart'));
                 const is24x7 = exists.chart_type === '24x7 Chart' || (exists.banner_text && (exists.banner_text.toLowerCase().includes('24/7') || exists.banner_text.toLowerCase().includes('24x7')));
-                
+
                 let chartRoute = '357-chart';
                 if (is24x7) {
                     chartRoute = 'twenty-four-seven-chart';
@@ -963,639 +962,639 @@ const TtoMT357Player = () => {
             {/* Main Player Container Wrapper for 3D Flip */}
             <div className="w-full max-w-[600px] [perspective:1500px] mobile-compact">
                 <div className={`w-full relative transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : '[transform:rotateY(0deg)]'}`}>
-                    
+
                     {/* Front Side */}
                     <div className={`w-full [backface-visibility:hidden] bg-[url('/357playerBG.png')] bg-[length:100%_100%] bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col relative overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 ${isFlipped ? 'pointer-events-none' : ''}`}>
 
 
 
 
-                {/* Header */}
-                <div className="flex px-[21px] pt-[21px] pb-[8px] items-center w-full">
-                    {/* Left */}
-                    <div className="flex-1 flex items-center justify-start gap-[21px] relative z-10">
-                        <button
-                            onClick={() => {
-                                let dashboardRoute = '/dashboard';
-                                if (userRole === 'student') dashboardRoute = '/dashboard/student';
-                                else if (userRole === 'super_admin') dashboardRoute = '/dashboard/super-admin';
-                                else if (userRole === 'admin') dashboardRoute = '/dashboard/admin';
-                                else if (userRole === 'leader') dashboardRoute = '/dashboard/leader';
-                                navigate(dashboardRoute);
+                        {/* Header */}
+                        <div className="flex px-[21px] pt-[21px] pb-[8px] items-center w-full">
+                            {/* Left */}
+                            <div className="flex-1 flex items-center justify-start gap-[21px] relative z-10">
+                                <button
+                                    onClick={() => {
+                                        let dashboardRoute = '/dashboard';
+                                        if (userRole === 'student') dashboardRoute = '/dashboard/student';
+                                        else if (userRole === 'super_admin') dashboardRoute = '/dashboard/super-admin';
+                                        else if (userRole === 'admin') dashboardRoute = '/dashboard/admin';
+                                        else if (userRole === 'leader') dashboardRoute = '/dashboard/leader';
+                                        navigate(dashboardRoute);
+                                    }}
+                                    className="text-[26px] w-[42px] h-[42px] shrink-0 flex items-center justify-center border border-[#4a2e1d] rounded-xl bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] shadow-[0_4px_6px_rgba(0,0,0,0.6),inset_0_2px_2px_rgba(255,200,160,0.4),inset_0_-1px_3px_rgba(0,0,0,0.4)] focus:outline-none active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] active:translate-y-px transition-all text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027]">
+                                    <i className="pi pi-bars font-bold"></i>
+                                </button>
+                                <div className="flex items-center gap-[8px] text-[13px] font-black leading-tight">
+                                    <i className="pi pi-calendar text-[26px] bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]"></i>
+                                    <div className="flex flex-col items-start bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e] leading-[1.2]">
+                                        <span className="whitespace-nowrap">{`${getOrdinalNum(currentTime.getDate())} ${fullDays[currentTime.getDay()]} ${months[currentTime.getMonth()]}`}</span>
+                                        <span className="whitespace-nowrap">{`${currentTime.getHours() % 12 || 12}:${currentTime.getMinutes().toString().padStart(2, '0')} ${currentTime.getHours() >= 12 ? 'PM' : 'AM'}`}</span>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-center ml-auto">
+                                    <div className="flex items-center text-[26px] font-black tracking-widest">
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">T</span>
+                                        <span className="text-[#FF0000]">t</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">o</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">m</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">T</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e] ml-[8px]">3</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e] mx-[4px]">5</span>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">7</span>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {/* Right */}
+                            <div className="flex-1 flex items-center relative z-10 pl-[10px]">
+                                <div className="flex-1 flex justify-center pr-[10px]">
+                                    <div
+                                        className="text-white font-Arial font-black text-[18px] tracking-wider uppercase px-[12px] py-[6px] rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all active:scale-95"
+                                        style={{
+                                            backgroundImage: "url('/ARTBG.png')",
+                                            backgroundSize: '100% 100%',
+                                            backgroundPosition: 'center',
+                                            backgroundRepeat: 'no-repeat'
+                                        }}
+                                    >
+                                        <span className="whitespace-nowrap">ART: {artHours}:{artMins.toString().padStart(2, '0')}</span>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsFlipped(true)} className="w-[42px] h-[42px] shrink-0 rounded-full border border-[#4a2e1d] bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] shadow-[0_4px_6px_rgba(0,0,0,0.6),inset_0_2px_2px_rgba(255,200,160,0.4),inset_0_-1px_3px_rgba(0,0,0,0.4)] flex items-center justify-center font-bold font-serif text-[21px] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] active:translate-y-px transition-all hover:from-[#d19c7f] hover:to-[#6b4027]">
+                                    i
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Interactive Subtitle */}
+                        <div className="flex items-center justify-center py-[8px] text-[16px] font-black tracking-widest uppercase gap-[13px] px-[21px] mb-[8px]">
+                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">R L L T</span>
+                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#8f583b] to-[#452717]">|</span>
+                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">MODULE 5</span>
+                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#8f583b] to-[#452717]">|</span>
+                            <div className="flex items-center gap-[8px]">
+                                <button onClick={() => setFacet(f => Math.max(2, f - 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-minus font-bold" style={{ fontSize: '10px' }}></i></button>
+                                <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">FCT {facet}</span>
+                                <button onClick={() => setFacet(f => Math.min(5, f + 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-plus font-bold" style={{ fontSize: '10px' }}></i></button>
+                            </div>
+                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#8f583b] to-[#452717]">|</span>
+                            <div className="flex items-center gap-[8px]">
+                                <button onClick={() => setPhase(p => Math.max(1, p - 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-minus font-bold" style={{ fontSize: '10px' }}></i></button>
+                                <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">PHS {phase}</span>
+                                <button onClick={() => setPhase(p => Math.min(5, p + 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-plus font-bold" style={{ fontSize: '10px' }}></i></button>
+                            </div>
+                        </div>
+
+                        {/* Tracklist & Image Panel */}
+                        <div className="flex flex-col sm:flex-row px-[10px] sm:px-[21px] gap-[2px] mb-[2px] h-auto sm:h-[220px]">
+                            {/* Tracks Area */}
+                            <div className="w-full sm:w-[38%] h-[200px] sm:h-full shrink-0 flex flex-col border-[2px] border-[#3b1a0b] bg-[url('/357playlist.png')] bg-[length:195%_145%] bg-center bg-no-repeat rounded-xl overflow-hidden shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] p-[8px] relative">
+                                <h2 className="text-[20px] font-black mb-[8px] text-[#1c0d06] drop-shadow-[0_1px_0_rgba(255,255,255,0.15)]" style={{ WebkitTextStroke: '0.5px #1c0d06' }}>DAY {selectedPreviewDay < 10 ? `0${selectedPreviewDay}` : selectedPreviewDay}/{displayDays.length < 10 ? `0${displayDays.length}` : displayDays.length}</h2>
+                                <div
+                                    ref={playlistRef}
+                                    onClick={() => setIsPlaylistScrollActive(true)}
+                                    className={`flex-1 min-h-0 pr-1 no-scrollbar pb-2 ${isPlaylistScrollActive ? 'overflow-y-auto' : 'overflow-hidden'}`}
+                                >
+                                    <div className="flex flex-col gap-0">
+                                        {tracks.map((track, idx) => {
+                                            const isActive = track === activeTrack;
+                                            return (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => {
+                                                        setActiveTrack(track);
+                                                        setIsPlaying(true);
+                                                    }}
+                                                    className={`w-full flex items-center gap-[8px] py-[4px] px-[8px] rounded-lg border transition-all ${isActive
+                                                        ? 'bg-gradient-to-b from-[#331508] to-[#1c0b04] border-[#1a0a03] shadow-[inset_0_3px_5px_rgba(0,0,0,0.9),0_1px_1px_rgba(255,255,255,0.1)]'
+                                                        : 'bg-transparent border-transparent shadow-none hover:bg-[#4a200e]/40'
+                                                        }`}
+                                                >
+                                                    <div className="w-[21px] h-[21px] shrink-0 flex items-center justify-center drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]">
+                                                        <img src="/pointbutton.png" alt="Play" className="w-full h-full object-contain pointer-events-none" />
+                                                    </div>
+                                                    <span className={`font-bold tracking-wide text-[13px] 2xl:text-[15px] text-[#fadfc3] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] whitespace-nowrap text-left w-full`}>
+                                                        {getFullTrackName(track)}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Image Area */}
+                            <div className="w-full sm:flex-1 h-[220px] sm:h-full rounded-xl overflow-hidden border-[3px] border-[#9a7638] shadow-[inset_0_0_20px_rgba(0,0,0,0.8),0_4px_8px_rgba(0,0,0,0.2)] bg-black relative">
+                                {sliderImages.map((src, index) => (
+                                    <img
+                                        key={index}
+                                        src={src}
+                                        alt="Reading"
+                                        className={`absolute top-0 left-0 w-full h-full object-fill transition-opacity duration-1000 ${index === sliderImageIndex ? 'opacity-90 z-10' : 'opacity-0 z-0'}`}
+                                    />
+                                ))}
+                                {/* Empty top-left corner */}
+                            </div>
+                        </div>
+
+                        {/* Player Bar */}
+                        <div
+                            className="mx-[16px] flex items-center pl-[16px] pr-[24px] py-[20px] mb-[-8px] relative bg-no-repeat z-10"
+                            style={{
+                                backgroundImage: "url('/playerbg.png')",
+                                backgroundSize: '100% 300%',
+                                backgroundPosition: 'center'
                             }}
-                            className="text-[26px] w-[42px] h-[42px] shrink-0 flex items-center justify-center border border-[#4a2e1d] rounded-xl bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] shadow-[0_4px_6px_rgba(0,0,0,0.6),inset_0_2px_2px_rgba(255,200,160,0.4),inset_0_-1px_3px_rgba(0,0,0,0.4)] focus:outline-none active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] active:translate-y-px transition-all text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027]">
-                            <i className="pi pi-bars font-bold"></i>
-                        </button>
-                        <div className="flex items-center gap-[8px] text-[13px] font-black leading-tight">
-                            <i className="pi pi-calendar text-[26px] bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]"></i>
-                            <div className="flex flex-col items-start bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e] leading-[1.2]">
-                                <span className="whitespace-nowrap">{`${getOrdinalNum(currentTime.getDate())} ${fullDays[currentTime.getDay()]} ${months[currentTime.getMonth()]}`}</span>
-                                <span className="whitespace-nowrap">{`${currentTime.getHours() % 12 || 12}:${currentTime.getMinutes().toString().padStart(2, '0')} ${currentTime.getHours() >= 12 ? 'PM' : 'AM'}`}</span>
+                        >
+                            <div className="flex w-full h-full items-center justify-between">
+                                <audio
+                                    ref={audioRef}
+                                    onTimeUpdate={handleTimeUpdate}
+                                    onEnded={handleEnded}
+                                    onLoadedMetadata={() => setDurationDisplay(formatTime(audioRef.current.duration))}
+                                    className="hidden"
+                                >
+                                    {currentAudioUrl && <source src={currentAudioUrl} type="audio/mpeg" />}
+                                </audio>
+
+                                {/* Play Button */}
+                                <button onClick={togglePlay} className="relative w-[75px] h-[75px] mb-[12px] shrink-0 flex items-center justify-center transition-all active:scale-95 group hover:brightness-110 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
+                                    <img src={isPlaying ? "/pointbutton.png" : "/playbutton.png"} alt="Play" className="w-full h-full object-contain scale-[1.1]" />
+                                    {isPlaying && <div className="absolute inset-0 flex items-center justify-center text-[#2b170c] font-black text-2xl drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]">||</div>}
+                                </button>
+
+                                {/* Center Column: Stacked Progress and Info */}
+                                <div className="flex-1 flex flex-col justify-center ml-[21px] mr-[24px] pt-[2px]">
+                                    {/* Progress Track */}
+                                    <div className="w-full relative">
+                                        <div
+                                            ref={progressBarRef}
+                                            onMouseDown={handleMouseDown}
+                                            className="w-full h-[12px] bg-[#8A6241] shadow-[inset_0_4px_6px_rgba(0,0,0,0.9)] rounded-full relative overflow-visible border-[1px] border-[#382312] cursor-pointer mb-[6px]"
+                                        >
+                                            <div className={`absolute top-[1px] left-[1px] bottom-[1px] shadow-[0_2px_2px_rgba(0,0,0,0.5)] rounded-full ${!activeThemeColor ? 'bg-gradient-to-b from-[#f0f4f8] via-[#a0a5ab] to-[#5b6066]' : ''}`} style={{ width: `calc(${progress}% - 2px)`, ...(activeThemeColor ? { backgroundColor: activeThemeColor } : {}) }}></div>
+                                            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[32px] h-[32px] flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-105 transition-transform drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ left: `${progress}%` }}>
+                                                <img src="/pointbutton.png" alt="Thumb" className="w-full h-full object-contain pointer-events-none" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Track Info */}
+                                    <div className="flex justify-between items-center w-full px-[4px]">
+                                        <span className="text-[#e3b586] text-[18px] font-['Times_New_Roman',_Times,_serif] font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider">{currentTimeDisplay}</span>
+                                        <span className="text-[#e3b586] text-[15px] font-['Times_New_Roman',_Times,_serif] font-black tracking-widest uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" style={{ textShadow: '1px 1px 0px rgba(0,0,0,0.8), 0px 2px 4px rgba(0,0,0,0.6)' }}>{getFullTrackName(activeTrack)}</span>
+                                        <span className="text-[#e3b586] text-[18px] font-['Times_New_Roman',_Times,_serif] font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider">{durationDisplay}</span>
+                                    </div>
+                                </div>
+
+                                {/* Settings Gear */}
+                                <button onClick={() => setShowSettings(true)} className="w-[32px] h-[32px] mb-[12px] shrink-0 flex items-center justify-center hover:brightness-125 transition-all active:translate-y-[2px] drop-shadow-[0_3px_4px_rgba(0,0,0,0.9)]">
+                                    <i className="pi pi-cog font-bold text-[24px] text-transparent bg-clip-text bg-gradient-to-b from-[#e3b586] via-[#a36338] to-[#47220d]"></i>
+                                </button>
                             </div>
                         </div>
-                        <div className="flex flex-col items-center ml-auto">
-                            <div className="flex items-center text-[26px] font-black tracking-widest">
-                                <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">T</span>
-                                <span className="text-[#FF0000]">t</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">o</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">m</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">T</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e] ml-[8px]">3</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e] mx-[4px]">5</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">7</span>
+
+                        {/* Pagination */}
+                        <div className="mx-[8px] sm:mx-[16px] mb-[13px] flex items-center justify-center pl-[10px] pr-[10px] sm:pl-[54px] sm:pr-[37px]">
+                            <div className="w-full flex items-center justify-between border-[2px] border-[#2e1d0d] bg-gradient-to-b from-[#c09d6b] via-[#a37d4c] to-[#644222] shadow-[0_4px_8px_rgba(0,0,0,0.8),inset_0_2px_3px_rgba(255,255,255,0.3)] py-[10px] px-[4px] sm:px-[8px] rounded-[13px]">
+                                <button
+                                    onClick={() => setDaysPage(prev => Math.max(0, prev - 1))}
+                                    disabled={daysPage === 0}
+                                    className={`cursor-pointer w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[6px] bg-gradient-to-b from-[#b48663] via-[#8c5f3e] to-[#54301c] border border-[#2e190d] shadow-[0_3px_5px_rgba(0,0,0,0.7),inset_0_1px_2px_rgba(255,255,255,0.4)] transition-transform text-[#efd9c5] ${daysPage === 0 ? 'opacity-50 cursor-not-allowed' : 'active:scale-95 hover:brightness-110'}`}
+                                >
+                                    <i className="pi pi-angle-left text-[18px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] font-bold"></i>
+                                </button>
+                                <div className="flex-1 min-w-0 flex flex-wrap justify-center gap-[6px] gap-y-[6px] font-['Times_New_Roman',_Times,_serif] font-bold text-[16px] px-[4px]">
+                                    {displayDays.slice(daysPage * 10, (daysPage + 1) * 10).map(n => (
+                                        <div key={n}
+                                            onClick={() => setSelectedPreviewDay(n)}
+                                            className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center cursor-pointer transition-colors ${n === selectedPreviewDay
+                                                ? 'rounded-[6px] bg-gradient-to-b from-[#967041] via-[#7a572c] to-[#473016] border border-[#3b2512] shadow-[0_1px_1px_rgba(255,255,255,0.2)] p-[2px]'
+                                                : 'rounded-[6px] bg-gradient-to-b from-[#f3e5d0] via-[#deccb1] to-[#bda380] border border-[#5a422d] shadow-[0_3px_4px_rgba(0,0,0,0.6),inset_0_2px_3px_rgba(255,255,255,0.9)] hover:brightness-105'
+                                                }`}>
+                                            {n === selectedPreviewDay ? (
+                                                <div className="w-full h-full rounded-[4px] bg-gradient-to-b from-[#1a0a03] to-[#3a1d0d] shadow-[inset_0_4px_6px_rgba(0,0,0,0.9)] flex items-center justify-center text-[#fdf0d5]">
+                                                    <span className="drop-shadow-[0_2px_2px_rgba(0,0,0,1)] text-[15px] font-black tracking-widest">{n}</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-[#331c0a] drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] text-[16px]">{n}</span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => setDaysPage(prev => Math.min(Math.ceil(displayDays.length / 10) - 1, prev + 1))}
+                                    disabled={daysPage >= Math.ceil(displayDays.length / 10) - 1}
+                                    className={`cursor-pointer w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[6px] bg-gradient-to-b from-[#b48663] via-[#8c5f3e] to-[#54301c] border border-[#2e190d] shadow-[0_3px_5px_rgba(0,0,0,0.7),inset_0_1px_2px_rgba(255,255,255,0.4)] transition-transform text-[#efd9c5] ${daysPage >= Math.ceil(displayDays.length / 10) - 1 ? 'opacity-50 cursor-not-allowed' : 'active:scale-95 hover:brightness-110'}`}
+                                >
+                                    <i className="pi pi-angle-right text-[18px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] font-bold"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Combined Bible Books */}
+                        <div className="mx-[0] mb-[10px] relative">
+                            <Tooltip target=".book-tooltip" position="top" className="custom-book-tooltip" showDelay={0} hideDelay={0} />
+                            <div className="drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/bookbg.png')] bg-[length:100%_100%] bg-center bg-no-repeat relative">
+
+                                <div className="w-full relative z-10 flex flex-col gap-[12px] pt-[56px] pb-[32px] px-[16px]">
+
+                                    {/* Old Testament Section */}
+                                    <div className="w-full relative flex flex-col items-center px-[13px]">
+                                        {/* Top Header Bar */}
+                                        <div className="flex items-center justify-between w-full relative mb-[2px] px-[24px]">
+                                            <i className={`pi pi-angle-left text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${otPage > 0 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setOtPage(p => Math.max(0, p - 1))}></i>
+
+                                            <div className="flex flex-col items-center flex-1">
+                                                <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Arial'] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
+                                                    <i className="pi pi-file text-[21px]"></i>
+                                                    <span>OLD TESTAMENT</span>
+                                                </div>
+                                                {/* Decorative underline */}
+                                                <div className="flex items-center justify-center gap-1 mt-1 opacity-80">
+                                                    <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#c9a679]"></div>
+                                                    <i className="pi pi-sun text-[10px] text-[#c9a679]"></i>
+                                                    <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c9a679]"></div>
+                                                </div>
+                                            </div>
+
+                                            <i className={`pi pi-angle-right text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${otPage < otTotalPages - 1 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setOtPage(p => Math.min(otTotalPages - 1, p + 1))}></i>
+                                        </div>
+
+                                        {/* Content Buttons Grid */}
+                                        <div className="w-full px-[10px] sm:px-[24px] grid grid-cols-4 sm:grid-cols-5 gap-x-[8px] sm:gap-x-[12px] gap-y-[6px] mb-[4px]">
+                                            {otDisplay.map((book, i) => {
+                                                const isSelected = selectedBooks.includes(book);
+                                                const isGold = (i === 0 || i === 2);
+                                                const isCopper = (i === 4 || i === 6 || i === 8);
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        onClick={() => toggleBook(book)}
+                                                        data-pr-tooltip={getBookTooltip(book)}
+                                                        style={{
+                                                            backgroundImage: isSelected ? undefined : (isGold ? "url('/glodenbuttonbg.png')" : (isCopper ? "url('/copperbuttonbg.png')" : "url('/woodenbuttonbg.png')")),
+                                                            backgroundSize: isGold ? '108% 195%' : (isCopper ? '110% 170%' : '112% 172%'),
+                                                            backgroundPosition: 'center',
+                                                            backgroundRepeat: 'no-repeat'
+                                                        }}
+                                                        className={`book-tooltip text-center py-[6px] rounded-[8px] text-[13px] font-['Arial'] font-black tracking-wider uppercase flex items-center justify-center cursor-pointer transition-all active:scale-95 border ${isSelected
+                                                            ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029] text-[#2b1212] border-[#2b1212] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_2px_4px_rgba(0,0,0,0.8)] scale-[0.98]'
+                                                            : isGold
+                                                                ? "border-[#45260f] text-[#3d1f08] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
+                                                                : isCopper
+                                                                    ? "border-[#45260f] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
+                                                                    : "border-[#140a05] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.15),inset_0_-2px_2px_rgba(0,0,0,0.5),inset_0_0_0_2px_rgba(90,55,35,0.4),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-125"
+                                                            }`}
+                                                    >
+                                                        <span className={isSelected ? 'drop-shadow-[0_1px_0_rgba(255,255,255,0.4)]' : (isGold ? 'drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]' : 'drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]')}>{book}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Pagination Dots */}
+                                        <div className="flex justify-center gap-[8px] shrink-0 pb-[2px]">
+                                            {Array.from({ length: otTotalPages }).map((_, i) => (
+                                                <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === otPage ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]' : 'bg-[#291010]'}`}></div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* New Testament Section */}
+                                    <div className="w-full relative flex flex-col items-center px-[13px] mt-[0]">
+                                        {/* Top Header Bar */}
+                                        <div className="flex items-center justify-between w-full relative mb-[2px] px-[24px]">
+                                            <i className={`pi pi-angle-left text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${ntPage > 0 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setNtPage(p => Math.max(0, p - 1))}></i>
+
+                                            <div className="flex flex-col items-center flex-1">
+                                                <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Arial'] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
+                                                    <i className="pi pi-file text-[21px]"></i>
+                                                    <span>NEW TESTAMENT</span>
+                                                </div>
+                                                {/* Decorative underline */}
+                                                <div className="flex items-center justify-center gap-1 mt-1 opacity-80">
+                                                    <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#c9a679]"></div>
+                                                    <i className="pi pi-sun text-[10px] text-[#c9a679]"></i>
+                                                    <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c9a679]"></div>
+                                                </div>
+                                            </div>
+
+                                            <i className={`pi pi-angle-right text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${ntPage < ntTotalPages - 1 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setNtPage(p => Math.min(ntTotalPages - 1, p + 1))}></i>
+                                        </div>
+
+                                        {/* Content Buttons Grid */}
+                                        <div className="w-full px-[10px] sm:px-[24px] grid grid-cols-4 sm:grid-cols-5 gap-x-[8px] sm:gap-x-[12px] gap-y-[6px] mb-[4px]">
+                                            {ntDisplay.map((book, i) => {
+                                                const isSelected = selectedBooks.includes(book);
+                                                const isGold = (i === 0 || i === 2);
+                                                const isCopper = (i === 4 || i === 6 || i === 8);
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        onClick={() => toggleBook(book)}
+                                                        data-pr-tooltip={getBookTooltip(book)}
+                                                        style={{
+                                                            backgroundImage: isSelected ? undefined : (isGold ? "url('/glodenbuttonbg.png')" : (isCopper ? "url('/copperbuttonbg.png')" : "url('/woodenbuttonbg.png')")),
+                                                            backgroundSize: isGold ? '108% 195%' : (isCopper ? '110% 170%' : '112% 172%'),
+                                                            backgroundPosition: 'center',
+                                                            backgroundRepeat: 'no-repeat'
+                                                        }}
+                                                        className={`book-tooltip text-center py-[6px] rounded-[8px] text-[13px] font-['Arial'] font-black tracking-wider uppercase flex items-center justify-center cursor-pointer transition-all active:scale-95 border ${isSelected
+                                                            ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029] text-[#2b1212] border-[#2b1212] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_2px_4px_rgba(0,0,0,0.8)] scale-[0.98]'
+                                                            : isGold
+                                                                ? "border-[#45260f] text-[#3d1f08] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
+                                                                : isCopper
+                                                                    ? "border-[#45260f] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
+                                                                    : "border-[#140a05] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.15),inset_0_-2px_2px_rgba(0,0,0,0.5),inset_0_0_0_2px_rgba(90,55,35,0.4),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-125"
+                                                            }`}
+                                                    >
+                                                        <span className={isSelected ? 'drop-shadow-[0_1px_0_rgba(255,255,255,0.4)]' : (isGold ? 'drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]' : 'drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]')}>{book}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Pagination Dots */}
+                                        <div className="flex justify-center gap-[8px] shrink-0 pb-[2px]">
+                                            {Array.from({ length: ntTotalPages }).map((_, i) => (
+                                                <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === ntPage ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]' : 'bg-[#291010]'}`}></div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom Controls */}
+                        <div className="px-[16px] mb-[13px] flex flex-col gap-[8px]">
+                            {/* Top Row: PSA 119 | Week Selection | PSA 75 */}
+                            <div className="flex items-stretch gap-[8px] h-[55px]">
+
+                                {/* PSA 119 Button (Left) */}
+                                <div
+                                    onClick={() => toggleSpecialBook('psa119')}
+                                    data-pr-tooltip={getBookTooltip('psa119')}
+                                    style={{
+                                        backgroundImage: "url('/PSA119.png')",
+                                        backgroundSize: '170% 240%',
+                                        backgroundPosition: 'center',
+                                        backgroundRepeat: 'no-repeat'
+                                    }}
+                                    className={`book-tooltip w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[12px] p-[4px] gap-[8px] ${selectedBooks.includes('psa119')
+                                        ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
+                                        : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
+                                        }`}
+                                >
+                                    <img
+                                        src="/bookicon.png"
+                                        alt="Book"
+                                        className="w-[36px] h-[36px] object-contain drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]"
+                                    />
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-black font-['Arial'] text-[14px] font-black tracking-widest leading-[1.1] text-center" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>PSALMS</span>
+                                        <span className="text-black font-['Arial'] text-[13.5px] font-black tracking-widest leading-[1.1] text-center" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>CHP 119</span>
+                                    </div>
+                                </div>
+
+                                {/* Week Selection Area (Center) */}
+                                <div
+                                    className="flex-1 border-2 border-[#a67c38] rounded-[13px] py-[4px] px-[13px] flex items-center justify-center shadow-[inset_0_3px_6px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.2)] relative overflow-hidden"
+                                    style={{
+                                        backgroundImage: "url('/357weekbg.png')",
+                                        backgroundSize: '185% 290%',
+                                        backgroundPosition: 'center',
+                                        backgroundRepeat: 'no-repeat'
+                                    }}
+                                >
+                                    <div className="flex flex-col items-center justify-center pr-[13px] relative z-10 w-full">
+                                        <div className="flex justify-center gap-[13px] font-black mb-0 w-full font-['Arial']">
+                                            <span
+                                                className="cursor-pointer flex items-baseline gap-1 active:scale-95 transition-transform"
+                                                style={{ textShadow: '2px 2px 2px rgba(0,0,0,0.5)' }}
+                                                onClick={() => setSelectedDay(3)}
+                                            >
+                                                <span className={`text-[21px] ${selectedDay === 3 ? 'text-red-600' : 'text-black'}`}>3</span> <span className="text-[13px] text-black">DAY</span>
+                                            </span>
+                                            <span
+                                                className="cursor-pointer flex items-baseline gap-1 active:scale-95 transition-transform"
+                                                style={{ textShadow: '2px 2px 2px rgba(0,0,0,0.5)' }}
+                                                onClick={() => setSelectedDay(5)}
+                                            >
+                                                <span className={`text-[21px] ${selectedDay === 5 ? 'text-red-600' : 'text-black'}`}>5</span> <span className="text-[13px] text-black">DAY</span>
+                                            </span>
+                                            <span
+                                                className="cursor-pointer flex items-baseline gap-1 active:scale-95 transition-transform"
+                                                style={{ textShadow: '2px 2px 2px rgba(0,0,0,0.5)' }}
+                                                onClick={() => setSelectedDay(7)}
+                                            >
+                                                <span className={`text-[21px] ${selectedDay === 7 ? 'text-red-600' : 'text-black'}`}>7</span> <span className="text-[13px] text-black">DAY</span>
+                                            </span>
+                                        </div>
+                                        <div className="text-[16px] text-black font-['Arial'] font-normal drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
+                                            {selectedWeek !== null ? (
+                                                <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '18px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
+                                            ) : (
+                                                "DAYS"
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-center pl-[8px] relative z-10 shrink-0">
+                                        <span
+                                            className="text-black font-['Arial'] text-[14px] font-black tracking-widest"
+                                            style={{
+                                                writingMode: 'vertical-rl',
+                                                transform: 'rotate(180deg)'
+                                            }}
+                                        >
+                                            TEAM
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* PSA 75 Button (Right) */}
+                                <div
+                                    onClick={() => toggleSpecialBook('psa75')}
+                                    data-pr-tooltip={getBookTooltip('psa75')}
+                                    style={{
+                                        backgroundImage: "url('/Davidpsa.png')",
+                                        backgroundSize: '110% 200%',
+                                        backgroundPosition: 'center',
+                                        backgroundRepeat: 'no-repeat'
+                                    }}
+                                    className={`book-tooltip w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[4px] pr-[6px] py-[4px] gap-[4px] ${selectedBooks.includes('psa75')
+                                        ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
+                                        : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
+                                        }`}
+                                >
+                                    <img
+                                        src="/bookicon2.png"
+                                        alt="Book"
+                                        className="w-[36px] h-[36px] object-contain drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]"
+                                    />
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-black font-['Arial'] text-[14px] font-black tracking-wider leading-[1.1] text-center whitespace-nowrap" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>PSA of David</span>
+                                        <span className="text-black font-['Arial'] text-[13.5px] font-black tracking-widest leading-[1.1] text-center whitespace-nowrap" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>73/75 CHP</span>
+                                    </div>
+                                </div>
                             </div>
 
-                        </div>
-                    </div>
-
-                    {/* Right */}
-                    <div className="flex-1 flex items-center relative z-10 pl-[10px]">
-                        <div className="flex-1 flex justify-center pr-[10px]">
+                            {/* Bottom Row: Keypad with Refresh and Confirm */}
                             <div
-                                className="text-black font-serif font-black text-[15px] tracking-wider uppercase px-[12px] py-[6px] rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all active:scale-95"
+                                className="w-full flex items-center justify-between border-2 border-[#a67c38] py-[6px] px-[8px] rounded-[13px] shadow-[inset_0_3px_6px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.2)]"
                                 style={{
-                                    backgroundImage: "url('/ARTBG.png')",
-                                    backgroundSize: '100% 100%',
+                                    backgroundImage: "url('/weeknumbg.png')",
+                                    backgroundSize: '285% 470%',
                                     backgroundPosition: 'center',
                                     backgroundRepeat: 'no-repeat'
                                 }}
                             >
-                                <span className="whitespace-nowrap">ART: {artHours}:{artMins.toString().padStart(2, '0')}</span>
-                            </div>
-                        </div>
-                        <button onClick={() => setIsFlipped(true)} className="w-[42px] h-[42px] shrink-0 rounded-full border border-[#4a2e1d] bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] shadow-[0_4px_6px_rgba(0,0,0,0.6),inset_0_2px_2px_rgba(255,200,160,0.4),inset_0_-1px_3px_rgba(0,0,0,0.4)] flex items-center justify-center font-bold font-serif text-[21px] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] active:translate-y-px transition-all hover:from-[#d19c7f] hover:to-[#6b4027]">
-                            i
-                        </button>
-                    </div>
-                </div>
-
-                {/* Interactive Subtitle */}
-                <div className="flex items-center justify-center py-[8px] text-[16px] font-black tracking-widest uppercase gap-[13px] px-[21px] mb-[8px]">
-                    <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">R L L T</span>
-                    <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#8f583b] to-[#452717]">|</span>
-                    <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">MODULE 5</span>
-                    <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#8f583b] to-[#452717]">|</span>
-                    <div className="flex items-center gap-[8px]">
-                        <button onClick={() => setFacet(f => Math.max(2, f - 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-minus font-bold" style={{ fontSize: '10px' }}></i></button>
-                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">FCT {facet}</span>
-                        <button onClick={() => setFacet(f => Math.min(5, f + 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-plus font-bold" style={{ fontSize: '10px' }}></i></button>
-                    </div>
-                    <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#8f583b] to-[#452717]">|</span>
-                    <div className="flex items-center gap-[8px]">
-                        <button onClick={() => setPhase(p => Math.max(1, p - 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-minus font-bold" style={{ fontSize: '10px' }}></i></button>
-                        <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">PHS {phase}</span>
-                        <button onClick={() => setPhase(p => Math.min(5, p + 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-plus font-bold" style={{ fontSize: '10px' }}></i></button>
-                    </div>
-                </div>
-
-                {/* Tracklist & Image Panel */}
-                <div className="flex flex-col sm:flex-row px-[10px] sm:px-[21px] gap-[10px] mb-[2px] h-auto sm:h-[220px]">
-                    {/* Tracks Area */}
-                    <div className="w-full sm:w-[38%] h-[200px] sm:h-full shrink-0 flex flex-col border-[2px] border-[#3b1a0b] bg-[url('/357playlist.png')] bg-[length:120%_110%] bg-center bg-no-repeat rounded-xl overflow-hidden shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] p-[8px] relative">
-                        <h2 className="text-[20px] font-black mb-[8px] text-[#1c0d06] drop-shadow-[0_1px_0_rgba(255,255,255,0.15)]" style={{ WebkitTextStroke: '0.5px #1c0d06' }}>DAY {selectedPreviewDay < 10 ? `0${selectedPreviewDay}` : selectedPreviewDay}/{displayDays.length < 10 ? `0${displayDays.length}` : displayDays.length}</h2>
-                        <div 
-                            ref={playlistRef}
-                            onClick={() => setIsPlaylistScrollActive(true)}
-                            className={`flex-1 min-h-0 pr-1 no-scrollbar pb-2 ${isPlaylistScrollActive ? 'overflow-y-auto' : 'overflow-hidden'}`}
-                        >
-                            <div className="flex flex-col gap-0">
-                                {tracks.map((track, idx) => {
-                                    const isActive = track === activeTrack;
-                                    return (
-                                        <button
-                                            key={idx}
-                                            onClick={() => {
-                                                setActiveTrack(track);
-                                                setIsPlaying(true);
-                                            }}
-                                            className={`w-full flex items-center gap-[8px] py-[4px] px-[8px] rounded-lg border transition-all ${isActive
-                                                ? 'bg-gradient-to-b from-[#331508] to-[#1c0b04] border-[#1a0a03] shadow-[inset_0_3px_5px_rgba(0,0,0,0.9),0_1px_1px_rgba(255,255,255,0.1)]'
-                                                : 'bg-transparent border-transparent shadow-none hover:bg-[#4a200e]/40'
-                                                }`}
-                                        >
-                                            <div className="w-[21px] h-[21px] shrink-0 flex items-center justify-center drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]">
-                                                <img src="/pointbutton.png" alt="Play" className="w-full h-full object-contain pointer-events-none" />
-                                            </div>
-                                            <span className={`font-bold tracking-wide text-[15px] text-[#fadfc3] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]`}>
-                                                {getFullTrackName(track)}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Image Area */}
-                    <div className="w-full sm:flex-1 h-[220px] sm:h-full rounded-xl overflow-hidden border-[3px] border-[#9a7638] shadow-[inset_0_0_20px_rgba(0,0,0,0.8),0_4px_8px_rgba(0,0,0,0.2)] bg-black relative">
-                        {sliderImages.map((src, index) => (
-                            <img
-                                key={index}
-                                src={src}
-                                alt="Reading"
-                                className={`absolute top-0 left-0 w-full h-full object-fill transition-opacity duration-1000 ${index === sliderImageIndex ? 'opacity-90 z-10' : 'opacity-0 z-0'}`}
-                            />
-                        ))}
-                        {/* Empty top-left corner */}
-                    </div>
-                </div>
-
-                {/* Player Bar */}
-                <div
-                    className="mx-[16px] flex items-center pl-[16px] pr-[24px] py-[20px] mb-[-8px] relative bg-no-repeat z-10"
-                    style={{
-                        backgroundImage: "url('/playerbg.png')",
-                        backgroundSize: '100% 300%',
-                        backgroundPosition: 'center'
-                    }}
-                >
-                    <div className="flex w-full h-full items-center justify-between">
-                        <audio
-                            ref={audioRef}
-                            onTimeUpdate={handleTimeUpdate}
-                            onEnded={handleEnded}
-                            onLoadedMetadata={() => setDurationDisplay(formatTime(audioRef.current.duration))}
-                            className="hidden"
-                        >
-                            {currentAudioUrl && <source src={currentAudioUrl} type="audio/mpeg" />}
-                        </audio>
-
-                        {/* Play Button */}
-                        <button onClick={togglePlay} className="relative w-[75px] h-[75px] mb-[12px] shrink-0 flex items-center justify-center transition-all active:scale-95 group hover:brightness-110 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
-                            <img src={isPlaying ? "/pointbutton.png" : "/playbutton.png"} alt="Play" className="w-full h-full object-contain scale-[1.1]" />
-                            {isPlaying && <div className="absolute inset-0 flex items-center justify-center text-[#2b170c] font-black text-2xl drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]">||</div>}
-                        </button>
-
-                        {/* Center Column: Stacked Progress and Info */}
-                        <div className="flex-1 flex flex-col justify-center ml-[21px] mr-[24px] pt-[2px]">
-                            {/* Progress Track */}
-                            <div className="w-full relative">
-                                <div
-                                    ref={progressBarRef}
-                                    onMouseDown={handleMouseDown}
-                                    className="w-full h-[12px] bg-[#8A6241] shadow-[inset_0_4px_6px_rgba(0,0,0,0.9)] rounded-full relative overflow-visible border-[1px] border-[#382312] cursor-pointer mb-[6px]"
-                                >
-                                    <div className={`absolute top-[1px] left-[1px] bottom-[1px] shadow-[0_2px_2px_rgba(0,0,0,0.5)] rounded-full ${!activeThemeColor ? 'bg-gradient-to-b from-[#f0f4f8] via-[#a0a5ab] to-[#5b6066]' : ''}`} style={{ width: `calc(${progress}% - 2px)`, ...(activeThemeColor ? { backgroundColor: activeThemeColor } : {}) }}></div>
-                                    <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-[32px] h-[32px] flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-105 transition-transform drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ left: `${progress}%` }}>
-                                        <img src="/pointbutton.png" alt="Thumb" className="w-full h-full object-contain pointer-events-none" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Track Info */}
-                            <div className="flex justify-between items-center w-full px-[4px]">
-                                <span className="text-[#e3b586] text-[18px] font-['Times_New_Roman',_Times,_serif] font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider">{currentTimeDisplay}</span>
-                                <span className="text-[#e3b586] text-[15px] font-['Times_New_Roman',_Times,_serif] font-black tracking-widest uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" style={{ textShadow: '1px 1px 0px rgba(0,0,0,0.8), 0px 2px 4px rgba(0,0,0,0.6)' }}>{getFullTrackName(activeTrack)}</span>
-                                <span className="text-[#e3b586] text-[18px] font-['Times_New_Roman',_Times,_serif] font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider">{durationDisplay}</span>
-                            </div>
-                        </div>
-
-                        {/* Settings Gear */}
-                        <button onClick={() => setShowSettings(true)} className="w-[32px] h-[32px] mb-[12px] shrink-0 flex items-center justify-center hover:brightness-125 transition-all active:translate-y-[2px] drop-shadow-[0_3px_4px_rgba(0,0,0,0.9)]">
-                            <i className="pi pi-cog font-bold text-[24px] text-transparent bg-clip-text bg-gradient-to-b from-[#e3b586] via-[#a36338] to-[#47220d]"></i>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Pagination */}
-                <div className="mx-[8px] sm:mx-[16px] mb-[13px] flex items-center justify-center pl-[10px] pr-[10px] sm:pl-[54px] sm:pr-[37px]">
-                    <div className="w-full flex items-center justify-between border-[2px] border-[#2e1d0d] bg-gradient-to-b from-[#c09d6b] via-[#a37d4c] to-[#644222] shadow-[0_4px_8px_rgba(0,0,0,0.8),inset_0_2px_3px_rgba(255,255,255,0.3)] py-[10px] px-[4px] sm:px-[8px] rounded-[13px]">
-                        <button
-                            onClick={() => setDaysPage(prev => Math.max(0, prev - 1))}
-                            disabled={daysPage === 0}
-                            className={`cursor-pointer w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[6px] bg-gradient-to-b from-[#b48663] via-[#8c5f3e] to-[#54301c] border border-[#2e190d] shadow-[0_3px_5px_rgba(0,0,0,0.7),inset_0_1px_2px_rgba(255,255,255,0.4)] transition-transform text-[#efd9c5] ${daysPage === 0 ? 'opacity-50 cursor-not-allowed' : 'active:scale-95 hover:brightness-110'}`}
-                        >
-                            <i className="pi pi-angle-left text-[18px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] font-bold"></i>
-                        </button>
-                        <div className="flex-1 min-w-0 flex flex-wrap justify-center gap-[6px] gap-y-[6px] font-['Times_New_Roman',_Times,_serif] font-bold text-[16px] px-[4px]">
-                            {displayDays.slice(daysPage * 10, (daysPage + 1) * 10).map(n => (
-                                <div key={n}
-                                    onClick={() => setSelectedPreviewDay(n)}
-                                    className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center cursor-pointer transition-colors ${n === selectedPreviewDay
-                                        ? 'rounded-[6px] bg-gradient-to-b from-[#967041] via-[#7a572c] to-[#473016] border border-[#3b2512] shadow-[0_1px_1px_rgba(255,255,255,0.2)] p-[2px]'
-                                        : 'rounded-[6px] bg-gradient-to-b from-[#f3e5d0] via-[#deccb1] to-[#bda380] border border-[#5a422d] shadow-[0_3px_4px_rgba(0,0,0,0.6),inset_0_2px_3px_rgba(255,255,255,0.9)] hover:brightness-105'
-                                        }`}>
-                                    {n === selectedPreviewDay ? (
-                                        <div className="w-full h-full rounded-[4px] bg-gradient-to-b from-[#1a0a03] to-[#3a1d0d] shadow-[inset_0_4px_6px_rgba(0,0,0,0.9)] flex items-center justify-center text-[#fdf0d5]">
-                                            <span className="drop-shadow-[0_2px_2px_rgba(0,0,0,1)] text-[15px] font-black tracking-widest">{n}</span>
-                                        </div>
-                                    ) : (
-                                        <span className="text-[#331c0a] drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)] text-[16px]">{n}</span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <button
-                            onClick={() => setDaysPage(prev => Math.min(Math.ceil(displayDays.length / 10) - 1, prev + 1))}
-                            disabled={daysPage >= Math.ceil(displayDays.length / 10) - 1}
-                            className={`cursor-pointer w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[6px] bg-gradient-to-b from-[#b48663] via-[#8c5f3e] to-[#54301c] border border-[#2e190d] shadow-[0_3px_5px_rgba(0,0,0,0.7),inset_0_1px_2px_rgba(255,255,255,0.4)] transition-transform text-[#efd9c5] ${daysPage >= Math.ceil(displayDays.length / 10) - 1 ? 'opacity-50 cursor-not-allowed' : 'active:scale-95 hover:brightness-110'}`}
-                        >
-                            <i className="pi pi-angle-right text-[18px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] font-bold"></i>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Combined Bible Books */}
-                <div className="mx-[0] mb-[10px] relative">
-                    <Tooltip target=".book-tooltip" position="top" className="custom-book-tooltip" showDelay={0} hideDelay={0} />
-                    <div className="drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/bookbg.png')] bg-[length:100%_100%] bg-center bg-no-repeat relative">
-
-                        <div className="w-full relative z-10 flex flex-col gap-[12px] pt-[56px] pb-[32px] px-[16px]">
-
-                            {/* Old Testament Section */}
-                            <div className="w-full relative flex flex-col items-center px-[13px]">
-                                {/* Top Header Bar */}
-                                <div className="flex items-center justify-between w-full relative mb-[2px] px-[24px]">
-                                    <i className={`pi pi-angle-left text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${otPage > 0 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setOtPage(p => Math.max(0, p - 1))}></i>
-
-                                    <div className="flex flex-col items-center flex-1">
-                                        <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Arial'] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
-                                            <i className="pi pi-file text-[21px]"></i>
-                                            <span>OLD TESTAMENT</span>
-                                        </div>
-                                        {/* Decorative underline */}
-                                        <div className="flex items-center justify-center gap-1 mt-1 opacity-80">
-                                            <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#c9a679]"></div>
-                                            <i className="pi pi-sun text-[10px] text-[#c9a679]"></i>
-                                            <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c9a679]"></div>
-                                        </div>
-                                    </div>
-
-                                    <i className={`pi pi-angle-right text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${otPage < otTotalPages - 1 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setOtPage(p => Math.min(otTotalPages - 1, p + 1))}></i>
-                                </div>
-
-                                {/* Content Buttons Grid */}
-                                <div className="w-full px-[10px] sm:px-[24px] grid grid-cols-4 sm:grid-cols-5 gap-x-[8px] sm:gap-x-[12px] gap-y-[6px] mb-[4px]">
-                                    {otDisplay.map((book, i) => {
-                                        const isSelected = selectedBooks.includes(book);
-                                        const isGold = (i === 0 || i === 2);
-                                        const isCopper = (i === 4 || i === 6 || i === 8);
-                                        return (
-                                            <div
-                                                key={i}
-                                                onClick={() => toggleBook(book)}
-                                                data-pr-tooltip={getBookTooltip(book)}
-                                                style={{
-                                                    backgroundImage: isSelected ? undefined : (isGold ? "url('/glodenbuttonbg.png')" : (isCopper ? "url('/copperbuttonbg.png')" : "url('/woodenbuttonbg.png')")),
-                                                    backgroundSize: isGold ? '108% 195%' : (isCopper ? '110% 170%' : '112% 172%'),
-                                                    backgroundPosition: 'center',
-                                                    backgroundRepeat: 'no-repeat'
-                                                }}
-                                                className={`book-tooltip text-center py-[6px] rounded-[8px] text-[13px] font-['Arial'] font-black tracking-wider uppercase flex items-center justify-center cursor-pointer transition-all active:scale-95 border ${isSelected
-                                                    ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029] text-[#2b1212] border-[#2b1212] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_2px_4px_rgba(0,0,0,0.8)] scale-[0.98]'
-                                                    : isGold
-                                                        ? "border-[#45260f] text-[#3d1f08] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
-                                                        : isCopper
-                                                            ? "border-[#45260f] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
-                                                            : "border-[#140a05] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.15),inset_0_-2px_2px_rgba(0,0,0,0.5),inset_0_0_0_2px_rgba(90,55,35,0.4),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-125"
-                                                    }`}
-                                            >
-                                                <span className={isSelected ? 'drop-shadow-[0_1px_0_rgba(255,255,255,0.4)]' : (isGold ? 'drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]' : 'drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]')}>{book}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Pagination Dots */}
-                                <div className="flex justify-center gap-[8px] shrink-0 pb-[2px]">
-                                    {Array.from({ length: otTotalPages }).map((_, i) => (
-                                        <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === otPage ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]' : 'bg-[#291010]'}`}></div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* New Testament Section */}
-                            <div className="w-full relative flex flex-col items-center px-[13px] mt-[0]">
-                                {/* Top Header Bar */}
-                                <div className="flex items-center justify-between w-full relative mb-[2px] px-[24px]">
-                                    <i className={`pi pi-angle-left text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${ntPage > 0 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setNtPage(p => Math.max(0, p - 1))}></i>
-
-                                    <div className="flex flex-col items-center flex-1">
-                                        <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Arial'] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
-                                            <i className="pi pi-file text-[21px]"></i>
-                                            <span>NEW TESTAMENT</span>
-                                        </div>
-                                        {/* Decorative underline */}
-                                        <div className="flex items-center justify-center gap-1 mt-1 opacity-80">
-                                            <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#c9a679]"></div>
-                                            <i className="pi pi-sun text-[10px] text-[#c9a679]"></i>
-                                            <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c9a679]"></div>
-                                        </div>
-                                    </div>
-
-                                    <i className={`pi pi-angle-right text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${ntPage < ntTotalPages - 1 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setNtPage(p => Math.min(ntTotalPages - 1, p + 1))}></i>
-                                </div>
-
-                                {/* Content Buttons Grid */}
-                                <div className="w-full px-[10px] sm:px-[24px] grid grid-cols-4 sm:grid-cols-5 gap-x-[8px] sm:gap-x-[12px] gap-y-[6px] mb-[4px]">
-                                    {ntDisplay.map((book, i) => {
-                                        const isSelected = selectedBooks.includes(book);
-                                        const isGold = (i === 0 || i === 2);
-                                        const isCopper = (i === 4 || i === 6 || i === 8);
-                                        return (
-                                            <div
-                                                key={i}
-                                                onClick={() => toggleBook(book)}
-                                                data-pr-tooltip={getBookTooltip(book)}
-                                                style={{
-                                                    backgroundImage: isSelected ? undefined : (isGold ? "url('/glodenbuttonbg.png')" : (isCopper ? "url('/copperbuttonbg.png')" : "url('/woodenbuttonbg.png')")),
-                                                    backgroundSize: isGold ? '108% 195%' : (isCopper ? '110% 170%' : '112% 172%'),
-                                                    backgroundPosition: 'center',
-                                                    backgroundRepeat: 'no-repeat'
-                                                }}
-                                                className={`book-tooltip text-center py-[6px] rounded-[8px] text-[13px] font-['Arial'] font-black tracking-wider uppercase flex items-center justify-center cursor-pointer transition-all active:scale-95 border ${isSelected
-                                                    ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029] text-[#2b1212] border-[#2b1212] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_2px_4px_rgba(0,0,0,0.8)] scale-[0.98]'
-                                                    : isGold
-                                                        ? "border-[#45260f] text-[#3d1f08] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
-                                                        : isCopper
-                                                            ? "border-[#45260f] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
-                                                            : "border-[#140a05] text-[#c9a679] shadow-[inset_0_2px_2px_rgba(255,255,255,0.15),inset_0_-2px_2px_rgba(0,0,0,0.5),inset_0_0_0_2px_rgba(90,55,35,0.4),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-125"
-                                                    }`}
-                                            >
-                                                <span className={isSelected ? 'drop-shadow-[0_1px_0_rgba(255,255,255,0.4)]' : (isGold ? 'drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]' : 'drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]')}>{book}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Pagination Dots */}
-                                <div className="flex justify-center gap-[8px] shrink-0 pb-[2px]">
-                                    {Array.from({ length: ntTotalPages }).map((_, i) => (
-                                        <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === ntPage ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]' : 'bg-[#291010]'}`}></div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bottom Controls */}
-                <div className="px-[16px] mb-[13px] flex flex-col gap-[8px]">
-                    {/* Top Row: PSA 119 | Week Selection | PSA 75 */}
-                    <div className="flex items-stretch gap-[8px] h-[55px]">
-
-                        {/* PSA 119 Button (Left) */}
-                        <div
-                            onClick={() => toggleSpecialBook('psa119')}
-                            data-pr-tooltip={getBookTooltip('psa119')}
-                            style={{
-                                backgroundImage: "url('/PSA119.png')",
-                                backgroundSize: '170% 240%',
-                                backgroundPosition: 'center',
-                                backgroundRepeat: 'no-repeat'
-                            }}
-                            className={`w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[12px] p-[4px] gap-[8px] ${selectedBooks.includes('psa119')
-                                ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
-                                : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
-                                }`}
-                        >
-                            <img
-                                src="/bookicon.png"
-                                alt="Book"
-                                className="w-[36px] h-[36px] object-contain drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]"
-                            />
-                            <div className="flex flex-col items-center">
-                                <span className="text-black font-['Arial'] text-[14px] font-black tracking-widest leading-[1.1] text-center" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>PSALMS</span>
-                                <span className="text-black font-['Arial'] text-[13.5px] font-black tracking-widest leading-[1.1] text-center" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>CHP 119</span>
-                            </div>
-                        </div>
-
-                        {/* Week Selection Area (Center) */}
-                        <div
-                            className="flex-1 border-2 border-[#a67c38] rounded-[13px] py-[4px] px-[13px] flex items-center justify-center shadow-[inset_0_3px_6px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.2)] relative overflow-hidden"
-                            style={{
-                                backgroundImage: "url('/357weekbg.png')",
-                                backgroundSize: '185% 290%',
-                                backgroundPosition: 'center',
-                                backgroundRepeat: 'no-repeat'
-                            }}
-                        >
-                            <div className="flex flex-col items-center justify-center pr-[13px] relative z-10 w-full">
-                                <div className="flex justify-center gap-[13px] font-black mb-0 w-full font-['Arial']">
-                                    <span
-                                        className="cursor-pointer flex items-baseline gap-1 active:scale-95 transition-transform"
-                                        style={{ textShadow: '2px 2px 2px rgba(0,0,0,0.5)' }}
-                                        onClick={() => setSelectedDay(3)}
-                                    >
-                                        <span className={`text-[21px] ${selectedDay === 3 ? 'text-red-600' : 'text-black'}`}>3</span> <span className="text-[13px] text-black">DAY</span>
-                                    </span>
-                                    <span
-                                        className="cursor-pointer flex items-baseline gap-1 active:scale-95 transition-transform"
-                                        style={{ textShadow: '2px 2px 2px rgba(0,0,0,0.5)' }}
-                                        onClick={() => setSelectedDay(5)}
-                                    >
-                                        <span className={`text-[21px] ${selectedDay === 5 ? 'text-red-600' : 'text-black'}`}>5</span> <span className="text-[13px] text-black">DAY</span>
-                                    </span>
-                                    <span
-                                        className="cursor-pointer flex items-baseline gap-1 active:scale-95 transition-transform"
-                                        style={{ textShadow: '2px 2px 2px rgba(0,0,0,0.5)' }}
-                                        onClick={() => setSelectedDay(7)}
-                                    >
-                                        <span className={`text-[21px] ${selectedDay === 7 ? 'text-red-600' : 'text-black'}`}>7</span> <span className="text-[13px] text-black">DAY</span>
-                                    </span>
-                                </div>
-                                <div className="text-[16px] text-black font-['Arial'] font-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
-                                    {selectedWeek !== null ? (
-                                        <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '18px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
-                                    ) : (
-                                        "DAYS"
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-center pl-[8px] relative z-10 shrink-0">
-                                <span
-                                    className="text-black font-['Arial'] text-[14px] font-black tracking-widest"
-                                    style={{
-                                        writingMode: 'vertical-rl',
-                                        transform: 'rotate(180deg)'
-                                    }}
-                                >
-                                    TEAM
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* PSA 75 Button (Right) */}
-                        <div
-                            onClick={() => toggleSpecialBook('psa75')}
-                            data-pr-tooltip={getBookTooltip('psa75')}
-                            style={{
-                                backgroundImage: "url('/Davidpsa.png')",
-                                backgroundSize: '110% 200%',
-                                backgroundPosition: 'center',
-                                backgroundRepeat: 'no-repeat'
-                            }}
-                            className={`w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[4px] pr-[6px] py-[4px] gap-[4px] ${selectedBooks.includes('psa75')
-                                ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
-                                : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
-                                }`}
-                        >
-                            <img
-                                src="/bookicon2.png"
-                                alt="Book"
-                                className="w-[36px] h-[36px] object-contain drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]"
-                            />
-                            <div className="flex flex-col items-center">
-                                <span className="text-black font-['Arial'] text-[14px] font-black tracking-wider leading-[1.1] text-center whitespace-nowrap" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>PSA of David</span>
-                                <span className="text-black font-['Arial'] text-[13.5px] font-black tracking-widest leading-[1.1] text-center whitespace-nowrap" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>73/75 CHP</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bottom Row: Keypad with Refresh and Confirm */}
-                    <div
-                        className="w-full flex items-center justify-between border-2 border-[#a67c38] py-[6px] px-[8px] rounded-[13px] shadow-[inset_0_3px_6px_rgba(0,0,0,0.2),0_2px_4px_rgba(0,0,0,0.2)]"
-                        style={{
-                            backgroundImage: "url('/weeknumbg.png')",
-                            backgroundSize: '285% 470%',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat'
-                        }}
-                    >
-                        {/* Refresh Button */}
-                        <button
-                            onClick={() => setSelectedWeek(null)}
-                            className="w-[42px] h-[42px] shrink-0 rounded-full transition-all active:scale-95 hover:brightness-110 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]"
-                            style={{
-                                backgroundImage: "url('/Resetbutton.png')",
-                                backgroundSize: 'auto 160%',
-                                backgroundPosition: 'center',
-                                backgroundRepeat: 'no-repeat'
-                            }}>
-                        </button>
-
-                        <div className="flex items-center gap-[4px] ml-[8px]">
-                            <span
-                                className="text-[14px] uppercase font-black tracking-widest text-black font-['Arial']"
-                                style={{
-                                    writingMode: 'vertical-rl',
-                                    transform: 'rotate(180deg)'
-                                }}
-                            >
-                                WEEK
-                            </span>
-                        </div>
-
-                        <div className="flex-1 flex flex-wrap items-center justify-evenly px-[4px] gap-y-[4px] font-bold text-[22px] text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] font-['Arial']">
-                            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                                {/* Refresh Button */}
                                 <button
-                                    key={n}
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setSelectedWeek(prev => {
-                                            if (prev === null) return String(n);
-                                            if (prev.length >= 3) return prev;
-                                            return prev + String(n);
-                                        });
-                                    }}
-                                    className={`cursor-pointer w-[24px] h-[24px] sm:w-[28px] sm:h-[28px] flex items-center justify-center rounded-full hover:bg-[#e4c995] transition-all duration-200 font-bold font-['Arial'] text-[18px] sm:text-[22px] ${selectedWeek !== null && selectedWeek.includes(String(n)) ? 'scale-110 z-10 relative shadow-[inset_0_2px_3px_rgba(255,255,255,0.7),inset_0_-2px_4px_rgba(0,0,0,0.6),0_5px_5px_rgba(0,0,0,0.8)]' : ''}`}
-                                    style={selectedWeek !== null && selectedWeek.includes(String(n)) ? {
-                                        WebkitTextStroke: '0.3px currentColor',
-                                        backgroundImage: "url('/highlight.png')",
-                                        backgroundSize: 'auto 133%',
+                                    onClick={() => setSelectedWeek(null)}
+                                    className="w-[42px] h-[42px] shrink-0 rounded-full transition-all active:scale-95 hover:brightness-110 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]"
+                                    style={{
+                                        backgroundImage: "url('/Resetbutton.png')",
+                                        backgroundSize: 'auto 160%',
                                         backgroundPosition: 'center',
                                         backgroundRepeat: 'no-repeat'
-                                    } : { WebkitTextStroke: '0.3px currentColor' }}>
-                                    {n}
+                                    }}>
                                 </button>
-                            ))}
+
+                                <div className="flex items-center gap-[4px] ml-[8px]">
+                                    <span
+                                        className="text-[14px] uppercase font-black tracking-widest text-black font-['Arial']"
+                                        style={{
+                                            writingMode: 'vertical-rl',
+                                            transform: 'rotate(180deg)'
+                                        }}
+                                    >
+                                        WEEK
+                                    </span>
+                                </div>
+
+                                <div className="flex-1 flex flex-wrap items-center justify-evenly px-[4px] gap-y-[4px] font-bold text-[22px] text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] font-['Arial']">
+                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                                        <button
+                                            key={n}
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setSelectedWeek(prev => {
+                                                    if (prev === null) return String(n);
+                                                    if (prev.length >= 3) return prev;
+                                                    return prev + String(n);
+                                                });
+                                            }}
+                                            className={`cursor-pointer w-[24px] h-[24px] sm:w-[28px] sm:h-[28px] flex items-center justify-center rounded-full hover:bg-[#e4c995] transition-all duration-200 font-bold font-['Arial'] text-[18px] sm:text-[22px] ${selectedWeek !== null && selectedWeek.includes(String(n)) ? 'scale-110 z-10 relative shadow-[inset_0_2px_3px_rgba(255,255,255,0.7),inset_0_-2px_4px_rgba(0,0,0,0.6),0_5px_5px_rgba(0,0,0,0.8)]' : ''}`}
+                                            style={selectedWeek !== null && selectedWeek.includes(String(n)) ? {
+                                                WebkitTextStroke: '0.3px currentColor',
+                                                backgroundImage: "url('/highlight.png')",
+                                                backgroundSize: 'auto 133%',
+                                                backgroundPosition: 'center',
+                                                backgroundRepeat: 'no-repeat'
+                                            } : { WebkitTextStroke: '0.3px currentColor' }}>
+                                            {n}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Confirm Button */}
+                                <button
+                                    onClick={handleSubmit}
+                                    className="w-[42px] h-[42px] shrink-0 rounded-full transition-all active:scale-95 hover:brightness-110 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]"
+                                    style={{
+                                        backgroundImage: "url('/submitbutton.png')",
+                                        backgroundSize: 'auto 160%',
+                                        backgroundPosition: 'center',
+                                        backgroundRepeat: 'no-repeat'
+                                    }}>
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Confirm Button */}
-                        <button
-                            onClick={handleSubmit}
-                            className="w-[42px] h-[42px] shrink-0 rounded-full transition-all active:scale-95 hover:brightness-110 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]"
-                            style={{
-                                backgroundImage: "url('/submitbutton.png')",
-                                backgroundSize: 'auto 160%',
-                                backgroundPosition: 'center',
-                                backgroundRepeat: 'no-repeat'
-                            }}>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Footer Actions */}
-                <div className="px-[21px] mb-[21px] pb-[13px]">
-                    <div className="flex gap-[13px]">
-                        <button
-                            onClick={() => handleViewChart(true)}
-                            className="flex-[0.350] h-[44px] rounded-[8px] flex items-center justify-center gap-[6px] border border-[#45260f] text-black [text-shadow:0_1px_1px_rgba(255,255,255,0.6)] font-black text-[16px] tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-                            style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', WebkitTextStroke: '0.4px currentColor' }}
-                        >
-                            <i className="pi pi-print text-[14px] font-black"></i> PRINT
-                        </button>
-                        <button
-                            onClick={handleViewChart}
-                            className="flex-[0.350] h-[44px] rounded-[8px] flex items-center justify-center gap-[6px] border border-[#45260f] text-black [text-shadow:0_1px_1px_rgba(255,255,255,0.6)] font-black text-[16px] tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-                            style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', WebkitTextStroke: '0.4px currentColor' }}
-                        >
-                            <i className="pi pi-eye text-[14px] font-black"></i> VIEW
-                        </button>
-                        <button
-                            className="flex-[0.350] h-[44px] rounded-[8px] flex items-center justify-center gap-[6px] border border-[#45260f] text-black [text-shadow:0_1px_1px_rgba(255,255,255,0.6)] font-black text-[16px] tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-                            style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', WebkitTextStroke: '0.4px currentColor' }}
-                        >
-                            <i className="pi pi-send text-[14px] font-black"></i> SEND
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Back Side */}
-            <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[url('/357playerBG.png')] bg-[length:100%_100%] bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 p-[20px] ${!isFlipped ? 'pointer-events-none' : ''}`}>
-                
-                {/* Header / Back Button */}
-                <div className="flex justify-between items-center mb-[20px] pb-[10px] border-b border-[#5a3618]">
-
-                    <button 
-                        onClick={() => setIsFlipped(false)} 
-                        className="px-[16px] py-[6px] flex items-center justify-center gap-[6px] border border-[#45260f] rounded-[8px] text-[#2b170c] font-black tracking-widest shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),0_4px_6px_rgba(0,0,0,0.6)] active:scale-95 transition-transform"
-                        style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
-                    >
-                        <i className="pi pi-arrow-left"></i> BACK
-                    </button>
-                </div>
-
-                <div className="flex flex-col gap-[16px] flex-1 overflow-y-auto no-scrollbar">
-                    {/* Video Player */}
-                    <div className="bg-[#1c0d06] rounded-[12px] p-[8px] border-[2px] border-[#3b1a0b] shadow-[inset_0_2px_4px_rgba(255,180,140,0.1),0_4px_8px_rgba(0,0,0,0.8)]">
-                        <h3 className="text-[#c9a679] font-bold text-[14px] mb-[8px] px-[4px]">Related Video</h3>
-                        <div className="w-full aspect-video bg-black rounded-[8px] overflow-hidden relative">
-                            <video controls className="w-full h-full object-cover">
-                                <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
-                                Your browser does not support HTML video.
-                            </video>
+                        {/* Footer Actions */}
+                        <div className="px-[21px] mb-[21px] pb-[13px]">
+                            <div className="flex gap-[13px]">
+                                <button
+                                    onClick={() => handleViewChart(true)}
+                                    className="flex-[0.350] h-[44px] rounded-[8px] flex items-center justify-center gap-[6px] border border-[#45260f] text-black [text-shadow:0_1px_1px_rgba(255,255,255,0.6)] font-black text-[16px] tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                                    style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', WebkitTextStroke: '0.4px currentColor' }}
+                                >
+                                    <i className="pi pi-print text-[14px] font-black"></i> PRINT
+                                </button>
+                                <button
+                                    onClick={handleViewChart}
+                                    className="flex-[0.350] h-[44px] rounded-[8px] flex items-center justify-center gap-[6px] border border-[#45260f] text-black [text-shadow:0_1px_1px_rgba(255,255,255,0.6)] font-black text-[16px] tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                                    style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', WebkitTextStroke: '0.4px currentColor' }}
+                                >
+                                    <i className="pi pi-eye text-[14px] font-black"></i> VIEW
+                                </button>
+                                <button
+                                    className="flex-[0.350] h-[44px] rounded-[8px] flex items-center justify-center gap-[6px] border border-[#45260f] text-black [text-shadow:0_1px_1px_rgba(255,255,255,0.6)] font-black text-[16px] tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                                    style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', WebkitTextStroke: '0.4px currentColor' }}
+                                >
+                                    <i className="pi pi-send text-[14px] font-black"></i> SEND
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Audio Player */}
-                    <div className="bg-[#1c0d06] rounded-[12px] p-[12px] border-[2px] border-[#3b1a0b] shadow-[inset_0_2px_4px_rgba(255,180,140,0.1),0_4px_8px_rgba(0,0,0,0.8)]">
-                        <h3 className="text-[#c9a679] font-bold text-[14px] mb-[8px]">Supplemental Audio</h3>
-                        <audio controls className="w-full h-[40px]">
-                            <source src="https://upload.wikimedia.org/wikipedia/commons/4/4b/River_stream_water_flowing_sound.ogg" type="audio/ogg" />
-                            Your browser does not support the audio element.
-                        </audio>
-                    </div>
+                    {/* Back Side */}
+                    <div className={`absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[url('/357playerBG.png')] bg-[length:100%_100%] bg-no-repeat border-[3px] border-[#9a7638] rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(255,255,255,0.7),inset_0_-2px_10px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden ring-4 ring-[#e5cf9f] ring-opacity-50 p-[20px] ${!isFlipped ? 'pointer-events-none' : ''}`}>
 
-                    {/* Reference Links */}
-                    <div className="bg-[url('/357playlist.png')] bg-[length:110%_110%] bg-center bg-no-repeat rounded-[12px] p-[12px] border-[2px] border-[#3b1a0b] shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] flex-1">
-                        <h3 className="text-[#1c0d06] font-black text-[16px] mb-[12px] drop-shadow-[0_1px_0_rgba(255,255,255,0.15)]">IMPORTANT LINKS</h3>
-                        <ul className="flex flex-col gap-[8px]">
-                            {['Biblical Commentary Notes', 'Historical Context Map', 'Sermon Transcript'].map((link, idx) => (
-                                <li key={idx} className="flex items-center gap-[8px] text-[#3d1f08] font-bold bg-[#f2cd79]/20 p-[8px] rounded-[6px] hover:bg-[#f2cd79]/40 cursor-pointer transition-colors border border-[#8f583b]/30">
-                                    <i className="pi pi-link text-[12px]"></i>
-                                    <a href="#" className="underline">{link}</a>
-                                </li>
-                            ))}
-                        </ul>
+                        {/* Header / Back Button */}
+                        <div className="flex justify-between items-center mb-[20px] pb-[10px] border-b border-[#5a3618]">
+
+                            <button
+                                onClick={() => setIsFlipped(false)}
+                                className="px-[16px] py-[6px] flex items-center justify-center gap-[6px] border border-[#45260f] rounded-[8px] text-[#2b170c] font-black tracking-widest shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),0_4px_6px_rgba(0,0,0,0.6)] active:scale-95 transition-transform"
+                                style={{ backgroundImage: "url('/copperbuttonbg.png')", backgroundSize: '200% 200%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+                            >
+                                <i className="pi pi-arrow-left"></i> BACK
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col gap-[16px] flex-1 overflow-y-auto no-scrollbar">
+                            {/* Video Player */}
+                            <div className="bg-[#1c0d06] rounded-[12px] p-[8px] border-[2px] border-[#3b1a0b] shadow-[inset_0_2px_4px_rgba(255,180,140,0.1),0_4px_8px_rgba(0,0,0,0.8)]">
+                                <h3 className="text-[#c9a679] font-bold text-[14px] mb-[8px] px-[4px]">Related Video</h3>
+                                <div className="w-full aspect-video bg-black rounded-[8px] overflow-hidden relative">
+                                    <video controls className="w-full h-full object-cover">
+                                        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
+                                        Your browser does not support HTML video.
+                                    </video>
+                                </div>
+                            </div>
+
+                            {/* Audio Player */}
+                            <div className="bg-[#1c0d06] rounded-[12px] p-[12px] border-[2px] border-[#3b1a0b] shadow-[inset_0_2px_4px_rgba(255,180,140,0.1),0_4px_8px_rgba(0,0,0,0.8)]">
+                                <h3 className="text-[#c9a679] font-bold text-[14px] mb-[8px]">Supplemental Audio</h3>
+                                <audio controls className="w-full h-[40px]">
+                                    <source src="https://upload.wikimedia.org/wikipedia/commons/4/4b/River_stream_water_flowing_sound.ogg" type="audio/ogg" />
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+
+                            {/* Reference Links */}
+                            <div className="bg-[url('/357playlist.png')] bg-[length:195%_145%] bg-center bg-no-repeat rounded-[12px] p-[12px] border-[2px] border-[#3b1a0b] shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] flex-1">
+                                <h3 className="text-[#1c0d06] font-black text-[16px] mb-[12px] drop-shadow-[0_1px_0_rgba(255,255,255,0.15)]">IMPORTANT LINKS</h3>
+                                <ul className="flex flex-col gap-[8px]">
+                                    {['Biblical Commentary Notes', 'Historical Context Map', 'Sermon Transcript'].map((link, idx) => (
+                                        <li key={idx} className="flex items-center gap-[8px] text-[#3d1f08] font-bold bg-[#f2cd79]/20 p-[8px] rounded-[6px] hover:bg-[#f2cd79]/40 cursor-pointer transition-colors border border-[#8f583b]/30">
+                                            <i className="pi pi-link text-[12px]"></i>
+                                            <a href="#" className="underline">{link}</a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-
-            </div>
-            </div>
             </div>
 
             {/* Settings Modal */}
@@ -1634,7 +1633,7 @@ const TtoMT357Player = () => {
                         </div>
 
                         <div className="flex justify-end pt-[10px] mt-[5px]">
-                            <button 
+                            <button
                                 onClick={() => {
                                     setActiveThemeColor(themeColor);
                                     setShowSettings(false);

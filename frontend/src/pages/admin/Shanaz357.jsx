@@ -31,12 +31,12 @@ const formatSum = (totalMins) => {
 };
 
 const STANDARD_BOOKS = [
-    "GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA", 
-    "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "EST", "JOB", "PSA", "PRO", 
-    "ECC", "SOS", "ISA", "JER", "LAM", "EZE", "DAN", "HOS", "JOE", "AMO", 
+    "GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA",
+    "1KI", "2KI", "1CH", "2CH", "EZR", "NEH", "EST", "JOB", "PSA", "PRO",
+    "ECC", "SOS", "ISA", "JER", "LAM", "EZE", "DAN", "HOS", "JOE", "AMO",
     "OBA", "JON", "MIC", "NAH", "HAB", "ZEP", "HAG", "ZEC", "MAL",
-    "MAT", "MAR", "LUK", "JOH", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH", 
-    "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAM", 
+    "MAT", "MAR", "LUK", "JOH", "ACT", "ROM", "1CO", "2CO", "GAL", "EPH",
+    "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAM",
     "1PE", "2PE", "1JN", "2JN", "3JN", "JUD", "REV"
 ];
 
@@ -47,30 +47,30 @@ const getBookColorConfig = (index) => {
     if (index >= 17 && index <= 21) return { text: 'text-[#007020]', bg: 'bg-[#007020]', activeText: 'text-white' }; // Green
     if (index >= 22 && index <= 26) return { text: 'text-[#0055a4]', bg: 'bg-[#0055a4]', activeText: 'text-white' }; // Blue
     if (index >= 27 && index <= 38) return { text: 'text-[#4b0082]', bg: 'bg-[#4b0082]', activeText: 'text-white' }; // Purple
-    
+
     // New Testament group colors based on screenshot
     if (index >= 39 && index <= 42) return { text: 'text-[#c00000]', bg: 'bg-[#c00000]', activeText: 'text-white' }; // Red (Gospels)
     if (index === 43) return { text: 'text-[#a67c00]', bg: 'bg-[#a67c00]', activeText: 'text-white' }; // Gold (Acts)
     if (index >= 44 && index <= 55) return { text: 'text-[#007020]', bg: 'bg-[#007020]', activeText: 'text-white' }; // Green (Romans to Titus)
     if (index >= 56 && index <= 63) return { text: 'text-[#0055a4]', bg: 'bg-[#0055a4]', activeText: 'text-white' }; // Blue (Philemon to 3 John)
     if (index >= 64 && index <= 66) return { text: 'text-[#4b0082]', bg: 'bg-[#4b0082]', activeText: 'text-white' }; // Purple (Jude, Revelation)
-    
+
     return { text: 'text-[#2b4c7e]', bg: 'bg-[#2b4c7e]', activeText: 'text-white' };
 };
 
 const isBookMatch = (bookCode, book) => {
     if (book.short_form && book.short_form.toUpperCase() === bookCode) return true;
-    
+
     // Some databases use full names like "1st John", "I John", "Song of Songs"
     const nameStr = book.name.toUpperCase().replace(/\s+/g, ''); // keep numbers and letters
     const rawName = book.name.toUpperCase();
     const code = bookCode.toUpperCase();
-    
+
     if (code === "JDG" && (nameStr.startsWith("JUDG") || nameStr.startsWith("JDG"))) return true;
     if (code === "SOS" && (nameStr.startsWith("SONG") || nameStr.startsWith("CANTICLES") || nameStr.startsWith("SOS"))) return true;
     if (code === "PHP" && (nameStr.startsWith("PHILIP") || nameStr.startsWith("PHP"))) return true;
     if (code === "PHM" && (nameStr.startsWith("PHILEM") || nameStr.startsWith("PHM"))) return true;
-    
+
     // John Epistles variations
     if (code === "1JN" && (nameStr.startsWith("1JO") || nameStr.startsWith("1STJO") || nameStr.startsWith("IJO") || nameStr.startsWith("1JN"))) return true;
     if (code === "2JN" && (nameStr.startsWith("2JO") || nameStr.startsWith("2NDJO") || nameStr.startsWith("IIJO") || nameStr.startsWith("2JN"))) return true;
@@ -86,9 +86,9 @@ const isBookMatch = (bookCode, book) => {
         "1PE": "1PET", "2PE": "2PET",
         "PSA": "PSALM", "NAM": "NAHUM", "NAH": "NAHUM"
     };
-    
+
     if (map[code] && nameStr.startsWith(map[code])) return true;
-    
+
     // Also try matching standard index if IDs are 1-66
     const standardIndex = STANDARD_BOOKS.indexOf(code) + 1;
     if (book.id === standardIndex) return true;
@@ -99,10 +99,10 @@ const isBookMatch = (bookCode, book) => {
 const StatItem = ({ title, icon, value, color }) => (
     <div className="flex sm:flex-col items-center justify-between sm:justify-center flex-1 py-2 sm:py-3 px-3 sm:px-1">
         <div className="flex sm:flex-col items-center gap-2 sm:gap-0">
-            <div className="text-[12px] sm:text-[14px] font-bold text-[#0B2149] sm:mb-2 w-10 sm:w-auto text-left sm:text-center">{title}</div>
-            <i className={`${icon} ${color} text-lg sm:text-3xl sm:mb-2`}></i>
+            <div className="text-[12px] sm:text-[14px] font-black text-[#0B2149] sm:mb-2 w-10 sm:w-auto text-left sm:text-center [text-shadow:1px_1px_0_#e6d5b8]">{title}</div>
+            <i className={`${icon} ${color} text-lg sm:text-3xl sm:mb-2 drop-shadow-[1px_1px_0_rgba(200,200,200,1)]`}></i>
         </div>
-        <div className={`${color} font-bold text-lg sm:text-xl leading-none truncate text-right sm:text-center`}>{value}</div>
+        <div className={`${color} font-black text-lg sm:text-xl leading-none truncate text-right sm:text-center [text-shadow:1px_1px_0_#ddd]`}>{value}</div>
     </div>
 );
 
@@ -156,7 +156,7 @@ const Shanaz357 = () => {
         axios.get('http://' + window.location.hostname + ':8000/api/chapters?limit=3000', { withCredentials: true })
             .then(res => setChaptersDB(res.data))
             .catch(err => console.error(err));
-            
+
         axios.get('http://' + window.location.hostname + ':8000/api/rllt_lookup', { withCredentials: true })
             .then(res => {
                 const data = res.data;
@@ -191,7 +191,7 @@ const Shanaz357 = () => {
         if (!unique.includes(Number(mdl))) unique.push(Number(mdl));
         return unique.sort((a, b) => a - b);
     })();
-    
+
     // Derived available options based on selections (1 up to the highest recorded value)
     const availableFacets = (() => {
         let max = 1;
@@ -221,16 +221,12 @@ const Shanaz357 = () => {
     }, [mdl, fct, availablePhases, phs]);
 
     let eachPhsDays = 0;
-    if (Number(mdl) === 5) {
-        eachPhsDays = enteredDays ? parseInt(enteredDays) : 0;
-    } else {
-        let currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct) && Number(d.phase) === Number(phs));
-        if (!currentPhaseData) {
-            // Fallback if exact phase not found
-            currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
-        }
-        eachPhsDays = currentPhaseData ? currentPhaseData.scheduled_value_days : 0;
+    let currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct) && Number(d.phase) === Number(phs));
+    if (!currentPhaseData) {
+        // Fallback if exact phase not found
+        currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
     }
+    eachPhsDays = currentPhaseData ? currentPhaseData.scheduled_value_days : 0;
     const stats = React.useMemo(() => {
         let bks = selectedBooks.length;
         let chp = 0;
@@ -272,12 +268,18 @@ const Shanaz357 = () => {
 
     const handleIncrement = () => {
         const currIdx = uniqueModules.indexOf(mdl);
-        if (currIdx < uniqueModules.length - 1) setMdl(uniqueModules[currIdx + 1]);
+        if (currIdx < uniqueModules.length - 1) {
+            setMdl(uniqueModules[currIdx + 1]);
+            setEnteredDays('');
+        }
     };
 
     const handleDecrement = () => {
         const currIdx = uniqueModules.indexOf(mdl);
-        if (currIdx > 0) setMdl(uniqueModules[currIdx - 1]);
+        if (currIdx > 0) {
+            setMdl(uniqueModules[currIdx - 1]);
+            setEnteredDays('');
+        }
     };
 
     const handleFctDec = () => {
@@ -305,7 +307,7 @@ const Shanaz357 = () => {
         try {
             const listRes = await axios.get(`http://${window.location.hostname}:8000/api/charts/list`, { withCredentials: true });
             const existsChart = listRes.data.find(c => Number(c.module) === Number(mdl) && Number(c.facet) === Number(fct) && Number(c.phase) === Number(phs));
-            
+
             if (existsChart) {
                 const isMainChart = existsChart.chart_type === 'Main Chart' || (existsChart.banner_text && existsChart.banner_text.toLowerCase().includes('main chart'));
                 const is24x7 = existsChart.chart_type === '24x7 Chart' || (existsChart.banner_text && (existsChart.banner_text.toLowerCase().includes('24/7') || existsChart.banner_text.toLowerCase().includes('24x7')));
@@ -421,9 +423,9 @@ const Shanaz357 = () => {
             }
 
             let cum = [], sum = 0;
-            for (let c of allChaps) { 
-                sum += (typeof c.art === 'number' ? c.art : parseTime(c.art)); 
-                cum.push(sum); 
+            for (let c of allChaps) {
+                sum += (typeof c.art === 'number' ? c.art : parseTime(c.art));
+                cum.push(sum);
             }
             const totalART = sum;
             const daysOut = [];
@@ -491,7 +493,7 @@ const Shanaz357 = () => {
             }
             return daysOut;
         };
-        
+
         const is24x7Format = isSpecialProcess;
         const use5Segments = is24x7Format;
         const daysPerChunk = cycle;
@@ -518,13 +520,13 @@ const Shanaz357 = () => {
             for (let d = 0; d < daysPerChunk; d++) {
                 if (dayCounter > chartLength) break;
                 const dIndex = dayCounter - 1;
-                
+
                 const bd1 = dist1[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 };
                 const bd2 = dist2[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 };
                 const bd3 = dist3[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 };
                 const bd4 = use5Segments ? (dist4[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 }) : null;
                 const bd5 = use5Segments ? (dist5[dIndex] || { portion: '', timeStr: '', timeFloat: 0, chapCount: 0, verseCount: 0 }) : null;
-                
+
                 const totChap = bd1.chapCount + bd2.chapCount + bd3.chapCount + (use5Segments ? bd4.chapCount + bd5.chapCount : 0);
                 const totVerse = bd1.verseCount + bd2.verseCount + bd3.verseCount + (use5Segments ? bd4.verseCount + bd5.verseCount : 0);
                 const totArtFloat = (bd1.timeFloat || 0) + (bd2.timeFloat || 0) + (bd3.timeFloat || 0) + (use5Segments ? (bd4.timeFloat || 0) + (bd5.timeFloat || 0) : 0);
@@ -561,13 +563,13 @@ const Shanaz357 = () => {
                 }
 
                 chunkDays.push(dayObj);
-                
+
                 dayCounter++;
             }
             if (chunkDays.length > 0) {
                 const maxPhases = availablePhases.length;
                 const phaseStr = isMainChart ? `PHASE - 1/1` : `MDL ${targetMdl}: FCT ${targetFct}: PHS - ${targetPhs}/${maxPhases}`;
-                
+
                 const chunkObj = {
                     id: `chunk_${c + 1}`,
                     team: `TEAM -${c + 1}`,
@@ -604,10 +606,10 @@ const Shanaz357 = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });
-            
+
             // Update the RLLT lookup table with chosen book metrics
             const matchingLookup = rlltDB.find(d => Number(d.module) === Number(targetMdl) && Number(d.facet) === Number(targetFct) && Number(d.phase) === Number(targetPhs));
-            
+
             if (Number(targetMdl) === 5 && ['super_admin', 'admin'].includes(userRole)) {
                 let ot_count = 0;
                 let nt_count = 0;
@@ -624,9 +626,9 @@ const Shanaz357 = () => {
                         if (b.id <= 39) ot_count++;
                         else nt_count++;
                     }
-                    
+
                     total_art += (Number(b.total_art) || 0);
-                    
+
                     const bChaps = chaptersDB.filter(c => c.book_id === b.id);
                     total_chp += bChaps.length;
                     bChaps.forEach(c => total_ver += (c.verse_count || 0));
@@ -681,15 +683,15 @@ const Shanaz357 = () => {
         return STANDARD_BOOKS.slice(startIndex, endIndex).map((bookCode, idx) => {
             const actualIndex = startIndex + idx;
             const colors = getBookColorConfig(actualIndex);
-            
+
             // Find the matching book in booksDB using the robust matcher
             const book = booksDB.find(b => isBookMatch(bookCode, b));
-            
+
             const isSelected = book ? selectedBooks.includes(book.id) : false;
-            
+
             return (
-                <div 
-                    key={bookCode} 
+                <div
+                    key={bookCode}
                     className={`book-tooltip-item border border-[#d3c09b] rounded-[5px] flex items-center justify-center py-2 text-center text-xs sm:text-sm font-bold font-serif tracking-widest cursor-pointer shadow-md transition-all w-[calc(25%-0.5rem)] sm:w-[calc(20%-0.5rem)] ${isSelected ? `${colors.bg} ${colors.activeText} shadow-inner` : `bg-[#fbf6ec] hover:bg-[#f0e4cd] ${colors.text}`}`}
                     onClick={() => book && toggleBook(book.id)}
                     data-pr-tooltip={book ? getBookTooltip(book) : ''}
@@ -704,12 +706,12 @@ const Shanaz357 = () => {
         <div className="min-h-screen bg-white p-2 sm:p-8 flex justify-center items-start font-sans">
             <Toast ref={toast} />
             <Tooltip target=".book-tooltip-item" position="top" />
-            <div className="bg-[#fcf8ef] rounded-[20px] shadow-[12px_12px_30px_rgba(0,0,0,0.25)] w-full max-w-[650px] p-4 sm:p-8 calc-border-6 relative">
+            <div className="bg-[#fcf8ef] rounded-[20px] w-full max-w-[650px] pt-4 px-4 pb-2 sm:pt-8 sm:px-8 sm:pb-3 gold-3d-border relative mt-4 sm:mt-0 mb-8 sm:mb-0">
                 {/* Decorative dots in corners */}
                 <div className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
                 <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
-                <div className="absolute bottom-2 left-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
-                <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
+                <div className="absolute bottom-1.5 left-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
+                <div className="absolute bottom-1.5 right-2 w-1.5 h-1.5 rounded-full bg-[#d3c09b]"></div>
 
                 {/* Header Section */}
                 <div className="text-center mb-4">
@@ -718,13 +720,13 @@ const Shanaz357 = () => {
                         <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                         <span className="w-1 h-1 rounded-full bg-gray-400"></span>
                     </div>
-                    <p className="text-[#8c7355] italic text-xs font-serif">Unlocking Transformation Through</p>
+                    <p className="text-[#8c7355] italic text-sm font-bold font-serif [text-shadow:1px_1px_0_#e6d5b8,2px_2px_0_#d3c09b]">Unlocking Transformation Through</p>
                     <div className="flex items-center justify-center gap-2 my-2">
-                        <div className="h-[1px] bg-[#d3c09b] w-12"></div>
-                        <span className="text-[9px] text-[#555] font-bold tracking-[0.2em]">THE WORD</span>
-                        <div className="h-[1px] bg-[#d3c09b] w-12"></div>
+                        <div className="h-[2px] bg-[#d3c09b] w-12 shadow-[1px_1px_0_#e6d5b8]"></div>
+                        <span className="text-[11px] text-[#555] font-black tracking-[0.2em] [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa]">THE WORD</span>
+                        <div className="h-[2px] bg-[#d3c09b] w-12 shadow-[1px_1px_0_#e6d5b8]"></div>
                     </div>
-                    <h1 className="text-4xl text-[#0B2149] tracking-wider mt-1 mb-2 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_3px_rgba(0,0,0,0.4)]" style={{fontFamily: "'Algerian', serif"}}>SHANAZ 357</h1>
+                    <h1 className="text-5xl text-[#0B2149]  tracking-wider mt-1 mb-2 [text-shadow:1px_1px_0_#ccc,2px_2px_0_#aaa,3px_3px_0_#888,4px_4px_0_#666]" style={{ fontFamily: "'Algerian', serif" }}>SHANAZ 357</h1>
                     <div className="flex items-center justify-center">
                         <span className="text-[#d3c09b] text-lg leading-none">✧</span>
                     </div>
@@ -732,15 +734,15 @@ const Shanaz357 = () => {
 
                 <div className="px-1">
                     {/* Stats Section */}
-                    <div className="flex flex-col sm:flex-row justify-between calc-border-4 rounded-lg mb-4 bg-[#fdfbf6] shadow-sm overflow-hidden py-1">
+                    <div className="flex flex-col sm:flex-row justify-between calc-border-4 rounded-lg mb-4 bg-[#fdfbf6] overflow-hidden py-1">
                         <StatItem title="BKS" icon="pi pi-book" value={displayStats.bks} color="text-[#1976d2]" />
-                        <div className="h-px w-full sm:w-px sm:h-auto bg-[#e8dcb9] my-0 sm:my-1"></div>
+                        <div className="w-full h-[2px] sm:w-[2px] sm:h-auto border-t border-t-[#c7a96b] border-b border-b-white sm:border-t-0 sm:border-b-0 sm:border-l sm:border-l-[#c7a96b] sm:border-r sm:border-r-white my-0 sm:my-1"></div>
                         <StatItem title="CHP" icon="pi pi-file" value={displayStats.chp} color="text-[#388e3c]" />
-                        <div className="h-px w-full sm:w-px sm:h-auto bg-[#e8dcb9] my-0 sm:my-1"></div>
+                        <div className="w-full h-[2px] sm:w-[2px] sm:h-auto border-t border-t-[#c7a96b] border-b border-b-white sm:border-t-0 sm:border-b-0 sm:border-l sm:border-l-[#c7a96b] sm:border-r sm:border-r-white my-0 sm:my-1"></div>
                         <StatItem title="VRS" icon="pi pi-crown" value={displayStats.vrs} color="text-[#f57c00]" />
-                        <div className="h-px w-full sm:w-px sm:h-auto bg-[#e8dcb9] my-0 sm:my-1"></div>
+                        <div className="w-full h-[2px] sm:w-[2px] sm:h-auto border-t border-t-[#c7a96b] border-b border-b-white sm:border-t-0 sm:border-b-0 sm:border-l sm:border-l-[#c7a96b] sm:border-r sm:border-r-white my-0 sm:my-1"></div>
                         <StatItem title="ART" icon="pi pi-clock" value={displayStats.art} color="text-[#7b1fa2]" />
-                        <div className="h-px w-full sm:w-px sm:h-auto bg-[#e8dcb9] my-0 sm:my-1"></div>
+                        <div className="w-full h-[2px] sm:w-[2px] sm:h-auto border-t border-t-[#c7a96b] border-b border-b-white sm:border-t-0 sm:border-b-0 sm:border-l sm:border-l-[#c7a96b] sm:border-r sm:border-r-white my-0 sm:my-1"></div>
                         <StatItem title="DAYS" icon="pi pi-calendar" value={eachPhsDays || 0} color="text-[#d32f2f]" />
                     </div>
 
@@ -748,24 +750,35 @@ const Shanaz357 = () => {
                         .scrollbar-hide::-webkit-scrollbar { display: none; }
                         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
                         .calc-border-4 {
-                            border: 1px solid #69512a;
-                            box-shadow: inset 0 0 0 1px #fffdf8, inset 0 0 0 3px #d3c09b;
+                            border: 2px solid #e8dcb9;
+                            box-shadow: 
+                                inset 1px 1px 0px 1px #ffffff,
+                                inset -1px -1px 0px 1px #c7a96b,
+                                0 0 0 1px #69512a,
+                                1px 1px 0px 1px #4a381c;
                         }
-                        .calc-border-6 {
-                            border: 1px solid #69512a;
-                            box-shadow: inset 0 0 0 2px #fffdf8, inset 0 0 0 6px #d3c09b, inset 0 0 0 7px #a48654;
+                        .gold-3d-border {
+                            border: 3px solid #ffeba1;
+                            box-shadow: 
+                                inset 0 0 10px rgba(0,0,0,0.1),
+                                0 0 0 2px #c0952b,
+                                0 0 0 5px #fcedb0,
+                                0 0 0 8px #9c7316,
+                                0 0 0 11px #e2c158,
+                                0 0 0 12px #594006,
+                                12px 12px 30px rgba(0,0,0,0.4);
                         }
                     `}</style>
 
                     {/* Books Grid */}
-                    <div className="calc-border-4 rounded-lg shadow-sm overflow-hidden flex flex-col mb-4">
+                    <div className="calc-border-4 rounded-lg overflow-hidden flex flex-col mb-4">
                         <div className="overflow-y-auto max-h-[225px] scrollbar-hide bg-[#fcf8ef]">
                             {/* Old Testament Section */}
                             <div>
                                 <div className="sticky top-0 bg-[#0B2149] text-white py-1.5 flex items-center justify-center relative border-b-[3px] border-[#c7a96b] z-10">
                                     <div className="absolute left-3 text-[#d3c09b] text-[10px]">❖</div>
                                     <div className="h-px bg-[#d3c09b] w-8 mx-2"></div>
-                                    <div className="text-sm tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{fontFamily: "'Algerian', serif"}}>OLD TESTAMENT</div>
+                                    <div className="text-sm tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{ fontFamily: "'Algerian', serif" }}>OLD TESTAMENT</div>
                                     <div className="h-px bg-[#d3c09b] w-8 mx-2"></div>
                                     <div className="absolute right-3 text-[#d3c09b] text-[10px]">❖</div>
                                 </div>
@@ -773,13 +786,13 @@ const Shanaz357 = () => {
                                     {booksDB.length > 0 && renderBooks(0, 39)}
                                 </div>
                             </div>
-                            
+
                             {/* New Testament Section */}
                             <div>
                                 <div className="sticky top-0 bg-[#0B2149] text-white py-1 flex items-center justify-center relative border-y-[3px] border-[#c7a96b] z-10">
                                     <div className="absolute left-3 text-[#d3c09b] text-[10px]">❖</div>
                                     <div className="h-px bg-[#d3c09b] w-6 mx-2"></div>
-                                    <div className="text-xs tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{fontFamily: "'Algerian', serif"}}>NEW TESTAMENT</div>
+                                    <div className="text-xs tracking-widest text-[#fdfbf6] [text-shadow:1px_1px_0_#000,2px_2px_0_#000,3px_3px_0_#000,4px_4px_3px_rgba(0,0,0,0.5)]" style={{ fontFamily: "'Algerian', serif" }}>NEW TESTAMENT</div>
                                     <div className="h-px bg-[#d3c09b] w-6 mx-2"></div>
                                     <div className="absolute right-3 text-[#d3c09b] text-[10px]">❖</div>
                                 </div>
@@ -791,54 +804,52 @@ const Shanaz357 = () => {
                     </div>
 
                     {/* Middle Input Section */}
-                    <div className="calc-border-4 rounded-lg p-2 bg-[#fdfbf6] shadow-sm mb-4">
+                    <div className="calc-border-4 rounded-lg p-2 bg-[#fdfbf6] mb-4">
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 min-h-[4.5rem]">
                             {(() => {
                                 const p119Book = booksDB.find(b => b.name.includes('119') || (b.short_form && b.short_form.includes('119')));
                                 const p119Selected = p119Book && selectedBooks.includes(p119Book.id);
-                                
+
                                 const p75Book = booksDB.find(b => b.name.toUpperCase().includes('DAVID') || b.name.includes('75'));
                                 const p75Selected = p75Book && selectedBooks.includes(p75Book.id);
 
                                 return (
                                     <>
-                                        <div 
-                                            className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex sm:flex-col items-center justify-center gap-1 sm:gap-0 text-center py-2 sm:py-0 text-xs sm:text-sm font-bold uppercase cursor-pointer transition-all ${
-                                                p119Selected 
-                                                    ? 'bg-[#007020] text-white border-transparent shadow-inner' 
-                                                    : 'bg-[#f0f7f0] text-[#3b603b] hover:bg-[#e2efe2]'
-                                            }`}
+                                        <div
+                                            className={`book-tooltip-item flex-1 rounded-[4px] flex sm:flex-col items-center justify-center gap-1 sm:gap-0 text-center py-2 sm:py-0 text-xs sm:text-sm font-black uppercase cursor-pointer transition-all ${p119Selected
+                                                ? 'bg-[#007020] text-white border-transparent shadow-[inset_3px_3px_5px_rgba(0,0,0,0.5),inset_-1px_-1px_2px_rgba(255,255,255,0.2)]'
+                                                : 'bg-[#f0f7f0] text-[#2e4d2e] border border-[#557855] hover:bg-[#e2efe2] shadow-[inset_2px_2px_0px_#ffffff,inset_-2px_-2px_0px_#b5ccb5]'
+                                                }`}
                                             onClick={() => p119Book && toggleBook(p119Book.id)}
                                             data-pr-tooltip={p119Book ? getBookTooltip(p119Book) : 'Book Not Found'}
                                         >
-                                            <span>PSALMS</span><span className="hidden sm:inline"> </span><span>CHP 119</span>
+                                            <span className="[text-shadow:1px_1px_0_#fff]">PSALMS</span><span className="hidden sm:inline"> </span><span className="[text-shadow:1px_1px_0_#fff]">CHP 119</span>
                                         </div>
-                                        <div className="flex-[1.5] border border-[#e8dcb9] bg-white rounded-[4px] flex justify-evenly items-center px-1 py-2 sm:py-0">
+                                        <div className="flex-[1.5] border border-[#a48654] bg-[#fdfbf6] rounded-[4px] flex justify-evenly items-center px-1 py-2 sm:py-0 shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#e8dcb9]">
                                             <button onClick={() => setCycle(3)} className="font-bold text-xs sm:text-sm transition-colors flex items-center gap-1">
-                                                <span className="text-[#c00000] text-base sm:text-lg">3</span>
-                                                <span className={cycle === 3 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}>DAYS</span>
+                                                <span className="text-[#c00000] text-lg sm:text-xl font-black [text-shadow:1px_1px_0_#ffcccc]">3</span>
+                                                <span className={cycle === 3 ? 'text-[#0B2149] font-black [text-shadow:1px_1px_0_#ddd]' : 'text-[#888] font-bold hover:text-gray-600'}>DAYS</span>
                                             </button>
-                                            <div className="h-6 sm:h-8 w-px bg-[#e8dcb9]"></div>
+                                            <div className="h-6 sm:h-8 w-[2px] border-l border-l-[#c7a96b] border-r border-r-white"></div>
                                             <button onClick={() => setCycle(5)} className="font-bold text-xs sm:text-sm transition-colors flex items-center gap-1">
-                                                <span className="text-[#c00000] text-base sm:text-lg">5</span>
-                                                <span className={cycle === 5 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}>DAYS</span>
+                                                <span className="text-[#c00000] text-lg sm:text-xl font-black [text-shadow:1px_1px_0_#ffcccc]">5</span>
+                                                <span className={cycle === 5 ? 'text-[#0B2149] font-black [text-shadow:1px_1px_0_#ddd]' : 'text-[#888] font-bold hover:text-gray-600'}>DAYS</span>
                                             </button>
-                                            <div className="h-6 sm:h-8 w-px bg-[#e8dcb9]"></div>
+                                            <div className="h-6 sm:h-8 w-[2px] border-l border-l-[#c7a96b] border-r border-r-white"></div>
                                             <button onClick={() => setCycle(7)} className="font-bold text-xs sm:text-sm transition-colors flex items-center gap-1">
-                                                <span className="text-[#c00000] text-base sm:text-lg">7</span>
-                                                <span className={cycle === 7 ? 'text-[#0B2149]' : 'text-gray-400 hover:text-gray-600'}>DAYS</span>
+                                                <span className="text-[#c00000] text-lg sm:text-xl font-black [text-shadow:1px_1px_0_#ffcccc]">7</span>
+                                                <span className={cycle === 7 ? 'text-[#0B2149] font-black [text-shadow:1px_1px_0_#ddd]' : 'text-[#888] font-bold hover:text-gray-600'}>DAYS</span>
                                             </button>
                                         </div>
-                                        <div 
-                                            className={`book-tooltip-item flex-1 border border-[#7a9e7a] rounded-[4px] flex sm:flex-col items-center justify-center gap-1 sm:gap-0 text-center py-2 sm:py-0 text-xs sm:text-sm font-bold uppercase cursor-pointer transition-all ${
-                                                p75Selected 
-                                                    ? 'bg-[#007020] text-white border-transparent shadow-inner' 
-                                                    : 'bg-[#f0f7f0] text-[#3b603b] hover:bg-[#e2efe2]'
-                                            }`}
+                                        <div
+                                            className={`book-tooltip-item flex-1 rounded-[4px] flex sm:flex-col items-center justify-center gap-1 sm:gap-0 text-center py-2 sm:py-0 text-xs sm:text-sm font-black uppercase cursor-pointer transition-all ${p75Selected
+                                                ? 'bg-[#007020] text-white border-transparent shadow-[inset_3px_3px_5px_rgba(0,0,0,0.5),inset_-1px_-1px_2px_rgba(255,255,255,0.2)]'
+                                                : 'bg-[#f0f7f0] text-[#2e4d2e] border border-[#557855] hover:bg-[#e2efe2] shadow-[inset_2px_2px_0px_#ffffff,inset_-2px_-2px_0px_#b5ccb5]'
+                                                }`}
                                             onClick={() => p75Book && toggleBook(p75Book.id)}
                                             data-pr-tooltip={p75Book ? getBookTooltip(p75Book) : 'Book Not Found'}
                                         >
-                                            <span>PSA OF DAVID</span><span className="hidden sm:inline"> </span><span>75 CHP</span>
+                                            <span className="[text-shadow:1px_1px_0_#fff]">PSA OF DAVID</span><span className="hidden sm:inline"> </span><span className="[text-shadow:1px_1px_0_#fff]">75 CHP</span>
                                         </div>
                                     </>
                                 );
@@ -862,31 +873,31 @@ const Shanaz357 = () => {
                         )}
 
                         <div className="flex justify-between items-center px-4 mb-3">
-                            <button 
+                            <button
                                 onClick={() => { setEnteredDays(''); setSelectedBooks([]); setChartStats(null); setDayValidationError(''); setBookValidationError(''); }}
-                                className="w-6 h-6 rounded-full border border-[#9c2929] text-[#9c2929] flex items-center justify-center hover:bg-red-50 transition-colors"
+                                className="w-6 h-6 rounded-full border border-[#9c2929] text-[#9c2929] flex items-center justify-center bg-white hover:bg-[#fff0f0] transition-all shadow-[inset_1px_1px_0_#ffffff,inset_-1px_-1px_0_#e5b3b3] active:shadow-[inset_1px_1px_2px_rgba(0,0,0,0.3),inset_-1px_-1px_1px_rgba(255,255,255,0.3)] [text-shadow:0.5px_0.5px_0_#fff]"
                             >
-                                <i className="pi pi-refresh text-[10px] font-bold"></i>
+                                <i className="pi pi-refresh text-[10px] font-black drop-shadow-[1px_1px_0_rgba(200,200,200,1)]"></i>
                             </button>
                             <div className="relative">
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#c3b08e] text-xs font-bold tracking-widest bg-[#fdfbf6] px-2 z-10 whitespace-nowrap">DAYS</div>
-                                <div className="w-16 h-10 border border-[#e8dcb9] rounded-full flex items-center justify-center bg-white shadow-inner">
-                                    {enteredDays && <span className="text-xl font-black text-[#0B2149] z-20 bg-white px-2 rounded">{enteredDays}</span>}
+                                {!enteredDays && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#a48654] text-xs font-black tracking-widest bg-[#fcf8ef] px-2 z-10 whitespace-nowrap [text-shadow:1px_1px_0_#fff]">DAYS</div>}
+                                <div className="w-16 h-10 border border-[#a48654] rounded-full flex items-center justify-center bg-[#fdfbf6] shadow-[inset_2px_2px_0_#e8dcb9,inset_-2px_-2px_0_#ffffff]">
+                                    {enteredDays && <span className="text-2xl font-black text-[#0B2149] z-20">{enteredDays}</span>}
                                 </div>
                             </div>
-                            <button 
+                            <button
                                 onClick={handleSubmit}
-                                className="w-6 h-6 rounded-full border border-[#2e532e] text-[#2e532e] flex items-center justify-center hover:bg-green-50 transition-colors"
+                                className="w-6 h-6 rounded-full border border-[#1f3b1f] text-[#1f3b1f] flex items-center justify-center bg-white hover:bg-[#eaf4ea] transition-all shadow-[inset_1px_1px_0_#ffffff,inset_-1px_-1px_0_#b5ccb5] active:shadow-[inset_1px_1px_2px_rgba(0,0,0,0.3),inset_-1px_-1px_1px_rgba(255,255,255,0.3)] [text-shadow:0.5px_0.5px_0_#fff]"
                             >
-                                <i className="pi pi-check text-[10px] font-bold"></i>
+                                <i className="pi pi-check text-[10px] font-black drop-shadow-[1px_1px_0_rgba(200,200,200,1)]"></i>
                             </button>
                         </div>
-                        
+
                         <div className="flex flex-wrap justify-center sm:justify-between items-center gap-2 sm:gap-0 bg-[#f7eedc] rounded px-2 py-3 sm:px-3 sm:py-3 calc-border-4">
                             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                                <button 
-                                    key={num} 
-                                    onClick={() => handleNumberClick(num)} 
+                                <button
+                                    key={num}
+                                    onClick={() => handleNumberClick(num)}
                                     className="text-[#0B2149] font-bold text-xl sm:text-2xl w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-[#ebd8b7] rounded transition-colors"
                                 >
                                     {num}
@@ -896,75 +907,75 @@ const Shanaz357 = () => {
                     </div>
 
                     {/* Lower Controls Section */}
-                    <div className="calc-border-4 rounded-lg p-3 bg-[#fdfbf6] shadow-sm mb-4">
+                    <div className="calc-border-4 rounded-lg p-3 bg-[#fdfbf6] mb-4">
                         {/* Plus/Minus Section */}
                         <div className="flex items-center justify-between mb-3 gap-2">
-                            <div className="flex-1 h-6 bg-white border border-[#e8dcb9] rounded-sm"></div>
-                            <button 
-                                className={`text-xl font-bold px-1 pb-1 ${uniqueModules.indexOf(mdl) > 0 ? 'text-[#8c7355] hover:text-[#5c4a35]' : 'text-gray-300'}`}
+                            <div className="flex-1 h-6 bg-white border border-[#a48654] rounded-[4px] shadow-[inset_2px_2px_0_#e8dcb9,inset_-2px_-2px_0_#ffffff]"></div>
+                            <button
+                                className={`text-xl font-bold px-1 pb-1 ${uniqueModules.indexOf(mdl) > 0 ? 'text-[#8c7355] hover:text-[#5c4a35] [text-shadow:1px_1px_0_#fff]' : 'text-gray-300'}`}
                                 onClick={handleDecrement} disabled={uniqueModules.indexOf(mdl) <= 0}
                             >-</button>
-                            
-                            <div className="border border-[#d4af37] bg-[#f7eedc] px-6 py-1 rounded-[4px] flex flex-col items-center justify-center shadow-sm min-w-[70px]">
-                                <div className="text-[11px] font-bold text-[#8c7355]">MDL.</div>
-                                <div className="text-xl font-black text-[#8c7355] leading-none mt-0.5">{mdl}</div>
+
+                            <div className="border border-[#b38728] bg-[#f7eedc] px-6 py-1 rounded-[4px] flex flex-col items-center justify-center min-w-[70px] shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#d4af37]">
+                                <div className="text-[11px] font-black text-[#69512a] [text-shadow:1px_1px_0_#fff]">MDL.</div>
+                                <div className="text-xl font-black text-[#8c7355] leading-none mt-0.5 [text-shadow:1px_1px_0_#fff]">{mdl}</div>
                             </div>
-                            
-                            <button 
-                                className={`text-xl font-bold px-1 pb-1 ${uniqueModules.indexOf(mdl) < uniqueModules.length - 1 ? 'text-[#8c7355] hover:text-[#5c4a35]' : 'text-gray-300'}`}
+
+                            <button
+                                className={`text-xl font-bold px-1 pb-1 ${uniqueModules.indexOf(mdl) < uniqueModules.length - 1 ? 'text-[#8c7355] hover:text-[#5c4a35] [text-shadow:1px_1px_0_#fff]' : 'text-gray-300'}`}
                                 onClick={handleIncrement} disabled={uniqueModules.indexOf(mdl) >= uniqueModules.length - 1}
                             >+</button>
-                            <div className="flex-1 h-6 bg-white border border-[#e8dcb9] rounded-sm"></div>
+                            <div className="flex-1 h-6 bg-white border border-[#a48654] rounded-[4px] shadow-[inset_2px_2px_0_#e8dcb9,inset_-2px_-2px_0_#ffffff]"></div>
                         </div>
 
                         {/* PHS Stats Section */}
-                        <div className="border border-[#7a9e7a] bg-[#f0f7f0] rounded-[4px] flex justify-between p-3 mb-3 text-center text-[#2e532e]">
+                        <div className="border border-[#557855] bg-[#f0f7f0] rounded-[4px] flex justify-between p-3 mb-3 text-center text-[#2e4d2e] shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#b5ccb5]">
                             <div className="flex flex-col items-center flex-1">
-                                <div className="text-xs font-bold mb-1">PAGES</div>
-                                <div className="flex items-center gap-1 text-base font-bold">
-                                    <button onClick={handleFctDec} disabled={availableFacets.indexOf(fct) <= 0} className={availableFacets.indexOf(fct) > 0 ? 'hover:text-[#1c3a1c]' : 'opacity-30'}><i className="pi pi-angle-left text-sm"></i></button>
-                                    <span className="w-4">{fct || '-'}</span>
-                                    <button onClick={handleFctInc} disabled={availableFacets.indexOf(fct) >= availableFacets.length - 1} className={availableFacets.indexOf(fct) < availableFacets.length - 1 ? 'hover:text-[#1c3a1c]' : 'opacity-30'}><i className="pi pi-angle-right text-sm"></i></button>
+                                <div className="text-xs font-black mb-1 [text-shadow:1px_1px_0_#fff]">FACES</div>
+                                <div className="flex items-center gap-1 text-base font-black">
+                                    <button onClick={handleFctDec} disabled={availableFacets.indexOf(fct) <= 0} className={availableFacets.indexOf(fct) > 0 ? 'hover:text-[#1c3a1c] [text-shadow:1px_1px_0_#fff]' : 'opacity-30'}><i className="pi pi-angle-left text-sm drop-shadow-[1px_1px_0_#fff]"></i></button>
+                                    <span className="w-4 [text-shadow:1px_1px_0_#fff]">{fct || '-'}</span>
+                                    <button onClick={handleFctInc} disabled={availableFacets.indexOf(fct) >= availableFacets.length - 1} className={availableFacets.indexOf(fct) < availableFacets.length - 1 ? 'hover:text-[#1c3a1c] [text-shadow:1px_1px_0_#fff]' : 'opacity-30'}><i className="pi pi-angle-right text-sm drop-shadow-[1px_1px_0_#fff]"></i></button>
                                 </div>
                             </div>
-                            <div className="w-px bg-[#7a9e7a] my-1 opacity-50"></div>
+                            <div className="w-[2px] border-l border-l-[#7a9e7a] border-r border-r-white my-1"></div>
                             <div className="flex flex-col items-center flex-1">
-                                <div className="text-xs font-bold mb-1">PHS.</div>
-                                <div className="flex items-center gap-1 text-base font-bold">
-                                    <button onClick={handlePhsDec} disabled={availablePhases.indexOf(phs) <= 0} className={availablePhases.indexOf(phs) > 0 ? 'hover:text-[#1c3a1c]' : 'opacity-30'}><i className="pi pi-angle-left text-sm"></i></button>
-                                    <span className="w-4">{phs || '-'}</span>
-                                    <button onClick={handlePhsInc} disabled={availablePhases.indexOf(phs) >= availablePhases.length - 1} className={availablePhases.indexOf(phs) < availablePhases.length - 1 ? 'hover:text-[#1c3a1c]' : 'opacity-30'}><i className="pi pi-angle-right text-sm"></i></button>
+                                <div className="text-xs font-black mb-1 [text-shadow:1px_1px_0_#fff]">PHS.</div>
+                                <div className="flex items-center gap-1 text-base font-black">
+                                    <button onClick={handlePhsDec} disabled={availablePhases.indexOf(phs) <= 0} className={availablePhases.indexOf(phs) > 0 ? 'hover:text-[#1c3a1c] [text-shadow:1px_1px_0_#fff]' : 'opacity-30'}><i className="pi pi-angle-left text-sm drop-shadow-[1px_1px_0_#fff]"></i></button>
+                                    <span className="w-4 [text-shadow:1px_1px_0_#fff]">{phs || '-'}</span>
+                                    <button onClick={handlePhsInc} disabled={availablePhases.indexOf(phs) >= availablePhases.length - 1} className={availablePhases.indexOf(phs) < availablePhases.length - 1 ? 'hover:text-[#1c3a1c] [text-shadow:1px_1px_0_#fff]' : 'opacity-30'}><i className="pi pi-angle-right text-sm drop-shadow-[1px_1px_0_#fff]"></i></button>
                                 </div>
                             </div>
-                            <div className="w-px bg-[#7a9e7a] my-1 opacity-50"></div>
+                            <div className="w-[2px] border-l border-l-[#7a9e7a] border-r border-r-white my-1"></div>
                             <div className="flex flex-col items-center flex-[1.5]">
-                                <div className="text-xs font-bold mb-1">EACH PHS.</div>
-                                <div className="text-base font-bold flex items-center h-5">{eachPhsDays ? `${eachPhsDays} DAYS` : '0 DAYS'}</div>
+                                <div className="text-xs font-black mb-1 [text-shadow:1px_1px_0_#fff]">EACH PHS.</div>
+                                <div className="text-base font-black flex items-center h-5 [text-shadow:1px_1px_0_#fff]">{eachPhsDays ? `${eachPhsDays} DAYS` : '0 DAYS'}</div>
                             </div>
                         </div>
 
                         {/* Action Buttons */}
                         <div className="grid grid-cols-3 gap-2">
-                            <button onClick={() => handleViewClick(true)} className="flex items-center justify-center gap-1.5 border border-[#4a5e78] text-[#4a5e78] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-gray-50 transition-colors">
-                                <i className="pi pi-print text-sm"></i> PRINT
+                            <button onClick={() => handleViewClick(true)} className="flex items-center justify-center gap-1.5 border border-[#304156] text-[#304156] rounded-[4px] py-1.5 text-xs font-black bg-white hover:bg-[#f0f4f8] transition-all shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#cbd5e1] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),inset_-1px_-1px_2px_rgba(255,255,255,0.2)] [text-shadow:1px_1px_0_#fff]">
+                                <i className="pi pi-print text-sm drop-shadow-[1px_1px_0_rgba(200,200,200,1)]"></i> PRINT
                             </button>
-                            <button onClick={() => handleViewClick(false)} disabled={isViewing} className="flex items-center justify-center gap-1.5 border border-[#2e532e] text-[#2e532e] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-green-50 transition-colors">
-                                <i className={`pi ${isViewing ? 'pi-spin pi-spinner' : 'pi-eye'} text-sm`}></i> VIEW
+                            <button onClick={() => handleViewClick(false)} disabled={isViewing} className={`flex items-center justify-center gap-1.5 border border-[#1f3b1f] text-[#1f3b1f] rounded-[4px] py-1.5 text-xs font-black bg-white hover:bg-[#eaf4ea] transition-all shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#b5ccb5] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),inset_-1px_-1px_2px_rgba(255,255,255,0.2)] [text-shadow:1px_1px_0_#fff] ${isViewing ? 'opacity-50' : ''}`}>
+                                <i className={`pi ${isViewing ? 'pi-spin pi-spinner' : 'pi-eye'} text-sm drop-shadow-[1px_1px_0_rgba(200,200,200,1)]`}></i> VIEW
                             </button>
-                            <button className="flex items-center justify-center gap-1.5 border border-[#6b3582] text-[#6b3582] rounded-[4px] py-1.5 text-xs font-bold bg-white hover:bg-purple-50 transition-colors">
-                                <i className="pi pi-send text-sm"></i> SEND
+                            <button className="flex items-center justify-center gap-1.5 border border-[#4a2459] text-[#4a2459] rounded-[4px] py-1.5 text-xs font-black bg-white hover:bg-[#f3eaf5] transition-all shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#d8b8e0] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),inset_-1px_-1px_2px_rgba(255,255,255,0.2)] [text-shadow:1px_1px_0_#fff]">
+                                <i className="pi pi-send text-sm drop-shadow-[1px_1px_0_rgba(200,200,200,1)]"></i> SEND
                             </button>
                         </div>
                     </div>
 
                     {/* Footer Image Area */}
-                    <div className="mt-4 w-full flex justify-center shadow-sm">
+                    <div className="w-full flex justify-center pointer-events-none -mt-[15%] -mb-[25%]">
                         {/* 
                           To use your custom image:
                           1. Place the image in the frontend/public folder
                           2. Change the src below to match your filename (e.g., "/my-image.png")
                         */}
-                        <img src="/footer-image.png" alt="Footer Illustration" className="w-full h-auto block" />
+                        <img src="/footer-image.png" alt="Footer Illustration" className="w-[calc(100%+56px)] sm:w-[calc(100%+88px)] max-w-none h-auto block" />
                     </div>
 
                 </div>

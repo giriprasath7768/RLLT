@@ -1175,21 +1175,21 @@ const WordToolbar = ({ toolbarId, quillRef, tiptapEditor, content, title, waterm
                 <div className="flex items-center gap-0 border-r pr-2">
                     <span className="ql-formats m-0 mr-1 flex items-center gap-0">
                         <select 
-                            className="text-xs border rounded p-1" 
+                            className="text-sm font-bold border rounded p-1" 
                             defaultValue="sans-serif"
                             onChange={(e) => tiptapEditor?.chain().focus().setFontFamily(e.target.value).run()}
                         >
-                            <option value="sans-serif">Sans Serif</option>
-                            <option value="serif">Serif</option>
-                            <option value="monospace">Monospace</option>
-                            <option value="bungee-shade">Bungee Shade (3D)</option>
-                            <option value="nabla">Nabla (3D Color)</option>
-                            <option value="rampart-one">Rampart One (3D Layered)</option>
-                            <option value="bungee">Bungee (Layer Base)</option>
-                            <option value="londrina">Londrina Solid (Layer Base)</option>
-                            <option value="alfa-slab-one">Alfa Slab One (Block)</option>
-                            <option value="rubik">Rubik Black (Block)</option>
-                            <option value="anton">Anton (Tall Block)</option>
+                            <option value="sans-serif" style={{ fontFamily: 'sans-serif', fontWeight: 'bold' }}>Sans Serif</option>
+                            <option value="serif" style={{ fontFamily: 'serif', fontWeight: 'bold' }}>Serif</option>
+                            <option value="monospace" style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>Monospace</option>
+                            <option value="bungee-shade" style={{ fontFamily: "'Bungee Shade', cursive", fontWeight: 'bold' }}>Bungee Shade (3D)</option>
+                            <option value="nabla" style={{ fontFamily: "'Nabla', system-ui", fontWeight: 'bold' }}>Nabla (3D Color)</option>
+                            <option value="rampart-one" style={{ fontFamily: "'Rampart One', cursive", fontWeight: 'bold' }}>Rampart One (3D Layered)</option>
+                            <option value="bungee" style={{ fontFamily: "'Bungee', cursive", fontWeight: 'bold' }}>Bungee (Layer Base)</option>
+                            <option value="londrina" style={{ fontFamily: "'Londrina Solid', cursive", fontWeight: 'bold' }}>Londrina Solid (Layer Base)</option>
+                            <option value="alfa-slab-one" style={{ fontFamily: "'Alfa Slab One', serif", fontWeight: 'bold' }}>Alfa Slab One (Block)</option>
+                            <option value="rubik" style={{ fontFamily: "'Rubik', sans-serif", fontWeight: 'bold' }}>Rubik Black (Block)</option>
+                            <option value="anton" style={{ fontFamily: "'Anton', sans-serif", fontWeight: 'bold' }}>Anton (Tall Block)</option>
                         </select>
                         <div className="relative border border-gray-200 rounded flex items-center h-[24px] mx-1 bg-white hover:border-gray-300 focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-400 transition-colors">
                             <input 

@@ -315,7 +315,7 @@ const SevenTNTPlayer = () => {
                 setPlayerWidth(playerRef.current.offsetWidth);
             }
         };
-        
+
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -437,7 +437,7 @@ const SevenTNTPlayer = () => {
                     let contentStr = dayObj.content || "";
                     let verseStr = contentStr;
                     if (contentStr.includes('Text:')) verseStr = contentStr.split('Text:')[0].trim();
-                    
+
                     const cleanDbVerse = (v) => v ? v.trim().toLowerCase().replace(/\s+/g, ' ') : '';
                     const targetVerse = cleanDbVerse(verseStr);
                     const targetBook = cleanDbVerse(chunks[chunkIdx].bookNameHeader || "");
@@ -461,9 +461,9 @@ const SevenTNTPlayer = () => {
                                 const parsed = JSON.parse(matchedContent.video_url);
                                 if (Array.isArray(parsed)) videos = parsed.map(v => `http://${window.location.hostname}:8000${v}`);
                                 else if (typeof parsed === 'string') videos = [`http://${window.location.hostname}:8000${parsed}`];
-                            } catch (e) {}
+                            } catch (e) { }
                         }
-                        
+
                         if (videos.length > 0 || matchedContent.ref_link) {
                             newPlaylist.push({
                                 day: i,
@@ -546,9 +546,9 @@ const SevenTNTPlayer = () => {
                 } else {
                     setVideoUrls([]);
                 }
-                
+
                 setCurrentRefLink(matchedContent.ref_link || null);
-                
+
             } else {
                 audioRef.current.src = '';
                 setVideoUrls([]);
@@ -609,12 +609,12 @@ const SevenTNTPlayer = () => {
 
     return (
         <div className="min-h-[100dvh] bg-gray-100 flex items-center justify-center sm:px-4 py-4 sm:py-8 font-sans transition-colors duration-500 overflow-y-auto">
-            <div 
-                className="w-full max-w-[420px] relative shrink-0" 
-                style={{ perspective: '1500px' }} 
+            <div
+                className="w-full max-w-[420px] relative shrink-0"
+                style={{ perspective: '1500px' }}
                 ref={playerRef}
             >
-                
+
                 {/* Front Face: Main Player */}
                 <div
                     className="w-full bg-[#12182b] flex flex-col shadow-2xl relative border-[5px] border-[#1a2234] rounded-none sm:rounded-lg overflow-hidden"
@@ -671,168 +671,168 @@ const SevenTNTPlayer = () => {
                         })()}
                     </div>
 
-                {/* Day / Time Bar */}
-                <div className="bg-[#445b73] py-1.5 flex justify-center items-center">
-                    <span className="text-white font-bold tracking-wider text-[13px] uppercase">DAY 0{selectedDay} : {currentTime}</span>
-                </div>
+                    {/* Day / Time Bar */}
+                    <div className="bg-[#445b73] py-1.5 flex justify-center items-center">
+                        <span className="text-white font-bold tracking-wider text-[13px] uppercase">DAY 0{selectedDay} : {currentTime}</span>
+                    </div>
 
-                {/* Facet Banner */}
-                <div className="bg-[#8b9ba8] px-4 py-1.5">
-                    <span className="text-white font-bold drop-shadow-sm text-sm">Facet {selectedDay}: Paradigm Spirituality</span>
-                </div>
+                    {/* Facet Banner */}
+                    <div className="bg-[#8b9ba8] px-4 py-1.5">
+                        <span className="text-white font-bold drop-shadow-sm text-sm">Facet {selectedDay}: Paradigm Spirituality</span>
+                    </div>
 
-                {/* Content Area */}
-                <div className="bg-[#243144] px-4 py-2 flex gap-3 min-h-[80px] items-center">
-                    <div className="flex-1 flex flex-col justify-center">
-                        <div className="text-white text-[14px] font-bold leading-tight flex-1 flex flex-col gap-1 mt-0.5">
-                            {(() => {
-                                const chunkIdx = Math.floor((selectedDay - 1) / 5);
-                                let contentStr = `Content for Day ${selectedDay}`;
-                                if (chunks && chunks[chunkIdx]) {
-                                    const dayObj = chunks[chunkIdx].days.find(d => d.day === selectedDay);
-                                    if (dayObj?.content) contentStr = dayObj.content;
-                                }
+                    {/* Content Area */}
+                    <div className="bg-[#243144] px-4 py-2 flex gap-3 min-h-[80px] items-center">
+                        <div className="flex-1 flex flex-col justify-center">
+                            <div className="text-white text-[14px] font-bold leading-tight flex-1 flex flex-col gap-1 mt-0.5">
+                                {(() => {
+                                    const chunkIdx = Math.floor((selectedDay - 1) / 5);
+                                    let contentStr = `Content for Day ${selectedDay}`;
+                                    if (chunks && chunks[chunkIdx]) {
+                                        const dayObj = chunks[chunkIdx].days.find(d => d.day === selectedDay);
+                                        if (dayObj?.content) contentStr = dayObj.content;
+                                    }
 
-                                if (contentStr.includes('Text:')) {
-                                    const parts = contentStr.split('Text:');
-                                    let titlePart = parts[0].trim().replace(/Verse:\s*/i, '').replace(/enesis/i, 'Genesis');
+                                    if (contentStr.includes('Text:')) {
+                                        const parts = contentStr.split('Text:');
+                                        let titlePart = parts[0].trim().replace(/Verse:\s*/i, '').replace(/enesis/i, 'Genesis');
+                                        return (
+                                            <>
+                                                <span className="pl-6">{titlePart}</span>
+                                                <div className="flex gap-2 items-start">
+                                                    <input type="radio" readOnly checked className="accent-black w-4 h-4 mt-[2px] flex-shrink-0" />
+                                                    <span className="text-[13px] font-normal">{parts[1].trim()}</span>
+                                                </div>
+                                            </>
+                                        );
+                                    }
+                                    let cleanContent = contentStr.replace(/Verse:\s*/i, '').replace(/enesis/i, 'Genesis');
                                     return (
-                                        <>
-                                            <span className="pl-6">{titlePart}</span>
-                                            <div className="flex gap-2 items-start">
-                                                <input type="radio" readOnly checked className="accent-black w-4 h-4 mt-[2px] flex-shrink-0" />
-                                                <span className="text-[13px] font-normal">{parts[1].trim()}</span>
-                                            </div>
-                                        </>
+                                        <div className="flex gap-2 items-start">
+                                            <input type="radio" readOnly checked className="accent-black w-4 h-4 mt-[2px] flex-shrink-0" />
+                                            <span className="text-[13px] font-normal">{cleanContent}</span>
+                                        </div>
                                     );
-                                }
-                                let cleanContent = contentStr.replace(/Verse:\s*/i, '').replace(/enesis/i, 'Genesis');
-                                return (
-                                    <div className="flex gap-2 items-start">
-                                        <input type="radio" readOnly checked className="accent-black w-4 h-4 mt-[2px] flex-shrink-0" />
-                                        <span className="text-[13px] font-normal">{cleanContent}</span>
-                                    </div>
-                                );
-                            })()}
+                                })()}
+                            </div>
+                        </div>
+                        <div className="w-[80px] sm:w-[90px] flex-shrink-0 relative flex items-center">
+                            <img src={placeholderImg} alt="Book Cover" className="w-full shadow-lg rounded object-cover h-[80px] sm:h-[90px]" />
                         </div>
                     </div>
-                    <div className="w-[80px] sm:w-[90px] flex-shrink-0 relative flex items-center">
-                        <img src={placeholderImg} alt="Book Cover" className="w-full shadow-lg rounded object-cover h-[80px] sm:h-[90px]" />
-                    </div>
-                </div>
 
-                {/* Audio Player Controls */}
-                <div
-                    className={`px-3 mx-1 mb-1 mt-0 h-[39px] rounded-[4px] border-[5px] flex flex-col justify-center relative z-10 transition-colors duration-300 shadow-inner`}
-                    style={{
-                        backgroundColor: playerBgColor,
-                        borderColor: playerBorderColor
-                    }}
-                >
-                    <div className="flex items-center justify-between gap-2">
-                        <button
-                            onClick={togglePlay}
-                            className="hover:scale-110 transition-transform flex-shrink-0 cursor-pointer text-black"
-                        >
-                            {isPlaying ? (
-                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
-                                    <rect x="6" y="4" width="4" height="16" rx="0.5" />
-                                    <rect x="14" y="4" width="4" height="16" rx="0.5" />
-                                </svg>
-                            ) : (
-                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
-                                    <path d="M6 4l14 8-14 8z" />
-                                </svg>
-                            )}
-                        </button>
-
-                        <div className="flex-grow flex flex-col justify-center overflow-hidden w-full">
-                            <div
-                                className="w-full cursor-pointer group py-0.5"
-                                onClick={(e) => {
-                                    const bounds = e.currentTarget.getBoundingClientRect();
-                                    const perc = (e.clientX - bounds.left) / bounds.width;
-                                    if (audioDuration) {
-                                        audioRef.current.currentTime = perc * audioDuration;
-                                    }
-                                }}
+                    {/* Audio Player Controls */}
+                    <div
+                        className={`px-3 mx-1 mb-1 mt-0 h-[39px] rounded-[4px] border-[5px] flex flex-col justify-center relative z-10 transition-colors duration-300 shadow-inner`}
+                        style={{
+                            backgroundColor: playerBgColor,
+                            borderColor: playerBorderColor
+                        }}
+                    >
+                        <div className="flex items-center justify-between gap-2">
+                            <button
+                                onClick={togglePlay}
+                                className="hover:scale-110 transition-transform flex-shrink-0 cursor-pointer text-black"
                             >
-                                <div className="w-full py-0">
-                                    <div className="w-full h-1 bg-white/30 group-hover:h-1.5 transition-all duration-150 relative rounded-full">
-                                        <div className="h-full bg-[#fca5a5] relative transition-all duration-100 rounded-full" style={{ width: `${progressPercent}%` }}>
-                                            <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-[#fca5a5] rounded-full scale-0 group-hover:scale-100 transition-transform duration-150 shadow-md"></div>
+                                {isPlaying ? (
+                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
+                                        <rect x="6" y="4" width="4" height="16" rx="0.5" />
+                                        <rect x="14" y="4" width="4" height="16" rx="0.5" />
+                                    </svg>
+                                ) : (
+                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px]">
+                                        <path d="M6 4l14 8-14 8z" />
+                                    </svg>
+                                )}
+                            </button>
+
+                            <div className="flex-grow flex flex-col justify-center overflow-hidden w-full">
+                                <div
+                                    className="w-full cursor-pointer group py-0.5"
+                                    onClick={(e) => {
+                                        const bounds = e.currentTarget.getBoundingClientRect();
+                                        const perc = (e.clientX - bounds.left) / bounds.width;
+                                        if (audioDuration) {
+                                            audioRef.current.currentTime = perc * audioDuration;
+                                        }
+                                    }}
+                                >
+                                    <div className="w-full py-0">
+                                        <div className="w-full h-1 bg-white/30 group-hover:h-1.5 transition-all duration-150 relative rounded-full">
+                                            <div className="h-full bg-[#fca5a5] relative transition-all duration-100 rounded-full" style={{ width: `${progressPercent}%` }}>
+                                                <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-[#fca5a5] rounded-full scale-0 group-hover:scale-100 transition-transform duration-150 shadow-md"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                                <div className="flex justify-between items-center w-full text-black font-bold text-[11px]">
+                                    <span className="flex-shrink-0 font-black">{formatTrackTime(audioProgress)}</span>
+                                    <span className="text-center font-bold uppercase tracking-widest text-[#1a2234] text-[12px] overflow-hidden whitespace-nowrap overflow-ellipsis leading-none px-2">
+                                        FACET 2: CHAPTER 1
+                                    </span>
+                                    <span className="flex-shrink-0 font-black">{formatTrackTime(audioDuration) === '0:00' ? '18:11' : formatTrackTime(audioDuration)}</span>
+                                </div>
                             </div>
-                            <div className="flex justify-between items-center w-full text-black font-bold text-[11px]">
-                                <span className="flex-shrink-0 font-black">{formatTrackTime(audioProgress)}</span>
-                                <span className="text-center font-bold uppercase tracking-widest text-[#1a2234] text-[12px] overflow-hidden whitespace-nowrap overflow-ellipsis leading-none px-2">
-                                    FACET 2: CHAPTER 1
-                                </span>
-                                <span className="flex-shrink-0 font-black">{formatTrackTime(audioDuration) === '0:00' ? '18:11' : formatTrackTime(audioDuration)}</span>
-                            </div>
-                        </div>
 
-                        <button
-                            onClick={() => setShowWisdom(!showWisdom)}
-                            className={`transition-all duration-300 flex-shrink-0 text-black ${showWisdom ? 'text-white rotate-90 scale-110 drop-shadow-lg' : 'hover:rotate-90 hover:scale-110'}`}
+                            <button
+                                onClick={() => setShowWisdom(!showWisdom)}
+                                className={`transition-all duration-300 flex-shrink-0 text-black ${showWisdom ? 'text-white rotate-90 scale-110 drop-shadow-lg' : 'hover:rotate-90 hover:scale-110'}`}
+                            >
+                                <i className="pi pi-cog text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Lower Area Stack */}
+                    <div className={`relative w-full`} style={{ perspective: '1000px' }}>
+                        {/* Front Face: Day Selection Grid */}
+                        <div
+                            className="relative flex flex-col rounded-b-lg"
+                            style={{
+                                backfaceVisibility: 'hidden',
+                                transform: showWisdom ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                                transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                                pointerEvents: showWisdom ? 'none' : 'auto',
+                                zIndex: showWisdom ? 0 : 10
+                            }}
                         >
-                            <i className="pi pi-cog text-lg"></i>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Lower Area Stack */}
-                <div className={`relative w-full`} style={{ perspective: '1000px' }}>
-                    {/* Front Face: Day Selection Grid */}
-                    <div
-                        className="relative flex flex-col rounded-b-lg"
-                        style={{
-                            backfaceVisibility: 'hidden',
-                            transform: showWisdom ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                            transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                            pointerEvents: showWisdom ? 'none' : 'auto',
-                            zIndex: showWisdom ? 0 : 10
-                        }}
-                    >
-                        <div className="p-3 pb-8 bg-black w-full rounded-none sm:rounded-b-lg">
-                            <div className={`grid grid-cols-5 ${trackingDays > 30 ? 'gap-y-[15px]' : 'gap-y-[30px]'} gap-x-2`}>
-                                {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => {
-                                    const isCompleted = finishedDays.has(num);
-                                    return (
-                                        <div key={num} className="flex justify-center">
-                                            <div
-                                                onClick={() => handleDaySelect(num)}
-                                                className={`flex items-center justify-center font-black transition-all duration-300 select-none text-[13px] sm:text-[14px] rounded-lg ${trackingDays > 30 ? 'w-6 h-6 sm:w-7 sm:h-7' : 'w-7 h-7 sm:w-8 sm:h-8'} cursor-pointer opacity-100 ${selectedDay === num ? 'bg-blue-500 text-white scale-125 ring-2 ring-blue-300' : (isCompleted ? 'bg-blue-500 text-white opacity-90' : 'text-white hover:text-blue-200')}`}
-                                                title={`Day ${num}`}
-                                            >
-                                                {num}
+                            <div className="p-3 pb-8 bg-black w-full rounded-none sm:rounded-b-lg">
+                                <div className={`grid grid-cols-5 ${trackingDays > 30 ? 'gap-y-[15px]' : 'gap-y-[30px]'} gap-x-2`}>
+                                    {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => {
+                                        const isCompleted = finishedDays.has(num);
+                                        return (
+                                            <div key={num} className="flex justify-center">
+                                                <div
+                                                    onClick={() => handleDaySelect(num)}
+                                                    className={`flex items-center justify-center font-black transition-all duration-300 select-none text-[13px] sm:text-[14px] rounded-lg ${trackingDays > 30 ? 'w-6 h-6 sm:w-7 sm:h-7' : 'w-7 h-7 sm:w-8 sm:h-8'} cursor-pointer opacity-100 ${selectedDay === num ? 'bg-blue-500 text-white scale-125 ring-2 ring-blue-300' : (isCompleted ? 'bg-blue-500 text-white opacity-90' : 'text-white hover:text-blue-200')}`}
+                                                    title={`Day ${num}`}
+                                                >
+                                                    {num}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Back Face: Wisdom Overlay */}
-                    <div
-                        className="absolute inset-0 flex flex-col rounded-b-lg"
-                        style={{
-                            backfaceVisibility: 'hidden',
-                            transform: showWisdom ? 'rotateY(0deg)' : 'rotateY(-180deg)',
-                            transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                            pointerEvents: showWisdom ? 'auto' : 'none',
-                            zIndex: showWisdom ? 10 : 0
-                        }}
-                    >
-                        <WisdomOverlay
-                            onPencilClick={(colorHex) => setPlayerBorderColor(colorHex)}
-                            onLetterClick={(colorHex) => setPlayerBgColor(colorHex)}
-                        />
+                        {/* Back Face: Wisdom Overlay */}
+                        <div
+                            className="absolute inset-0 flex flex-col rounded-b-lg"
+                            style={{
+                                backfaceVisibility: 'hidden',
+                                transform: showWisdom ? 'rotateY(0deg)' : 'rotateY(-180deg)',
+                                transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                                pointerEvents: showWisdom ? 'auto' : 'none',
+                                zIndex: showWisdom ? 10 : 0
+                            }}
+                        >
+                            <WisdomOverlay
+                                onPencilClick={(colorHex) => setPlayerBorderColor(colorHex)}
+                                onLetterClick={(colorHex) => setPlayerBgColor(colorHex)}
+                            />
+                        </div>
                     </div>
-                </div>
                 </div>
 
                 {/* Back Face: Video Player */}
@@ -876,9 +876,9 @@ const SevenTNTPlayer = () => {
                             {/* Main Video */}
                             {videoUrls.length > 0 ? (
                                 <div className="w-full border-2 border-gray-700 rounded-lg overflow-hidden shadow-lg bg-black">
-                                    <video 
-                                        src={videoUrls[0]} 
-                                        controls 
+                                    <video
+                                        src={videoUrls[0]}
+                                        controls
                                         className="w-full"
                                         autoPlay={isVideoAutoPlay}
                                     />
@@ -898,8 +898,8 @@ const SevenTNTPlayer = () => {
                                         <h3 className="text-gray-400 font-black text-[10px] tracking-widest m-0 uppercase">Playlist Sequence:</h3>
                                         <span className="text-gray-500 text-[10px]">({fullPlaylist.length} tracks)</span>
                                     </div>
-                                    
-                                    <div 
+
+                                    <div
                                         ref={playlistRef}
                                         onMouseDown={handleMouseDown}
                                         onMouseLeave={handleMouseLeave}
@@ -908,8 +908,8 @@ const SevenTNTPlayer = () => {
                                         className="flex gap-3 overflow-x-auto custom-scrollbar pb-3 pt-1 px-1 cursor-grab active:cursor-grabbing select-none"
                                     >
                                         {fullPlaylist.map((item, idx) => (
-                                            <div 
-                                                key={idx} 
+                                            <div
+                                                key={idx}
                                                 onClick={(e) => {
                                                     if (dragDistance > 10) {
                                                         e.stopPropagation();
@@ -923,13 +923,13 @@ const SevenTNTPlayer = () => {
                                                     <i className="pi pi-video text-gray-700 text-2xl group-hover:scale-110 transition-transform duration-300"></i>
                                                 </div>
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-                                                
+
                                                 {selectedDay === item.day && (
                                                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center bg-black/60 z-10 shadow-md">
                                                         <i className="pi pi-play text-white text-xs ml-0.5"></i>
                                                     </div>
                                                 )}
-                                                
+
                                                 <div className="absolute bottom-2 left-2 right-2">
                                                     <span className="text-white font-bold text-[11px] truncate block drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                                                         {item.title}
@@ -945,9 +945,9 @@ const SevenTNTPlayer = () => {
                             {currentRefLink && (
                                 <div className="w-full mt-2">
                                     <h3 className="text-gray-400 font-black text-[10px] tracking-widest mb-2 uppercase">Attached References:</h3>
-                                    <a 
-                                        href={currentRefLink.startsWith('http') ? currentRefLink : `https://${currentRefLink}`} 
-                                        target="_blank" 
+                                    <a
+                                        href={currentRefLink.startsWith('http') ? currentRefLink : `https://${currentRefLink}`}
+                                        target="_blank"
                                         rel="noreferrer"
                                         className="w-full bg-[#162032] border border-[#23314a] rounded-lg p-3 flex items-center justify-between hover:bg-[#1c283f] hover:border-gray-600 transition-all duration-300 group shadow-sm"
                                     >

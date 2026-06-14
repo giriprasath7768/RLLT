@@ -572,7 +572,7 @@ const HIGHLIGHT_CATEGORIES = [
 const SEVEN_MOUNTAIN_SPHERES = [
     { label: "Family", color: "#86c5f7" },
     { label: "Finance", color: "#38b948" },
-    { label: "Government", color: "#4579d4" },
+    { label: "Government", color: "#60A5FA" },
     { label: "Talent", color: "#8b2671" },
     { label: "Training", color: "#f17a41" },
     { label: "Spirituality", color: "#ebe244" },
@@ -598,7 +598,7 @@ const HighlightOverlay = ({ h }) => {
             });
 
             const isOval = format === 'circle' || format === 'oval';
-            
+
             // Expand by exactly 5px vertically, and 3.8px horizontally (or 8px for oval to accommodate curve)
             const paddingY = 5;
             const paddingX = isOval ? 8 : 3.8;
@@ -641,7 +641,7 @@ const HighlightOverlay = ({ h }) => {
                     const expandTop = 0.7;
                     const expandBottom = 0.3;
                     const expandX = 0.1;
-                    
+
                     let style = {
                         position: 'absolute',
                         top: `${Math.max(0, rect.top - expandTop)}%`,
@@ -660,7 +660,7 @@ const HighlightOverlay = ({ h }) => {
                         style.backgroundColor = color;
                         style.opacity = 0.75;
                         style.mixBlendMode = 'multiply';
-                        
+
                         const pct = (hlLvl / 5) * 70;
                         const baseHeight = rect.height + expandTop + expandBottom;
                         style.height = `${(baseHeight * pct) / 100}%`;
@@ -687,11 +687,11 @@ const PDFPageRender = React.forwardRef((props, ref) => {
     const lightingObj = { background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%)' };
 
     return (
-        <div className={`page bg-[#e5e7eb] shadow-2xl w-full h-full`} ref={ref} data-density="soft">
-            <div className={`page-content w-full bg-[#ffffff] flex flex-col relative overflow-hidden h-full justify-center items-center`}>
-                <div className={`absolute inset-0 pdf-page-content p-[8%] pt-[10%] flex flex-col z-50 text-left`} style={{ gap: `${props.width * 0.016}px` }} data-page-number={props.pageNumber}>
+        <div className={`page bg-[#ffffff] shadow-2xl w-full h-full`} ref={ref} data-density="soft">
+            <div className={`page-content w-full bg-transparent flex flex-col relative overflow-hidden h-full justify-center items-center`}>
+                <div className={`absolute inset-0 pdf-page-content p-[8%] pt-[10%] flex flex-col z-50 text-left pointer-events-none`} style={{ gap: `${props.width * 0.016}px` }} data-page-number={props.pageNumber}>
                     {props.pageData && props.pageData.paragraphs.map((para, i) => (
-                        <span key={i} className="pdf-selectable-paragraph leading-relaxed font-serif text-[#1a1a1a]" style={{ fontSize: `${Math.max(12, props.width * 0.0185)}px` }} id={`para-${props.pageNumber}-${i}`}>
+                        <span key={i} className="pdf-selectable-paragraph leading-relaxed font-serif text-[#1a1a1a] pointer-events-auto" style={{ fontSize: `${Math.max(12, props.width * 0.0185)}px` }} id={`para-${props.pageNumber}-${i}`}>
                             {para}
                         </span>
                     ))}
@@ -701,7 +701,7 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                 {props.pageHighlights && props.pageHighlights.map(h => (
                     <HighlightOverlay key={h.id} h={h} />
                 ))}
-                
+
                 {!isMobile && <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-10" style={lightingObj} />}
                 {!isMobile && <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />}
                 {!isMobile && <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-30" style={isRightPage ? rightEdgeObj : leftEdgeObj} />}
@@ -715,8 +715,8 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                         <div className="absolute bottom-0 right-0 w-[5%] h-[5%] cursor-pointer z-[60]" />
                     </>
                 )}
-                <div 
-                    className="absolute inset-0 z-[70]" 
+                <div
+                    className="absolute inset-0 z-[70]"
                     style={{ pointerEvents: props.isTextSelectionMode ? 'none' : 'auto' }}
                     onDoubleClick={props.onDoubleClick}
                 />
@@ -788,7 +788,7 @@ const BookIndex = () => {
     const [showAudioPlayer, setShowAudioPlayer] = useState(false);
     const [audioLoadedTrackName, setAudioLoadedTrackName] = useState(null);
     const [showWisdomOverlay, setShowWisdomOverlay] = useState(false);
-    const [playerBgColor, setPlayerBgColor] = useState('#547395');
+    const [playerBgColor, setPlayerBgColor] = useState('#6195df');
     const [playerBorderColor, setPlayerBorderColor] = useState('#080b12');
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -817,10 +817,10 @@ const BookIndex = () => {
         if (audioLoadedTrackName !== trackIdentifier) {
             const content = contentDB.find(c => c.book_id === selectedBook.id && c.chapter_id === selectedChapter.id);
             const mediaUrlStr = content?.audio_url || content?.video_url;
-            
+
             if (mediaUrlStr) {
                 let parsedAudioUrl = '';
-                
+
                 let rawAudios = [];
                 if (Array.isArray(mediaUrlStr)) {
                     rawAudios = mediaUrlStr;
@@ -833,7 +833,7 @@ const BookIndex = () => {
                         parsedAudioUrl = mediaUrlStr;
                     }
                 }
-                
+
                 if (!parsedAudioUrl && rawAudios.length > 0) {
                     const firstAudio = rawAudios[0];
                     if (typeof firstAudio === 'string') {
@@ -842,12 +842,12 @@ const BookIndex = () => {
                         parsedAudioUrl = firstAudio.url || firstAudio.path || '';
                     }
                 }
-                
+
                 if (typeof parsedAudioUrl !== 'string' || !parsedAudioUrl) {
                     console.error("Invalid media URL format:", mediaUrlStr);
                     return;
                 }
-                
+
                 const formattedUrl = parsedAudioUrl.startsWith('/') ? parsedAudioUrl : '/' + parsedAudioUrl;
                 audioRef.current.src = `http://${window.location.hostname}:8000${formattedUrl}`;
                 setAudioLoadedTrackName(trackIdentifier);
@@ -888,9 +888,6 @@ const BookIndex = () => {
         let lastValidRange = null;
 
         const handleStopPropagation = (e) => {
-            if (window.innerWidth < 768) {
-                return;
-            }
             if (e.target.closest('.pdf-page-content')) {
                 e.stopPropagation();
             }
@@ -1068,8 +1065,8 @@ const BookIndex = () => {
                         toKeep.push(h);
                         return;
                     }
-                    const overlaps = h.rects.some(hr => 
-                        selectionMenu.rects.some(sr => 
+                    const overlaps = h.rects.some(hr =>
+                        selectionMenu.rects.some(sr =>
                             !(hr.left > sr.left + sr.width || hr.left + hr.width < sr.left || hr.top > sr.top + sr.height || hr.top + hr.height < sr.top)
                         )
                     );
@@ -1090,7 +1087,7 @@ const BookIndex = () => {
             setTimeout(() => window.getSelection().removeAllRanges(), 0);
             return;
         }
-        
+
         // Ensure format and styleOption are set, with fallbacks for legacy/direct calls
         const isMountain = SEVEN_MOUNTAIN_SPHERES.some(m => m.label === categoryObj.label);
         const finalFormat = format ? format : (isMountain ? 'square' : 'highlight');
@@ -1126,7 +1123,7 @@ const BookIndex = () => {
             console.error("Failed to save highlight:", err);
             // Revert or show error (optimistic update optional, here we just don't add if failed)
         });
-        
+
         // Touch count for team transformation (scroll/team transformation used)
         StudentService.updateMyTouchCounts({ transformation: 0, team_transformation: 1, klt_reading_plan: 0 })
             .catch(err => console.log('Touch count update skipped:', err?.response?.status));
@@ -1247,10 +1244,10 @@ const BookIndex = () => {
                     setBookData(null);
                     setNumPages(null);
                 });
-                
+
             // Fetch highlights for this book and chapter
             if (selectedBook && selectedChapter) {
-                axios.get(`http://${window.location.hostname}:8000/api/highlights?book_id=${selectedBook.id}&chapter_id=${selectedChapter.id}&t=${Date.now()}`, { 
+                axios.get(`http://${window.location.hostname}:8000/api/highlights?book_id=${selectedBook.id}&chapter_id=${selectedChapter.id}&t=${Date.now()}`, {
                     withCredentials: true,
                     headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                 })
@@ -1302,19 +1299,20 @@ const BookIndex = () => {
         const updateDimensions = () => {
             if (bookContainerRef.current) {
                 const containerWidth = bookContainerRef.current.offsetWidth;
-                const windowHeight = bookContainerRef.current.offsetHeight;
-
-                // Allow the book width to span the majority of the screen width securely
-                const maxAvailableWidth = containerWidth; // Size of book to 100%
                 const isMob = window.innerWidth < 768;
-                let singlePageWidth = isMob ? maxAvailableWidth * 0.95 : maxAvailableWidth / 2;
-                let singlePageHeight = singlePageWidth * aspectRatio;
+                const numPages = isMob ? 1 : 2;
 
-                // Vertical limits are removed to allow full native scrolling, enabling max legibility.
+                // Base dimensions purely on width to allow vertical scrolling
+                // Leave a little horizontal margin (95% mobile, 90% desktop)
+                const maxWidth = isMob ? containerWidth * 0.95 : containerWidth * 0.90;
+                const a4Ratio = 1.4142; // height = width * a4Ratio
+
+                let pageWidth = maxWidth / numPages;
+                let pageHeight = pageWidth * a4Ratio;
 
                 setPlayerDimensions({
-                    width: Math.max(250, Math.floor(singlePageWidth)),
-                    height: Math.max(350, Math.floor(singlePageHeight))
+                    width: Math.floor(pageWidth),
+                    height: Math.floor(pageHeight)
                 });
 
                 setIsMobile(isMob);
@@ -1336,9 +1334,9 @@ const BookIndex = () => {
 
     const overlappingHighlight = React.useMemo(() => {
         if (!selectionMenu) return null;
-        return highlights.find(h => 
-            h.pageNumber === selectionMenu.pageNumber && 
-            h.text && selectionMenu.text && 
+        return highlights.find(h =>
+            h.pageNumber === selectionMenu.pageNumber &&
+            h.text && selectionMenu.text &&
             (h.text.includes(selectionMenu.text) || selectionMenu.text.includes(h.text))
         );
     }, [selectionMenu, highlights]);
@@ -1349,7 +1347,7 @@ const BookIndex = () => {
             <GlobalPDFPageOverridesSMT />
 
             {/* Static SMT-Style Top Navigation Bar */}
-            <div className="w-full shrink-0 min-h-[68px] py-2 md:py-0 bg-[#0b0f19] border-b border-gray-800 flex flex-wrap md:flex-nowrap items-center px-2 sm:px-4 justify-between z-50 shadow-[0_15px_30px_rgba(0,0,0,0.6)] relative pointer-events-auto gap-y-2">
+            <div className="w-full shrink-0 min-h-[68px] py-2 md:py-0 bg-[#0b0f19] border-b border-gray-800 flex flex-wrap md:flex-nowrap items-center px-2 sm:px-4 justify-between z-[115] shadow-[0_15px_30px_rgba(0,0,0,0.6)] relative pointer-events-auto gap-y-2">
                 {/* Left Controls */}
                 <div className="flex items-center gap-2 sm:gap-4 shrink-0 order-1">
                     <button onClick={() => navigate(-1)} className="bg-gray-800 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all border border-gray-600 shrink-0">
@@ -1417,11 +1415,13 @@ const BookIndex = () => {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={undoHighlight}
-                            className="bg-gray-800 hover:bg-red-600 text-white w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-full flex items-center justify-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
+                            className="group bg-gray-800 hover:bg-red-600 text-white h-11 px-3 sm:px-4 rounded-full flex items-center border border-gray-600 shadow-xl transition-all duration-300 whitespace-nowrap"
                             title="Undo Last Highlight"
                         >
-                            <i className="pi pi-undo text-lg"></i>
-                            <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline">UNDO</span>
+                            <i className="pi pi-undo text-2xl shrink-0 transition-transform group-hover:scale-110"></i>
+                            <span className="overflow-hidden max-w-0 opacity-0 group-hover:max-w-[80px] group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                                <span className="text-[11px] font-black tracking-widest uppercase pl-2">UNDO</span>
+                            </span>
                         </button>
                         <button
                             onClick={() => {
@@ -1429,10 +1429,12 @@ const BookIndex = () => {
                                 setShowToolMenu(false);
                                 incrementTransformationTouch();
                             }}
-                            className="bg-gray-800 hover:bg-blue-600 text-white w-10 h-10 sm:w-auto sm:h-auto sm:px-5 sm:py-2 rounded-full flex items-center justify-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
+                            className="group bg-gray-800 hover:bg-blue-600 text-white h-11 px-3 sm:px-4 rounded-full flex items-center border border-gray-600 shadow-xl transition-all duration-300 whitespace-nowrap"
                         >
-                            <i className="pi pi-play-circle text-lg"></i>
-                            <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline">PLAYER</span>
+                            <i className="pi pi-play-circle text-2xl shrink-0 transition-transform group-hover:scale-110"></i>
+                            <span className="overflow-hidden max-w-0 opacity-0 group-hover:max-w-[100px] group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                                <span className="text-[11px] font-black tracking-widest uppercase pl-2">PLAYER</span>
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -1491,7 +1493,7 @@ const BookIndex = () => {
                                     <div className="bg-[#1a2234] rounded-lg p-3 border border-[#2a3045]">
                                         <div className="flex justify-between items-center border-b border-[#2a3045] mb-3 pb-2">
                                             <h3 className="text-sm font-black text-white tracking-wide">DAY {selectedDayNum} TRACKS</h3>
-                                            <button 
+                                            <button
                                                 onClick={() => setExpandedBookId(null)}
                                                 className="text-gray-400 hover:text-red-400 transition-colors"
                                                 title="Close Tracks"
@@ -1503,7 +1505,7 @@ const BookIndex = () => {
                                             {(() => {
                                                 const dayNode = selectedDayObj;
                                                 let fullList = [];
-                                                
+
                                                 let is24x7 = false;
                                                 try { is24x7 = JSON.stringify(parsedPayload).includes('"m4b"'); } catch (e) { }
 
@@ -1531,12 +1533,12 @@ const BookIndex = () => {
                                                     const parts = bookStr.trim().split(' ');
                                                     const chapNum = parseInt(parts.pop());
                                                     const bookName = parts.join(' ').toUpperCase();
-                                                    
+
                                                     const dbBook = booksDB.find(b => b.name.toUpperCase() === bookName);
                                                     const dbChapter = dbBook ? chaptersDB.find(c => c.book_id === dbBook.id && c.chapter_number == chapNum) : null;
-                                                    
+
                                                     const isSelected = selectedChapter?.id === dbChapter?.id;
-                                                    
+
                                                     let textColorClass = 'text-gray-400 hover:bg-[#2d3748] hover:text-white';
                                                     if (isSelected) {
                                                         textColorClass = 'bg-[#3b82f6] text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]';
@@ -1545,7 +1547,7 @@ const BookIndex = () => {
                                                     } else if (bookObj.type === 'evening') {
                                                         textColorClass = 'text-blue-400 hover:bg-[#2d3748] hover:text-blue-300';
                                                     }
-                                                    
+
                                                     return (
                                                         <li key={bIdx}>
                                                             <button
@@ -1611,9 +1613,9 @@ const BookIndex = () => {
                                                 onClick={() => {
                                                     setExpandedBookId(prev => prev === book.id ? null : book.id);
                                                 }}
-                                                className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-semibold tracking-wide flex justify-between items-center ${expandedBookId === book.id
-                                                    ? 'bg-[#547395] text-white shadow-md border-l-4 border-[#c8a165]'
-                                                    : 'hover:bg-[#2a3045] text-gray-400 hover:text-white border-l-4 border-transparent'
+                                                className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-bold tracking-wide flex justify-between items-center text-white ${expandedBookId === book.id
+                                                    ? 'bg-[#547395] shadow-md border-l-4 border-[#c8a165]'
+                                                    : 'hover:bg-[#2a3045] border-l-4 border-transparent'
                                                     }`}
                                             >
                                                 <span className="truncate pr-2">{book.name}</span>
@@ -1621,7 +1623,7 @@ const BookIndex = () => {
                                                     {book.total_chapters || 0} Ch
                                                 </span>
                                             </button>
-    
+
                                             {/* Expandable Chapter Grid */}
                                             {expandedBookId === book.id && (
                                                 <div className="grid grid-cols-5 gap-1.5 mt-2 p-1.5 bg-[#0f131c] rounded-md shadow-inner mb-2 mx-2">
@@ -1667,66 +1669,64 @@ const BookIndex = () => {
                     <div className="relative z-10 w-full flex justify-center items-start">
                         {activePdfUrl ? (
                             <div className="w-full h-full flex justify-center items-center">
-                                    {numPages && aspectReady && (
+                                {numPages && aspectReady && (
+                                    <div
+                                        className="relative mx-auto flex items-center justify-center my-4 md:my-0"
+                                        style={{
+                                            width: `${isMobile ? baseWidth : baseWidth * 2}px`,
+                                            height: `${baseHeight}px`,
+                                        }}
+                                    >
                                         <div
-                                            className="relative mx-auto flex items-center justify-center my-4 md:my-0"
-                                            style={{
-                                                width: `${baseWidth}px`,
-                                                height: `${baseHeight}px`,
-                                            }}
+                                            style={{ width: `${isMobile ? baseWidth : baseWidth * 2}px`, height: `${baseHeight}px` }}
+                                            className="shadow-[0_45px_100px_rgba(0,0,0,0.8)] ring-1 ring-[#5c3a21]/50 flex flex-col justify-center items-center bg-[#ffffff] mt-0"
                                         >
-                                            <div
-                                                style={{ width: `${baseWidth}px`, height: `${baseHeight}px` }}
-                                                className="shadow-[0_45px_100px_rgba(0,0,0,0.8)] ring-1 ring-[#5c3a21]/50 flex flex-col justify-center items-center bg-[#ffffff] mt-0"
+                                            <HTMLFlipBook
+                                                width={baseWidth}
+                                                height={baseHeight}
+                                                style={{ width: '100%', height: '100%' }}
+                                                size="stretch"
+                                                minWidth={100}
+                                                maxWidth={9000}
+                                                minHeight={100}
+                                                maxHeight={9000}
+                                                drawShadow={true}
+                                                maxShadowOpacity={0.8}
+                                                showCover={false}
+                                                mobileScrollSupport={true}
+                                                disableFlipByClick={true}
+                                                useMouseEvents={true}
+                                                swipeDistance={30}
+                                                showPageCorners={false}
+                                                className="mx-auto"
+                                                flippingTime={900}
+                                                usePortrait={true}
+                                                onFlip={onPageFlip}
+                                                ref={flipBookRef}
                                             >
-                                                <HTMLFlipBook
-                                                    width={isMobile ? baseWidth : 1000}
-                                                    height={isMobile ? baseHeight : Math.floor(1000 * aspectRatio)}
-                                                    style={{ width: '100%', height: '100%' }}
-                                                    size={isMobile ? "fixed" : "stretch"}
-                                                    minWidth={100}
-                                                    maxWidth={9000}
-                                                    minHeight={100}
-                                                    maxHeight={9000}
-                                                    drawShadow={true}
-                                                    maxShadowOpacity={0.8}
-                                                    showCover={false}
-                                                    mobileScrollSupport={true}
-                                                    disableFlipByClick={true}
-                                                    useMouseEvents={!isTextSelectionMode}
-                                                    swipeDistance={isTextSelectionMode ? 0 : 30}
-                                                    showPageCorners={false}
-                                                    className="mx-auto"
-                                                    flippingTime={900}
-                                                    usePortrait={true}
-                                                    onFlip={onPageFlip}
-                                                    ref={flipBookRef}
-                                                >
-                                                    {Array.from(new Array(numPages), (_, index) => {
-                                                        const pageToRender = index + 1;
-                                                        return (
-                                                            <PDFPageRender
-                                                                key={index}
-                                                                pageNumber={pageToRender}
-                                                                width={baseWidth}
-                                                                pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
-                                                                pageData={bookData ? bookData.pages[pageToRender - 1] : null}
-                                                                onDeleteHighlight={deleteHighlight}
-                                                                isMobile={true}
-                                                                isTextSelectionMode={isTextSelectionMode}
-                                                                onDoubleClick={() => {
-                                                                    if (window.innerWidth < 768) {
-                                                                        setIsTextSelectionMode(prev => !prev);
-                                                                    }
-                                                                }}
-                                                            />
-                                                        );
-                                                    })}
-                                                </HTMLFlipBook>
-                                            </div>
+                                                {Array.from(new Array(numPages), (_, index) => {
+                                                    const pageToRender = index + 1;
+                                                    return (
+                                                        <PDFPageRender
+                                                            key={index}
+                                                            pageNumber={pageToRender}
+                                                            width={baseWidth}
+                                                            pageHighlights={highlights.filter(h => h.pageNumber === pageToRender)}
+                                                            pageData={bookData ? bookData.pages[pageToRender - 1] : null}
+                                                            onDeleteHighlight={deleteHighlight}
+                                                            isMobile={true}
+                                                            isTextSelectionMode={isTextSelectionMode}
+                                                            onDoubleClick={() => {
+                                                                setIsTextSelectionMode(prev => !prev);
+                                                            }}
+                                                        />
+                                                    );
+                                                })}
+                                            </HTMLFlipBook>
                                         </div>
-                                    )}
-                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center text-[#5c3a21] bg-[#e8d5a2]/60 p-12 rounded-2xl shadow-sm border border-[#5c3a21]/20 w-full max-w-2xl text-center backdrop-blur-sm">
                                 <i className="pi pi-book text-6xl opacity-30 mb-6 drop-shadow-sm"></i>
@@ -1766,11 +1766,10 @@ const BookIndex = () => {
                                 {/* Wisdom Overlay Popup rendered based on direction */}
                                 {showWisdomOverlay && (
                                     <div
-                                        className={`absolute w-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] rounded-[4px] overflow-hidden ${
-                                            direction === 'down' 
-                                                ? 'top-[calc(100%+8px)] animate-slide-down-fade' 
+                                        className={`absolute w-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] rounded-[4px] overflow-hidden ${direction === 'down'
+                                                ? 'top-[calc(100%+8px)] animate-slide-down-fade'
                                                 : 'bottom-[calc(100%+8px)] animate-slide-up-fade'
-                                        }`}
+                                            }`}
                                         data-nodrag="true"
                                     >
                                         <WisdomOverlay
@@ -1784,74 +1783,74 @@ const BookIndex = () => {
                                     </div>
                                 )}
 
-                                 {/* Player UI */}
-                                 <div
-                                     className="w-full h-[50px] border-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex items-center px-3.5 transition-all duration-300 rounded-[8px]"
-                                     style={{ backgroundColor: playerBgColor, borderColor: playerBorderColor }}
-                                 >
-                                     {/* Left Side: Play Button */}
-                                     <button
-                                         onClick={() => { togglePlay(); incrementKltTouch(); }}
-                                         className="outline-none mr-2.5 flex items-center shrink-0"
-                                         style={{ color: '#000000' }}
-                                     >
-                                         {isPlaying ? (
-                                             <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" style={{ fill: '#000000', stroke: '#000000' }}>
-                                                 <rect x="6" y="4" width="4" height="16" rx="0.5" style={{ fill: '#000000', stroke: '#000000' }} />
-                                                 <rect x="14" y="4" width="4" height="16" rx="0.5" style={{ fill: '#000000', stroke: '#000000' }} />
-                                             </svg>
-                                         ) : (
-                                             <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" style={{ fill: '#000000', stroke: '#000000' }}>
-                                                 <path d="M6 4l14 8-14 8z" style={{ fill: '#000000', stroke: '#000000' }} />
-                                             </svg>
-                                         )}
-                                     </button>
+                                {/* Player UI */}
+                                <div
+                                    className="w-full h-[50px] border-[5px] shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex items-center px-3.5 transition-all duration-300 rounded-[8px]"
+                                    style={{ backgroundColor: playerBgColor, borderColor: playerBorderColor }}
+                                >
+                                    {/* Left Side: Play Button */}
+                                    <button
+                                        onClick={() => { togglePlay(); incrementKltTouch(); }}
+                                        className="outline-none mr-2.5 flex items-center shrink-0"
+                                        style={{ color: '#000000' }}
+                                    >
+                                        {isPlaying ? (
+                                            <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" style={{ fill: '#000000', stroke: '#000000' }}>
+                                                <rect x="6" y="4" width="4" height="16" rx="0.5" style={{ fill: '#000000', stroke: '#000000' }} />
+                                                <rect x="14" y="4" width="4" height="16" rx="0.5" style={{ fill: '#000000', stroke: '#000000' }} />
+                                            </svg>
+                                        ) : (
+                                            <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" style={{ fill: '#000000', stroke: '#000000' }}>
+                                                <path d="M6 4l14 8-14 8z" style={{ fill: '#000000', stroke: '#000000' }} />
+                                            </svg>
+                                        )}
+                                    </button>
 
-                                     {/* Center Column: Scrubber & Text Row */}
-                                     <div className="flex-1 flex flex-col justify-center gap-0.5 mx-2 relative top-0">
-                                         <div
-                                             className="w-[98%] mx-auto h-[3px] bg-[#e4baaf]/50 cursor-pointer rounded-full relative hover:h-[4px] transition-all"
-                                             onClick={handleSeek}
-                                             data-nodrag="true"
-                                         >
-                                             <div
-                                                 className="absolute top-0 left-0 h-full bg-[#fe8b80] rounded-full drop-shadow-sm transition-all pointer-events-none"
-                                                 style={{ width: `${audioDuration ? (audioProgress / audioDuration) * 100 : 0}%` }}
-                                             />
-                                         </div>
+                                    {/* Center Column: Scrubber & Text Row */}
+                                    <div className="flex-1 flex flex-col justify-center gap-0.5 mx-2 relative top-0">
+                                        <div
+                                            className="w-[98%] mx-auto h-[3px] bg-[#e4baaf]/50 cursor-pointer rounded-full relative hover:h-[4px] transition-all"
+                                            onClick={handleSeek}
+                                            data-nodrag="true"
+                                        >
+                                            <div
+                                                className="absolute top-0 left-0 h-full bg-[#fe8b80] rounded-full drop-shadow-sm transition-all pointer-events-none"
+                                                style={{ width: `${audioDuration ? (audioProgress / audioDuration) * 100 : 0}%` }}
+                                            />
+                                        </div>
 
-                                         {/* Text row */}
-                                         <div className="flex justify-between items-center w-full text-black font-bold text-[12px] tracking-wide mt-0.5 select-none pointer-events-none leading-none">
-                                             <span>{formatTrackTime(audioProgress)}</span>
-                                             <span className="text-[12px] uppercase tracking-widest leading-none drop-shadow-sm truncate px-1 flex-1 text-center font-black">{selectedBook ? `${selectedBook.name} ${selectedChapter.chapter_number}` : 'Audio'}</span>
-                                             <span>{formatTrackTime(audioDuration)}</span>
-                                         </div>
-                                     </div>
+                                        {/* Text row */}
+                                        <div className="flex justify-between items-center w-full text-black font-bold text-[12px] tracking-wide mt-0.5 select-none pointer-events-none leading-none">
+                                            <span>{formatTrackTime(audioProgress)}</span>
+                                            <span className="text-[12px] uppercase tracking-widest leading-none drop-shadow-sm truncate px-1 flex-1 text-center font-black">{selectedBook ? `${selectedBook.name} ${selectedChapter.chapter_number}` : 'Audio'}</span>
+                                            <span>{formatTrackTime(audioDuration)}</span>
+                                        </div>
+                                    </div>
 
-                                     {/* Right Side: Settings & Close */}
-                                     <div className="flex items-center gap-0.5 ml-2.5 shrink-0" data-nodrag="true">
-                                         <button
-                                             onClick={() => setShowWisdomOverlay(!showWisdomOverlay)}
-                                             className="hover:rotate-90 transition-all duration-300 outline-none w-7 h-7 flex items-center justify-center relative"
-                                             style={{ color: '#000000' }}
-                                         >
-                                             <i className="pi pi-cog text-[18px]" style={{ color: '#000000' }}></i>
-                                         </button>
-                                         <button
-                                             onClick={() => {
-                                                 if (audioRef.current && !audioRef.current.paused) {
-                                                     audioRef.current.pause();
-                                                 }
-                                                 setShowAudioPlayer(false);
-                                                 setIsPlaying(false);
-                                                 setShowWisdomOverlay(false);
-                                             }}
-                                             className="text-black outline-none w-7 h-7 flex items-center justify-center ml-0.5"
-                                         >
-                                             <i className="pi pi-times-circle text-[18px]"></i>
-                                         </button>
-                                     </div>
-                                 </div>
+                                    {/* Right Side: Settings & Close */}
+                                    <div className="flex items-center gap-0.5 ml-2.5 shrink-0" data-nodrag="true">
+                                        <button
+                                            onClick={() => setShowWisdomOverlay(!showWisdomOverlay)}
+                                            className="hover:rotate-90 transition-all duration-300 outline-none w-7 h-7 flex items-center justify-center relative"
+                                            style={{ color: '#000000' }}
+                                        >
+                                            <i className="pi pi-cog text-[18px]" style={{ color: '#000000' }}></i>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (audioRef.current && !audioRef.current.paused) {
+                                                    audioRef.current.pause();
+                                                }
+                                                setShowAudioPlayer(false);
+                                                setIsPlaying(false);
+                                                setShowWisdomOverlay(false);
+                                            }}
+                                            className="text-black outline-none w-7 h-7 flex items-center justify-center ml-0.5"
+                                        >
+                                            <i className="pi pi-times-circle text-[18px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
 
                             </div>
                         )}

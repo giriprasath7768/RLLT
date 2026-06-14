@@ -755,8 +755,7 @@ const TTomTPlayer = () => {
             setActiveTrackName(playlistBooks[0].name);
         }
     }, [playlistBooks, activeTrackName]);
-
-    const placeholderImg = "https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?w=500&auto=format&fit=crop&q=60";
+    const placeholderImg = "/lighthouse.jpeg";
 
     const tz = playerWidth / 2;
 
@@ -786,9 +785,9 @@ const TTomTPlayer = () => {
                 }
             `}</style>
             {/* The Player Container - Shrink Wrapped */}
-            <div 
-                className="w-full max-w-[420px] relative shrink-0 mobile-compact" 
-                style={{ perspective: '1500px' }} 
+            <div
+                className="w-full max-w-[420px] relative shrink-0 mobile-compact"
+                style={{ perspective: '1500px' }}
                 ref={playerRef}
             >
                 <div className="w-full relative">
@@ -897,15 +896,12 @@ const TTomTPlayer = () => {
                                 </div>
 
                                 {/* Right Column - Image */}
-                                <div className="w-1/2 relative cursor-pointer group" onClick={() => setShowAudioSelector(!showAudioSelector)}>
+                                <div className="w-1/2 relative cursor-pointer group flex items-center justify-center bg-black" onClick={() => setShowAudioSelector(!showAudioSelector)}>
                                     <img
                                         src={placeholderImg}
                                         alt="Proverbs Artwork"
-                                        className={`w-full h-full object-cover rounded-sm border-2 border-black transition-opacity ${showAudioSelector ? 'opacity-20' : 'opacity-100 group-hover:opacity-80'}`}
+                                        className={`max-w-full max-h-full w-full h-full object-fill rounded-sm border-2 border-black transition-opacity ${showAudioSelector ? 'opacity-20' : 'opacity-100 group-hover:opacity-80'}`}
                                     />
-                                    <div className="absolute top-2 right-2 text-yellow-500 drop-shadow-md z-10 transition-transform group-hover:scale-110">
-                                        <i className="pi pi-headphones text-4xl"></i>
-                                    </div>
 
                                     {showAudioSelector && (
                                         <div className="absolute inset-0 flex flex-col p-2 bg-black/70 rounded-sm overflow-y-auto custom-scrollbar z-20" onClick={(e) => e.stopPropagation()}>

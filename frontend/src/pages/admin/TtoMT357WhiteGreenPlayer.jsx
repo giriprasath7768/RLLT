@@ -449,14 +449,13 @@ const TtoMT357WhiteGreenPlayer = () => {
     };
 
     const getBookTooltip = (code) => {
-        let matchedBook;
         if (code === 'psa119') {
-            matchedBook = booksDB.find(b => (b.name + " " + (b.short_form || "")).toUpperCase().includes("119"));
+            return 'PSALM 119 - 22 Chapters';
         } else if (code === 'psa75') {
-            matchedBook = booksDB.find(b => (b.name + " " + (b.short_form || "")).toUpperCase().includes("DAVID"));
-        } else {
-            matchedBook = booksDB.find(b => isBookMatch(code, b));
+            return 'PSALM of David - 75 Chapters';
         }
+
+        let matchedBook = booksDB.find(b => isBookMatch(code, b));
 
         if (!matchedBook) return '';
         const chaps = chaptersDB.filter(c => c.book_id === matchedBook.id);
@@ -473,7 +472,7 @@ const TtoMT357WhiteGreenPlayer = () => {
             const list = [];
             selectedBooks.forEach(code => {
                 if (code === 'psa119') list.push('PSALMS 119');
-                else if (code === 'psa75') list.push('DAVID 75');
+                else if (code === 'psa75') list.push('PSALMS of David 75');
                 else {
                     const match = booksDB.find(b => isBookMatch(code, b));
                     list.push(match ? match.name.toUpperCase() : code.toUpperCase());
@@ -1017,7 +1016,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                             <div className="flex-1 flex items-center relative z-10 pl-[10px]">
                                 <div className="flex-1 flex justify-center pr-[10px]">
                                     <div
-                                        className="text-black font-serif font-black text-[15px] tracking-wider uppercase px-[12px] py-[6px] rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all active:scale-95"
+                                        className="text-white font-Arial font-black text-[18px] tracking-wider uppercase px-[12px] py-[6px] rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all active:scale-95"
                                         style={{
                                             backgroundImage: "url('/ARTBG.png')",
                                             backgroundSize: '100% 100%',
@@ -1041,22 +1040,22 @@ const TtoMT357WhiteGreenPlayer = () => {
                             <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">MODULE 5</span>
                             <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#8f583b] to-[#452717]">|</span>
                             <div className="flex items-center gap-[8px]">
-                                <button onClick={() => setFacet(f => Math.max(2, f - 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-minus font-bold" style={{ fontSize: '10px' }}></i></button>
+                                <button onClick={() => setFacet(f => Math.max(2, f - 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all" title="Previous Facet"><i className="pi pi-angle-left font-bold" style={{ fontSize: '12px' }}></i></button>
                                 <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">FCT {facet}</span>
-                                <button onClick={() => setFacet(f => Math.min(5, f + 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-plus font-bold" style={{ fontSize: '10px' }}></i></button>
+                                <button onClick={() => setFacet(f => Math.min(5, f + 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all" title="Next Facet"><i className="pi pi-angle-right font-bold" style={{ fontSize: '12px' }}></i></button>
                             </div>
                             <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#8f583b] to-[#452717]">|</span>
                             <div className="flex items-center gap-[8px]">
-                                <button onClick={() => setPhase(p => Math.max(1, p - 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-minus font-bold" style={{ fontSize: '10px' }}></i></button>
+                                <button onClick={() => setPhase(p => Math.max(1, p - 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all" title="Previous Phase"><i className="pi pi-angle-left font-bold" style={{ fontSize: '12px' }}></i></button>
                                 <span className="bg-clip-text text-transparent bg-gradient-to-b from-[#edbe9f] via-[#c47b52] to-[#753b1e]">PHS {phase}</span>
-                                <button onClick={() => setPhase(p => Math.min(5, p + 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all"><i className="pi pi-plus font-bold" style={{ fontSize: '10px' }}></i></button>
+                                <button onClick={() => setPhase(p => Math.min(5, p + 1))} className="w-[26px] h-[26px] flex items-center justify-center bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] border border-[#4a2e1d] rounded-md shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,200,160,0.4)] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] hover:from-[#d19c7f] hover:to-[#6b4027] active:translate-y-px active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.6)] transition-all" title="Next Phase"><i className="pi pi-angle-right font-bold" style={{ fontSize: '12px' }}></i></button>
                             </div>
                         </div>
 
                         {/* Tracklist & Image Panel */}
-                        <div className="flex px-[21px] gap-[10px] mb-[2px] h-[220px]">
+                        <div className="flex px-[21px] gap-[2px] mb-[2px] h-[220px]">
                             {/* Tracks Area */}
-                            <div className="w-[38%] shrink-0 flex flex-col border-[2px] border-[#3b1a0b] bg-[url('/357playlist.png')] bg-[length:120%_110%] bg-center bg-no-repeat rounded-xl overflow-hidden shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] p-[8px] relative h-full">
+                            <div className="w-[38%] shrink-0 flex flex-col border-[2px] border-[#3b1a0b] bg-[url('/357playlist.png')] bg-[length:195%_145%] bg-center bg-no-repeat rounded-xl overflow-hidden shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] p-[8px] relative h-full">
                                 <h2 className="text-[20px] font-black mb-[8px] text-[#1c0d06] drop-shadow-[0_1px_0_rgba(255,255,255,0.15)]" style={{ WebkitTextStroke: '0.5px #1c0d06' }}>DAY {selectedPreviewDay < 10 ? `0${selectedPreviewDay}` : selectedPreviewDay}/{displayDays.length < 10 ? `0${displayDays.length}` : displayDays.length}</h2>
                                 <div
                                     ref={playlistRef}
@@ -1081,7 +1080,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                                                     <div className="w-[21px] h-[21px] shrink-0 flex items-center justify-center drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]">
                                                         <img src="/pointbutton.png" alt="Play" className="w-full h-full object-contain pointer-events-none" />
                                                     </div>
-                                                    <span className={`font-bold tracking-wide text-[15px] text-[#fadfc3] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]`}>
+                                                    <span className={`font-bold tracking-wide text-[13px] 2xl:text-[15px] text-[#fadfc3] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] whitespace-nowrap text-left w-full`}>
                                                         {getFullTrackName(track)}
                                                     </span>
                                                 </button>
@@ -1366,7 +1365,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                         </div>
 
                         {/* Bottom Controls */}
-                        <div className="px-[16px] mb-[13px] flex flex-col gap-[8px]">
+                        <div className="px-[16px] mb-[13px] flex flex-col gap-[8px] relative z-10">
                             {/* Top Row: PSA 119 | Week Selection | PSA 75 */}
                             <div className="flex items-stretch gap-[8px] h-[55px]">
 
@@ -1380,7 +1379,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                                         backgroundPosition: 'center',
                                         backgroundRepeat: 'no-repeat'
                                     }}
-                                    className={`w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[12px] p-[4px] gap-[8px] ${selectedBooks.includes('psa119')
+                                    className={`book-tooltip w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[12px] p-[4px] gap-[8px] ${selectedBooks.includes('psa119')
                                         ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
                                         : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
                                         }`}
@@ -1430,7 +1429,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                                                 <span className={`text-[21px] ${selectedDay === 7 ? 'text-red-600' : 'text-black'}`}>7</span> <span className="text-[13px] text-black">DAY</span>
                                             </span>
                                         </div>
-                                        <div className="text-[16px] text-black font-['Arial'] font-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
+                                        <div className="text-[16px] text-black font-['Arial'] font-normal drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
                                             {selectedWeek !== null ? (
                                                 <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '18px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
                                             ) : (
@@ -1462,7 +1461,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                                         backgroundPosition: 'center',
                                         backgroundRepeat: 'no-repeat'
                                     }}
-                                    className={`w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[4px] pr-[6px] py-[4px] gap-[4px] ${selectedBooks.includes('psa75')
+                                    className={`book-tooltip w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[4px] pr-[6px] py-[4px] gap-[4px] ${selectedBooks.includes('psa75')
                                         ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
                                         : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
                                         }`}
@@ -1617,7 +1616,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                             </div>
 
                             {/* Reference Links */}
-                            <div className="bg-[url('/357playlist.png')] bg-[length:110%_110%] bg-center bg-no-repeat rounded-[12px] p-[12px] border-[2px] border-[#3b1a0b] shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] flex-1">
+                            <div className="bg-[url('/357playlist.png')] bg-[length:195%_145%] bg-center bg-no-repeat rounded-[12px] p-[12px] border-[2px] border-[#3b1a0b] shadow-[inset_0_2px_4px_rgba(255,180,140,0.2),0_4px_8px_rgba(0,0,0,0.8)] flex-1">
                                 <h3 className="text-[#1c0d06] font-black text-[16px] mb-[12px] drop-shadow-[0_1px_0_rgba(255,255,255,0.15)]">IMPORTANT LINKS</h3>
                                 <ul className="flex flex-col gap-[8px]">
                                     {['Biblical Commentary Notes', 'Historical Context Map', 'Sermon Transcript'].map((link, idx) => (

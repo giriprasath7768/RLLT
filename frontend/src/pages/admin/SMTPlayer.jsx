@@ -544,7 +544,7 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                                             const level = parseInt(h.styleOption.split('-')[1]);
                                             thicknessRatio = (level / 5) * 0.70;
                                         }
-                                        
+
                                         styles.backgroundColor = h.color || '#dc2626';
                                         styles.opacity = 0.75;
                                         styles.mixBlendMode = 'multiply';
@@ -565,8 +565,8 @@ const PDFPageRender = React.forwardRef((props, ref) => {
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-20" style={isRightPage ? rightSpineObj : leftSpineObj} />
                 <div className="absolute inset-y-0 inset-x-0 pointer-events-none z-30" style={isRightPage ? rightEdgeObj : leftEdgeObj} />
 
-                <div 
-                    className="absolute inset-0 z-[70]" 
+                <div
+                    className="absolute inset-0 z-[70]"
                     style={{ pointerEvents: props.isTextSelectionMode ? 'none' : 'auto' }}
                     onDoubleClick={props.onDoubleClick}
                 />
@@ -643,7 +643,7 @@ const SMTPlayer = () => {
     const [showAudioPlayer, setShowAudioPlayer] = useState(false);
     const [audioLoadedTrackName, setAudioLoadedTrackName] = useState(null);
     const [showWisdomOverlay, setShowWisdomOverlay] = useState(false);
-    const [playerBgColor, setPlayerBgColor] = useState('rgb(81, 106, 135)');
+    const [playerBgColor, setPlayerBgColor] = useState('#6195df');
     const [playerBorderColor, setPlayerBorderColor] = useState('#000000');
     const lastTouchRef = useRef(0);
 
@@ -746,9 +746,9 @@ const SMTPlayer = () => {
             setIsPlaying(false);
             if (!playerStateRef.current) return;
             const { activeTrackName: currTrack, playlistBooks: currPlaylist, selectedDay: currDay } = playerStateRef.current;
-            
+
             if (!currTrack || !currPlaylist) return;
-            
+
             const currentIndex = currPlaylist.findIndex(b => b.name === currTrack);
             // If this is the last track in the playlist, mark the day as finished
             if (currentIndex !== -1 && currentIndex === currPlaylist.length - 1) {
@@ -952,8 +952,8 @@ const SMTPlayer = () => {
         if (format === 'remove') {
             setHighlights(prev => prev.filter(h => {
                 if (h.pageNumber !== selectionMenu.pageNumber) return true;
-                return !h.rects.some(hr => 
-                    selectionMenu.rects.some(sr => 
+                return !h.rects.some(hr =>
+                    selectionMenu.rects.some(sr =>
                         !(hr.left > sr.left + sr.width || hr.left + hr.width < sr.left || hr.top > sr.top + sr.height || hr.top + hr.height < sr.top)
                     )
                 );
@@ -1265,11 +1265,13 @@ const SMTPlayer = () => {
                                 setHighlights(prev => prev.length > 0 ? prev.slice(0, -1) : prev);
                             }}
                             disabled={highlights.length === 0}
-                            className={`bg-gray-800 hover:bg-red-600 text-white px-4 sm:px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap ${highlights.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`group bg-gray-800 hover:bg-red-600 text-white h-11 px-3 sm:px-4 rounded-full flex items-center border border-gray-600 shadow-xl transition-all duration-300 whitespace-nowrap ${highlights.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                             title="Undo Last Highlight"
                         >
-                            <i className="pi pi-undo text-lg"></i>
-                            <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline-block">UNDO</span>
+                            <i className="pi pi-undo text-2xl shrink-0 transition-transform group-hover:scale-110"></i>
+                            <span className="overflow-hidden max-w-0 opacity-0 group-hover:max-w-[80px] group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                                <span className="text-[11px] font-black tracking-widest uppercase pl-2">UNDO</span>
+                            </span>
                         </button>
                         <button
                             onClick={() => {
@@ -1279,10 +1281,12 @@ const SMTPlayer = () => {
                                     audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
                                 }
                             }}
-                            className="bg-gray-800 hover:bg-blue-600 text-white px-4 sm:px-5 py-2 rounded-full flex items-center gap-2 border border-gray-600 shadow-xl transition-colors whitespace-nowrap"
+                            className="group bg-gray-800 hover:bg-blue-600 text-white h-11 px-3 sm:px-4 rounded-full flex items-center border border-gray-600 shadow-xl transition-all duration-300 whitespace-nowrap"
                         >
-                            <i className="pi pi-play-circle text-lg"></i>
-                            <span className="text-[11px] font-black tracking-widest uppercase hidden sm:inline-block">PLAYER</span>
+                            <i className="pi pi-play-circle text-2xl shrink-0 transition-transform group-hover:scale-110"></i>
+                            <span className="overflow-hidden max-w-0 opacity-0 group-hover:max-w-[100px] group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                                <span className="text-[11px] font-black tracking-widest uppercase pl-2">PLAYER</span>
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -1322,7 +1326,7 @@ const SMTPlayer = () => {
                                 }}
                             >
                                 {/* Left/Right Screen Navigation Buttons */}
-                                <button 
+                                <button
                                     className="fixed left-4 sm:left-8 top-1/2 -translate-y-1/2 bg-[#1e2433]/80 hover:bg-[#8b5a2b] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm transition-all z-[100] disabled:opacity-0 disabled:pointer-events-none hover:scale-110"
                                     onClick={() => flipBookRef.current?.pageFlip().flipPrev()}
                                     disabled={currentPage === 0}
@@ -1330,7 +1334,7 @@ const SMTPlayer = () => {
                                 >
                                     <i className="pi pi-angle-left text-lg sm:text-xl"></i>
                                 </button>
-                                <button 
+                                <button
                                     className="fixed right-4 sm:right-8 top-1/2 -translate-y-1/2 bg-[#1e2433]/80 hover:bg-[#8b5a2b] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg backdrop-blur-sm transition-all z-[100] disabled:opacity-0 disabled:pointer-events-none hover:scale-110"
                                     onClick={() => flipBookRef.current?.pageFlip().flipNext()}
                                     disabled={currentPage >= numPages - 1}
@@ -1425,11 +1429,10 @@ const SMTPlayer = () => {
                                 {/* Wisdom Overlay Popup rendered based on direction */}
                                 {showWisdomOverlay && (
                                     <div
-                                        className={`absolute w-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] rounded-[4px] overflow-hidden ${
-                                            direction === 'down' 
-                                                ? 'top-[calc(100%+8px)] animate-slide-down-fade' 
+                                        className={`absolute w-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] rounded-[4px] overflow-hidden ${direction === 'down'
+                                                ? 'top-[calc(100%+8px)] animate-slide-down-fade'
                                                 : 'bottom-[calc(100%+8px)] animate-slide-up-fade'
-                                        }`}
+                                            }`}
                                         data-nodrag="true"
                                     >
                                         <WisdomOverlay

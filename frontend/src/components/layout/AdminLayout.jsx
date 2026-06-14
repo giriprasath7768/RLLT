@@ -38,7 +38,7 @@ const AdminLayout = () => {
 
                 {/* Page Content */}
                 <main className="flex-grow bg-gray-50/30 min-w-0 print:block print:bg-white print:m-0 print:p-0 print:overflow-visible print:h-auto">
-                    <div className="w-full h-full overflow-x-hidden print:overflow-visible print:h-auto print:block">
+                    <div className="w-full h-full scrollbar-hide print:overflow-visible print:h-auto print:block">
                         <Outlet />
                     </div>
                 </main>

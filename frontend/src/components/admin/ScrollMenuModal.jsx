@@ -11,7 +11,7 @@ const HIGHLIGHT_CATEGORIES = [
 const SEVEN_MOUNTAIN_SPHERES = [
     { label: "Family", color: "#00c0ff" },
     { label: "Finance", color: "#00a638" },
-    { label: "Government", color: "#3340cd" },
+    { label: "Government", color: "#60A5FA" },
     { label: "Talent", color: "#bb43b1" },
     { label: "Training", color: "#fe6d01" },
     { label: "Spirituality", color: "#fafa33" },

@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import DashboardHeader from './LightChartDigitalComponents/DashboardHeader';
+import ModuleSelector from './LightChartDigitalComponents/ModuleSelector';
+import FacetsPhasesGrids from './LightChartDigitalComponents/FacetsPhasesGrids';
+import StatStrips from './LightChartDigitalComponents/StatStrips';
+import FooterVisual from './LightChartDigitalComponents/FooterVisual';
+
 const LightChartDigital = () => {
     const [rlltDB, setRlltDB] = useState([]);
     const [mdl, setMdl] = useState(1);
@@ -107,14 +113,14 @@ const LightChartDigital = () => {
         if (formattedArt.includes('H')) {
             const splitH = formattedArt.split('H');
             artParts.push(splitH[0]);
-            artParts.push(<span key="h" className="text-2xl">H</span>);
+            artParts.push(<span key="h" className="text-xl">H</span>);
             if (splitH[1]) {
                 const rest = splitH[1].trim();
                 if (rest.includes('m')) {
                     const numberPart = rest.replace(/[^\d]/g, '');
                     const textPart = rest.replace(/[\d]/g, '');
                     artParts.push(' ' + numberPart);
-                    artParts.push(<span key="m" className="text-2xl">{textPart}</span>);
+                    artParts.push(<span key="m" className="text-xl">{textPart}</span>);
                 } else {
                     artParts.push(' ' + rest);
                 }
@@ -123,7 +129,7 @@ const LightChartDigital = () => {
             const numberPart = formattedArt.replace(/[^\d]/g, '');
             const textPart = formattedArt.replace(/[\d]/g, '');
             artParts.push(numberPart);
-            artParts.push(<span key="m" className="text-2xl">{textPart}</span>);
+            artParts.push(<span key="m" className="text-xl">{textPart}</span>);
         } else {
             artParts.push(formattedArt);
         }
@@ -153,231 +159,72 @@ const LightChartDigital = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 sm:p-8 flex justify-center items-start font-sans overflow-x-hidden w-full">
-            <div className="bg-[#fcf8ef] rounded-lg shadow-2xl w-full max-w-[800px] relative" style={{ border: '2px solid #d3c09b', outline: '4px solid #fcf8ef', outlineOffset: '-6px' }}>
+        <div className="min-h-screen bg-gradient-to-br from-[#e8dcb9] to-[#fcf8ef] py-4 flex justify-center items-start font-sans overflow-x-hidden w-full">
+            <style>{`
+                @media (max-width: 380px) {
+                    .mobile-compact {
+                        width: 630px !important;
+                        max-width: 630px !important;
+                        zoom: 0.55;
+                    }
+                }
+                @media (min-width: 381px) and (max-width: 450px) {
+                    .mobile-compact {
+                        width: 630px !important;
+                        max-width: 630px !important;
+                        zoom: 0.65;
+                    }
+                }
+                @media (min-width: 451px) and (max-width: 549px) {
+                    .mobile-compact {
+                        width: 630px !important;
+                        max-width: 630px !important;
+                        zoom: 0.75;
+                    }
+                }
+                @media (min-width: 550px) and (max-width: 640px) {
+                    .mobile-compact {
+                        width: 630px !important;
+                        max-width: 630px !important;
+                        zoom: 0.85;
+                    }
+                }
+                @media (min-width: 641px) {
+                    .mobile-compact {
+                        width: 630px !important;
+                        max-width: 630px !important;
+                        zoom: 1;
+                    }
+                }
+            `}</style>
+            
+            {/* Main Container */}
+            <div className="bg-[#fdfbf6] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(0,0,0,0.05)] relative border-[6px] border-[#d4af37] outline outline-[1px] outline-black/10 overflow-hidden mobile-compact">
                 
-                {/* Top Section */}
-                <div className="p-4 sm:p-6 pb-2">
-                    <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-4 md:gap-0">
-                        
-                        {/* Logo Left */}
-                        <div className="flex flex-col items-center mt-1">
-                            <div className="relative w-24 h-28 flex items-center justify-center mb-1">
-                                <svg viewBox="0 0 100 115" className="absolute inset-0 w-full h-full" style={{ filter: 'drop-shadow(3px 5px 5px rgba(0,0,0,0.4))' }}>
-                                    <polygon points="50,5 94,30 94,85 50,110 6,85 6,30" fill="#0B2149" stroke="#d3c09b" strokeWidth="8" strokeLinejoin="round" />
-                                </svg>
-                                <span className="relative text-[3.8rem] text-[#d3c09b] transform -translate-y-1" style={{ 
-                                    fontFamily: "'Algerian', serif",
-                                    textShadow: '1px 1px 0px #b09c73, 2px 2px 0px #9d8960, 3px 3px 0px #8a774e, 4px 4px 0px #75633c, 5px 5px 0px #63522f, 7px 7px 10px rgba(0,0,0,0.6)'
-                                }}>D</span>
-                            </div>
-                            <div className="text-[10px] font-bold text-[#0B2149] text-center leading-tight tracking-widest">
-                                LIGHT CHART<br/>DIGITAL
-                            </div>
-                        </div>
+                <DashboardHeader globalStats={globalStats} />
+                
+                {/* Combined Module & Grids Container */}
+                <div className="mx-[18px] mt-2 p-3 pb-2 bg-gradient-to-br from-[#fdfbf6] to-[#f0e4cd] border-[3px] border-[#d3c09b] rounded-xl shadow-[0_5px_15px_rgba(0,0,0,0.1),inset_0_2px_10px_rgba(255,255,255,1)] flex flex-col gap-3 relative z-10">
+                    <ModuleSelector 
+                        mdl={mdl} 
+                        modStats={modStats} 
+                        handleDecMdl={handleDecMdl} 
+                        handleIncMdl={handleIncMdl} 
+                    />
 
-                        {/* Title Center */}
-                        <div className="flex flex-col items-center mt-2">
-                            <h1 className="text-2xl md:text-3xl font-bold text-[#0B2149] tracking-widest text-center" style={{ fontFamily: "'Algerian', serif" }}>
-                                REAL LIFE LEADERSHIP TRAINING
-                            </h1>
-                            <p className="text-[#a67c00] italic text-sm mt-1" style={{ fontFamily: "Georgia, serif" }}>
-                                Leadership Impact. Growth. Healthy Transformation.
-                            </p>
-                            <div className="flex items-center gap-2 mt-2 w-full justify-center">
-                                <div className="h-[1px] bg-[#d3c09b] flex-1 max-w-[100px]"></div>
-                                <span className="text-[#d3c09b] text-xl leading-none">✧</span>
-                                <div className="h-[1px] bg-[#d3c09b] flex-1 max-w-[100px]"></div>
-                            </div>
-                        </div>
-
-                        {/* Stats Right */}
-                        <div className="flex shrink-0 border-2 border-[#d3c09b] rounded-lg shadow-md overflow-hidden h-24 w-36">
-                            <div className="flex flex-col w-1/2 bg-[#fcf8ef]">
-                                <div className="flex-1 flex flex-col items-center justify-center border-b-2 border-[#d3c09b]">
-                                    <span className="text-xl text-[#a67c00] leading-none mb-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{globalStats.modules}</span>
-                                    <span className="text-[8px] font-bold text-[#0B2149] tracking-widest">MODULES</span>
-                                </div>
-                                <div className="flex-1 flex flex-col items-center justify-center">
-                                    <span className="text-xl text-[#a67c00] leading-none mb-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{globalStats.facets}</span>
-                                    <span className="text-[8px] font-bold text-[#0B2149] tracking-widest">FACETS</span>
-                                </div>
-                            </div>
-                            <div className="w-1/2 flex flex-col items-center justify-center bg-[#0B2149] border-l-2 border-[#d3c09b]">
-                                <span className="text-3xl text-[#d3c09b] leading-none mb-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{globalStats.phases}</span>
-                                <span className="text-[9px] font-bold text-[#d3c09b] tracking-widest mt-1">PHASES</span>
-                            </div>
-                        </div>
-                    </div>
+                    <FacetsPhasesGrids 
+                        fct={fct} 
+                        phs={phs} 
+                        setFct={setFct} 
+                        setPhs={setPhs} 
+                        modStats={modStats} 
+                        fctStats={fctStats} 
+                    />
                 </div>
 
-                {/* Module Selection Card Wrapper */}
-                <div className="mx-4 sm:mx-6 mt-4 p-2 sm:p-4 bg-[#fcf8ef] border-2 border-[#d3c09b] rounded-lg shadow-sm">
-                    {/* Subtitle */}
-                    <div className="text-center mb-4 flex flex-col items-center">
-                        {/* Equation row */}
-                        <div className="flex items-center justify-center gap-2 sm:gap-10 mb-4 w-full">
-                            <span 
-                                className="text-[#d3c09b] font-bold text-3xl sm:text-[42px] cursor-pointer hover:text-[#b5a07c] transition-colors leading-none" 
-                                onClick={handleDecMdl}
-                            >-</span>
-                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-24 h-20 sm:w-32 sm:h-24 shadow-inner">
-                                <span className="text-xs sm:text-[16px] font-bold text-[#0B2149] tracking-widest">MODULE</span>
-                                <span className="text-3xl sm:text-[42px] text-[#5a6b5a] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{mdl}</span>
-                            </div>
-                            <span 
-                                className="text-[#d3c09b] font-bold text-3xl sm:text-[42px] cursor-pointer hover:text-[#b5a07c] transition-colors leading-none"
-                                onClick={handleIncMdl}
-                            >+</span>
-                            <div className="bg-[#fcf8ef] border-2 border-[#d3c09b] rounded flex flex-col items-center justify-center w-24 h-20 sm:w-32 sm:h-24 shadow-inner">
-                                <span className="text-xs sm:text-[16px] font-bold text-[#0B2149] tracking-widest">DAYS</span>
-                                <span className="text-3xl sm:text-[42px] text-[#5a6b5a] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{modStats.days}</span>
-                            </div>
-                        </div>
+                <StatStrips selectedPhaseStats={selectedPhaseStats} />
 
-                        <div className="bg-[#fdfbf6] border border-[#d3c09b] rounded py-1 px-4 inline-block shadow-sm">
-                            <span className="text-xs font-bold text-[#0B2149] tracking-[0.15em]">
-                                MODULE {mdl}: {modStats.totalFacetsCount} FACETS. {modStats.totalPhasesCount} PHASES. EACH PHASE {modStats.days} DAYS
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Grid Section */}
-                    <div className="flex flex-col md:flex-row gap-4">
-                        {/* FACETS Grid */}
-                        <div className="flex-1 bg-gradient-to-r from-[#1e4620] to-[#2d5a3c] rounded-lg flex relative shadow-lg overflow-hidden p-1 md:pl-0">
-                            <div className="hidden md:flex w-20 items-center justify-center relative overflow-hidden">
-                            </div>
-                            <div className="flex-1 bg-[#fdfbf6] rounded border-[2px] border-[#d3c09b] flex flex-col shadow-[0_0_15px_rgba(0,0,0,0.6)] z-10 overflow-hidden">
-                                <div className="text-center text-white bg-gradient-to-b from-[#1e4620] to-[#112a13] py-1 font-bold tracking-[0.3em] text-sm border-b-2 border-[#d3c09b]" style={{ fontFamily: "'Algerian', serif" }}>
-                                    F A C E T S
-                                </div>
-                                <div className="grid grid-cols-4 flex-1 bg-[#fdfbf6]">
-                                    {Array.from({ length: modStats.maxFacet }, (_, i) => i + 1).map(num => (
-                                        <div 
-                                            key={num} 
-                                            onClick={() => setFct(num)}
-                                            className={`border-[0.5px] border-[#e8dcb9] flex items-center justify-center text-xl shadow-sm cursor-pointer transition-colors ${fct === num ? 'bg-[#c7a96b] text-white font-bold' : 'bg-[#fcf8ef] text-[#5a6b5a] hover:bg-[#f0e4cd]'}`} 
-                                            style={{ fontFamily: "Georgia, serif", minHeight: '40px' }}
-                                        >
-                                            {num}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* PHASES Grid */}
-                        <div className="flex-1 bg-gradient-to-l from-[#8b2b2b] to-[#6b151a] rounded-lg flex relative shadow-lg overflow-hidden p-1 md:pr-0">
-                            <div className="flex-1 bg-[#fdfbf6] rounded border-[2px] border-[#d3c09b] flex flex-col shadow-[0_0_15px_rgba(0,0,0,0.6)] z-10 overflow-hidden">
-                                <div className="text-center text-white bg-gradient-to-b from-[#8b2b2b] to-[#591414] py-1 font-bold tracking-[0.3em] text-sm border-b-2 border-[#d3c09b]" style={{ fontFamily: "'Algerian', serif" }}>
-                                    P H A S E S
-                                </div>
-                                <div className={fctStats.maxPhase === 1 ? "flex items-center justify-center flex-1 bg-[#fdfbf6]" : "grid grid-cols-4 flex-1 content-start bg-[#fdfbf6]"}>
-                                    {Array.from({ length: fctStats.maxPhase }, (_, i) => i + 1).map(num => (
-                                        <div 
-                                            key={num} 
-                                            onClick={() => {
-                                                setPhs(num);
-                                            }}
-                                            className={`border-[0.5px] border-[#e8dcb9] flex items-center justify-center shadow-sm cursor-pointer transition-all ${fctStats.maxPhase === 1 ? 'w-full h-full text-5xl md:text-6xl font-bold' : 'text-xl'} ${phs === num ? 'bg-[#c7a96b] text-white font-bold' : 'bg-[#fcf8ef] text-[#5a6b5a] hover:bg-[#f0e4cd]'}`} 
-                                            style={{ fontFamily: "Georgia, serif", minHeight: fctStats.maxPhase === 1 ? '96px' : '40px' }}
-                                        >
-                                            {num}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="hidden md:flex w-20 items-center justify-center relative overflow-hidden">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Stats Row 1 */}
-                <div className="px-4 sm:px-6 mt-4">
-                    <div className="bg-[#fdfbf6] border-2 border-[#d3c09b] rounded flex flex-col sm:flex-row justify-between items-center shadow-sm relative overflow-hidden">
-                        {/* Decorative watermark left */}
-                        <div className="absolute left-0 top-0 bottom-0 w-20 opacity-10 hidden sm:flex items-center justify-center pointer-events-none">
-                            <i className="pi pi-sun text-6xl text-[#a67c00]"></i>
-                        </div>
-                        {/* Decorative watermark right */}
-                        <div className="absolute right-0 top-0 bottom-0 w-20 opacity-10 hidden sm:flex items-center justify-center pointer-events-none">
-                            <i className="pi pi-sun text-6xl text-[#a67c00]"></i>
-                        </div>
-
-                        <div className="flex-1 w-full flex flex-col items-center py-4 border-b sm:border-b-0 sm:border-r border-[#e8dcb9] z-10">
-                            <span className="text-xs sm:text-[16px] font-bold text-[#0B2149] tracking-widest mb-1">WEEKS/PHASE</span>
-                            <span className="text-3xl sm:text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.weeks}</span>
-                        </div>
-                        <div className="flex-1 w-full flex flex-col items-center py-4 border-b sm:border-b-0 sm:border-r border-[#e8dcb9] z-10">
-                            <span className="text-xs sm:text-[16px] font-bold text-[#0B2149] tracking-widest mb-1">DAYS/PHASE</span>
-                            <span className="text-3xl sm:text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.days}</span>
-                        </div>
-                        <div className="flex-1 w-full flex flex-col items-center py-4 z-10">
-                            <span className="text-xs sm:text-[16px] font-bold text-[#8b2b2b] tracking-widest mb-1">ART.</span>
-                            <span className="text-3xl sm:text-[42px] text-[#a67c00] leading-none mt-1" style={{ fontFamily: "'Times New Roman', Times, serif" }}>{selectedPhaseStats.artParts}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Stats Row 2 (Icons) */}
-                <div className="px-4 sm:px-6 mt-4">
-                    <div className="bg-[#fdfbf6] border-2 border-[#d3c09b] rounded flex flex-col shadow-sm">
-                        {/* Top half: 2x2 grid */}
-                        <div className="grid grid-cols-2 border-b border-[#e8dcb9]">
-                            <div className="flex flex-col items-center justify-center py-3 border-r border-b border-[#e8dcb9]">
-                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">OT BKS</span>
-                                <span className="text-[#2d5a3c] font-bold text-xl sm:text-2xl">{selectedPhaseStats.ot_bks}</span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center py-3 border-b border-[#e8dcb9]">
-                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">NT BKS</span>
-                                <span className="text-[#0B2149] font-bold text-xl sm:text-2xl">{selectedPhaseStats.nt_bks}</span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center py-3 border-r border-[#e8dcb9]">
-                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">CHAP</span>
-                                <span className="text-[#0B2149] font-bold text-xl sm:text-2xl">{selectedPhaseStats.chp}</span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center py-3">
-                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider mb-1">VRS</span>
-                                <span className="text-[#2d5a3c] font-bold text-xl sm:text-2xl">{selectedPhaseStats.ver}</span>
-                            </div>
-                        </div>
-
-                        {/* Bottom half: English Words and Original Languages */}
-                        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-[#e8dcb9]">
-                            <div className="flex-1 sm:flex-[1.5] flex flex-col items-center justify-center py-3 bg-[#fdfbf6]">
-                                <i className="pi pi-book text-[#0B2149] text-xl sm:text-2xl mb-1"></i>
-                                <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider">ENGLISH WORDS</span>
-                                <span className="text-[#0B2149] font-bold text-xl sm:text-2xl mt-1">{selectedPhaseStats.english_words}</span>
-                            </div>
-                            
-                            <div className="flex-1 sm:flex-[2] flex flex-col">
-                                <div className="flex-1 flex flex-col items-center justify-center border-b border-[#e8dcb9] py-2">
-                                    <div className="flex items-center gap-2">
-                                        <i className="pi pi-pencil text-[#8b2b2b] text-[14px] sm:text-[16px]"></i>
-                                        <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider">HEB - WORDS</span>
-                                    </div>
-                                    <span className="text-[#8b2b2b] font-bold text-xl sm:text-2xl leading-none mt-1">{selectedPhaseStats.hebrew_words}</span>
-                                </div>
-                                <div className="flex-1 flex flex-col items-center justify-center py-2">
-                                    <div className="flex items-center gap-2">
-                                        <i className="pi pi-building text-[#8b2b2b] text-[14px] sm:text-[16px]"></i>
-                                        <span className="text-xs sm:text-[14px] font-bold text-[#0B2149] tracking-wider">GK. WORDS</span>
-                                    </div>
-                                    <span className="text-[#8b2b2b] font-bold text-xl sm:text-2xl leading-none mt-1">{selectedPhaseStats.greek_words}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer Image Area */}
-                <div className="px-4 sm:px-6 mt-4 mb-6">
-                    <div className="rounded-lg overflow-hidden border-2 border-[#d3c09b] shadow-md">
-                        <img src="/footer-image.png" alt="Discover More Footer" className="w-full object-cover" />
-                    </div>
-                </div>
+                <FooterVisual />
             </div>
         </div>
     );

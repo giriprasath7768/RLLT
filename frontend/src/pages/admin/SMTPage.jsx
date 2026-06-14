@@ -167,41 +167,52 @@ const DraggableWrapper = ({ children, initialX = 0, initialY = 0, className = ""
 const HTMLPageOverrides = () => (
     <style>{`
         .smt-html-page {
-            width: 100%;
-            max-width: 900px;
-            min-height: 500px;
+            width: 95vw;
+            height: 85vh;
+            max-width: none;
             background: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             margin: 0 auto 20px auto;
             position: relative;
             box-sizing: border-box;
             padding: 40px;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             flex-shrink: 0;
             transition: transform 0.2s ease-out;
             border-radius: 14px;
         }
         .smt-pdf-page {
             padding: 0 !important;
-            width: max-content !important;
+            width: auto !important;
+            height: auto !important;
+            max-width: none !important;
             min-height: auto !important;
+            display: inline-block;
+        }
+        .react-pdf__Page__textContent {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+            cursor: text !important;
+            z-index: 50 !important;
+            line-height: 1 !important;
+        }
+        .react-pdf__Page__textContent span {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
         }
         .smt-canvas-wrapper {
-             position: absolute !important;
-             inset: 0 !important;
-             width: 100% !important;
-             height: 100% !important;
-             display: flex !important;
-             justify-content: center !important;
-             align-items: center !important;
+             position: relative !important;
              z-index: 0;
              overflow: visible !important;
-             transform: scale(0.96) !important;
          }
          .smt-canvas-wrapper canvas {
              width: 100% !important;
-             height: 100% !important;
-             object-fit: contain !important;
+             height: auto !important;
          }
         .smt-html-page-content {
             width: 100%;
@@ -395,6 +406,17 @@ const SMTPage = () => {
     // PDF Document State
     const [numPages, setNumPages] = useState(null);
     const [activePdfUrl, setActivePdfUrl] = useState(null);
+    const [pageWidth, setPageWidth] = useState(794);
+
+    useEffect(() => {
+        const updateWidth = () => {
+            const viewportWidth = window.innerWidth * 0.9;
+            setPageWidth(Math.min(viewportWidth, 1200));
+        };
+        window.addEventListener('resize', updateWidth);
+        updateWidth();
+        return () => window.removeEventListener('resize', updateWidth);
+    }, []);
 
 
     // Highlighting State Memory
@@ -667,7 +689,7 @@ const SMTPage = () => {
                                         <span className={`text-sm font-bold tracking-wider ${isExpanded ? 'text-blue-300' : 'text-white'}`}>{bookStr}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-bold text-gray-400 bg-gray-900 px-2 py-0.5 rounded-md">{bookObj.total_chapters || 0} Ch</span>
+                                        <span className="text-[12px] font-bold text-white bg-gray-900 px-2 py-0.5 rounded-md">{bookObj.total_chapters || 0} Ch</span>
                                         <i className={`pi ${isExpanded ? 'pi-chevron-down' : 'pi-chevron-right'} text-xs text-gray-500`}></i>
                                     </div>
                                 </div>
@@ -681,7 +703,7 @@ const SMTPage = () => {
                                                 <div
                                                     key={chapterNum}
                                                     onClick={() => { setActiveTrackName(trackStr); setShowSidebar(false); incrementKltTouch(); }}
-                                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${isActive ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'text-gray-400 hover:text-white hover:bg-gray-800 border border-transparent'}`}
+                                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${isActive ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'text-white hover:bg-gray-800 border border-transparent'}`}
                                                 >
                                                     <i className={`pi pi-file text-xs ${isActive ? 'text-blue-400' : 'text-gray-600'}`}></i>
                                                     <span className="text-sm font-bold tracking-wide">Chapter {chapterNum}</span>
@@ -734,10 +756,10 @@ const SMTPage = () => {
                             }
                         >
                             {Array.from(new Array(numPages || 0), (el, index) => (
-                                <div key={`page_${index + 1}`} className="shadow-2xl relative bg-white smt-html-page smt-pdf-page" data-page-number={index + 1} style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}>
+                                <div key={`page_${index + 1}`} className="shadow-2xl relative bg-white smt-html-page smt-pdf-page" data-page-number={index + 1} style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center', marginBottom: '20px' }}>
                                     <Page 
                                         pageNumber={index + 1} 
-                                        width={794} 
+                                        width={pageWidth} 
                                         renderTextLayer={true} 
                                         renderAnnotationLayer={false}
                                         devicePixelRatio={Math.max(window.devicePixelRatio || 1, 2.0)}
