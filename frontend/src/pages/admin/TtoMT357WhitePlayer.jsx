@@ -1393,9 +1393,9 @@ const TtoMT357WhitePlayer = () => {
                                                 <span className={`text-[21px] ${selectedDay === 7 ? 'text-red-600' : 'text-black'}`}>7</span> <span className="text-[13px] font-black text-black">DAY</span>
                                             </span>
                                         </div>
-                                        <div className="text-[16px] text-black font-['Arial'] font-bold drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
+                                        <div className="text-[16px] text-[#006400] font-['Arial'] font-bold drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
                                             {selectedWeek !== null ? (
-                                                <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '18px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
+                                                <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '15px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
                                             ) : (
                                                 "DAYS"
                                             )}
