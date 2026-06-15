@@ -450,7 +450,7 @@ const TtoMT357WhiteGreenPlayer = () => {
 
     const getBookTooltip = (code) => {
         if (code === 'psa119') {
-            return 'PSALM 119 - 22 Chapters';
+            return 'PSALM 119';
         } else if (code === 'psa75') {
             return 'PSALM of David - 75 Chapters';
         }
@@ -1199,14 +1199,14 @@ const TtoMT357WhiteGreenPlayer = () => {
                             <Tooltip target=".book-tooltip" position="top" className="custom-book-tooltip" showDelay={0} hideDelay={0} />
 
                             {/* Old Testament Container */}
-                            <div className="drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/GreenBK.png')] bg-[length:100%_100%] bg-center bg-no-repeat relative z-10">
+                            <div className="drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] bg-[url('/GreenBK.png')] bg-[length:100%_100%] bg-center bg-no-repeat relative z-10 pointer-events-none">
                                 <div className="w-full relative z-10 flex flex-col pt-[110px] pb-[95px] px-[16px]">
 
                                     {/* Old Testament Section */}
                                     <div className="w-full relative flex flex-col items-center px-[13px]">
                                         {/* Top Header Bar */}
                                         <div className="flex items-center justify-between w-full relative mb-[2px] px-[24px]">
-                                            <div className="w-[26px] flex items-center justify-center">
+                                            <div className="w-[26px] flex items-center justify-center pointer-events-auto">
                                                 <i
                                                     className={`pi pi-angle-left text-[#e3c598] font-black text-[24px] cursor-pointer drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] transition-all ${otPage > 0 ? 'hover:scale-110 active:scale-95' : 'opacity-50 pointer-events-none'}`}
                                                     onClick={() => setOtPage(p => Math.max(0, p - 1))}
@@ -1226,7 +1226,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="w-[26px] flex items-center justify-center">
+                                            <div className="w-[26px] flex items-center justify-center pointer-events-auto">
                                                 <i
                                                     className={`pi pi-angle-right text-[#e3c598] font-black text-[24px] cursor-pointer drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] transition-all ${otPage < otTotalPages - 1 ? 'hover:scale-110 active:scale-95' : 'opacity-50 pointer-events-none'}`}
                                                     onClick={() => setOtPage(p => Math.min(otTotalPages - 1, p + 1))}
@@ -1235,7 +1235,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                                         </div>
 
                                         {/* Content Buttons Grid */}
-                                        <div className="w-full px-[24px] grid grid-cols-5 gap-x-[12px] gap-y-[6px] mb-[4px]">
+                                        <div className="w-full px-[24px] grid grid-cols-5 gap-x-[12px] gap-y-[6px] mb-[4px] pointer-events-auto">
                                             {otDisplay.map((book, i) => {
                                                 const isSelected = selectedBooks.includes(book);
                                                 const isGold = (i % 10 === 0 || i % 10 === 2);
@@ -1273,8 +1273,9 @@ const TtoMT357WhiteGreenPlayer = () => {
                                                     key={i}
                                                     onClick={() => setOtPage(i)}
                                                     className={`w-[8px] h-[8px] rounded-full cursor-pointer transition-all ${i === otPage
-                                                        ? 'bg-[#f2cd79] shadow-[0_0_4px_#f2cd79]'
-                                                        : 'bg-[#2b1204] shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)] hover:bg-[#a67c38]'}`}
+                                                        ? ''
+                                                        : 'bg-[#f2cd79] shadow-[0_0_4px_#f2cd79]'}`}
+                                                    style={i === otPage ? { backgroundColor: activeThemeColor || '#FE6D01', boxShadow: '0 0 4px ' + (activeThemeColor || '#FE6D01') } : {}}
                                                 ></div>
                                             ))}
                                         </div>
@@ -1354,8 +1355,9 @@ const TtoMT357WhiteGreenPlayer = () => {
                                                     key={i}
                                                     onClick={() => setNtPage(i)}
                                                     className={`w-[8px] h-[8px] rounded-full cursor-pointer transition-all ${i === ntPage
-                                                        ? 'bg-[#f2cd79] shadow-[0_0_4px_#f2cd79]'
-                                                        : 'bg-[#2b1204] shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)] hover:bg-[#a67c38]'}`}
+                                                        ? ''
+                                                        : 'bg-[#f2cd79] shadow-[0_0_4px_#f2cd79]'}`}
+                                                    style={i === ntPage ? { backgroundColor: activeThemeColor || '#FE6D01', boxShadow: '0 0 4px ' + (activeThemeColor || '#FE6D01') } : {}}
                                                 ></div>
                                             ))}
                                         </div>
@@ -1429,7 +1431,7 @@ const TtoMT357WhiteGreenPlayer = () => {
                                                 <span className={`text-[21px] ${selectedDay === 7 ? 'text-red-600' : 'text-black'}`}>7</span> <span className="text-[13px] text-black">DAY</span>
                                             </span>
                                         </div>
-                                        <div className="text-[16px] text-black font-['Arial'] font-normal drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
+                                        <div className="text-[16px] text-black font-['Arial'] font-bold drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
                                             {selectedWeek !== null ? (
                                                 <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '18px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
                                             ) : (

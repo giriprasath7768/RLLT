@@ -151,7 +151,7 @@ const StudentSidebar = ({ visible, onHide }) => {
         return (
             <div className="flex flex-col py-4 h-full bg-[#1F2937]">
                 <div className="px-6 mb-4 mt-2 flex flex-col items-center">
-                    <img src="/custom-logo.png" alt="Student Logo" className="w-20 h-20 rounded-full border border-gray-600 mb-3 shadow-md object-cover" />
+                    <img src={themeConfig?.logoUrl || "/custom-logo.png"} alt="Student Logo" className="w-20 h-20 rounded-full border border-gray-600 mb-3 shadow-md object-cover" />
                     <span className="text-white text-sm font-semibold tracking-wider">STUDENT PORTAL</span>
                 </div>
                 <div className="px-6 mb-4">
@@ -210,7 +210,7 @@ const StudentSidebar = ({ visible, onHide }) => {
                 style={{ backgroundColor: '#1F2937' }}
                 icons={(
                     <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-700 w-full mb-4">
-                        <img src="/custom-logo.png" alt="Logo" className="h-8 w-8 rounded-full border border-gray-300 object-cover shadow-sm" />
+                        <img src={themeConfig?.logoUrl || "/custom-logo.png"} alt="Logo" className="h-8 w-8 rounded-full border border-gray-300 object-cover shadow-sm" />
                         <span className="text-white font-bold text-sm tracking-widest uppercase">Student Menu</span>
                     </div>
                 )}

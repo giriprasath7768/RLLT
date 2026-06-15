@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useThemeContext } from '../../context/ThemeContext';
+import axios from 'axios';
 
 const Settings = () => {
     const menuGroups = {
@@ -59,6 +60,7 @@ const Settings = () => {
     
     // Notifications state
     const [notification, setNotification] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -78,6 +80,41 @@ const Settings = () => {
     const handleSavePermissions = (e) => {
         e.preventDefault();
         showNotification('Role permissions saved successfully.');
+    };
+
+    const handleLogoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (file.size > 2 * 1024 * 1024) {
+            showNotification('File size exceeds 2MB limit', 'error');
+            return;
+        }
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('files', file);
+
+        try {
+            const res = await axios.post(`http://${window.location.hostname}:8000/api/images/upload`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                },
+                withCredentials: true
+            });
+
+            if (res.data && res.data.urls && res.data.urls.length > 0) {
+                const url = res.data.urls[0];
+                const absoluteUrl = `http://${window.location.hostname}:8000${url}`;
+                updateTheme({ logoUrl: absoluteUrl });
+                showNotification('Logo uploaded successfully', 'success');
+            }
+        } catch (error) {
+            showNotification('Failed to upload logo', 'error');
+            console.error(error);
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const renderApplicationCustomization = () => (
@@ -112,14 +149,56 @@ const Settings = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Application Logo</label>
                     <div className="flex items-center gap-6">
                         <div className="w-24 h-24 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
-                            <i className="pi pi-image text-gray-400 text-3xl"></i>
+                            {themeConfig.logoUrl ? (
+                                <img src={themeConfig.logoUrl} alt="App Logo" className="max-w-full max-h-full object-contain" />
+                            ) : (
+                                <i className="pi pi-image text-gray-400 text-3xl"></i>
+                            )}
                         </div>
                         <div>
-                            <input type="file" accept=".png, .jpg, .jpeg" className="hidden" id="logo-upload" />
-                            <label htmlFor="logo-upload" className="cursor-pointer px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                Choose File
+                            <input type="file" accept=".png, .jpg, .jpeg" className="hidden" id="logo-upload" onChange={handleLogoUpload} disabled={isUploading} />
+                            <label htmlFor="logo-upload" className={`cursor-pointer px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                {isUploading ? 'Uploading...' : 'Choose File'}
                             </label>
                             <p className="text-xs text-gray-500 mt-2">Accepts .png, .jpg, .jpeg (Max 2MB)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mb-6 pt-6 border-t border-gray-100">
+                    <h4 className="text-lg font-bold text-gray-800 mb-4">Footer Settings</h4>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Copyright Text</label>
+                            <input 
+                                type="text" 
+                                value={themeConfig.footerCopyright || ''}
+                                onChange={(e) => updateTheme({ footerCopyright: e.target.value })}
+                                className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                                placeholder="© 2026 App Creators Media. All rights reserved."
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Privacy Policy URL</label>
+                            <input 
+                                type="text" 
+                                value={themeConfig.footerPrivacyLink || ''}
+                                onChange={(e) => updateTheme({ footerPrivacyLink: e.target.value })}
+                                className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                                placeholder="#"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Terms of Service URL</label>
+                            <input 
+                                type="text" 
+                                value={themeConfig.footerTermsLink || ''}
+                                onChange={(e) => updateTheme({ footerTermsLink: e.target.value })}
+                                className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                                placeholder="#"
+                            />
                         </div>
                     </div>
                 </div>

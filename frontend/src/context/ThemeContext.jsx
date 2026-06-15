@@ -64,7 +64,11 @@ export const CustomThemeProvider = ({ children }) => {
                     sidebarBg: updated.sidebarBg,
                     sidebarText: updated.sidebarText,
                     topbarBg: updated.topbarBg,
-                    topbarText: updated.topbarText
+                    topbarText: updated.topbarText,
+                    footerCopyright: updated.footerCopyright,
+                    footerPrivacyLink: updated.footerPrivacyLink,
+                    footerTermsLink: updated.footerTermsLink,
+                    logoUrl: updated.logoUrl
                 }
             }, { withCredentials: true }).catch(err => {
                 console.log("Could not sync theme config to backend", err);

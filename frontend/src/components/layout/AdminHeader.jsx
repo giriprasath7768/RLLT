@@ -122,7 +122,7 @@ const AdminHeader = ({ onMenuToggle }) => {
                 </button>
 
                 <img
-                    src="/custom-logo.png"
+                    src={themeConfig?.logoUrl || "/custom-logo.png"}
                     alt="Logo"
                     className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover shadow-sm border border-gray-100"
                     onError={(e) => {

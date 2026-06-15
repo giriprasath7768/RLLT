@@ -353,7 +353,7 @@ const AdminSidebar = ({ visible, onHide }) => {
                 style={{ backgroundColor: themeConfig?.sidebarBg || '#1F2937' }}
                 icons={(
                     <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-700 w-full mb-4">
-                        <img src="/custom-logo.png" alt="Logo" className="h-8 w-8 rounded-full border border-gray-300 object-cover shadow-sm" />
+                        <img src={themeConfig?.logoUrl || "/custom-logo.png"} alt="Logo" className="h-8 w-8 rounded-full border border-gray-300 object-cover shadow-sm" />
                         <span className="text-white font-bold text-sm tracking-widest uppercase">Menu</span>
                     </div>
                 )}

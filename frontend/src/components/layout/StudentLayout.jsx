@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import AdminHeader from './AdminHeader';
 import StudentSidebar from './StudentSidebar';
+import { useThemeContext } from '../../context/ThemeContext';
 
 const StudentLayout = () => {
     const [sidebarVisible, setSidebarVisible] = useState(false);
     const location = useLocation();
+    const { themeConfig } = useThemeContext();
 
     // Hide Topbar, Sidebar, and Footer when navigating to Book Index to allow immersive full-screen UX
     const isFullScreenMode = location.pathname.includes('/book-index');
@@ -41,10 +43,10 @@ const StudentLayout = () => {
             </div>
 
             <footer className="py-4 px-4 sm:py-6 sm:px-8 border-t border-gray-100 flex flex-col sm:flex-row gap-3 justify-center sm:justify-between items-center text-[12px] text-gray-500 bg-white">
-                <span>© 2026 App Creators Media. All rights reserved.</span>
+                <span>{themeConfig.footerCopyright || '© 2026 App Creators Media. All rights reserved.'}</span>
                 <div className="flex gap-4">
-                    <a href="#" className="hover:text-blue-600 transition-colors">Support</a>
-                    <a href="#" className="hover:text-blue-600 transition-colors">Privacy</a>
+                    <a href={themeConfig.footerPrivacyLink || '#'} className="hover:text-blue-600 transition-colors">Privacy Policy</a>
+                    <a href={themeConfig.footerTermsLink || '#'} className="hover:text-blue-600 transition-colors">Terms of Service</a>
                 </div>
             </footer>
         </div>

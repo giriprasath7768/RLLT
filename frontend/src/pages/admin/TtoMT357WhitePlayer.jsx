@@ -450,7 +450,7 @@ const TtoMT357WhitePlayer = () => {
 
     const getBookTooltip = (code) => {
         if (code === 'psa119') {
-            return 'PSALM 119 - 22 Chapters';
+            return 'PSALM 119';
         } else if (code === 'psa75') {
             return 'PSALM of David - 75 Chapters';
         }
@@ -1023,7 +1023,7 @@ const TtoMT357WhitePlayer = () => {
                                     </div>
                                 </div>
                                 <button onClick={() => setIsFlipped(true)} className="w-[42px] h-[42px] shrink-0 rounded-full border border-[#4a2e1d] bg-gradient-to-b from-[#c28e71] via-[#9c6343] to-[#59341f] shadow-[0_4px_6px_rgba(0,0,0,0.6),inset_0_2px_2px_rgba(255,200,160,0.4),inset_0_-1px_3px_rgba(0,0,0,0.4)] flex items-center justify-center font-bold font-serif text-[21px] text-[#2b170c] drop-shadow-[0_1px_0_rgba(255,255,255,0.2)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] active:translate-y-px transition-all hover:from-[#d19c7f] hover:to-[#6b4027]">
-
+                                    i
                                 </button>
                             </div>
                         </div>
@@ -1258,7 +1258,7 @@ const TtoMT357WhitePlayer = () => {
                                         {/* Pagination Dots */}
                                         <div className="flex justify-center gap-[8px] shrink-0 pb-[2px]">
                                             {Array.from({ length: otTotalPages }).map((_, i) => (
-                                                <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === otPage ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]' : 'bg-[#291010]'}`}></div>
+                                                <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === otPage ? '' : 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]'}`} style={i === otPage ? { backgroundColor: activeThemeColor || '#FE6D01' } : {}}></div>
                                             ))}
                                         </div>
                                     </div>
@@ -1320,7 +1320,7 @@ const TtoMT357WhitePlayer = () => {
                                         {/* Pagination Dots */}
                                         <div className="flex justify-center gap-[8px] shrink-0 pb-[2px]">
                                             {Array.from({ length: ntTotalPages }).map((_, i) => (
-                                                <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === ntPage ? 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]' : 'bg-[#291010]'}`}></div>
+                                                <div key={i} className={`w-[13px] h-[13px] rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.2)] border border-[#2b1212] ${i === ntPage ? '' : 'bg-gradient-to-b from-[#f2cd79] to-[#b38029]'}`} style={i === ntPage ? { backgroundColor: activeThemeColor || '#FE6D01' } : {}}></div>
                                             ))}
                                         </div>
                                     </div>
@@ -1393,7 +1393,7 @@ const TtoMT357WhitePlayer = () => {
                                                 <span className={`text-[21px] ${selectedDay === 7 ? 'text-red-600' : 'text-black'}`}>7</span> <span className="text-[13px] font-black text-black">DAY</span>
                                             </span>
                                         </div>
-                                        <div className="text-[16px] text-black font-['Arial'] font-normal drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
+                                        <div className="text-[16px] text-black font-['Arial'] font-bold drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
                                             {selectedWeek !== null ? (
                                                 <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '18px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
                                             ) : (
