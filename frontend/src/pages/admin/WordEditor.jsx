@@ -96,6 +96,39 @@ const getBiblicalOrder = (bookName) => {
     return BIBLICAL_ORDER[clean] || 999;
 };
 
+const CurrentDateTimeDisplay = () => {
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const formatDateTimeHeader = (date) => {
+        const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        
+        const dayName = days[date.getDay()];
+        const dayNum = date.getDate().toString().padStart(2, '0');
+        const monthName = months[date.getMonth()];
+        const year = date.getFullYear();
+        
+        let hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+
+        return `${dayName} ${dayNum} ${monthName} ${year} ${hours}:${minutes} ${ampm}`;
+    };
+
+    return (
+        <div className="w-full bg-[#6c6c6c] text-[#f0f0f0] text-center py-2 text-[15px] tracking-[0.05em] font-['Arial'] border-y border-[#5a5a5a]">
+            {formatDateTimeHeader(currentTime)}
+        </div>
+    );
+};
+
 const WordEditor = () => {
     const quillRef = useRef(null);
     const [title, setTitle] = useState('Untitled Document');
@@ -191,21 +224,21 @@ const WordEditor = () => {
         if (!quillRef.current) {
             quillRef.current = {
                 getEditor: () => ({
-                    on: () => {},
-                    off: () => {},
-                    format: () => {},
+                    on: () => { },
+                    off: () => { },
+                    format: () => { },
                     getFormat: () => ({}),
                     getSelection: () => ({ index: 0, length: 0 }),
                     getLength: () => 0,
-                    insertText: () => {},
-                    insertEmbed: () => {},
-                    deleteText: () => {},
-                    setSelection: () => {},
+                    insertText: () => { },
+                    insertEmbed: () => { },
+                    deleteText: () => { },
+                    setSelection: () => { },
                     root: {
-                        addEventListener: () => {},
-                        removeEventListener: () => {},
-                        setAttribute: () => {},
-                        blur: () => {},
+                        addEventListener: () => { },
+                        removeEventListener: () => { },
+                        setAttribute: () => { },
+                        blur: () => { },
                         innerHTML: ''
                     }
                 })
@@ -480,7 +513,7 @@ const WordEditor = () => {
                 </div>
 
                 <div className="flex items-center gap-5 shrink-0">
-                    <button 
+                    <button
                         onClick={() => {
                             if (window.confirm("Are you sure you want to start a new document?")) {
                                 setDocumentId(null);
@@ -587,7 +620,7 @@ const WordEditor = () => {
                 />
 
                 {/* Embedded Scroll Menu Modal */}
-                <ScrollMenuModal 
+                <ScrollMenuModal
                     isOpen={scrollMenuOpen}
                     onSelect={(category, format, styleOption) => {
                         if (!editor) return;
@@ -666,81 +699,81 @@ const WordEditor = () => {
 
                 {/* Primary Editing Area */}
                 <div className={`flex-grow overflow-y-auto p-4 sm:p-8 flex justify-center bg-gray-100 print:bg-white print:p-0 ${['ar', 'he', 'fa', 'ur'].includes(language) ? 'rtl' : 'ltr'}`} lang={language}>
-                <div
-                    id="pdf-export-container"
-                    className="relative transition-all mx-auto flex flex-col duration-300"
-                    style={{
-                        width: PAGE_SIZES[pageSize].width,
-                        '--page-min-height': PAGE_SIZES[pageSize].height,
-                        '--page-padding': PAGE_SIZES[pageSize].padding,
-                        transform: `scale(${zoomLevel})`,
-                        transformOrigin: 'top center',
-                        marginBottom: `calc(${PAGE_SIZES[pageSize].height} * ${Math.max(0, zoomLevel - 1)})`,
-                    }}
-                >
-                    <div className="relative w-full flex-grow flex flex-col cursor-text" onClick={(e) => { if (e.target === e.currentTarget && editor) editor.commands.focus(); }}>
-                        <EditorContent 
-                            editor={editor} 
-                            readOnly={isChartEditing}
-                            className="border-none relative z-10 bg-transparent flex-grow flex flex-col min-h-full tiptap-editor-container"
-                        />
-
-                        {/* IRON SHIELD: Physical interaction blocker */}
-                        {isChartEditing && (
-                            <div 
-                                className="absolute inset-0 z-[150] bg-white/5 cursor-not-allowed pointer-events-auto backdrop-blur-[1px]"
-                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    <div
+                        id="pdf-export-container"
+                        className="relative transition-all mx-auto flex flex-col duration-300"
+                        style={{
+                            width: PAGE_SIZES[pageSize].width,
+                            '--page-min-height': PAGE_SIZES[pageSize].height,
+                            '--page-padding': PAGE_SIZES[pageSize].padding,
+                            transform: `scale(${zoomLevel})`,
+                            transformOrigin: 'top center',
+                            marginBottom: `calc(${PAGE_SIZES[pageSize].height} * ${Math.max(0, zoomLevel - 1)})`,
+                        }}
+                    >
+                        <div className="relative w-full flex-grow flex flex-col cursor-text" onClick={(e) => { if (e.target === e.currentTarget && editor) editor.commands.focus(); }}>
+                            <EditorContent
+                                editor={editor}
+                                readOnly={isChartEditing}
+                                className="border-none relative z-10 bg-transparent flex-grow flex flex-col min-h-full tiptap-editor-container"
                             />
-                        )}
-                    </div>
-                </div>
-            </div>
 
-            {/* Map Preview Modal */}
-            {mapModalOpen && (
-                <div className="absolute inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm print:hidden">
-                    <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-md flex flex-col transform transition-all scale-100 opacity-100">
-                        <div className="px-5 py-4 bg-gray-100 border-b flex justify-between items-center bg-gradient-to-r from-gray-100 to-gray-50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                                <i className="pi pi-map-marker text-blue-500 text-lg"></i>
-                                {selectedCountry?.name} Map Overview
-                            </h3>
-                            <button onClick={() => setMapModalOpen(false)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-colors focus:outline-none">
-                                <i className="pi pi-times"></i>
-                            </button>
-                        </div>
-                        <div className="p-8 flex justify-center bg-white min-h-[250px] relative items-center">
-                            <img
-                                src={mapUrl}
-                                alt={`Map of ${selectedCountry?.name}`}
-                                className="max-h-64 h-auto w-auto object-contain drop-shadow-md"
-                                onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = `https://upload.wikimedia.org/wikipedia/commons/e/ec/Map_of_the_World_1998.jpg`;
-                                }}
-                            />
-                        </div>
-                        <div className="p-4 bg-gray-50 border-t flex justify-end gap-3">
-                            <button
-                                onClick={() => setMapModalOpen(false)}
-                                className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition-colors focus:outline-none"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={insertMapIntoDocument}
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg shadow cursor-pointer flex items-center gap-2 transition-transform hover:scale-105 focus:outline-none"
-                            >
-                                <i className="pi pi-plus-circle"></i> Insert into Document
-                            </button>
+                            {/* IRON SHIELD: Physical interaction blocker */}
+                            {isChartEditing && (
+                                <div
+                                    className="absolute inset-0 z-[150] bg-white/5 cursor-not-allowed pointer-events-auto backdrop-blur-[1px]"
+                                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
-            )}
 
-            {/* Hidden styles to override Tiptap border within our "page" & strict A4 printing overrides */}
-            <style>{`
+                {/* Map Preview Modal */}
+                {mapModalOpen && (
+                    <div className="absolute inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm print:hidden">
+                        <div className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-md flex flex-col transform transition-all scale-100 opacity-100">
+                            <div className="px-5 py-4 bg-gray-100 border-b flex justify-between items-center bg-gradient-to-r from-gray-100 to-gray-50">
+                                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                    <i className="pi pi-map-marker text-blue-500 text-lg"></i>
+                                    {selectedCountry?.name} Map Overview
+                                </h3>
+                                <button onClick={() => setMapModalOpen(false)} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-colors focus:outline-none">
+                                    <i className="pi pi-times"></i>
+                                </button>
+                            </div>
+                            <div className="p-8 flex justify-center bg-white min-h-[250px] relative items-center">
+                                <img
+                                    src={mapUrl}
+                                    alt={`Map of ${selectedCountry?.name}`}
+                                    className="max-h-64 h-auto w-auto object-contain drop-shadow-md"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = `https://upload.wikimedia.org/wikipedia/commons/e/ec/Map_of_the_World_1998.jpg`;
+                                    }}
+                                />
+                            </div>
+                            <div className="p-4 bg-gray-50 border-t flex justify-end gap-3">
+                                <button
+                                    onClick={() => setMapModalOpen(false)}
+                                    className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition-colors focus:outline-none"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={insertMapIntoDocument}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-lg shadow cursor-pointer flex items-center gap-2 transition-transform hover:scale-105 focus:outline-none"
+                                >
+                                    <i className="pi pi-plus-circle"></i> Insert into Document
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Hidden styles to override Tiptap border within our "page" & strict A4 printing overrides */}
+                <style>{`
                 .tiptap-editor-container { 
                     border: none !important; 
                     height: auto !important; 
@@ -798,142 +831,190 @@ const WordEditor = () => {
                 }
             `}</style>
 
-            {/* Sidebar Overlay */}
-            <div
-                className={`fixed inset-0 bg-black/60 z-[350] transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => setIsSidebarOpen(false)}
-            ></div>
+                {/* Sidebar Overlay */}
+                <div
+                    className={`fixed inset-0 bg-black/60 z-[350] transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                    onClick={() => setIsSidebarOpen(false)}
+                ></div>
 
-            {/* TIER 1: Book List (Sidebar) Drawer */}
-            <div className={`fixed top-0 left-0 h-full w-64 sm:w-72 md:w-80 bg-[#1e2433] text-gray-300 shadow-2xl z-[360] flex flex-col overflow-hidden transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="px-6 py-5 border-b border-[#2a3045] bg-[#151a26] flex flex-col justify-start">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
-                                <i className="pi pi-book text-[#c8a165]"></i>
-                                Book Index
-                            </h2>
-                        </div>
-                        <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-white p-1">
-                            <i className="pi pi-times text-xl"></i>
-                        </button>
-                    </div>
-                    <div className="relative">
-                        <i className="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-                        <input
-                            type="text"
-                            placeholder="Search books..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#1e2433] text-white text-sm rounded-md py-2 pl-9 pr-3 border border-gray-600 focus:outline-none focus:border-[#3b82f6] transition-colors placeholder-gray-500"
-                        />
-                    </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-3 py-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4b5563 #1f2937' }}>
-                    {Object.keys(groupedBooks).map(type => (
-                        <div key={type} className="mb-6">
-                            <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">
-                                {type.replace(/-?\s*OT\s*BKS/gi, '').replace(/-?\s*NT\s*BKS/gi, '').trim()}
-                            </h3>
-                            <ul className="space-y-1">
-                                {groupedBooks[type].map(book => (
-                                    <li key={book.id}>
-                                        <button
-                                            onClick={() => {
-                                                setExpandedBookId(prev => prev === book.id ? null : book.id);
-                                                setExpandedChapterId(null);
-                                                incrementKltTouch();
-                                            }}
-                                            className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-bold tracking-wide flex justify-between items-center text-white ${expandedBookId === book.id
-                                                ? 'bg-[#547395] shadow-md border-l-4 border-[#c8a165]'
-                                                : 'hover:bg-[#2a3045] border-l-4 border-transparent'
-                                                }`}
-                                        >
-                                            <span className="truncate pr-2">{book.name}</span>
-                                            <span className="text-[10px] opacity-60 bg-black/20 px-2 py-0.5 rounded-full">
-                                                {book.total_chapters || 0} Ch
-                                            </span>
+                {/* TIER 1: Book List (Sidebar) Drawer */}
+                <div className={`fixed top-0 left-0 h-full w-64 sm:w-72 md:w-80 bg-black text-gray-300 shadow-2xl z-[360] flex flex-col overflow-hidden transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                    <div className="bg-black flex flex-col justify-start">
+                        <div className="px-6 pt-5 pb-3">
+                            <div className="flex flex-col w-full">
+                                <div className="flex items-center justify-between w-full">
+                                    {/* Left side: Arrow and NKJV */}
+                                    <div 
+                                        className="flex items-center justify-start text-[#46b5ff] font-bold cursor-pointer hover:text-[#46b5ff]/80 transition-colors -ml-4 w-1/4"
+                                        onClick={() => setIsSidebarOpen(false)}
+                                    >
+                                        <i className="pi pi-angle-left text-2xl font-black -ml-1"></i>
+                                        <span className="text-[14px] tracking-wide ml-0.5">NKJV</span>
+                                    </div>
+                                    
+                                    {/* Center: Holy Bible */}
+                                    <div className="flex justify-center w-1/2">
+                                        <h2 className="text-[20px] font-bold text-white tracking-wide leading-none mt-1">Holy Bible</h2>
+                                    </div>
+                                    
+                                    {/* Right side: Hamburger menu */}
+                                    <div className="flex justify-end w-1/4">
+                                        <button onClick={() => setIsSidebarOpen(false)} className="text-[#46b5ff] hover:text-[#46b5ff]/80 p-1 mt-1">
+                                            <i className="pi pi-bars text-2xl font-bold"></i>
                                         </button>
+                                    </div>
+                                </div>
+                                
+                                {/* Bottom row: New King James Version */}
+                                <div className="flex justify-center w-full mt-1.5">
+                                    <span className="text-[12px] text-gray-400 font-medium tracking-wide">New King James Version</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <CurrentDateTimeDisplay />
+                        
+                        <div className="w-full">
+                            <input
+                                type="text"
+                                placeholder="TRANSFORMATION"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-white text-gray-800 text-[15px] text-center tracking-[0.05em] font-['Arial'] py-2 border-none focus:outline-none transition-colors placeholder-gray-500"
+                            />
+                        </div>
+                    </div>
 
-                                        {/* Expandable Chapter Grid */}
-                                        {expandedBookId === book.id && (
-                                            <div className="flex flex-col gap-1.5 mt-2 p-1.5 bg-[#0f131c] rounded-md shadow-inner mb-2 mx-2">
-                                                {!expandedChapterId ? (
-                                                    <div className="grid grid-cols-5 gap-1.5">
-                                                        {expandedBookChapters.length > 0 ? (
-                                                            expandedBookChapters.map(chapter => (
-                                                                <div key={chapter.id} className="relative">
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setExpandedChapterId(chapter.id);
-                                                                            incrementKltTouch();
-                                                                        }}
-                                                                        className={`flex items-center justify-center w-full aspect-square rounded font-bold text-sm transition-all duration-200 bg-[#1e2433] text-gray-400 hover:bg-[#2d3748] hover:text-white`}
-                                                                        title={`Chapter ${chapter.chapter_number} (${chapter.verse_count || 0} Verses)`}
-                                                                    >
-                                                                        {chapter.chapter_number}
-                                                                    </button>
+                    <div className="flex-1 overflow-y-auto px-3 py-4 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        {Object.keys(groupedBooks).map(type => (
+                            <div key={type} className="mb-6">
+                                {(() => {
+                                    const rawLabel = type.replace(/-?\s*OT\s*BKS/gi, '').replace(/-?\s*NT\s*BKS/gi, '').trim() || type;
+                                    const normalizedLabel = rawLabel.toUpperCase().replace(/\s+/g, ' ');
+                                    const isOldTestament = normalizedLabel === 'OLD TESTAMENT' || normalizedLabel.includes('OLD TESTAMENT');
+                                    const isNewTestament = normalizedLabel === 'NEW TESTAMENT' || normalizedLabel.includes('NEW TESTAMENT');
+
+                                    if (isOldTestament || isNewTestament) {
+                                        const title = isOldTestament ? 'Old Testament' : 'New Testament';
+                                        return (
+                                            <div className="flex items-center bg-black py-3 pr-3 pl-1 mb-3 shadow-md">
+                                                <img src="/book_listing.jpeg" alt="Bible" className="w-[80px] h-[80px] object-cover flex-shrink-0 rounded-sm" />
+                                                <div className="flex flex-col items-center flex-grow text-center">
+                                                    <h3 className="text-[18px] font-bold text-white tracking-wide">
+                                                        {title}
+                                                    </h3>
+                                                    <p className="text-white text-[12px] italic font-serif opacity-90 leading-tight mt-1 px-1">
+                                                        Your word is a lamp to my feet <br /> And a light to my path.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">
+                                            {rawLabel}
+                                        </h3>
+                                    );
+                                })()}
+                                <ul className="space-y-1">
+                                    {groupedBooks[type].map(book => (
+                                        <li key={book.id}>
+                                            <button
+                                                onClick={() => {
+                                                    setExpandedBookId(prev => prev === book.id ? null : book.id);
+                                                    setExpandedChapterId(null);
+                                                    incrementKltTouch();
+                                                }}
+                                                className={`w-full text-left px-4 py-2.5 rounded-md transition-all duration-200 text-sm font-bold tracking-wide flex justify-between items-center text-white ${expandedBookId === book.id
+                                                    ? 'bg-[#547395] shadow-md border-l-4 border-[#c8a165]'
+                                                    : 'hover:bg-[#2a3045] border-l-4 border-transparent'
+                                                    }`}
+                                            >
+                                                <span className="truncate pr-2">{book.name}</span>
+                                                <span className="text-[10px] opacity-60 bg-black/20 px-2 py-0.5 rounded-full">
+                                                    {book.total_chapters || 0} Ch
+                                                </span>
+                                            </button>
+
+                                            {/* Expandable Chapter Grid */}
+                                            {expandedBookId === book.id && (
+                                                <div className="flex flex-col gap-1.5 mt-2 p-1.5 bg-[#0f131c] rounded-md shadow-inner mb-2 mx-2">
+                                                    {!expandedChapterId ? (
+                                                        <div className="grid grid-cols-5 gap-1.5">
+                                                            {expandedBookChapters.length > 0 ? (
+                                                                expandedBookChapters.map(chapter => (
+                                                                    <div key={chapter.id} className="relative">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setExpandedChapterId(chapter.id);
+                                                                                incrementKltTouch();
+                                                                            }}
+                                                                            className={`flex items-center justify-center w-full aspect-square rounded font-bold text-sm transition-all duration-200 bg-[#1e2433] text-gray-400 hover:bg-[#2d3748] hover:text-white`}
+                                                                            title={`Chapter ${chapter.chapter_number} (${chapter.verse_count || 0} Verses)`}
+                                                                        >
+                                                                            {chapter.chapter_number}
+                                                                        </button>
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <span className="col-span-5 text-[#8b9bb4] text-xs text-center italic py-2">No chapters</span>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mt-1 p-2 animate-fadein">
+                                                            <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-800">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setExpandedChapterId(null);
+                                                                    }}
+                                                                    className="text-[#3b82f6] hover:text-[#60a5fa] text-xs font-bold flex items-center gap-1 transition-colors"
+                                                                >
+                                                                    <i className="pi pi-arrow-left text-[10px]"></i>
+                                                                    Back to Chapters
+                                                                </button>
+                                                                <div className="text-[10px] font-bold text-[#8b9bb4] uppercase tracking-widest">
+                                                                    Ch {expandedBookChapters.find(c => c.id === expandedChapterId)?.chapter_number} Verses
                                                                 </div>
-                                                            ))
-                                                        ) : (
-                                                            <span className="col-span-5 text-[#8b9bb4] text-xs text-center italic py-2">No chapters</span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <div className="mt-1 p-2 animate-fadein">
-                                                        <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-800">
-                                                            <button 
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setExpandedChapterId(null);
-                                                                }}
-                                                                className="text-[#3b82f6] hover:text-[#60a5fa] text-xs font-bold flex items-center gap-1 transition-colors"
-                                                            >
-                                                                <i className="pi pi-arrow-left text-[10px]"></i>
-                                                                Back to Chapters
-                                                            </button>
-                                                            <div className="text-[10px] font-bold text-[#8b9bb4] uppercase tracking-widest">
-                                                                Ch {expandedBookChapters.find(c => c.id === expandedChapterId)?.chapter_number} Verses
+                                                            </div>
+                                                            <div className="grid grid-cols-6 gap-1 max-h-[250px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                                                                {(() => {
+                                                                    const chap = expandedBookChapters.find(c => c.id === expandedChapterId);
+                                                                    const count = chap?.verse_count || 0;
+                                                                    if (count === 0) return <span className="col-span-6 text-center text-xs italic text-gray-600">No verses</span>;
+
+                                                                    return Array.from({ length: count }, (_, i) => i + 1).map(v => (
+                                                                        <button
+                                                                            key={v}
+                                                                            onClick={() => handleVerseInsert(book, chap, v)}
+                                                                            className="bg-[#2a3045] hover:bg-green-600 text-gray-300 hover:text-white text-[11px] font-medium py-1.5 rounded transition-colors text-center shadow-sm"
+                                                                        >
+                                                                            {v}
+                                                                        </button>
+                                                                    ));
+                                                                })()}
                                                             </div>
                                                         </div>
-                                                        <div className="grid grid-cols-6 gap-1 max-h-[250px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
-                                                            {(() => {
-                                                                const chap = expandedBookChapters.find(c => c.id === expandedChapterId);
-                                                                const count = chap?.verse_count || 0;
-                                                                if (count === 0) return <span className="col-span-6 text-center text-xs italic text-gray-600">No verses</span>;
-
-                                                                return Array.from({ length: count }, (_, i) => i + 1).map(v => (
-                                                                    <button
-                                                                        key={v}
-                                                                        onClick={() => handleVerseInsert(book, chap, v)}
-                                                                        className="bg-[#2a3045] hover:bg-green-600 text-gray-300 hover:text-white text-[11px] font-medium py-1.5 rounded transition-colors text-center shadow-sm"
-                                                                    >
-                                                                        {v}
-                                                                    </button>
-                                                                ));
-                                                            })()}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+                                                    )}
+                                                </div>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
 
-            <SavedDocumentsModal
-                isOpen={savedDocsModalOpen}
-                onClose={() => setSavedDocsModalOpen(false)}
-                documents={savedDocuments}
-                onSelectDocument={loadDocument}
-                onDeleteDocument={deleteDocument}
-            />
+                <SavedDocumentsModal
+                    isOpen={savedDocsModalOpen}
+                    onClose={() => setSavedDocsModalOpen(false)}
+                    documents={savedDocuments}
+                    onSelectDocument={loadDocument}
+                    onDeleteDocument={deleteDocument}
+                />
 
             </div>
         </div >

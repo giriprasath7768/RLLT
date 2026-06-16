@@ -1431,11 +1431,14 @@ const TtoMT357WhiteGreenPlayer = () => {
                                                 <span className={`text-[21px] ${selectedDay === 7 ? 'text-red-600' : 'text-black'}`}>7</span> <span className="text-[13px] text-black">DAY</span>
                                             </span>
                                         </div>
-                                        <div className="text-[16px] text-[#006400] font-['Arial'] font-bold drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
+                                        <div className="text-[#006400] font-['Arial'] drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] flex items-baseline justify-center gap-[4px]">
                                             {selectedWeek !== null ? (
-                                                <span style={{ fontFamily: 'Arial, sans-serif', fontSize: '15px' }}>{parseInt(selectedWeek) * selectedDay} DAYS</span>
+                                                <>
+                                                    <span className="text-[21px] font-black">{parseInt(selectedWeek) * selectedDay}</span>
+                                                    <span className="text-[21px] font-black">DAYS</span>
+                                                </>
                                             ) : (
-                                                "DAYS"
+                                                <span className="text-[21px] font-black">DAYS</span>
                                             )}
                                         </div>
                                     </div>

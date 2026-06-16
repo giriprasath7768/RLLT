@@ -748,6 +748,39 @@ const getBiblicalOrder = (bookName) => {
     return BIBLICAL_ORDER[clean] || 999;
 };
 
+const CurrentDateTimeDisplay = () => {
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const formatDateTimeHeader = (date) => {
+        const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        
+        const dayName = days[date.getDay()];
+        const dayNum = date.getDate().toString().padStart(2, '0');
+        const monthName = months[date.getMonth()];
+        const year = date.getFullYear();
+        
+        let hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+
+        return `${dayName} ${dayNum} ${monthName} ${year} ${hours}:${minutes} ${ampm}`;
+    };
+
+    return (
+        <div className="w-full bg-[#6c6c6c] text-[#f0f0f0] text-center py-2 text-[15px] tracking-[0.05em] font-['Arial'] border-y border-[#5a5a5a]">
+            {formatDateTimeHeader(currentTime)}
+        </div>
+    );
+};
+
 const BookIndex = () => {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -1419,7 +1452,7 @@ const BookIndex = () => {
             <GlobalPDFPageOverridesSMT />
 
             {/* Static SMT-Style Top Navigation Bar */}
-            <div className="w-full shrink-0 min-h-[68px] py-2 md:py-0 bg-[#0b0f19] border-b border-gray-800 flex flex-wrap md:flex-nowrap items-center px-2 sm:px-4 justify-between z-[115] shadow-[0_15px_30px_rgba(0,0,0,0.6)] relative pointer-events-auto gap-y-2">
+            <div className={`w-full shrink-0 min-h-[68px] py-2 md:py-0 bg-[#0b0f19] border-b border-gray-800 flex flex-wrap md:flex-nowrap items-center px-2 sm:px-4 justify-between z-[115] shadow-[0_15px_30px_rgba(0,0,0,0.6)] relative pointer-events-auto gap-y-2 ${isSidebarOpen ? 'hidden' : ''}`}>
                 {/* Left Controls */}
                 <div className="flex items-center gap-2 sm:gap-4 shrink-0 order-1">
                     <button onClick={() => navigate(-1)} className="bg-gray-800 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all border border-gray-600 shrink-0">
@@ -1490,7 +1523,7 @@ const BookIndex = () => {
                             className="group bg-gray-800 hover:bg-red-600 text-white h-11 px-3 sm:px-4 rounded-full flex items-center border border-gray-600 shadow-xl transition-all duration-300 whitespace-nowrap"
                             title="Undo Last Highlight"
                         >
-                            <i className="pi pi-undo text-2xl shrink-0 transition-transform group-hover:scale-110"></i>
+                            <i className="pi pi-undo text-[16px] shrink-0 transition-transform group-hover:scale-110"></i>
                             <span className="overflow-hidden max-w-0 opacity-0 group-hover:max-w-[80px] group-hover:opacity-100 transition-all duration-500 ease-in-out">
                                 <span className="text-[11px] font-black tracking-widest uppercase pl-2">UNDO</span>
                             </span>
@@ -1503,7 +1536,7 @@ const BookIndex = () => {
                             }}
                             className="group bg-gray-800 hover:bg-blue-600 text-white h-11 px-3 sm:px-4 rounded-full flex items-center border border-gray-600 shadow-xl transition-all duration-300 whitespace-nowrap"
                         >
-                            <i className="pi pi-play-circle text-2xl shrink-0 transition-transform group-hover:scale-110"></i>
+                            <i className="pi pi-play-circle text-[16px] shrink-0 transition-transform group-hover:scale-110"></i>
                             <span className="overflow-hidden max-w-0 opacity-0 group-hover:max-w-[100px] group-hover:opacity-100 transition-all duration-500 ease-in-out">
                                 <span className="text-[11px] font-black tracking-widest uppercase pl-2">PLAYER</span>
                             </span>
@@ -1519,32 +1552,54 @@ const BookIndex = () => {
             ></div>
 
             {/* TIER 1: Book List (Sidebar) Drawer */}
-            <div className={`fixed top-0 left-0 h-full w-64 sm:w-72 md:w-80 bg-[#1e2433] text-gray-300 shadow-2xl z-[60] flex flex-col overflow-hidden transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="px-6 py-5 border-b border-[#2a3045] bg-[#151a26] flex flex-col justify-start">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h2 className="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
-                                <i className="pi pi-book text-[#c8a165]"></i>
-                                Book Index
-                            </h2>
+            <div className={`fixed top-0 left-0 h-full w-64 sm:w-72 md:w-80 bg-black text-gray-300 shadow-2xl z-[60] flex flex-col overflow-hidden transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="bg-black flex flex-col justify-start">
+                    <div className="px-6 pt-5 pb-3">
+                        <div className="flex flex-col w-full">
+                            <div className="flex items-center justify-between w-full">
+                                {/* Left side: Arrow and NKJV */}
+                                <div 
+                                    className="flex items-center justify-start text-[#46b5ff] font-bold cursor-pointer hover:text-[#46b5ff]/80 transition-colors -ml-4 w-1/4"
+                                    onClick={() => setIsSidebarOpen(false)}
+                                >
+                                    <i className="pi pi-angle-left text-2xl font-black -ml-1"></i>
+                                    <span className="text-[14px] tracking-wide ml-0.5">NKJV</span>
+                                </div>
+                                
+                                {/* Center: Holy Bible */}
+                                <div className="flex justify-center w-1/2">
+                                    <h2 className="text-[20px] font-bold text-white tracking-wide leading-none mt-1">Holy Bible</h2>
+                                </div>
+                                
+                                {/* Right side: Hamburger menu */}
+                                <div className="flex justify-end w-1/4">
+                                    <button onClick={() => setIsSidebarOpen(false)} className="text-[#46b5ff] hover:text-[#46b5ff]/80 p-1 mt-1">
+                                        <i className="pi pi-bars text-2xl font-bold"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {/* Bottom row: New King James Version */}
+                            <div className="flex justify-center w-full mt-1.5">
+                                <span className="text-[12px] text-gray-400 font-medium tracking-wide">New King James Version</span>
+                            </div>
                         </div>
-                        <button onClick={() => setIsSidebarOpen(false)} className="text-gray-400 hover:text-white p-1">
-                            <i className="pi pi-times text-xl"></i>
-                        </button>
                     </div>
-                    <div className="relative">
-                        <i className="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                    
+                    <CurrentDateTimeDisplay />
+                    
+                    <div className="w-full">
                         <input
                             type="text"
-                            placeholder="Search books..."
+                            placeholder="TRANSFORMATION"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#1e2433] text-white text-sm rounded-md py-2 pl-9 pr-3 border border-gray-600 focus:outline-none focus:border-[#3b82f6] transition-colors placeholder-gray-500"
+                            className="w-full bg-white text-gray-800 text-[15px] text-center tracking-[0.05em] font-['Arial'] py-2 border-none focus:outline-none transition-colors placeholder-gray-500"
                         />
                     </div>
-                </div>
+            </div>
 
-                <div className="flex-1 overflow-y-auto tier1-scroll px-3 py-4">
+                <div className="flex-1 overflow-y-auto px-3 py-4 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {parsedPayload.length > 0 ? (
                         <div className="flex flex-col gap-4">
                             {/* Tracks List (Now ABOVE the Day Grid) */}
@@ -1675,9 +1730,35 @@ const BookIndex = () => {
                     ) : (
                         Object.keys(groupedBooks).map(type => (
                             <div key={type} className="mb-6">
-                                <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">
-                                    {type.replace(/-?\s*OT\s*BKS/gi, '').replace(/-?\s*NT\s*BKS/gi, '').trim()}
-                                </h3>
+                            {(() => {
+                                const rawLabel = type.replace(/-?\s*OT\s*BKS/gi, '').replace(/-?\s*NT\s*BKS/gi, '').trim() || type;
+                                const normalizedLabel = rawLabel.toUpperCase().replace(/\s+/g, ' ');
+                                const isOldTestament = normalizedLabel === 'OLD TESTAMENT' || normalizedLabel.includes('OLD TESTAMENT');
+                                const isNewTestament = normalizedLabel === 'NEW TESTAMENT' || normalizedLabel.includes('NEW TESTAMENT');
+                                
+                                if (isOldTestament || isNewTestament) {
+                                        const title = isOldTestament ? 'Old Testament' : 'New Testament';
+                                        return (
+                                            <div className="flex items-center bg-black py-3 pr-3 pl-1 mb-3 shadow-md">
+                                                <img src="/book_listing.jpeg" alt="Bible" className="w-[80px] h-[80px] object-cover flex-shrink-0 rounded-sm" />
+                                                <div className="flex flex-col items-center flex-grow text-center">
+                                                    <h3 className="text-[18px] font-bold text-white tracking-wide">
+                                                        {title}
+                                                    </h3>
+                                                    <p className="text-white text-[12px] italic font-serif opacity-90 leading-tight mt-1 px-1">
+                                                        Your word is a lamp to my feet <br /> And a light to my path.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <h3 className="text-xs font-black text-[#8b9bb4] uppercase tracking-widest pl-3 mb-2">
+                                            {rawLabel}
+                                        </h3>
+                                    );
+                                })()}
                                 <ul className="space-y-1">
                                     {groupedBooks[type].map(book => (
                                         <li key={book.id}>
