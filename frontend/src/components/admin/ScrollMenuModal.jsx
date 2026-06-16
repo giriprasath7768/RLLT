@@ -20,6 +20,7 @@ const SEVEN_MOUNTAIN_SPHERES = [
 
 const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [showUnderlinePalette, setShowUnderlinePalette] = useState(false);
     
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 600;
     const scale = screenWidth < 550 ? (screenWidth * 0.94) / 550 : 1;
@@ -121,7 +122,7 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                     }
                                 `}</style>
 
-                                <div className="text-center w-full flex flex-col gap-[2px] mb-3 mt-2">
+                                <div className="text-center w-full flex flex-col gap-[2px] mb-0 mt-2">
                                     <div className="font-cinzel font-black text-[18px] leading-tight w-full text-center drop-shadow-sm tracking-wide text-stroke-1">
                                         THE POWER OF GOD AND THE-
                                     </div>
@@ -135,7 +136,7 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                     </button>
                                 </div>
 
-                                <div className="flex flex-col w-full items-center gap-[8px] mb-4">
+                                <div className="flex flex-col w-full items-center gap-[2px] mb-10">
                                     {HIGHLIGHT_CATEGORIES.map(cat => (
                                         <button
                                             key={cat.label}
@@ -149,7 +150,7 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                     ))}
                                 </div>
 
-                                <div className="w-full text-center drop-shadow-sm mb-4">
+                                <div className="w-full text-center drop-shadow-sm mb-1">
                                     <div className="font-cinzel font-black text-[22px] tracking-wide text-stroke-1">
                                         TRANSFORMATION
                                     </div>
@@ -168,7 +169,7 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                         </button>
                                     ))}
                                 </div>
-                                <div className="w-[90%] flex flex-wrap justify-center gap-x-3 gap-y-3 mb-3 leading-none drop-shadow-sm">
+                                <div className="w-[90%] flex flex-wrap justify-center gap-x-3 gap-y-3 mb-2 leading-none drop-shadow-sm">
                                     {SEVEN_MOUNTAIN_SPHERES.slice(4).map(cat => (
                                         <button 
                                             key={cat.label} 
@@ -182,7 +183,7 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                     ))}
                                 </div>
 
-                                <div className="flex flex-col items-center text-center font-times italic text-[13px] leading-tight font-black pointer-events-none w-[80%] opacity-90 drop-shadow-sm mt-3 mb-0">
+                                <div className="flex flex-col items-center text-center font-times italic text-[13px] leading-tight font-black pointer-events-none w-[80%] opacity-90 drop-shadow-sm mt-1 mb-0">
                                     <span>I AM HERE TO DO GOD'S WILL and DO WHAT IS</span>
                                     <span>WRITTEN ABOUT ME IN THIS SCROLL</span>
                                 </div>
@@ -205,22 +206,63 @@ const ScrollMenuModal = ({ isOpen, onSelect, onClose }) => {
                                         <span className="text-[10px] tracking-widest uppercase">Remove</span>
                                     </button>
                                     
-                                    <button 
-                                        onMouseDown={(e) => {
-                                            if (e) { e.preventDefault(); e.stopPropagation(); }
-                                            if (onSelect) onSelect({ label: 'Underline', color: '#8b5a2b' }, 'underline', 'solid-2px');
-                                            if (onClose) onClose();
-                                        }}
-                                        onTouchStart={(e) => {
-                                            if (e) { e.preventDefault(); e.stopPropagation(); }
-                                            if (onSelect) onSelect({ label: 'Underline', color: '#8b5a2b' }, 'underline', 'solid-2px');
-                                            if (onClose) onClose();
-                                        }}
-                                        className="text-black hover:text-blue-600 font-bold transition-all hover:scale-110 flex flex-col items-center gap-1 drop-shadow-md cursor-pointer"
+                                    {/* Underline Button with Hover Colors */}
+                                    <div 
+                                        className="relative flex flex-col items-center"
+                                        onMouseEnter={() => setShowUnderlinePalette(true)}
                                     >
-                                        <i className="pi pi-minus text-xl"></i>
-                                        <span className="text-[10px] tracking-widest uppercase">Underline</span>
-                                    </button>
+                                        <div className="text-black hover:text-blue-600 font-bold transition-all hover:scale-110 flex flex-col items-center gap-1 drop-shadow-md cursor-pointer">
+                                            <i className="pi pi-minus text-xl"></i>
+                                            <span className="text-[10px] tracking-widest uppercase">Underline</span>
+                                        </div>
+
+                                        {/* Color Options Tooltip */}
+                                        <div className={`absolute bottom-full mb-1 transition-all duration-200 flex gap-[6px] items-center bg-[#f8f5ed] p-2 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.3)] border border-[#d2b48c] z-[100] ${showUnderlinePalette ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                                            {[
+                                                { color: '#00C0FF', label: 'Light Blue' },
+                                                { color: '#00A638', label: 'Green' },
+                                                { color: '#3340CD', label: 'Dark Blue' },
+                                                { color: '#FAFA33', label: 'Yellow' },
+                                                { color: '#BB43B1', label: 'Purple' },
+                                                { color: '#FE6D01', label: 'Orange' },
+                                                { color: '#FE0005', label: 'Red' }
+                                            ].map((item, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onMouseDown={(e) => {
+                                                        if (e) { e.preventDefault(); e.stopPropagation(); }
+                                                        if (onSelect) onSelect({ label: 'Underline', color: item.color }, 'underline', 'solid-2px');
+                                                        setShowUnderlinePalette(false);
+                                                        if (onClose) onClose();
+                                                    }}
+                                                    onTouchStart={(e) => {
+                                                        if (e) { e.preventDefault(); e.stopPropagation(); }
+                                                        if (onSelect) onSelect({ label: 'Underline', color: item.color }, 'underline', 'solid-2px');
+                                                        setShowUnderlinePalette(false);
+                                                        if (onClose) onClose();
+                                                    }}
+                                                    className="w-[22px] h-[22px] rounded-full cursor-pointer hover:scale-125 transition-transform shadow-sm border-[2px] border-black/80 hover:border-black"
+                                                    style={{ backgroundColor: item.color }}
+                                                    title={item.label}
+                                                />
+                                            ))}
+                                            {/* Close icon for the palette */}
+                                            <button
+                                                onMouseDown={(e) => {
+                                                    if (e) { e.preventDefault(); e.stopPropagation(); }
+                                                    setShowUnderlinePalette(false);
+                                                }}
+                                                onTouchStart={(e) => {
+                                                    if (e) { e.preventDefault(); e.stopPropagation(); }
+                                                    setShowUnderlinePalette(false);
+                                                }}
+                                                className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-red-600 hover:bg-red-100 transition-colors ml-1"
+                                                title="Close"
+                                            >
+                                                <i className="pi pi-times text-[12px] font-bold"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                     
                                     <button 
                                         onMouseDown={(e) => {

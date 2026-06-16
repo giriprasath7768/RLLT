@@ -912,14 +912,86 @@ const BookIndex = () => {
                 return;
             }
 
-            const rects = Array.from(range.getClientRects());
-            const pageNode = textContentNode;
+            let textNodes = [];
+            if (commonAncestor.nodeType === Node.TEXT_NODE) {
+                textNodes.push(commonAncestor);
+            } else {
+                const treeWalker = document.createTreeWalker(
+                    commonAncestor,
+                    NodeFilter.SHOW_TEXT,
+                    {
+                        acceptNode: function(node) {
+                            return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                        }
+                    }
+                );
+                while(treeWalker.nextNode()) textNodes.push(treeWalker.currentNode);
+            }
 
+            let rects = [];
+            if (textNodes.length > 0) {
+                textNodes.forEach(node => {
+                    const text = node.textContent;
+                    let match;
+                    const wordRegex = /\S+/g;
+                    
+                    while ((match = wordRegex.exec(text)) !== null) {
+                        let wStart = match.index;
+                        let wEnd = match.index + match[0].length;
+
+                        if (node === range.startContainer && wEnd <= range.startOffset) continue;
+                        if (node === range.endContainer && wStart >= range.endOffset) continue;
+
+                        let selStart = wStart;
+                        let selEnd = wEnd;
+                        
+                        if (node === range.startContainer) selStart = Math.max(selStart, range.startOffset);
+                        if (node === range.endContainer) selEnd = Math.min(selEnd, range.endOffset);
+
+                        if (selStart < selEnd) {
+                            const wordRange = document.createRange();
+                            wordRange.setStart(node, selStart);
+                            wordRange.setEnd(node, selEnd);
+                            
+                            const wordRects = Array.from(wordRange.getClientRects()).filter(r => r.width > 0 && r.height > 0);
+                            rects.push(...wordRects);
+                        }
+                    }
+                });
+            } else {
+                rects = Array.from(range.getClientRects()).filter(r => r.width > 2 && r.height > 2);
+            }
+
+            if (rects.length === 0) {
+                setSelectionMenu(null);
+                return;
+            }
+
+            const pageNode = textContentNode;
             const pageRect = pageNode.getBoundingClientRect();
             const pageNumberStr = pageNode.getAttribute('data-page-number');
             const pageNumber = pageNumberStr ? parseInt(pageNumberStr) : 1;
 
-            const mappedRects = rects.map(r => ({
+            const lineRects = [];
+            rects.forEach(r => {
+                if (r.width === 0 || r.height === 0) return;
+                const existing = lineRects.find(lr => {
+                    const overlapY = Math.max(0, Math.min(r.bottom, lr.bottom) - Math.max(r.top, lr.top));
+                    return overlapY > Math.min(r.height, lr.height) * 0.5;
+                });
+                if (existing) {
+                    existing.left = Math.min(existing.left, r.left);
+                    existing.right = Math.max(existing.right, r.right);
+                    existing.top = Math.min(existing.top, r.top);
+                    existing.bottom = Math.max(existing.bottom, r.bottom);
+                    existing.width = existing.right - existing.left;
+                    existing.height = existing.bottom - existing.top;
+                } else {
+                    lineRects.push({ ...r.toJSON() });
+                }
+            });
+
+            const mappedRects = lineRects.map(r => ({
                 top: ((r.top - pageRect.top) / pageRect.height) * 100,
                 left: ((r.left - pageRect.left) / pageRect.width) * 100,
                 width: (r.width / pageRect.width) * 100,

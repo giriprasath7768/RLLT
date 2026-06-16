@@ -546,19 +546,32 @@ const SMTPage = () => {
                 let rects = [];
                 if (textNodes.length > 0) {
                     textNodes.forEach(node => {
-                        const subRange = document.createRange();
-                        subRange.selectNodeContents(node);
+                        const text = node.textContent;
+                        let match;
+                        const wordRegex = /\S+/g;
                         
-                        if (node === range.startContainer) {
-                            subRange.setStart(node, range.startOffset);
+                        while ((match = wordRegex.exec(text)) !== null) {
+                            let wStart = match.index;
+                            let wEnd = match.index + match[0].length;
+
+                            if (node === range.startContainer && wEnd <= range.startOffset) continue;
+                            if (node === range.endContainer && wStart >= range.endOffset) continue;
+
+                            let selStart = wStart;
+                            let selEnd = wEnd;
+                            
+                            if (node === range.startContainer) selStart = Math.max(selStart, range.startOffset);
+                            if (node === range.endContainer) selEnd = Math.min(selEnd, range.endOffset);
+
+                            if (selStart < selEnd) {
+                                const wordRange = document.createRange();
+                                wordRange.setStart(node, selStart);
+                                wordRange.setEnd(node, selEnd);
+                                
+                                const wordRects = Array.from(wordRange.getClientRects()).filter(r => r.width > 0 && r.height > 0);
+                                rects.push(...wordRects);
+                            }
                         }
-                        if (node === range.endContainer) {
-                            subRange.setEnd(node, range.endOffset);
-                        }
-                        
-                        // Only add rects that have actual dimensions (ignores empty newlines)
-                        const nodeRects = Array.from(subRange.getClientRects()).filter(r => r.width > 2 && r.height > 2);
-                        rects.push(...nodeRects);
                     });
                 } else {
                     rects = Array.from(range.getClientRects()).filter(r => r.width > 2 && r.height > 2);
@@ -572,7 +585,26 @@ const SMTPage = () => {
                 const pageRect = pageNode.getBoundingClientRect();
                 const pageNumber = parseInt(pageNode.getAttribute('data-page-number')) || 1;
 
-                const mappedRects = rects.map(r => ({
+                const lineRects = [];
+                rects.forEach(r => {
+                    if (r.width === 0 || r.height === 0) return;
+                    const existing = lineRects.find(lr => {
+                        const overlapY = Math.max(0, Math.min(r.bottom, lr.bottom) - Math.max(r.top, lr.top));
+                        return overlapY > Math.min(r.height, lr.height) * 0.5;
+                    });
+                    if (existing) {
+                        existing.left = Math.min(existing.left, r.left);
+                        existing.right = Math.max(existing.right, r.right);
+                        existing.top = Math.min(existing.top, r.top);
+                        existing.bottom = Math.max(existing.bottom, r.bottom);
+                        existing.width = existing.right - existing.left;
+                        existing.height = existing.bottom - existing.top;
+                    } else {
+                        lineRects.push({ ...r.toJSON() });
+                    }
+                });
+
+                const mappedRects = lineRects.map(r => ({
                     top: ((r.top - pageRect.top) / pageRect.height) * 100,
                     left: ((r.left - pageRect.left) / pageRect.width) * 100,
                     width: (r.width / pageRect.width) * 100,
