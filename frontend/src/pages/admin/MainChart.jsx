@@ -108,6 +108,37 @@ const MainChart = () => {
     const [tableFontSize, setTableFontSize] = useState(8); // Default base data size now 14 (requested shift from 12->14)
     const getFS = (base) => (base + (tableFontSize - 14)) + 'px'; // scaling relative to the new 14px default
 
+    // Transformation Colors Popup State
+    const [inputColors, setInputColors] = useState({});
+    const [colorPopup, setColorPopup] = useState({ visible: false, x: 0, y: 0, targetId: null });
+    const transformationColors = [
+        '#00C0FF', '#00A638', '#3340CD', '#FAFA33',
+        '#BB43B1', '#FE6D01', '#FE0005'
+    ];
+
+    useEffect(() => {
+        const handleMouseUp = (e) => {
+            const activeEl = document.activeElement;
+            if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') && activeEl.id) {
+                if (activeEl.selectionStart !== activeEl.selectionEnd) {
+                    const rect = activeEl.getBoundingClientRect();
+                    setColorPopup({
+                        visible: true,
+                        x: Math.max(100, e.clientX),
+                        y: Math.max(20, rect.top - 60),
+                        targetId: activeEl.id
+                    });
+                    return;
+                }
+            }
+            if (!e.target.closest('.color-popup-container')) {
+                setColorPopup({ visible: false, x: 0, y: 0, targetId: null });
+            }
+        };
+        document.addEventListener('mouseup', handleMouseUp);
+        return () => document.removeEventListener('mouseup', handleMouseUp);
+    }, []);
+
     // Popup state
     const [showPopup, setShowPopup] = useState(false);
     const [mdl, setMdl] = useState(1);
@@ -219,6 +250,10 @@ const MainChart = () => {
                             if (Array.isArray(parsed)) {
                                 setChartDays(parsed.length * 5);
                                 setChunks(parsed);
+                            } else if (parsed && parsed.chunks) {
+                                setChartDays(parsed.chunks.length * 5);
+                                setChunks(parsed.chunks);
+                                if (parsed.inputColors) setInputColors(parsed.inputColors);
                             }
                         } catch (e) { /* ignore parse error */ }
                     }
@@ -292,7 +327,7 @@ const MainChart = () => {
         formData.append("phase", currentPhs);
         formData.append("banner_text", bannerText);
         formData.append("t_label", tLabel);
-        formData.append("state_payload", JSON.stringify(chunks));
+        formData.append("state_payload", JSON.stringify({ chunks, inputColors }));
 
         if (logo1 && typeof logo1 === 'object' && logo1.file) {
             formData.append("logo1", logo1.file);
@@ -701,6 +736,34 @@ const MainChart = () => {
                 return null;
             })()}
 
+            <style>{`
+                ${Object.entries(inputColors).map(([id, color]) => `
+                    #${id} { color: ${color} !important; }
+                `).join('\n')}
+            `}</style>
+
+            {colorPopup.visible && (
+                <div 
+                    className="color-popup-container fixed z-[1000] bg-[#1a2234] border border-gray-600 rounded-lg p-3 shadow-2xl flex flex-col gap-3"
+                    style={{ left: colorPopup.x, top: colorPopup.y, transform: 'translateX(-50%)' }}
+                >
+                    <span className="text-[#fadfc3] text-[13px] font-bold text-center tracking-wide">Transformation Colors</span>
+                    <div className="flex gap-2 justify-center">
+                        {transformationColors.map(color => (
+                            <button
+                                key={color}
+                                onClick={() => {
+                                    setInputColors(prev => ({ ...prev, [colorPopup.targetId]: color }));
+                                    setColorPopup({ visible: false, x: 0, y: 0, targetId: null });
+                                }}
+                                className="w-7 h-7 rounded-full border-2 hover:scale-110 transition-transform shadow-md"
+                                style={{ backgroundColor: color, borderColor: 'rgba(255,255,255,0.4)' }}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6">
 
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] p-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 pb-4 gap-4">
@@ -772,6 +835,7 @@ const MainChart = () => {
                                         {/* T BLOCK */}
                                         <td className="w-[55px] bg-[#00b050] border-r-2 border-black p-0 align-middle">
                                             <input
+                                                id="tLabel_input"
                                                 className="w-full h-full text-center bg-transparent text-white font-serif text-[32px] border-none outline-none"
                                                 value={tLabel}
                                                 onChange={(e) => setTLabel(e.target.value)}
@@ -839,10 +903,11 @@ const MainChart = () => {
                                         <td className="border-r-2 border-black p-1 align-middle bg-white relative">
                                             <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
                                             <input
+                                                id="bannerText_input"
                                                 type="text"
                                                 value={bannerText}
                                                 onChange={(e) => setBannerText(e.target.value)}
-                                                className="w-full h-full min-h-[50px] outline-none text-black font-bold px-4 text-[22px] uppercase bg-transparent relative z-10"
+                                                className="w-full h-full min-h-[50px] outline-none text-black font-bold px-4 text-center text-[22px] uppercase bg-transparent relative z-10"
                                                 placeholder="..."
                                             />
                                         </td>
@@ -945,6 +1010,7 @@ const MainChart = () => {
                                                     <td colSpan={6} className="border-2 border-black px-2 align-middle bg-white">
                                                         <div className="flex h-full w-full items-center">
                                                             <input
+                                                                id={`promises_${cIdx}`}
                                                                 value={chunk.promises}
                                                                 onChange={(e) => updateChunk(cIdx, 'promises', e.target.value)}
                                                                 className="w-full h-full outline-none font-bold bg-transparent text-black font-serif tracking-tight text-left uppercase pl-2"
@@ -955,6 +1021,7 @@ const MainChart = () => {
                                                     </td>
                                                     <td colSpan={5} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
                                                         <input
+                                                            id={`promiseInput_${cIdx}`}
                                                             className="w-full h-full outline-none p-1 font-bold text-center bg-transparent text-black block"
                                                             style={{ fontSize: getFS(20) }}
                                                             value={chunk.promiseInput}
@@ -984,15 +1051,15 @@ const MainChart = () => {
                                                     </th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`DAY`}</th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">
-                                                        <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h1} onChange={(e) => updateChunk(cIdx, 'h1', e.target.value)} />
+                                                        <input id={`h1_${cIdx}`} className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h1} onChange={(e) => updateChunk(cIdx, 'h1', e.target.value)} />
                                                     </th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`TIME`}</th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">
-                                                        <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h2} onChange={(e) => updateChunk(cIdx, 'h2', e.target.value)} />
+                                                        <input id={`h2_${cIdx}`} className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h2} onChange={(e) => updateChunk(cIdx, 'h2', e.target.value)} />
                                                     </th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`TIME`}</th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle pl-1 pr-1">
-                                                        <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h3} onChange={(e) => updateChunk(cIdx, 'h3', e.target.value)} />
+                                                        <input id={`h3_${cIdx}`} className="w-full bg-transparent outline-none font-bold text-center" value={chunk.h3} onChange={(e) => updateChunk(cIdx, 'h3', e.target.value)} />
                                                     </th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`TIME`}</th>
                                                     <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black align-middle">{`CHAP`}</th>
@@ -1006,34 +1073,34 @@ const MainChart = () => {
                                                         <td className="border-2 border-black p-0 font-extrabold bg-white text-black align-middle" style={{ fontSize: getFS(20) }}>{d.day}</td>
 
                                                         <td className="border-2 border-black p-0 bg-white align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m1b} onChange={(e) => updateDay(cIdx, d.id, 'm1b', e.target.value)} />
+                                                            <input id={`m1b_${d.id}`} className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m1b} onChange={(e) => updateDay(cIdx, d.id, 'm1b', e.target.value)} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
+                                                            <input id={`m1t_${d.id}`} className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-0 bg-white align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m2b} onChange={(e) => updateDay(cIdx, d.id, 'm2b', e.target.value)} />
+                                                            <input id={`m2b_${d.id}`} className="w-full text-center outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m2b} onChange={(e) => updateDay(cIdx, d.id, 'm2b', e.target.value)} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
+                                                            <input id={`m2t_${d.id}`} className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m3b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm3b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
+                                                            <textarea id={`m3b_${d.id}`} className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m3b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm3b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
+                                                            <input id={`m3t_${d.id}`} className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-0 align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
+                                                            <input id={`chap_${d.id}`} className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
+                                                            <input id={`verse_${d.id}`} className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
+                                                            <input id={`art_${d.id}`} className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-0 text-center align-middle">

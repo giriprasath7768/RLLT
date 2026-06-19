@@ -35,6 +35,43 @@ const TtoMT357Player = () => {
     const [selectedPreviewDay, setSelectedPreviewDay] = useState(1);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isFlipped, setIsFlipped] = useState(false);
+    const [showBookTypePopup, setShowBookTypePopup] = useState(false);
+    const [bookTypeMode, setBookTypeMode] = useState('book');
+    const [selectedChapters, setSelectedChapters] = useState({});
+    const [activeChapterPopupBook, setActiveChapterPopupBook] = useState(null);
+    const [activeVersePopup, setActiveVersePopup] = useState(null);
+    const [selectedVerses, setSelectedVerses] = useState({});
+    const [activeBookOrChapterPopup, setActiveBookOrChapterPopup] = useState(null);
+
+    const [selectionOrder, setSelectionOrder] = useState([]);
+
+    useEffect(() => {
+        const currentSelectedCodes = new Set([
+            ...selectedBooks,
+            ...Object.keys(selectedChapters).filter(k => selectedChapters[k] && selectedChapters[k].length > 0),
+            ...Object.keys(selectedVerses).filter(k => selectedVerses[k] && selectedVerses[k].length > 0).map(k => k.split('-')[0])
+        ]);
+
+        setSelectionOrder(prev => {
+            const next = prev.filter(code => currentSelectedCodes.has(code));
+            currentSelectedCodes.forEach(code => {
+                if (!next.includes(code)) {
+                    next.push(code);
+                }
+            });
+            return next;
+        });
+    }, [selectedBooks, selectedChapters, selectedVerses]);
+
+    const BOOK_CHAPTERS_COUNT = {
+        "GEN": 50, "EXO": 40, "LEV": 27, "NUM": 36, "DEU": 34, "JOS": 24, "JDG": 21, "RUT": 4, "1SA": 31, "2SA": 24,
+        "1KI": 22, "2KI": 25, "1CH": 29, "2CH": 36, "EZR": 10, "NEH": 13, "EST": 10, "JOB": 42, "PSA": 150, "PRO": 31,
+        "ECC": 12, "SOS": 8, "ISA": 66, "JER": 52, "LAM": 5, "EZE": 48, "DAN": 12, "HOS": 14, "JOE": 3, "AMO": 9,
+        "OBA": 1, "JON": 4, "MIC": 7, "NAH": 3, "HAB": 3, "ZEP": 3, "HAG": 2, "ZEC": 14, "MAL": 4,
+        "MAT": 28, "MAR": 16, "LUK": 24, "JOH": 21, "ACT": 28, "ROM": 16, "1CO": 16, "2CO": 13, "GAL": 6, "EPH": 6,
+        "PHP": 4, "COL": 4, "1TH": 5, "2TH": 3, "1TI": 6, "2TI": 4, "TIT": 3, "PHM": 1, "HEB": 13, "JAM": 5,
+        "1PE": 5, "2PE": 3, "1JN": 5, "2JN": 1, "3JN": 1, "JUD": 1, "REV": 22
+    };
 
     const playlistRef = useRef(null);
     const [isPlaylistScrollActive, setIsPlaylistScrollActive] = useState(false);
@@ -343,10 +380,59 @@ const TtoMT357Player = () => {
     };
 
     const toggleBook = (bookCode) => {
-        if (selectedBooks.includes(bookCode)) {
-            setSelectedBooks(selectedBooks.filter(b => b !== bookCode));
+        if (bookTypeMode === 'book') {
+            if (selectedBooks.includes(bookCode)) {
+                setSelectedBooks(selectedBooks.filter(b => b !== bookCode));
+            } else {
+                setSelectedBooks([...selectedBooks, bookCode]);
+            }
+        } else if (bookTypeMode === 'book_chapter') {
+            setActiveBookOrChapterPopup(bookCode);
         } else {
-            setSelectedBooks([...selectedBooks, bookCode]);
+            setActiveChapterPopupBook(bookCode);
+        }
+    };
+
+    const toggleChapter = (book, chapterNum) => {
+        const currentChapters = selectedChapters[book] || [];
+        if (currentChapters.includes(chapterNum)) {
+            setSelectedChapters({
+                ...selectedChapters,
+                [book]: currentChapters.filter(c => c !== chapterNum)
+            });
+        } else {
+            setSelectedChapters({
+                ...selectedChapters,
+                [book]: [...currentChapters, chapterNum]
+            });
+        }
+    };
+
+    const getVerseCount = (bookCode, chapterNum) => {
+        let targetBook = null;
+        if (bookCode === 'PROVERBS') targetBook = booksDB.find(b => b.short_form === 'PRO');
+        else if (bookCode === 'PSALMS' || bookCode === 'DAVID') targetBook = booksDB.find(b => b.short_form === 'PSA');
+        else {
+            targetBook = booksDB.find(b => isBookMatch(bookCode, b));
+        }
+        if (!targetBook) return 0;
+        const chapterObj = chaptersDB.find(c => c.book_id === targetBook.id && c.chapter_number === chapterNum);
+        return chapterObj ? (chapterObj.verse_count || 0) : 0;
+    };
+
+    const toggleVerse = (book, chapterNum, verseNum) => {
+        const key = `${book}-${chapterNum}`;
+        const currentVerses = selectedVerses[key] || [];
+        if (currentVerses.includes(verseNum)) {
+            setSelectedVerses({
+                ...selectedVerses,
+                [key]: currentVerses.filter(v => v !== verseNum)
+            });
+        } else {
+            setSelectedVerses({
+                ...selectedVerses,
+                [key]: [...currentVerses, verseNum]
+            });
         }
     };
 
@@ -624,29 +710,46 @@ const TtoMT357Player = () => {
 
         const allSelectedBooks = [];
 
-        // Add books in strict chronological order of selection
-        for (const code of selectedBooks) {
+        const allCodesSet = new Set(selectedBooks);
+        Object.keys(selectedChapters).forEach(k => { if (selectedChapters[k]?.length > 0) allCodesSet.add(k); });
+        Object.keys(selectedVerses).forEach(k => { if (selectedVerses[k]?.length > 0) allCodesSet.add(k.split('-')[0]); });
+
+        for (const code of allCodesSet) {
+            let b = null;
             if (code === 'psa119') {
-                const psa119Book = booksDB.find(b => (b.name + " " + (b.short_form || "")).toUpperCase().includes("119"));
-                if (psa119Book) allSelectedBooks.push(psa119Book);
+                b = booksDB.find(bk => (bk.name + " " + (bk.short_form || "")).toUpperCase().includes("119"));
             } else if (code === 'psa75') {
-                const psa75Book = booksDB.find(b => (b.name + " " + (b.short_form || "")).toUpperCase().includes("DAVID"));
-                if (psa75Book) allSelectedBooks.push(psa75Book);
+                b = booksDB.find(bk => (bk.name + " " + (bk.short_form || "")).toUpperCase().includes("DAVID"));
             } else {
-                const match = booksDB.find(b => isBookMatch(code, b));
-                if (match) allSelectedBooks.push(match);
+                b = booksDB.find(bk => isBookMatch(code, bk));
+            }
+
+            if (b) {
+                allSelectedBooks.push({
+                    ...b,
+                    _selectedCode: code,
+                    _isFullBook: selectedBooks.includes(code),
+                    _selectedChapters: selectedChapters[code] || [],
+                    _selectedVerses: Object.keys(selectedVerses).filter(k => k.startsWith(`${code}-`) && selectedVerses[k].length > 0).reduce((acc, k) => {
+                        acc[parseInt(k.split('-')[1])] = selectedVerses[k].map(v => parseInt(v));
+                        return acc;
+                    }, {})
+                });
             }
         }
 
-        const hasPsa119 = selectedBooks.includes('psa119');
-        const hasPsa75 = selectedBooks.includes('psa75');
+        allSelectedBooks.sort((a, b) => {
+            const indexA = selectionOrder.indexOf(a._selectedCode);
+            const indexB = selectionOrder.indexOf(b._selectedCode);
+            return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+        });
 
         if (allSelectedBooks.length === 0) {
-            alert('Please select at least one book or special book.');
+            alert('Please select at least one book or chapter.');
             return;
         }
 
-        const is24x7Format = hasPsa119 || hasPsa75;
+        const is24x7Format = true;
         const use5Segments = is24x7Format;
         const daysPerChunk = selectedDay; // User selected 3, 5, or 7
 
@@ -660,7 +763,25 @@ const TtoMT357Player = () => {
             if (!booksArr || !booksArr.length) return Array.from({ length: daysOutCount }, () => null);
             let allChaps = [];
             for (let b of booksArr) {
-                const bChaps = chaptersDB.filter(c => c.book_id === b.id).sort((a, b) => a.chapter_number - b.chapter_number);
+                let bChaps = chaptersDB.filter(c => c.book_id === b.id).sort((a, b) => a.chapter_number - b.chapter_number);
+                if (!b._isFullBook) {
+                    bChaps = bChaps.filter(c => {
+                        const hasChapter = b._selectedChapters.includes(c.chapter_number) || b._selectedChapters.includes(String(c.chapter_number));
+                        const hasVerses = b._selectedVerses && b._selectedVerses[c.chapter_number] && b._selectedVerses[c.chapter_number].length > 0;
+                        return hasChapter || hasVerses;
+                    });
+                    bChaps = bChaps.map(c => {
+                        let newC = { ...c };
+                        if (b._selectedVerses && b._selectedVerses[c.chapter_number] && b._selectedVerses[c.chapter_number].length > 0) {
+                            const selVerses = b._selectedVerses[c.chapter_number].length;
+                            const totVerses = c.verse_count || 1;
+                            newC.verse_count = selVerses;
+                            const originalArt = typeof c.art === 'number' ? c.art : parseTime(c.art);
+                            newC.art = (originalArt * selVerses) / totVerses;
+                        }
+                        return newC;
+                    });
+                }
                 bChaps.forEach(c => c._bookAbbr = b.short_form || b.name);
                 allChaps = allChaps.concat(bChaps);
             }
@@ -1207,7 +1328,7 @@ const TtoMT357Player = () => {
                                         <div className="flex items-center justify-between w-full relative mb-[2px] px-[24px]">
                                             <i className={`pi pi-angle-left text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${otPage > 0 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setOtPage(p => Math.max(0, p - 1))}></i>
 
-                                            <div className="flex flex-col items-center flex-1">
+                                            <div className="flex flex-col items-center flex-1 relative">
                                                 <div className="flex items-center justify-center gap-[8px] text-[#e3c598] font-['Arial'] font-bold text-[18px] tracking-widest text-center" style={{ textShadow: '0px 1px 0px #5c3a21, 0px 2px 0px #452717, 0px 3px 0px #2a150b, 0px 4px 4px rgba(0,0,0,0.8)' }}>
                                                     <i className="pi pi-file text-[21px]"></i>
                                                     <span>OLD TESTAMENT</span>
@@ -1218,6 +1339,14 @@ const TtoMT357Player = () => {
                                                     <i className="pi pi-sun text-[10px] text-[#c9a679]"></i>
                                                     <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c9a679]"></div>
                                                 </div>
+
+                                                <button 
+                                                    onClick={() => setShowBookTypePopup(true)}
+                                                    className="absolute right-[30px] sm:right-[50px] md:right-[70px] top-0 text-[#c9a679] hover:text-white transition-colors"
+                                                    title="Book Type"
+                                                >
+                                                    <i className="pi pi-book text-[20px]"></i>
+                                                </button>
                                             </div>
 
                                             <i className={`pi pi-angle-right text-[26px] font-bold text-[#c9a679] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] cursor-pointer ${otPage < otTotalPages - 1 ? 'hover:text-white hover:scale-110 transition-transform' : 'opacity-40'}`} onClick={() => setOtPage(p => Math.min(otTotalPages - 1, p + 1))}></i>
@@ -1226,7 +1355,7 @@ const TtoMT357Player = () => {
                                         {/* Content Buttons Grid */}
                                         <div className="w-full px-[10px] sm:px-[24px] grid grid-cols-4 sm:grid-cols-5 gap-x-[8px] sm:gap-x-[12px] gap-y-[6px] mb-[4px]">
                                             {otDisplay.map((book, i) => {
-                                                const isSelected = selectedBooks.includes(book);
+                                                const isSelected = selectedBooks.includes(book) || (selectedChapters[book]?.length > 0) || Object.keys(selectedVerses).some(k => k.startsWith(`${book}-`) && selectedVerses[k].length > 0);
                                                 const isGold = (i === 0 || i === 2);
                                                 const isCopper = (i === 4 || i === 6 || i === 8);
                                                 return (
@@ -1288,7 +1417,7 @@ const TtoMT357Player = () => {
                                         {/* Content Buttons Grid */}
                                         <div className="w-full px-[10px] sm:px-[24px] grid grid-cols-4 sm:grid-cols-5 gap-x-[8px] sm:gap-x-[12px] gap-y-[6px] mb-[4px]">
                                             {ntDisplay.map((book, i) => {
-                                                const isSelected = selectedBooks.includes(book);
+                                                const isSelected = selectedBooks.includes(book) || (selectedChapters[book]?.length > 0) || Object.keys(selectedVerses).some(k => k.startsWith(`${book}-`) && selectedVerses[k].length > 0);
                                                 const isGold = (i === 0 || i === 2);
                                                 const isCopper = (i === 4 || i === 6 || i === 8);
                                                 return (
@@ -1343,7 +1472,7 @@ const TtoMT357Player = () => {
                                         backgroundPosition: 'center',
                                         backgroundRepeat: 'no-repeat'
                                     }}
-                                    className={`book-tooltip w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[12px] p-[4px] gap-[8px] ${selectedBooks.includes('psa119')
+                                    className={`book-tooltip w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[12px] p-[4px] gap-[8px] ${(selectedBooks.includes('psa119') || (selectedChapters['psa119']?.length > 0) || Object.keys(selectedVerses).some(k => k.startsWith('psa119-') && selectedVerses[k].length > 0))
                                         ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
                                         : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
                                         }`}
@@ -1428,7 +1557,7 @@ const TtoMT357Player = () => {
                                         backgroundPosition: 'center',
                                         backgroundRepeat: 'no-repeat'
                                     }}
-                                    className={`book-tooltip w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[4px] pr-[6px] py-[4px] gap-[4px] ${selectedBooks.includes('psa75')
+                                    className={`book-tooltip w-[28%] shrink-0 rounded-[13px] cursor-pointer transition-all active:scale-95 border flex items-center justify-start pl-[4px] pr-[6px] py-[4px] gap-[4px] ${(selectedBooks.includes('psa75') || (selectedChapters['psa75']?.length > 0) || Object.keys(selectedVerses).some(k => k.startsWith('psa75-') && selectedVerses[k].length > 0))
                                         ? "border-[#45260f] shadow-[inset_0_4px_8px_rgba(0,0,0,0.6),inset_0_0_0_2px_rgba(180,130,40,0.4)] opacity-80 scale-[0.98]"
                                         : "border-[#45260f] shadow-[inset_0_2px_2px_rgba(255,255,255,0.6),inset_0_-2px_2px_rgba(0,0,0,0.4),inset_0_0_0_2px_rgba(230,180,80,0.5),0_4px_6px_rgba(0,0,0,0.7)] hover:brightness-110"
                                         }`}
@@ -1599,6 +1728,187 @@ const TtoMT357Player = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Book or Chapter Selection Modal */}
+            {activeBookOrChapterPopup && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-[#2a1208] border-[3px] border-[#9a7638] rounded-xl p-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col gap-[20px] min-w-[320px] relative mx-[20px]">
+                        <div className="flex justify-between items-center border-b border-[#5a3618] pb-[10px]">
+                            <h3 className="text-[#e3b586] font-bold text-[18px] tracking-wide font-['Times_New_Roman',_Times,_serif]">Select Option for {activeBookOrChapterPopup}</h3>
+                            <button onClick={() => setActiveBookOrChapterPopup(null)} className="text-[#e3b586] hover:text-white transition-colors">
+                                <i className="pi pi-times text-[18px]"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="flex flex-col gap-4 mt-2">
+                            <button
+                                onClick={() => {
+                                    const bookCode = activeBookOrChapterPopup;
+                                    if (selectedBooks.includes(bookCode)) {
+                                        setSelectedBooks(selectedBooks.filter(b => b !== bookCode));
+                                    } else {
+                                        setSelectedBooks([...selectedBooks, bookCode]);
+                                    }
+                                    setActiveBookOrChapterPopup(null);
+                                }}
+                                className={`w-full py-[12px] px-[20px] border rounded-[8px] font-bold text-[16px] transition-all ${
+                                    selectedBooks.includes(activeBookOrChapterPopup)
+                                        ? 'bg-gradient-to-b from-[#e3b586] via-[#a36338] to-[#47220d] text-[#ffffff] border-[#f3d5b6] shadow-[0_4px_6px_rgba(0,0,0,0.5)] scale-105'
+                                        : 'bg-[#3b2512] text-[#fadfc3] border-[#5a3618] hover:bg-[#5a3618] hover:scale-105 shadow-[0_2px_4px_rgba(0,0,0,0.4)]'
+                                }`}
+                            >
+                                {selectedBooks.includes(activeBookOrChapterPopup) ? "Deselect Full Book" : "Select Full Book"}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setActiveChapterPopupBook(activeBookOrChapterPopup);
+                                    setActiveBookOrChapterPopup(null);
+                                }}
+                                className="w-full py-[12px] px-[20px] bg-[#3b2512] text-[#fadfc3] border border-[#5a3618] hover:bg-[#5a3618] hover:scale-105 shadow-[0_2px_4px_rgba(0,0,0,0.4)] rounded-[8px] font-bold text-[16px] transition-all"
+                            >
+                                Select Chapters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Chapter Selection Modal */}
+            {activeChapterPopupBook && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-[#2a1208] border-[3px] border-[#9a7638] rounded-xl p-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col gap-[20px] w-full max-w-[450px] relative mx-[20px]">
+                        <div className="flex justify-between items-center border-b border-[#5a3618] pb-[10px]">
+                            <h3 className="text-[#e3b586] font-bold text-[18px] tracking-wide font-['Times_New_Roman',_Times,_serif]">Select Chapters for {activeChapterPopupBook}</h3>
+                            <button onClick={() => setActiveChapterPopupBook(null)} className="text-[#e3b586] hover:text-white transition-colors">
+                                <i className="pi pi-times text-[18px]"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-5 sm:grid-cols-6 gap-[8px] max-h-[300px] overflow-y-auto pr-[5px] custom-scrollbar">
+                            {Array.from({ length: BOOK_CHAPTERS_COUNT[activeChapterPopupBook] || 0 }).map((_, i) => {
+                                const chapterNum = i + 1;
+                                const isChapterSelected = bookTypeMode === 'verses'
+                                    ? (selectedVerses[`${activeChapterPopupBook}-${chapterNum}`]?.length > 0)
+                                    : selectedChapters[activeChapterPopupBook]?.includes(chapterNum);
+                                return (
+                                    <button 
+                                        key={chapterNum}
+                                        onClick={() => {
+                                            if (bookTypeMode === 'verses') {
+                                                setActiveVersePopup({ book: activeChapterPopupBook, chapter: chapterNum });
+                                            } else {
+                                                toggleChapter(activeChapterPopupBook, chapterNum);
+                                            }
+                                        }}
+                                        className={`py-[8px] px-[4px] rounded-[6px] font-bold text-center border transition-all text-[14px] ${
+                                            isChapterSelected 
+                                                ? 'bg-gradient-to-b from-[#e3b586] via-[#a36338] to-[#47220d] text-[#ffffff] border-[#f3d5b6] shadow-[0_4px_6px_rgba(0,0,0,0.5)] scale-105' 
+                                                : 'bg-[#3b2512] text-[#fadfc3] border-[#5a3618] hover:bg-[#5a3618] hover:scale-105 shadow-[0_2px_4px_rgba(0,0,0,0.4)]'
+                                        }`}
+                                    >
+                                        {chapterNum}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        
+                        <div className="flex justify-end pt-[10px] mt-[5px]">
+                            <button
+                                onClick={() => setActiveChapterPopupBook(null)}
+                                className="px-[20px] py-[8px] bg-gradient-to-b from-[#e3b586] via-[#a36338] to-[#47220d] border border-[#f3d5b6] shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.4)] text-[#ffffff] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] rounded-[8px] font-['Times_New_Roman',_Times,_serif] font-bold text-[16px] tracking-wide hover:brightness-110 active:scale-95 transition-all"
+                            >
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Verse Selection Modal */}
+            {activeVersePopup && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-[#2a1208] border-[3px] border-[#9a7638] rounded-xl p-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col gap-[20px] w-full max-w-[450px] relative mx-[20px]">
+                        <div className="flex justify-between items-center border-b border-[#5a3618] pb-[10px]">
+                            <h3 className="text-[#e3b586] font-bold text-[18px] tracking-wide font-['Times_New_Roman',_Times,_serif]">Select Verses for {activeVersePopup.book} {activeVersePopup.chapter}</h3>
+                            <button onClick={() => setActiveVersePopup(null)} className="text-[#e3b586] hover:text-white transition-colors">
+                                <i className="pi pi-times text-[18px]"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-5 sm:grid-cols-6 gap-[8px] max-h-[300px] overflow-y-auto pr-[5px] custom-scrollbar">
+                            {Array.from({ length: getVerseCount(activeVersePopup.book, activeVersePopup.chapter) }).map((_, i) => {
+                                const verseNum = i + 1;
+                                const key = `${activeVersePopup.book}-${activeVersePopup.chapter}`;
+                                const isVerseSelected = selectedVerses[key]?.includes(verseNum);
+                                return (
+                                    <button 
+                                        key={verseNum}
+                                        onClick={() => toggleVerse(activeVersePopup.book, activeVersePopup.chapter, verseNum)}
+                                        className={`py-[8px] px-[4px] rounded-[6px] font-bold text-center border transition-all text-[14px] ${
+                                            isVerseSelected 
+                                                ? 'bg-gradient-to-b from-[#e3b586] via-[#a36338] to-[#47220d] text-[#ffffff] border-[#f3d5b6] shadow-[0_4px_6px_rgba(0,0,0,0.5)] scale-105' 
+                                                : 'bg-[#3b2512] text-[#fadfc3] border-[#5a3618] hover:bg-[#5a3618] hover:scale-105 shadow-[0_2px_4px_rgba(0,0,0,0.4)]'
+                                        }`}
+                                    >
+                                        {verseNum}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        
+                        <div className="flex justify-end pt-[10px] mt-[5px]">
+                            <button
+                                onClick={() => setActiveVersePopup(null)}
+                                className="px-[20px] py-[8px] bg-gradient-to-b from-[#e3b586] via-[#a36338] to-[#47220d] border border-[#f3d5b6] shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.4)] text-[#ffffff] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] rounded-[8px] font-['Times_New_Roman',_Times,_serif] font-bold text-[16px] tracking-wide hover:brightness-110 active:scale-95 transition-all"
+                            >
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Book Type Modal */}
+            {showBookTypePopup && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-[#2a1208] border-[3px] border-[#9a7638] rounded-xl p-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col gap-[20px] min-w-[320px] relative mx-[20px]">
+                        <div className="flex justify-between items-center border-b border-[#5a3618] pb-[10px]">
+                            <h3 className="text-[#e3b586] font-bold text-[18px] tracking-wide font-['Times_New_Roman',_Times,_serif]">Select Chart Type</h3>
+                            <button onClick={() => setShowBookTypePopup(false)} className="text-[#e3b586] hover:text-white transition-colors">
+                                <i className="pi pi-times text-[18px]"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="flex flex-col gap-3">
+                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-[#5a3618]/50 rounded-md transition-colors">
+                                <input type="radio" name="bookType" checked={bookTypeMode === 'book'} onChange={() => setBookTypeMode('book')} className="accent-[#c9a679] w-4 h-4"/>
+                                <span className="text-[#fadfc3] text-base font-sans font-semibold">Create chart by book</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-[#5a3618]/50 rounded-md transition-colors">
+                                <input type="radio" name="bookType" checked={bookTypeMode === 'book_chapter'} onChange={() => setBookTypeMode('book_chapter')} className="accent-[#c9a679] w-4 h-4"/>
+                                <span className="text-[#fadfc3] text-base font-sans font-semibold">Create chart by book and chapter</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-[#5a3618]/50 rounded-md transition-colors">
+                                <input type="radio" name="bookType" checked={bookTypeMode === 'chapter'} onChange={() => setBookTypeMode('chapter')} className="accent-[#c9a679] w-4 h-4"/>
+                                <span className="text-[#fadfc3] text-base font-sans font-semibold">Create chart by chapter</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-[#5a3618]/50 rounded-md transition-colors">
+                                <input type="radio" name="bookType" checked={bookTypeMode === 'verses'} onChange={() => setBookTypeMode('verses')} className="accent-[#c9a679] w-4 h-4"/>
+                                <span className="text-[#fadfc3] text-base font-sans font-semibold">Create chart by verses</span>
+                            </label>
+                        </div>
+                        
+                        <div className="flex justify-end pt-[10px] mt-[5px]">
+                            <button
+                                onClick={() => setShowBookTypePopup(false)}
+                                className="px-[20px] py-[8px] bg-gradient-to-b from-[#e3b586] via-[#a36338] to-[#47220d] border border-[#f3d5b6] shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.4)] text-[#ffffff] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] rounded-[8px] font-['Times_New_Roman',_Times,_serif] font-bold text-[16px] tracking-wide hover:brightness-110 active:scale-95 transition-all"
+                            >
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Settings Modal */}
             {showSettings && (
