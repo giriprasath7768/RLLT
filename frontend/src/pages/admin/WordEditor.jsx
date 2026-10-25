@@ -148,21 +148,101 @@ const WordEditor = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     const [spellCheckEnabled, setSpellCheckEnabled] = useState(true);
     const debounceTimeout = useRef(null);
-    const lastTouchRef = useRef(0);
+    const lastTypingTouchRef = useRef(0);
+    const lastPointerTouchRef = useRef(0);
+    const pendingWordTouchesRef = useRef(0);
+    const isFlushingTouchesRef = useRef(false);
+
+    const flushWordTouches = () => {
+        if (isFlushingTouchesRef.current || pendingWordTouchesRef.current <= 0) return;
+        const countToSend = pendingWordTouchesRef.current;
+        pendingWordTouchesRef.current = 0;
+        isFlushingTouchesRef.current = true;
+
+        StudentService.updateMyTouchCounts({
+            transformation: 0,
+            word_editor: countToSend,
+            team_transformation: 0,
+            klt_reading_plan: 0
+        })
+            .catch(err => console.log('Touch count update skipped:', err?.response?.status))
+            .finally(() => {
+                isFlushingTouchesRef.current = false;
+                if (pendingWordTouchesRef.current > 0) {
+                    flushWordTouches();
+                }
+            });
+    };
+
+    const queueWordTouch = () => {
+        pendingWordTouchesRef.current += 1;
+        flushWordTouches();
+    };
 
     const incrementWordTouch = () => {
         const now = Date.now();
-        // Throttle to max 1 touch every 2 seconds while typing
-        if (now - lastTouchRef.current < 2000) return;
-        lastTouchRef.current = now;
-        StudentService.updateMyTouchCounts({ transformation: 0, word_editor: 1, team_transformation: 0, klt_reading_plan: 0 })
-            .catch(err => console.log('Touch count update skipped:', err?.response?.status));
+        // Skip if this content update was immediately triggered by a click already counted via pointerdown
+        if (now - lastPointerTouchRef.current < 150) return;
+        // Throttle continuous typing to max 1 touch per 1.5 seconds
+        if (now - lastTypingTouchRef.current < 1500) return;
+        lastTypingTouchRef.current = now;
+        queueWordTouch();
     };
 
     const incrementKltTouch = () => {
         StudentService.updateMyTouchCounts({ transformation: 0, word_editor: 0, team_transformation: 0, klt_reading_plan: 1 })
             .catch(err => console.log('Touch count update skipped:', err?.response?.status));
     };
+
+    // Capture all clicks, selections, and interactions anywhere on the 7TNT Word page (including portaled dropdowns & modals)
+    useEffect(() => {
+        const handleGlobalPointerDown = (e) => {
+            // Only count primary mouse clicks or touch/pen interactions
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            const now = Date.now();
+            if (now - lastPointerTouchRef.current < 60) return;
+            lastPointerTouchRef.current = now;
+            queueWordTouch();
+        };
+
+        const handleGlobalChange = (e) => {
+            const tag = e.target?.tagName;
+            const type = e.target?.type;
+            if (tag === 'SELECT' || (tag === 'INPUT' && (type === 'color' || type === 'file' || type === 'number' || type === 'range'))) {
+                const now = Date.now();
+                if (now - lastPointerTouchRef.current < 120) return;
+                lastPointerTouchRef.current = now;
+                queueWordTouch();
+            }
+        };
+
+        const handleGlobalInput = (e) => {
+            const tag = e.target?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') {
+                incrementWordTouch();
+            }
+        };
+
+        document.addEventListener('pointerdown', handleGlobalPointerDown, true);
+        document.addEventListener('change', handleGlobalChange, true);
+        document.addEventListener('input', handleGlobalInput, true);
+
+        return () => {
+            document.removeEventListener('pointerdown', handleGlobalPointerDown, true);
+            document.removeEventListener('change', handleGlobalChange, true);
+            document.removeEventListener('input', handleGlobalInput, true);
+            if (pendingWordTouchesRef.current > 0) {
+                const remaining = pendingWordTouchesRef.current;
+                pendingWordTouchesRef.current = 0;
+                StudentService.updateMyTouchCounts({
+                    transformation: 0,
+                    word_editor: remaining,
+                    team_transformation: 0,
+                    klt_reading_plan: 0
+                }).catch(() => {});
+            }
+        };
+    }, []);
 
     // Book Index States
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -214,6 +294,69 @@ const WordEditor = () => {
             UnderlineMark
         ],
         content: content,
+        editorProps: {
+            handlePaste: (view, event) => {
+                const clipboardData = event.clipboardData;
+                if (!clipboardData) return false;
+
+                const rawText = clipboardData.getData('text/plain') || '';
+                const rawHtml = clipboardData.getData('text/html') || '';
+                if (!rawText && !rawHtml) return false;
+
+                // Check if pasted content contains inline run-together numbered points/verses
+                // e.g. "19Then ... Barnea. 20Then ... 21See" or ". 7. Next point" on the same line
+                const hasInlineNumbers =
+                    /(?:^|[\s.!?'"”’)\]])\d{1,3}(?=[A-Z“"‘'][a-zA-Z])/.test(rawText) ||
+                    /[.!?'"”’)\]]\s+(?:\(\d{1,3}\)|\d{1,3}[\.\)])\s+(?=[A-Z“"‘'])/.test(rawText);
+
+                if (!hasInlineNumbers) return false;
+
+                event.preventDefault();
+
+                const splitInlineNumberedText = (text) => {
+                    return text
+                        .replace(/\r\n/g, '\n')
+                        .split('\n')
+                        .flatMap(line => {
+                            const normalized = line.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+                            if (!normalized) return [];
+                            const broken = normalized
+                                .replace(/(^|[\s.!?'"”’)\]])(\d{1,3})(?=[A-Z“"‘'][a-zA-Z])/g, (m, pre, num) => {
+                                    if (!pre) return `${num}. `;
+                                    return `${pre}\n${num}. `;
+                                })
+                                .replace(/([.!?'"”’)\]]\s+)(?:\((\d{1,3})\)|(\d{1,3})[\.\)]?)\s+(?=[A-Z“"‘'])/g, (m, pre, pNum, dNum) => {
+                                    const num = pNum || dNum;
+                                    return `${pre.trim()}\n${num}. `;
+                                })
+                                .replace(/^(\d{1,3})\s+(?=[A-Z“"‘'])/, '$1. ');
+                            return broken.split('\n').map(s => s.trim()).filter(Boolean);
+                        });
+                };
+
+                const lines = splitInlineNumberedText(rawText);
+                if (lines.length === 0) return false;
+
+                const htmlBlocks = lines.map(line => {
+                    const escaped = line
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                    const numMatch = escaped.match(/^(\d{1,3}\.)\s+(.*)$/);
+                    if (numMatch) {
+                        return `<p><strong>${numMatch[1]}</strong> ${numMatch[2]}</p>`;
+                    }
+                    const isHeading = line.length <= 55 && !/[.!?]$/.test(line) && !/^\d/.test(line);
+                    if (isHeading) {
+                        return `<p><strong>${escaped}</strong></p>`;
+                    }
+                    return `<p>${escaped}</p>`;
+                }).join('');
+
+                editor?.commands.insertContent(htmlBlocks);
+                return true;
+            }
+        },
         onUpdate: ({ editor }) => {
             handleContentChange(editor.getHTML());
         }

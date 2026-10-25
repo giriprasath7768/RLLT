@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { TransformationColorPopup } from '../../components/TransformationColorPopup';
 import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
@@ -99,6 +100,7 @@ const SevenTNTMainChart = () => {
     const toast = useRef(null);
     const location = useLocation();
     const [chartDays, setChartDays] = useState(30);
+    const [inputColors, setInputColors] = useState({});
     const [chunks, setChunks] = useState(generateInitialData(30));
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
@@ -274,7 +276,7 @@ const SevenTNTMainChart = () => {
         formData.append("phase", phs);
         formData.append("banner_text", bannerText);
         formData.append("t_label", tLabel);
-        formData.append("state_payload", JSON.stringify(chunks));
+        formData.append("state_payload", JSON.stringify({ _isWrapped: true, payload: chunks, inputColors }));
 
         if (logo1 && typeof logo1 === 'object' && logo1.file) {
             formData.append("logo", logo1.file);
@@ -466,11 +468,12 @@ const SevenTNTMainChart = () => {
         <div className="p-8 w-full max-w-full overflow-x-auto bg-gray-50 min-h-screen">
             <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet" />
             <Toast ref={toast} />
+            <TransformationColorPopup inputColors={inputColors} setInputColors={setInputColors} />
 
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6">
 
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] p-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 pb-4 gap-4">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-4 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-4 xl:mb-0">
                         <h1 className="text-2xl font-black tracking-tight mb-1 text-[#c8a165] whitespace-nowrap">{bannerText}</h1>
                         <p className="text-xs font-medium text-gray-300 uppercase tracking-widest mb-3">7TNT Specifications</p>
                     </div>
@@ -540,7 +543,7 @@ const SevenTNTMainChart = () => {
                                 <tbody>
                                     <tr className="h-[55px]">
                                         <td className="w-[55px] bg-[#00b050] border-r-2 border-black p-0 align-middle">
-                                            <input className="w-full h-full text-center bg-transparent text-white font-serif text-[32px] border-none outline-none" value={tLabel} onChange={(e) => setTLabel(e.target.value)} />
+                                            <input id={`auto_$tLabel`} className="w-full h-full text-center bg-transparent text-white font-serif text-[32px] border-none outline-none" value={tLabel} onChange={(e) => setTLabel(e.target.value)} />
                                         </td>
                                         <td className="p-0 align-middle text-center bg-white">
                                             <span className="text-[#ff0000] font-bold text-[20px] tracking-wide uppercase" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
@@ -580,14 +583,14 @@ const SevenTNTMainChart = () => {
                                         <td className="w-[85px] border-r-2 border-black p-0 align-middle bg-white"><div className="w-[85px] h-[65px] p-1"><ImageUploadPlaceholder state={logo3} setState={setLogo3} /></div></td>
                                         <td className="border-r-2 border-black p-1 align-middle bg-white relative">
                                             <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
-                                            <div className="w-full h-full min-h-[50px] flex items-center px-4 relative z-10">
-                                                <input className="w-full flex-1 bg-transparent border-none text-black font-bold text-[22px] p-1 focus:outline-none uppercase placeholder-gray-400" value={bannerText} onChange={(e) => setBannerText(e.target.value)} placeholder="ENTER TEXT HERE" />
+                                            <div className="w-full h-full min-h-[50px] flex items-center justify-center px-4 relative z-10">
+                                                <input id={`auto_$bannerText`} className="w-full flex-1 text-center bg-transparent border-none text-black font-bold text-[22px] p-1 focus:outline-none uppercase placeholder-gray-400" value={bannerText} onChange={(e) => setBannerText(e.target.value)} placeholder="ENTER TEXT HERE" />
                                             </div>
                                         </td>
                                         <td className="w-[160px] bg-[#ffff00] p-0 h-[65px] align-middle">
                                             <div className="flex flex-col h-[65px] w-full">
                                                 <div className="flex-1 flex items-center justify-center border-b-2 border-black pt-1">
-                                                    <span className="text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
+                                                    <span className="text-center text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-center pb-1">
                                                     <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>{extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).bks} - {extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).art}</span>
@@ -658,7 +661,7 @@ const SevenTNTMainChart = () => {
                                                 />
                                             </td>
                                             <td colSpan={4} className="border-2 border-black p-1 align-middle bg-white">
-                                                <input
+                                                <input id={`auto_$chunk_promiseInput || ''`}
                                                     className="w-full bg-transparent border-2 text-black font-bold focus:outline-none px-1"
                                                     style={{ fontSize: getFS(25), height: '20px', borderColor: promiseBorderColors[cIdx % promiseBorderColors.length] }}
                                                     type="text"
@@ -678,7 +681,7 @@ const SevenTNTMainChart = () => {
                                             <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}></th>
                                             <th className="border-2 border-black p-0 bg-white text-black" style={{ fontSize: getFS(23) }}>DAY</th>
                                             <th className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}>
-                                                <input
+                                                <input id={`auto_$chunk_bookNameHeader || ''`}
                                                     className="w-full bg-transparent border-none text-center font-bold text-black uppercase focus:outline-none"
                                                     style={{ fontSize: getFS(23) }}
                                                     type="text"
@@ -721,7 +724,7 @@ const SevenTNTMainChart = () => {
 
                                                 {/* BOOKS/CONTENT CELLS */}
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
-                                                    <input
+                                                    <input id={`auto_$d_content || ''`}
                                                         className="w-full bg-transparent border-none text-center uppercase font-bold text-black focus:outline-none px-1"
                                                         style={{ fontSize: getFS(25) }}
                                                         type="text"
@@ -736,7 +739,7 @@ const SevenTNTMainChart = () => {
 
                                                 {/* PAGES */}
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
-                                                    <input
+                                                    <input id={`auto_$d_pages || ''`}
                                                         className="w-full bg-transparent border-none text-center uppercase font-bold text-black focus:outline-none px-1"
                                                         style={{ fontSize: getFS(20) }}
                                                         type="text"
@@ -751,7 +754,7 @@ const SevenTNTMainChart = () => {
 
                                                 {/* STATS */}
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
-                                                    <input
+                                                    <input id={`auto_$d_chap || ''`}
                                                         className="w-full bg-transparent border-none text-center font-bold text-black focus:outline-none"
                                                         style={{ fontSize: getFS(25) }}
                                                         type="text"
@@ -764,7 +767,7 @@ const SevenTNTMainChart = () => {
                                                     />
                                                 </td>
                                                 <td className="border-2 border-black p-0 bg-white align-middle">
-                                                    <input
+                                                    <input id={`auto_$d_art || ''`}
                                                         className="w-full bg-transparent border-none text-center font-bold text-black focus:outline-none"
                                                         style={{ fontSize: getFS(25) }}
                                                         type="text"
@@ -811,7 +814,7 @@ const SevenTNTMainChart = () => {
                                         <tr className="bg-white text-center h-[25px]">
                                             <td className="border-2 border-black bg-white"></td>
                                             <td colSpan={3} className="border-2 border-black p-0 bg-white align-middle text-center">
-                                                <input
+                                                <input id={`auto_$chunk_footerHash || ''`}
                                                     className="w-full bg-transparent border-none text-center font-extrabold tracking-[0.2em] text-black focus:outline-none uppercase"
                                                     style={{ fontSize: getFS(25) }}
                                                     type="text"
@@ -835,7 +838,7 @@ const SevenTNTMainChart = () => {
                                         <td className="border-2 border-black bg-white"></td>
                                         <td className="border-2 border-black bg-white"></td>
                                         <td colSpan={3} className="border-2 border-black p-0 bg-white align-middle text-center">
-                                            <input
+                                            <input id={`auto_$grandTotalHash1`}
                                                 className="w-full bg-transparent border-none text-center font-extrabold tracking-[0.2em] text-black focus:outline-none uppercase"
                                                 style={{ fontSize: getFS(25) }}
                                                 type="text"
@@ -849,7 +852,7 @@ const SevenTNTMainChart = () => {
                                     </tr>
                                     <tr className="bg-white text-center h-[25px]">
                                         <td colSpan={8} className="border-2 border-black p-0 bg-white align-middle text-center">
-                                            <input
+                                            <input id={`auto_$grandTotalHash2`}
                                                 className="w-full bg-transparent border-none text-center font-extrabold tracking-[0.5em] text-black focus:outline-none uppercase"
                                                 style={{ fontSize: getFS(25) }}
                                                 type="text"

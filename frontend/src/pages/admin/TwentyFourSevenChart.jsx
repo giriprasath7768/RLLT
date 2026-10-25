@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { TransformationColorPopup } from '../../components/TransformationColorPopup';
 import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
@@ -93,6 +94,7 @@ const TwentyFourSevenChart = () => {
     const toast = useRef(null);
     const location = useLocation();
     const [chartDays, setChartDays] = useState(30);
+    const [inputColors, setInputColors] = useState({});
     const [chunks, setChunks] = useState(generateInitialData(30));
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
@@ -201,7 +203,13 @@ const TwentyFourSevenChart = () => {
                     if (data.state_payload) {
                         try {
                             const parsed = JSON.parse(data.state_payload);
-                            if (Array.isArray(parsed)) {
+                            if (parsed && parsed._isWrapped) {
+                                setInputColors(parsed.inputColors || {});
+                                if (Array.isArray(parsed.payload)) {
+                                    setChartDays(parsed.payload.length * 5);
+                                    setChunks(parsed.payload);
+                                }
+                            } else if (Array.isArray(parsed)) {
                                 setChartDays(parsed.length * 5);
                                 setChunks(parsed);
                             }
@@ -277,7 +285,7 @@ const TwentyFourSevenChart = () => {
         formData.append("phase", currentPhs);
         formData.append("banner_text", bannerText);
         formData.append("t_label", tLabel);
-        formData.append("state_payload", JSON.stringify(chunks));
+        formData.append("state_payload", JSON.stringify({ _isWrapped: true, payload: chunks, inputColors }));
 
         if (logo1 && typeof logo1 === 'object' && logo1.file) {
             formData.append("logo", logo1.file);
@@ -702,6 +710,7 @@ const TwentyFourSevenChart = () => {
                 }
             `}</style>
             <Toast ref={toast} />
+            <TransformationColorPopup inputColors={inputColors} setInputColors={setInputColors} />
 
             {/* Hidden logic processing */}
             {(() => {
@@ -712,7 +721,7 @@ const TwentyFourSevenChart = () => {
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6">
 
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] p-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 pb-4 gap-4">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-4 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-4 xl:mb-0">
                         <h1 className="text-2xl font-black tracking-tight mb-1 text-[#c8a165] whitespace-nowrap">{chartDays === 40 ? "40 Days 24x7 Chart" : "24x7 Chart - 30 Days"}</h1>
                         <p className="text-xs font-medium text-gray-300 uppercase tracking-widest mb-3">{chartDays} Days Tracking</p>
 
@@ -778,7 +787,7 @@ const TwentyFourSevenChart = () => {
                                     <tr className="h-[55px]">
                                         {/* T BLOCK */}
                                         <td className="w-[55px] bg-[#00b050] border-r-2 border-black p-0 align-middle">
-                                            <input
+                                            <input id={`auto_$tLabel`}
                                                 className="w-full h-full text-center bg-transparent text-white font-serif text-[32px] border-none outline-none"
                                                 value={tLabel}
                                                 onChange={(e) => setTLabel(e.target.value)}
@@ -847,9 +856,10 @@ const TwentyFourSevenChart = () => {
                                             <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
                                             <input
                                                 type="text"
+                                                id="bannerText_input"
                                                 value={bannerText}
                                                 onChange={(e) => setBannerText(e.target.value)}
-                                                className="w-full h-full min-h-[50px] outline-none text-black font-bold px-4 text-[22px] uppercase bg-transparent relative z-10"
+                                                className="w-full h-full min-h-[50px] outline-none text-center text-center text-black font-bold px-4 text-[22px] uppercase bg-transparent relative z-10"
                                                 placeholder="..."
                                             />
                                         </td>
@@ -957,17 +967,17 @@ const TwentyFourSevenChart = () => {
                                                     <td className="border-2 border-black bg-white"></td>
                                                     <td colSpan={11} className="border-2 border-black px-2 align-middle bg-white">
                                                         <div className="flex h-full w-full items-center">
-                                                            <input
+                                                            <input id={`auto_$chunk_promises`}
                                                                 value={chunk.promises}
                                                                 onChange={(e) => updateChunk(cIdx, 'promises', e.target.value)}
-                                                                className="w-full h-full flex-1 outline-none font-bold bg-transparent text-black font-serif tracking-tight text-left uppercase pl-2"
+                                                                className="w-full h-full flex-1 outline-none font-bold bg-transparent text-black font-serif tracking-tight text-center uppercase pl-2"
                                                                 style={{ fontSize: getFS(20) }}
                                                                 placeholder="GOD'S PROMISES : ENTER GOD'S PROMISES HERE"
                                                             />
                                                         </div>
                                                     </td>
                                                     <td colSpan={4} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
-                                                        <input
+                                                        <input id={`auto_$chunk_promiseInput`}
                                                             className="w-full h-full outline-none p-1 font-bold text-center bg-transparent text-black block"
                                                             style={{ fontSize: getFS(20) }}
                                                             value={chunk.promiseInput}
@@ -980,7 +990,7 @@ const TwentyFourSevenChart = () => {
                                                     <th rowSpan={6} className="border-2 border-black p-0 align-middle bg-white overflow-hidden relative" style={{ fontSize: getFS(23) }}>
                                                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                                                             <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }} className="whitespace-nowrap tracking-widest font-extrabold text-black uppercase origin-center leading-none">
-                                                                <input
+                                                                <input id={`auto_$chunk_team`}
                                                                     className="bg-transparent text-center outline-none font-extrabold"
                                                                     value={chunk.team}
                                                                     onChange={(e) => updateChunk(cIdx, 'team', e.target.value)}
@@ -989,24 +999,24 @@ const TwentyFourSevenChart = () => {
                                                         </div>
                                                     </th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
-                                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">
-                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h1} onChange={(e) => updateChunk(cIdx, 'h1', e.target.value)} />
+                                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-center pl-1 leading-none">
+                                                        <input id={`auto_$chunk_h1`} className="w-full bg-transparent outline-none font-bold" value={chunk.h1} onChange={(e) => updateChunk(cIdx, 'h1', e.target.value)} />
                                                     </th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">
-                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h2} onChange={(e) => updateChunk(cIdx, 'h2', e.target.value)} />
+                                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-center pl-1 leading-none">
+                                                        <input id={`auto_$chunk_h2`} className="w-full bg-transparent outline-none font-bold" value={chunk.h2} onChange={(e) => updateChunk(cIdx, 'h2', e.target.value)} />
                                                     </th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">
-                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h3} onChange={(e) => updateChunk(cIdx, 'h3', e.target.value)} />
+                                                    <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-center pl-1 leading-none">
+                                                        <input id={`auto_$chunk_h3`} className="w-full bg-transparent outline-none font-bold" value={chunk.h3} onChange={(e) => updateChunk(cIdx, 'h3', e.target.value)} />
                                                     </th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">
-                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h4} onChange={(e) => updateChunk(cIdx, 'h4', e.target.value)} />
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-center pl-2 leading-none">
+                                                        <input id={`auto_$chunk_h4`} className="w-full bg-transparent outline-none font-bold" value={chunk.h4} onChange={(e) => updateChunk(cIdx, 'h4', e.target.value)} />
                                                     </th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">
-                                                        <input className="w-full bg-transparent outline-none font-bold" value={chunk.h5} onChange={(e) => updateChunk(cIdx, 'h5', e.target.value)} />
+                                                    <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-center pl-2 leading-none">
+                                                        <input id={`auto_$chunk_h5`} className="w-full bg-transparent outline-none font-bold" value={chunk.h5} onChange={(e) => updateChunk(cIdx, 'h5', e.target.value)} />
                                                     </th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
                                                     <th style={{ fontSize: getFS(23) }} className="border-2 border-black p-0 bg-white text-black">THEM</th>
@@ -1027,48 +1037,48 @@ const TwentyFourSevenChart = () => {
                                                         <td className="border-2 border-black p-0 font-extrabold bg-white text-black align-middle" style={{ fontSize: getFS(25) }}>{d.day}</td>
 
                                                         <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m1b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm1b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
+                                                            <textarea id={`auto_$d_m1b`} className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m1b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm1b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
+                                                            <input id={`auto_$d_m1t`} className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m1t} onChange={(e) => updateDay(cIdx, d.id, 'm1t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m2b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm2b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
+                                                            <textarea id={`auto_$d_m2b`} className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m2b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm2b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
+                                                            <input id={`auto_$d_m2t`} className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m2t} onChange={(e) => updateDay(cIdx, d.id, 'm2t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m3b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm3b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
+                                                            <textarea id={`auto_$d_m3b`} className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m3b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm3b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
+                                                            <input id={`auto_$d_m3t`} className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => updateDay(cIdx, d.id, 'm3t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m4b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm4b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
+                                                            <textarea id={`auto_$d_m4b`} className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m4b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm4b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m4t} onChange={(e) => updateDay(cIdx, d.id, 'm4t', e.target.value)} />
+                                                            <input id={`auto_$d_m4t`} className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m4t} onChange={(e) => updateDay(cIdx, d.id, 'm4t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                            <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m5b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm5b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
+                                                            <textarea id={`auto_$d_m5b`} className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d.m5b} onChange={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; updateDay(cIdx, d.id, 'm5b', e.target.value); }} ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m5t} onChange={(e) => updateDay(cIdx, d.id, 'm5t', e.target.value)} />
+                                                            <input id={`auto_$d_m5t`} className="w-full text-center outline-none bg-transparent font-bold px-1" style={{ fontSize: getFS(20) }} value={d.m5t} onChange={(e) => updateDay(cIdx, d.id, 'm5t', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-0 align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(25) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
+                                                            <input id={`auto_$d_chap`} className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(25) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(25) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
+                                                            <input id={`auto_$d_verse`} className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(25) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(25) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
+                                                            <input id={`auto_$d_art`} className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(25) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-0 text-center align-middle">
@@ -1207,7 +1217,7 @@ const TwentyFourSevenChart = () => {
                         <div key={dIdx} className="shrink-0 bg-white rounded-xl border border-gray-300 overflow-hidden shadow-sm">
                             <button
                                 type="button"
-                                className={`w-full px-4 py-3 font-bold text-left flex justify-between items-center transition-colors shrink-0 ${expandedDay === dIdx ? 'bg-[#c8a165] text-white' : 'bg-[#051220] hover:bg-gray-800 text-white'}`}
+                                className={`w-full px-4 py-3 font-bold text-center flex justify-between items-center transition-colors shrink-0 ${expandedDay === dIdx ? 'bg-[#c8a165] text-white' : 'bg-[#051220] hover:bg-gray-800 text-white'}`}
                                 onClick={() => setExpandedDay(expandedDay === dIdx ? -1 : dIdx)}
                             >
                                 <span className="tracking-wide text-lg">Day {dIdx + 1} Configuration</span>

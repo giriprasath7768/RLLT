@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import base64
 
 try:
     import fitz  # PyMuPDF
@@ -10,8 +11,8 @@ except ImportError:
 
 def extract_pdf_to_html(pdf_path, output_dir):
     """
-    Extracts a PDF file into structured HTML blocks.
-    Saves the HTML into the output_dir with the same base name as the PDF.
+    Extracts a PDF file into structured HTML blocks and JSON page data.
+    Saves the HTML and JSON into the output_dir with the same base name as the PDF.
     """
     if not os.path.exists(pdf_path):
         print(f"Error: File not found {pdf_path}")
@@ -29,32 +30,66 @@ def extract_pdf_to_html(pdf_path, output_dir):
     
     html_content = ["<div class='bookindex-reader-bg p-8 max-w-4xl mx-auto'>"]
     json_content = {"pages": []}
+
+    # Check if SMT Formatter embedded structured JSON paragraphs in PDF metadata
+    embedded_pages = None
+    try:
+        meta_keywords = (doc.metadata or {}).get("keywords") or ""
+        if "SMT_JSON_B64:" in meta_keywords:
+            b64_part = meta_keywords.split("SMT_JSON_B64:", 1)[1].strip()
+            decoded_bytes = base64.b64decode(b64_part)
+            parsed = json.loads(decoded_bytes.decode("utf-8"))
+            if isinstance(parsed, list):
+                embedded_pages = parsed
+    except Exception as e:
+        print(f"Warning: Could not parse embedded SMT metadata: {e}")
     
     for page_num, page in enumerate(doc):
         html_content.append(f"  <div class='pdf-page mb-8' data-page-number='{page_num + 1}'>")
         page_data = {"page_number": page_num + 1, "paragraphs": []}
         
-        # Extract blocks using PyMuPDF dictionary
-        blocks = page.get_text("dict")["blocks"]
-        for b in blocks:
-            if b.get('type') == 0:  # text block
-                paragraph_text = ""
-                for line in b.get("lines", []):
-                    for span in line.get("spans", []):
-                        paragraph_text += span.get("text", "")
-                    paragraph_text += " "
-                
-                paragraph_text = paragraph_text.strip()
+        if embedded_pages and page_num < len(embedded_pages) and isinstance(embedded_pages[page_num], list) and len(embedded_pages[page_num]) > 0:
+            for paragraph_text in embedded_pages[page_num]:
+                paragraph_text = " ".join(str(paragraph_text).split())
                 if paragraph_text:
-                    # Clean up random whitespace
-                    paragraph_text = " ".join(paragraph_text.split())
-                    
-                    # HTML Generation
                     para_idx = len(page_data["paragraphs"])
                     html_content.append(f"    <p class='pdf-selectable-paragraph my-4 text-lg leading-relaxed font-serif' id='para-{page_num + 1}-{para_idx}'>{paragraph_text}</p>")
-                    
-                    # JSON Generation
                     page_data["paragraphs"].append(paragraph_text)
+        else:
+            # Extract blocks using PyMuPDF dictionary
+            blocks = page.get_text("dict")["blocks"]
+            for b in blocks:
+                if b.get('type') == 0:  # text block
+                    paragraph_text = ""
+                    for line in b.get("lines", []):
+                        for span in line.get("spans", []):
+                            paragraph_text += span.get("text", "")
+                        paragraph_text += " "
+                    
+                    paragraph_text = paragraph_text.strip()
+                    if paragraph_text:
+                        # Clean up random whitespace
+                        paragraph_text = " ".join(paragraph_text.split())
+                        
+                        # HTML Generation
+                        para_idx = len(page_data["paragraphs"])
+                        html_content.append(f"    <p class='pdf-selectable-paragraph my-4 text-lg leading-relaxed font-serif' id='para-{page_num + 1}-{para_idx}'>{paragraph_text}</p>")
+                        
+                        # JSON Generation
+                        page_data["paragraphs"].append(paragraph_text)
+
+        # Fallback: if a page has 0 extracted text paragraphs (e.g. image-only / scanned PDF),
+        # render the page as a high-res PNG so the viewer can still display the page visually.
+        if len(page_data["paragraphs"]) == 0:
+            try:
+                img_filename = f"{base_name}_page_{page_num + 1}.png"
+                img_path = os.path.join(output_dir, img_filename)
+                pix = page.get_pixmap(dpi=180)
+                pix.save(img_path)
+                page_data["image_url"] = f"/api/uploads/{img_filename}"
+                html_content.append(f"    <img src='/api/uploads/{img_filename}' class='w-full h-auto' alt='Page {page_num + 1}' />")
+            except Exception as e:
+                print(f"Warning: Failed to render fallback image for page {page_num + 1}: {e}")
                     
         html_content.append("  </div>")
         json_content["pages"].append(page_data)

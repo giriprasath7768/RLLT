@@ -13,8 +13,9 @@ const Settings = () => {
             { label: 'SMT Page' },
             { label: '7TNT Word' },
             { label: 'Classroom', items: ['Assign Assignments', 'Evaluate Assignments', 'Q&A', 'Resources'] },
-            { label: 'Reports', items: ['Student Report', 'Honeycomb Report'] },
-            { label: 'Light Digital Chart' }
+            { label: 'Reports', items: ['Student Report', 'Honeycomb Report', 'ISI Report'] },
+            { label: 'Light Digital Chart' },
+            { label: 'ISI' }
         ],
         'Non-Digital': [
             { label: 'SHANAZ 357' },

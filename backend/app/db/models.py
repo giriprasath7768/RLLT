@@ -77,6 +77,63 @@ class StudentTouchCount(Base):
 
     user = relationship("User", backref="touch_counts")
 
+class StudentTouchLog(Base):
+    __tablename__ = "student_touch_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id", ondelete="SET NULL"), nullable=True, index=True)
+    transformation_touches = Column(Integer, default=0)
+    team_transformation_touches = Column(Integer, default=0)
+    klt_reading_plan_touches = Column(Integer, default=0)
+    word_editor_touches = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    user = relationship("User")
+    location = relationship("Location")
+
+class OfflineHoneycombReport(Base):
+    __tablename__ = "offline_honeycomb_reports"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    file_name = Column(String, nullable=True)
+    organization_name = Column(String, nullable=True)
+    location_display = Column(String, nullable=False)
+    location_ids = Column(String, nullable=True)
+    report_date = Column(String, nullable=False)
+    from_date = Column(String, nullable=True)
+    to_date = Column(String, nullable=True)
+    report_time = Column(String, nullable=False)
+    from_time = Column(String, nullable=True)
+    to_time = Column(String, nullable=True)
+    module = Column(String, nullable=False)
+    facet = Column(String, nullable=False)
+    phase = Column(String, nullable=False)
+    mother_tongue = Column(String, nullable=True)
+    word_editor_touches = Column(Integer, default=0)
+    transformation_touches = Column(Integer, default=0)
+    team_transformation_touches = Column(Integer, default=0)
+    klt_reading_plan_touches = Column(Integer, default=0)
+    metrics_json = Column(JSON, nullable=True)
+    signature_hash = Column(String, unique=True, index=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    user_name = Column(String, nullable=True)
+    email = Column(String, nullable=True, index=True)
+    role = Column(String, nullable=False, index=True)
+    location_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    location_name = Column(String, nullable=True)
+    login_time = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    logout_time = Column(DateTime(timezone=True), nullable=True, index=True)
+    session_status = Column(String, default="active", nullable=False)
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+
 class StudentHighlight(Base):
     __tablename__ = "student_highlights"
 
@@ -575,3 +632,26 @@ class AssessmentSummarySetting(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     location = relationship("Location")
+
+class ISIRecord(Base):
+    __tablename__ = "isi_records"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    username = Column(String, nullable=False, index=True)
+    role = Column(String, nullable=False, index=True)
+    category = Column(String, nullable=True, index=True)
+    module = Column(Integer, nullable=False)
+    facet = Column(Integer, nullable=False)
+    phase = Column(Integer, nullable=False)
+    day = Column(Integer, nullable=False)
+    phase_days = Column(Integer, nullable=True)
+    art = Column(String, nullable=True)
+    daily_isi_count = Column(Integer, nullable=False, default=0)
+    able_again_count = Column(Integer, nullable=False, default=0)
+    color_code = Column(String, nullable=True)
+    theme_color = Column(String, nullable=True)
+    banner_text = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    user = relationship("User")

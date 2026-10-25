@@ -431,7 +431,7 @@ const SevenTNTDayCycleChartView = () => {
             {/* Header Block matching MainChartViewer */}
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6 print:hidden">
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] py-3 px-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 gap-2">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-2 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-2 xl:mb-0">
                         <h1 className="text-xl font-black tracking-tight mb-0.5 text-[#c8a165] whitespace-nowrap">{headerTitle}</h1>
                         <p className="text-[11px] font-medium text-gray-300 uppercase tracking-widest mb-1.5">Administrative Day Cycle Chart Database</p>
 
@@ -539,8 +539,8 @@ const SevenTNTDayCycleChartView = () => {
                                         </td>
                                         <td className="border-r-2 border-black p-1 align-middle bg-white relative">
                                             <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
-                                            <div className="w-full h-full min-h-[50px] flex items-center px-4 relative z-10">
-                                                <input className="w-full text-black font-bold text-[22px] uppercase bg-transparent outline-none"
+                                            <div className="w-full h-full min-h-[50px] flex items-center justify-center px-4 relative z-10">
+                                                <input className="w-full text-center text-black font-bold text-[22px] uppercase bg-transparent outline-none"
                                                     value={bannerText} onChange={e => setBannerText(e.target.value)} placeholder="ENTER BANNER TITLE" />
                                             </div>
                                         </td>
@@ -585,7 +585,7 @@ const SevenTNTDayCycleChartView = () => {
                                                 <input
                                                     value={promises}
                                                     onChange={(e) => setPromises(e.target.value)}
-                                                    className="w-full h-full flex-1 outline-none font-bold bg-transparent text-black font-serif tracking-tight text-left uppercase pl-2"
+                                                    className="w-full h-full flex-1 outline-none font-bold bg-transparent text-black font-serif tracking-tight text-center uppercase pl-2"
                                                     style={{ fontSize: getFS(15) }}
                                                     placeholder="GOD'S PROMISES : ENTER GOD'S PROMISES HERE"
                                                 />

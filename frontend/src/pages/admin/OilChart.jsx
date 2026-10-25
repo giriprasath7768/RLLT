@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { TransformationColorPopup } from '../../components/TransformationColorPopup';
 import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
@@ -38,6 +39,7 @@ const OilChart = () => {
 
     // Header & Meta State
     const [mdl, setMdl] = useState(1);
+    const [inputColors, setInputColors] = useState({});
     const [fct, setFct] = useState(1);
     const [phs, setPhs] = useState(1);
     const [tLabel, setTLabel] = useState("T");
@@ -154,7 +156,7 @@ const OilChart = () => {
         formData.append("phase", phs);
         formData.append("banner_text", bannerText);
         formData.append("t_label", tLabel);
-        formData.append("state_payload", JSON.stringify(rows));
+        formData.append("state_payload", JSON.stringify({ _isWrapped: true, payload: rows, inputColors }));
 
         if (logo1 && typeof logo1 === 'object' && logo1.file) {
             formData.append("logo", logo1.file);
@@ -394,6 +396,7 @@ const OilChart = () => {
                 .right-bar-segment { display: flex; align-items: center; justify-content: center; overflow: hidden; }
             `}</style>
                 <Toast ref={toast} />
+            <TransformationColorPopup inputColors={inputColors} setInputColors={setInputColors} />
 
                 <Dialog
                     header={
@@ -481,7 +484,7 @@ const OilChart = () => {
                                 <div className="flex w-full h-[50px] border-b-[1px] border-black">
                                     {/* T Box */}
                                     <div className="w-[4.28%] shrink-0 bg-[#00b050] flex items-center justify-center border-r-[1px] border-black">
-                                        <input
+                                        <input id={`auto_$tLabel || "T"`}
                                             className="w-full bg-transparent text-white text-center text-[28px] outline-none"
                                             style={{ fontFamily: 'Times New Roman, serif' }}
                                             value={tLabel || "T"}
@@ -490,7 +493,7 @@ const OilChart = () => {
                                     </div>
                                     {/* Center Title */}
                                     <div className="flex-1 flex items-center justify-center bg-white p-2">
-                                        <input
+                                        <input id={`auto_$bannerText || "REAL LIFE LEADERSHIP TRAINING - NO CHART SELECTED"`}
                                             className="w-full text-center bg-transparent border-none outline-none font-bold text-[18px] text-[#ff0000] tracking-wide"
                                             style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
                                             value={bannerText || "REAL LIFE LEADERSHIP TRAINING - NO CHART SELECTED"}
@@ -501,7 +504,7 @@ const OilChart = () => {
                                     <div className="w-[4.76%] shrink-0 bg-[#00b050] flex flex-col border-l-[1px] border-black text-white font-bold" style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
                                         <div className="flex-1 flex items-center justify-center border-b-[1px] border-black text-[14px] leading-none pt-0.5">PH</div>
                                         <div className="flex-1 flex items-center justify-center">
-                                            <input
+                                            <input id={`auto_$phs || "1"`}
                                                 className="w-full bg-transparent text-center outline-none text-white text-[16px] leading-none pb-0.5"
                                                 value={phs || "1"}
                                                 onChange={(e) => setPhs(e.target.value)}
@@ -567,7 +570,7 @@ const OilChart = () => {
                                                 {/* Col 2 */}
                                                 <div className="w-[20.40%] shrink-0 flex p-2 relative box-border bg-white items-start">
                                                     <span className={`${row.isEvening ? 'text-[#0033CC]' : 'text-[#00b050]'} font-black mr-1 mt-[2px]`} style={{ fontSize: getFS(15), fontFamily: 'Arial, Helvetica, sans-serif' }}>{idx + 1}.</span>
-                                                    <textarea
+                                                    <textarea id={`auto_$row_books`}
                                                         value={row.books}
                                                         onChange={e => updateRow(idx, 'books', e.target.value)}
                                                         className={`flex-1 w-full h-full bg-transparent outline-none resize-none font-bold uppercase mt-[2px] ${row.isEvening ? 'text-[#0033CC]' : 'text-[#00b050]'}`}
@@ -576,7 +579,7 @@ const OilChart = () => {
                                                 </div>
                                                 {/* Col 3 */}
                                                 <div className="w-[4.08%] shrink-0 flex items-center justify-center overflow-hidden box-border bg-white">
-                                                    <textarea
+                                                    <textarea id={`auto_$row_timeline`}
                                                         value={row.timeline}
                                                         onChange={e => updateRow(idx, 'timeline', e.target.value)}
                                                         className="vertical-text text-black font-bold text-[14px] tracking-tighter text-center bg-transparent resize-none h-full w-full outline-none py-2"
@@ -594,7 +597,7 @@ const OilChart = () => {
                                                             updateRow(idx, 'themeColor', nextColor);
                                                         }}
                                                     ></span>
-                                                    <textarea
+                                                    <textarea id={`auto_$row_theme`}
                                                         value={row.theme}
                                                         onChange={e => updateRow(idx, 'theme', e.target.value)}
                                                         className="flex-1 w-full h-full bg-transparent outline-none resize-none font-bold text-[14px] font-serif uppercase text-black mt-[1px]"
@@ -603,20 +606,20 @@ const OilChart = () => {
                                                 {/* Col 5 */}
                                                 <div className="w-[6.12%] shrink-0 flex items-start justify-center pt-[10px] group relative box-border bg-white">
                                                     <div className={`flex items-center justify-center font-bold ${row.isEvening ? 'text-[#0033CC]' : 'text-[#00b050]'}`} style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                                                        <input
+                                                        <input id={`auto_$row_time`}
                                                             value={row.time}
                                                             onChange={e => updateRow(idx, 'time', e.target.value)}
                                                             className="w-[20px] text-right bg-transparent outline-none text-[15px]"
                                                         /><span className="text-[15px] ml-1">m</span>
                                                     </div>
                                                     <div className="absolute bottom-0 inset-x-0 h-[24px] flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 border-t border-gray-100 p-0.5">
-                                                        <input type="number" placeholder="CH" value={row.chaps} onChange={e => updateRow(idx, 'chaps', e.target.value)} className="w-1/2 text-[10px] text-center outline-none bg-gray-50 rounded border" />
-                                                        <input type="number" placeholder="VS" value={row.verses} onChange={e => updateRow(idx, 'verses', e.target.value)} className="w-1/2 text-[10px] text-center outline-none bg-gray-50 rounded border" />
+                                                        <input id={`auto_$row_chaps`} type="number" placeholder="CH" value={row.chaps} onChange={e => updateRow(idx, 'chaps', e.target.value)} className="w-1/2 text-[10px] text-center outline-none bg-gray-50 rounded border" />
+                                                        <input id={`auto_$row_verses`} type="number" placeholder="VS" value={row.verses} onChange={e => updateRow(idx, 'verses', e.target.value)} className="w-1/2 text-[10px] text-center outline-none bg-gray-50 rounded border" />
                                                     </div>
                                                 </div>
                                                 {/* Col 6 */}
                                                 <div className="w-[32.14%] shrink-0 flex flex-col items-center justify-center box-border bg-white">
-                                                    <textarea
+                                                    <textarea id={`auto_$row_lessons`}
                                                         value={row.lessons}
                                                         onChange={e => updateRow(idx, 'lessons', e.target.value)}
                                                         className="flex-1 w-full p-2 bg-transparent outline-none resize-none font-medium text-gray-800 text-[14px]"

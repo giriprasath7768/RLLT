@@ -424,7 +424,7 @@ const DynamicCycleChartView = () => {
 
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6 print:border-none print:shadow-none print:overflow-visible">
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] py-3 px-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 gap-2 print:hidden">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-2 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-2 xl:mb-0">
                         <h1 className="text-xl font-black tracking-tight mb-0.5 text-[#c8a165] whitespace-nowrap">{headerTitle}</h1>
                         <p className="text-[11px] font-medium text-gray-300 uppercase tracking-widest mb-1.5">Administrative Chart Database (Read-Only)</p>
 
@@ -529,8 +529,8 @@ const DynamicCycleChartView = () => {
                                             </td>
                                             <td className="border-r-2 border-black p-1 align-middle bg-white relative">
                                                 <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
-                                                <div className="w-full h-full min-h-[50px] flex items-center px-4 relative z-10">
-                                                    <span className="text-black font-bold text-[22px] uppercase">{bannerText}</span>
+                                                <div className="w-full h-full min-h-[50px] flex items-center justify-center px-4 relative z-10">
+                                                    <span className="text-center text-black font-bold text-[22px] uppercase">{bannerText}</span>
                                                 </div>
                                             </td>
                                             <td className="w-[160px] bg-[#ffff00] p-0 h-[65px] align-middle">
@@ -627,7 +627,7 @@ const DynamicCycleChartView = () => {
                                                         <td className="border-2 border-black bg-white"></td>
                                                         <td colSpan={is5Seg ? 11 : 6} className="border-2 border-black px-2 align-middle bg-white">
                                                             <div className="flex h-full w-full items-center">
-                                                                <span className="w-full flex-1 font-bold text-left uppercase text-black leading-none tracking-tight pl-2" style={{ fontSize: getFS(20) }}>{chunk.promises}</span>
+                                                                <span className="w-full flex-1 font-bold text-center uppercase text-black leading-none tracking-tight pl-2" style={{ fontSize: getFS(20) }}>{chunk.promises}</span>
                                                             </div>
                                                         </td>
                                                         <td colSpan={is5Seg ? 4 : 5} className="bg-white p-0 align-middle" style={{ '--cell-border': `3.5px solid ${currentBorderColor}` }}>

@@ -498,7 +498,7 @@ const TwentyFourSevenMorningEveningChart = () => {
 
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6 print:border-none print:shadow-none print:overflow-visible">
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] py-3 px-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 gap-2 print:hidden">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-2 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-2 xl:mb-0">
                         <h1 className="text-xl font-black tracking-tight mb-0.5 text-[#c8a165] whitespace-nowrap">{headerTitle}</h1>
                         <p className="text-[11px] font-medium text-gray-300 uppercase tracking-widest mb-1.5">24x7 Morning & Evening Split (Read-Only)</p>
 
@@ -689,7 +689,7 @@ const TwentyFourSevenMorningEveningChart = () => {
                                                             <td className="border-2 border-black bg-white"></td>
                                                             <td colSpan={9} className="border-2 border-black px-2 align-middle bg-white">
                                                                 <div className="flex h-full w-full items-center">
-                                                                    <span className="w-full flex-1 font-bold text-left uppercase text-black leading-none tracking-tight pl-2" style={{ fontSize: getFS(20) }}>{chunk.promises}</span>
+                                                                    <span className="w-full flex-1 font-bold text-center uppercase text-black leading-none tracking-tight pl-2" style={{ fontSize: getFS(20) }}>{chunk.promises}</span>
                                                                 </div>
                                                             </td>
                                                             <td colSpan={5} className="bg-white p-0 align-middle" style={{ '--cell-border': `3.5px solid ${currentBorderColor}` }}>
@@ -708,13 +708,13 @@ const TwentyFourSevenMorningEveningChart = () => {
                                                                 </div>
                                                             </th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
-                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h1}</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-center pl-1 leading-none">{chunk.h1}</th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h2}</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-center pl-1 leading-none">{chunk.h2}</th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-left pl-1 leading-none">{chunk.h3}</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-center pl-1 leading-none">{chunk.h3}</th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
-                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-left pl-2 leading-none">{chunk.h4}</th>
+                                                            <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-1 bg-white text-center pl-2 leading-none">{chunk.h4}</th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black">VERSE</th>

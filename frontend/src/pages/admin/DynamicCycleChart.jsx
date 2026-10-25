@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { TransformationColorPopup } from '../../components/TransformationColorPopup';
 import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
@@ -104,6 +105,7 @@ const DynamicCycleChart = () => {
     const toast = useRef(null);
     const location = useLocation();
     const [chartCycle, setChartCycle] = useState(3);
+    const [inputColors, setInputColors] = useState({});
     const [chunks, setChunks] = useState(generateInitialData(3));
     const [booksDB, setBooksDB] = useState([]);
     const [chaptersDB, setChaptersDB] = useState([]);
@@ -308,7 +310,7 @@ const DynamicCycleChart = () => {
         formData.append("phase", currentPhs);
         formData.append("banner_text", bannerText);
         formData.append("t_label", tLabel);
-        formData.append("state_payload", JSON.stringify(chunks));
+        formData.append("state_payload", JSON.stringify({ _isWrapped: true, payload: chunks, inputColors }));
 
         if (logo1 && typeof logo1 === 'object' && logo1.file) {
             formData.append("logo", logo1.file);
@@ -504,7 +506,7 @@ const DynamicCycleChart = () => {
         formData.append("phase", currentPhs);
         formData.append("banner_text", bannerText);
         formData.append("t_label", tLabel);
-        formData.append("state_payload", JSON.stringify(chunks));
+        formData.append("state_payload", JSON.stringify({ _isWrapped: true, payload: chunks, inputColors }));
 
         if (logo1 && typeof logo1 === 'object' && logo1.file) {
             formData.append("logo", logo1.file);
@@ -799,6 +801,7 @@ const DynamicCycleChart = () => {
                 }
             `}</style>
             <Toast ref={toast} />
+            <TransformationColorPopup inputColors={inputColors} setInputColors={setInputColors} />
 
             {/* Hidden logic processing */}
             {(() => {
@@ -809,7 +812,7 @@ const DynamicCycleChart = () => {
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6">
 
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] p-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 pb-4 gap-4">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-4 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-4 xl:mb-0">
                         <h1 className="text-2xl font-black tracking-tight mb-1 text-[#c8a165] whitespace-nowrap">3-5-7 CHART - {chartCycle} DAY CYCLE</h1>
                         <p className="text-xs font-medium text-gray-300 uppercase tracking-widest mb-3">{chartCycle} Day Periodic Cycle</p>
 
@@ -873,7 +876,7 @@ const DynamicCycleChart = () => {
                                     <tr className="h-[55px]">
                                         {/* T BLOCK */}
                                         <td className="w-[55px] bg-[#00b050] border-r-2 border-black p-0 align-middle">
-                                            <input
+                                            <input id={`auto_$tLabel`}
                                                 className="w-full h-full text-center bg-transparent text-white font-serif text-[32px] border-none outline-none"
                                                 value={tLabel}
                                                 onChange={(e) => setTLabel(e.target.value)}
@@ -942,9 +945,10 @@ const DynamicCycleChart = () => {
                                             <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
                                             <input
                                                 type="text"
+                                                id="bannerText_input"
                                                 value={bannerText}
                                                 onChange={(e) => setBannerText(e.target.value)}
-                                                className="w-full h-full min-h-[50px] outline-none text-black font-bold px-4 text-[22px] uppercase bg-transparent relative z-10"
+                                                className="w-full h-full min-h-[50px] outline-none text-center text-black font-bold px-4 text-[22px] uppercase bg-transparent relative z-10"
                                                 placeholder="..."
                                             />
                                         </td>
@@ -1076,17 +1080,17 @@ const DynamicCycleChart = () => {
                                                     <td className="border-2 border-black bg-white"></td>
                                                     <td colSpan={is5Seg ? 11 : 6} className="border-2 border-black px-2 align-middle bg-white">
                                                         <div className="flex h-full w-full items-center">
-                                                            <input
+                                                            <input id={`auto_$chunk_promises`}
                                                                 value={chunk.promises}
                                                                 onChange={(e) => updateChunk(cIdx, 'promises', e.target.value)}
-                                                                className="w-full h-full outline-none font-bold bg-transparent text-black font-serif tracking-tight text-left uppercase pl-2"
+                                                                className="w-full h-full outline-none font-bold bg-transparent text-black font-serif tracking-tight text-center uppercase pl-2"
                                                                 style={{ fontSize: getFS(20) }}
                                                                 placeholder="GOD'S PROMISES : ENTER GOD'S PROMISES HERE"
                                                             />
                                                         </div>
                                                     </td>
                                                     <td colSpan={is5Seg ? 4 : 5} className="bg-white p-0 align-middle" style={{ border: `3.5px solid ${CHUNK_COLORS[cIdx % CHUNK_COLORS.length]}` }}>
-                                                        <input
+                                                        <input id={`auto_$chunk_promiseInput`}
                                                             className="w-full h-full outline-none p-1 font-bold text-center bg-transparent text-black block"
                                                             style={{ fontSize: getFS(20) }}
                                                             value={chunk.promiseInput}
@@ -1118,7 +1122,7 @@ const DynamicCycleChart = () => {
                                                     {Array.from({ length: numSegs }).map((_, i) => (
                                                         <React.Fragment key={i}>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-center align-middle">
-                                                                <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk[`h${i+1}`] || ''} onChange={(e) => updateChunk(cIdx, `h${i+1}`, e.target.value)} />
+                                                                  <input className="w-full bg-transparent outline-none font-bold text-center" value={chunk[`h${i+1}`] || ''} onChange={(e) => updateChunk(cIdx, `h${i+1}`, e.target.value)} />
                                                             </th>
                                                             <th style={{ fontSize: getFS(20) }} className="border-2 border-black p-0 bg-white text-black text-center w-12 align-middle">TIME</th>
                                                         </React.Fragment>
@@ -1139,23 +1143,23 @@ const DynamicCycleChart = () => {
                                                             return (
                                                                 <React.Fragment key={bIdx}>
                                                                     <td className="border-2 border-black p-1 bg-white text-center align-middle">
-                                                                        <textarea className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d[b] || ''} onChange={(e) => updateDay(cIdx, d.id, b, e.target.value)} />
+                                                                        <textarea id={`auto_$d[b] || ''`} className="w-full text-center outline-none bg-transparent font-bold uppercase resize-none overflow-hidden align-middle break-words block leading-tight" style={{ fontSize: getFS(20) }} rows={1} value={d[b] || ''} onChange={(e) => updateDay(cIdx, d.id, b, e.target.value)} />
                                                                     </td>
                                                                     <td className="border-2 border-black p-0 bg-white font-bold text-black align-middle">
-                                                                        <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d[t] || ''} onChange={(e) => updateDay(cIdx, d.id, t, e.target.value)} />
+                                                                        <input id={`auto_$d[t] || ''`} className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d[t] || ''} onChange={(e) => updateDay(cIdx, d.id, t, e.target.value)} />
                                                                     </td>
                                                                 </React.Fragment>
                                                             );
                                                         })}
 
                                                         <td className="border-2 border-black p-0 align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
+                                                            <input id={`auto_$d_chap`} className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.chap} onChange={(e) => updateDay(cIdx, d.id, 'chap', e.target.value)} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
+                                                            <input id={`auto_$d_verse`} className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.verse} onChange={(e) => updateDay(cIdx, d.id, 'verse', e.target.value)} />
                                                         </td>
                                                         <td className="border-2 border-black p-0 align-middle">
-                                                            <input className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
+                                                            <input id={`auto_$d_art`} className="w-full text-center outline-none bg-transparent font-bold text-black" style={{ fontSize: getFS(20) }} value={d.art} onChange={(e) => updateDay(cIdx, d.id, 'art', e.target.value)} />
                                                         </td>
 
                                                         <td className="border-2 border-black p-0 text-center align-middle">
@@ -1303,7 +1307,7 @@ const DynamicCycleChart = () => {
 
                 {/* Master Mapping Configuration Container - Global Generator View */}
                 <div className="bg-white rounded-xl border border-gray-300 overflow-hidden shadow-sm mt-4">
-                    <div className="w-full px-4 py-3 font-bold text-left bg-[#051220] text-white md:flex md:justify-between items-center gap-2">
+                    <div className="w-full px-4 py-3 font-bold text-center bg-[#051220] text-white md:flex md:justify-between items-center gap-2">
                         <span className="tracking-wide text-lg">Smart Book Generation Config</span>
                         <span className="text-gray-300 text-sm">Distributes readings across {modalTotalDays} Days with ideal 1~15 min lengths</span>
                     </div>

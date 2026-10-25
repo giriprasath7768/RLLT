@@ -861,7 +861,7 @@ const LightChart = () => {
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 print:shadow-none print:border-none print:rounded-none overflow-hidden print:overflow-visible mb-6 p-0 sm:p-0 mx-auto max-w-4xl">
 
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] p-4 sm:p-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 mb-4 print:hidden gap-4">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-4 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-4 xl:mb-0">
                         <h1 className="text-2xl font-black tracking-tight mb-1 text-[#c8a165] whitespace-nowrap">Light Chart</h1>
 
                         {/* Font Size Scaling Controls */}

@@ -686,15 +686,204 @@ const PDFPageRender = React.forwardRef((props, ref) => {
     const leftEdgeObj = { background: 'linear-gradient(to right, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 5%)' };
     const lightingObj = { background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%)' };
 
+    const paragraphs = props.pageData?.paragraphs || [];
+    const imageUrl = props.pageData?.image_url || null;
+    const totalChars = paragraphs.reduce((sum, p) => sum + (p ? p.length : 0), 0);
+    const paraCount = paragraphs.length;
+
+    const pageContentRef = React.useRef(null);
+    const innerWrapRef = React.useRef(null);
+    const metricsCacheRef = React.useRef(null);
+
+    const baseW = props.width || 600;
+    const defaultFontSize = Math.max(13, baseW * 0.0228);
+    const defaultHeadingSize = defaultFontSize * 1.24;
+    const defaultLineHeight = 1.56;
+    const defaultGap = Math.max(7, baseW * 0.0155);
+
+    const cacheKey = `${baseW}_${props.pageNumber}_${paraCount}_${totalChars}`;
+    const activeMetrics = (metricsCacheRef.current && metricsCacheRef.current.key === cacheKey)
+        ? metricsCacheRef.current
+        : {
+            key: cacheKey,
+            fontSize: defaultFontSize,
+            headingSize: defaultHeadingSize,
+            lineHeight: defaultLineHeight,
+            gap: defaultGap
+        };
+
+    React.useLayoutEffect(() => {
+        const pageEl = pageContentRef.current;
+        const innerEl = innerWrapRef.current;
+        if (!pageEl || !innerEl || paraCount === 0) return;
+
+        const calibratePageTypography = () => {
+            const cs = window.getComputedStyle(pageEl);
+            const padTop = parseFloat(cs.paddingTop) || 0;
+            const padBottom = parseFloat(cs.paddingBottom) || 0;
+            const availH = pageEl.clientHeight - padTop - padBottom;
+            if (availH <= 80) return;
+
+            const actualW = pageEl.clientWidth || baseW;
+            const baseFs = Math.max(13, actualW * 0.0228);
+            const baseHs = baseFs * 1.24;
+            const baseLh = 1.56;
+            const baseGp = Math.max(7, actualW * 0.0155);
+
+            const isFullPage = paraCount >= 11 || totalChars >= 1250;
+
+            innerEl.style.setProperty('--pdf-font-size', `${baseFs}px`);
+            innerEl.style.setProperty('--pdf-heading-size', `${baseHs}px`);
+            innerEl.style.setProperty('--pdf-line-height', `${baseLh}`);
+            innerEl.style.setProperty('--pdf-gap', `${baseGp}px`);
+
+            const naturalH = innerEl.scrollHeight;
+
+            if (isFullPage || naturalH > availH * 0.975) {
+                let low = 0.65;
+                let high = isFullPage ? 1.35 : 1.02;
+                let bestScale = low;
+
+                for (let step = 0; step < 8; step++) {
+                    const mid = (low + high) / 2;
+                    const fs = baseFs * mid;
+                    const hs = fs * 1.24;
+                    const lh = Math.max(1.35, Math.min(1.68, baseLh * (0.45 + 0.55 * mid)));
+                    const gp = baseGp * mid;
+
+                    innerEl.style.setProperty('--pdf-font-size', `${fs}px`);
+                    innerEl.style.setProperty('--pdf-heading-size', `${hs}px`);
+                    innerEl.style.setProperty('--pdf-line-height', `${lh}`);
+                    innerEl.style.setProperty('--pdf-gap', `${gp}px`);
+
+                    if (innerEl.scrollHeight <= availH * 0.97) {
+                        bestScale = mid;
+                        low = mid;
+                    } else {
+                        high = mid;
+                    }
+                }
+
+                const finalFs = baseFs * bestScale;
+                const finalHs = finalFs * 1.24;
+                const finalLh = Math.max(1.35, Math.min(1.68, baseLh * (0.45 + 0.55 * bestScale)));
+                let finalGp = baseGp * bestScale;
+
+                innerEl.style.setProperty('--pdf-font-size', `${finalFs}px`);
+                innerEl.style.setProperty('--pdf-heading-size', `${finalHs}px`);
+                innerEl.style.setProperty('--pdf-line-height', `${finalLh}`);
+                innerEl.style.setProperty('--pdf-gap', `${finalGp}px`);
+
+                // Distribute any remaining vertical space on full pages so content spans cleanly from top to bottom
+                const usedH = innerEl.scrollHeight;
+                if (isFullPage && paraCount > 1 && usedH < availH * 0.965) {
+                    const extraGap = (availH * 0.968 - usedH) / (paraCount - 1);
+                    finalGp = Math.min(finalGp + extraGap, finalFs * 1.45);
+                    innerEl.style.setProperty('--pdf-gap', `${finalGp}px`);
+                }
+
+                metricsCacheRef.current = {
+                    key: cacheKey,
+                    fontSize: finalFs,
+                    headingSize: finalHs,
+                    lineHeight: finalLh,
+                    gap: finalGp
+                };
+            } else {
+                metricsCacheRef.current = {
+                    key: cacheKey,
+                    fontSize: baseFs,
+                    headingSize: baseHs,
+                    lineHeight: baseLh,
+                    gap: baseGp
+                };
+            }
+        };
+
+        calibratePageTypography();
+
+        let ro = null;
+        if (typeof ResizeObserver !== 'undefined') {
+            ro = new ResizeObserver(() => {
+                calibratePageTypography();
+            });
+            ro.observe(pageEl);
+        }
+
+        return () => {
+            if (ro) ro.disconnect();
+        };
+    }, [baseW, props.pageNumber, paraCount, totalChars, cacheKey]);
+
     return (
         <div className={`page bg-[#ffffff] shadow-2xl w-full h-full`} ref={ref} data-density="soft">
             <div className={`page-content w-full bg-transparent flex flex-col relative overflow-hidden h-full justify-center items-center`}>
-                <div className={`absolute inset-0 pdf-page-content p-[8%] pt-[10%] flex flex-col z-50 text-left pointer-events-none`} style={{ gap: `${props.width * 0.016}px` }} data-page-number={props.pageNumber}>
-                    {props.pageData && props.pageData.paragraphs.map((para, i) => (
-                        <span key={i} className="pdf-selectable-paragraph leading-relaxed font-serif text-[#1a1a1a] pointer-events-auto" style={{ fontSize: `${Math.max(12, props.width * 0.0185)}px` }} id={`para-${props.pageNumber}-${i}`}>
-                            {para}
-                        </span>
-                    ))}
+                <div
+                    ref={pageContentRef}
+                    className={`absolute inset-0 pdf-page-content px-[5.8%] pt-[4.5%] pb-[4.2%] flex flex-col z-50 text-left pointer-events-none overflow-hidden`}
+                    data-page-number={props.pageNumber}
+                >
+                    {paragraphs.length > 0 ? (
+                        <div
+                            ref={innerWrapRef}
+                            className="flex flex-col w-full"
+                            style={{
+                                '--pdf-font-size': `${activeMetrics.fontSize}px`,
+                                '--pdf-heading-size': `${activeMetrics.headingSize}px`,
+                                '--pdf-line-height': `${activeMetrics.lineHeight}`,
+                                '--pdf-gap': `${activeMetrics.gap}px`,
+                                gap: 'var(--pdf-gap)'
+                            }}
+                        >
+                            {paragraphs.map((para, i) => {
+                                const trimmed = (para || '').trim();
+                                const numberedMatch = trimmed.match(/^(\d{1,3}\.)\s+(.*)$/);
+                                const isHeading = !numberedMatch && trimmed.length > 0 && trimmed.length <= 68 && !/[.!?”’"']$/.test(trimmed);
+
+                                if (numberedMatch) {
+                                    return (
+                                        <span
+                                            key={i}
+                                            className="pdf-selectable-paragraph font-serif text-[#1a1a1a] pointer-events-auto block"
+                                            style={{
+                                                fontSize: 'var(--pdf-font-size)',
+                                                lineHeight: 'var(--pdf-line-height)',
+                                                paddingLeft: '2.15em',
+                                                textIndent: '-2.15em',
+                                                textAlign: 'justify'
+                                            }}
+                                            id={`para-${props.pageNumber}-${i}`}
+                                        >
+                                            <strong style={{ display: 'inline-block', minWidth: '2.15em', textIndent: 0, textAlign: 'left', fontWeight: 700 }}>
+                                                {numberedMatch[1]}{' '}
+                                            </strong>
+                                            {numberedMatch[2]}
+                                        </span>
+                                    );
+                                }
+
+                                return (
+                                    <span
+                                        key={i}
+                                        className={`pdf-selectable-paragraph font-serif pointer-events-auto block ${isHeading ? 'font-bold text-[#0f172a] mt-0.5' : 'text-[#1a1a1a]'}`}
+                                        style={{
+                                            fontSize: isHeading ? 'var(--pdf-heading-size)' : 'var(--pdf-font-size)',
+                                            lineHeight: isHeading ? 1.3 : 'var(--pdf-line-height)'
+                                        }}
+                                        id={`para-${props.pageNumber}-${i}`}
+                                    >
+                                        {para}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    ) : imageUrl ? (
+                        <img
+                            src={`http://${window.location.hostname}:8000${imageUrl}`}
+                            alt={`Page ${props.pageNumber}`}
+                            className="w-full h-full object-contain pointer-events-none select-none"
+                        />
+                    ) : null}
                 </div>
 
                 {/* Render Highlight Overlays */}
@@ -1337,7 +1526,10 @@ const BookIndex = () => {
     useEffect(() => {
         if (activeJsonUrl) {
             setAspectReady(false);
-            axios.get(activeJsonUrl, { withCredentials: true })
+            axios.get(`${activeJsonUrl}?t=${Date.now()}`, {
+                withCredentials: true,
+                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+            })
                 .then(res => {
                     setBookData(res.data);
                     setNumPages(res.data.pages.length);

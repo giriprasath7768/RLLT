@@ -6,6 +6,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Dialog } from 'primereact/dialog';
 import { FileUpload } from 'primereact/fileupload';
 import axios from 'axios';
+import { TransformationColorPopup } from '../../components/TransformationColorPopup';
 import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -64,6 +65,7 @@ const SevenTNTDayCycleChart = () => {
     const toast = useRef(null);
 
     const [headerSubtitle, setHeaderSubtitle] = useState("NO CHART SELECTED");
+    const [inputColors, setInputColors] = useState({});
     const [headerTitle, setHeaderTitle] = useState("7TNT Day Cycle Chart");
     const [bannerText, setBannerText] = useState("");
     const [tLabel, setTLabel] = useState("T");
@@ -442,7 +444,7 @@ const SevenTNTDayCycleChart = () => {
         formData.append("phase", phs);
         formData.append("banner_text", "7TNT DAY CYCLE CHART");
         formData.append("t_label", "T");
-        formData.append("state_payload", JSON.stringify(rowsData));
+        formData.append("state_payload", JSON.stringify({ _isWrapped: true, payload: rowsData, inputColors }));
 
         try {
             await axios.post('http://' + window.location.hostname + ':8000/api/seven_tnt_daycycle_charts/sync', formData, {
@@ -473,10 +475,11 @@ const SevenTNTDayCycleChart = () => {
                 }
             `}</style>
             <Toast ref={toast} />
+            <TransformationColorPopup inputColors={inputColors} setInputColors={setInputColors} />
 
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6 print:hidden">
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] py-3 px-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 gap-2">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-2 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-2 xl:mb-0">
                         <h1 className="text-xl font-black tracking-tight mb-0.5 text-[#c8a165] whitespace-nowrap">{headerTitle}</h1>
                         <p className="text-[11px] font-medium text-gray-300 uppercase tracking-widest mb-1.5">Creation Component</p>
 
@@ -526,7 +529,7 @@ const SevenTNTDayCycleChart = () => {
                             <tbody>
                                 <tr className="h-[55px]">
                                     <td className="w-[55px] bg-[#00b050] border-r-2 border-black p-0 align-middle">
-                                        <input className="w-full h-full text-center text-white bg-transparent outline-none font-serif text-[32px] font-normal leading-none placeholder-white/70"
+                                        <input id={`auto_$tLabel`} className="w-full h-full text-center text-white bg-transparent outline-none font-serif text-[32px] font-normal leading-none placeholder-white/70"
                                             value={tLabel} onChange={e => setTLabel(e.target.value)} placeholder="T" />
                                     </td>
                                     <td className="p-0 align-middle text-center bg-white relative">
@@ -534,7 +537,7 @@ const SevenTNTDayCycleChart = () => {
                                             <span className="text-[#ff0000] font-bold text-[20px] tracking-wide uppercase mr-2" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
                                                 REAL LIFE LEADERSHIP TRAINING -
                                             </span>
-                                            <input className="text-[#ff0000] bg-transparent outline-none font-bold text-[16px] tracking-wide uppercase placeholder-red-300 min-w-[200px]"
+                                            <input id={`auto_$headerSubtitle`} className="text-[#ff0000] bg-transparent outline-none font-bold text-[16px] tracking-wide uppercase placeholder-red-300 min-w-[200px]"
                                                 value={headerSubtitle} onChange={e => setHeaderSubtitle(e.target.value)} placeholder="ENTER TITLE" />
                                         </div>
                                     </td>
@@ -555,7 +558,7 @@ const SevenTNTDayCycleChart = () => {
                                                 <span className="text-white font-black text-[15px] tracking-tighter">PH</span>
                                             </div>
                                             <div className="flex-1 flex items-center justify-center">
-                                                <input className="w-full text-center text-white bg-transparent outline-none font-bold text-[18px] placeholder-white/70"
+                                                <input id={`auto_$phaseLabel`} className="w-full text-center text-white bg-transparent outline-none font-bold text-[18px] placeholder-white/70"
                                                     value={phaseLabel} onChange={e => setPhaseLabel(e.target.value)} placeholder="1" />
                                             </div>
                                         </div>
@@ -578,15 +581,15 @@ const SevenTNTDayCycleChart = () => {
                                     </td>
                                     <td className="border-r-2 border-black p-1 align-middle bg-white relative">
                                         <div className="absolute inset-[3px] border-[4px] border-[#e47636] pointer-events-none"></div>
-                                        <div className="w-full h-full min-h-[50px] flex items-center px-4 relative z-10">
-                                            <input className="w-full text-black font-bold text-[22px] uppercase bg-transparent outline-none placeholder-gray-300"
+                                        <div className="w-full h-full min-h-[50px] flex items-center justify-center px-4 relative z-10">
+                                            <input id={`auto_$bannerText`} className="w-full text-center text-black font-bold text-[22px] uppercase bg-transparent outline-none placeholder-gray-300"
                                                 value={bannerText} onChange={e => setBannerText(e.target.value)} placeholder="ENTER BANNER TITLE" />
                                         </div>
                                     </td>
                                     <td className="w-[160px] bg-[#ffff00] p-0 h-[65px] align-middle">
                                         <div className="flex flex-col h-[65px] w-full">
                                             <div className="flex-1 flex items-center justify-center border-b-2 border-black pt-1">
-                                                <span className="text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
+                                                <span className="text-center text-black font-black tracking-widest text-[20px] drop-shadow-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.15em' }}>B K - A R</span>
                                             </div>
                                             <div className="flex-1 flex items-center justify-center pb-1">
                                                 <span className="text-black font-black tracking-widest text-[18px] drop-shadow-sm whitespace-nowrap" style={{ letterSpacing: '0.15em' }}>{extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).bks} - {extractBooksAndAuthors(typeof chunks !== 'undefined' ? chunks : (typeof mappingConfig !== 'undefined' ? mappingConfig : (typeof rlltDB !== 'undefined' ? rlltDB : null))).art}</span>
@@ -622,10 +625,10 @@ const SevenTNTDayCycleChart = () => {
                                     <td className="border-2 border-black bg-white"></td>
                                     <td colSpan={10} className="border-2 border-l-0 border-black px-2 align-middle bg-white">
                                         <div className="flex w-full items-center">
-                                            <input
+                                            <input id={`auto_$promises`}
                                                 value={promises}
                                                 onChange={(e) => setPromises(e.target.value)}
-                                                className="w-full h-full flex-1 outline-none font-bold bg-transparent text-black font-serif tracking-tight text-left uppercase pl-2"
+                                                className="w-full h-full flex-1 outline-none font-bold bg-transparent text-black font-serif tracking-tight text-center uppercase pl-2"
                                                 style={{ fontSize: getFS(15) }}
                                                 placeholder="GOD'S PROMISES : ENTER GOD'S PROMISES HERE"
                                             />
@@ -633,7 +636,7 @@ const SevenTNTDayCycleChart = () => {
                                     </td>
                                     <td colSpan={2} className="border-2 border-black p-0 align-middle bg-white border-t-[3.5px] border-r-[3.5px] border-[#00b0f0]">
                                         <div className="w-full h-full min-h-[35px] flex items-center justify-center p-1">
-                                            <input
+                                            <input id={`auto_$promiseInput`}
                                                 className="w-full h-full text-center font-bold text-black focus:outline-none bg-transparent"
                                                 style={{ fontSize: getFS(20) }}
                                                 value={promiseInput}
@@ -654,15 +657,15 @@ const SevenTNTDayCycleChart = () => {
                                     </th>
                                     <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">DAY</th>
                                     <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white">
-                                        <input className="w-full text-center bg-transparent outline-none font-bold block" value={h1} onChange={(e) => setH1(e.target.value)} />
+                                        <input id={`auto_$h1`} className="w-full text-center bg-transparent outline-none font-bold block" value={h1} onChange={(e) => setH1(e.target.value)} />
                                     </th>
                                     <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
                                     <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white">
-                                        <input className="w-full text-center bg-transparent outline-none font-bold block" value={h2} onChange={(e) => setH2(e.target.value)} />
+                                        <input id={`auto_$h2`} className="w-full text-center bg-transparent outline-none font-bold block" value={h2} onChange={(e) => setH2(e.target.value)} />
                                     </th>
                                     <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
                                     <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white">
-                                        <input className="w-full text-center bg-transparent outline-none font-bold block" value={h3} onChange={(e) => setH3(e.target.value)} />
+                                        <input id={`auto_$h3`} className="w-full text-center bg-transparent outline-none font-bold block" value={h3} onChange={(e) => setH3(e.target.value)} />
                                     </th>
                                     <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">TIME</th>
                                     <th style={{ fontSize: getFS(25) }} className="border-2 border-black p-0 bg-white text-black">CHAP</th>
@@ -672,7 +675,7 @@ const SevenTNTDayCycleChart = () => {
                                     <th rowSpan={totalDays + 1} className="border-2 border-black p-0 align-middle bg-white relative overflow-hidden" style={{ fontSize: getFS(23) }}>
                                         <div className="absolute inset-0 flex items-center justify-center w-full h-full bg-white z-[5]">
                                             <div style={{ transform: 'rotate(-90deg)', fontSize: getFS(25) }} className="whitespace-nowrap font-extrabold text-black origin-center">
-                                                <input className="bg-transparent text-center outline-none border-none uppercase font-extrabold" value={headerSubtitle} onChange={(e) => setHeaderSubtitle(e.target.value)} style={{ width: `${(totalDays * 35) + 105}px` }} placeholder="MODULE1:FACET1:PHASE-1/1" />
+                                                <input id={`auto_$headerSubtitle`} className="bg-transparent text-center outline-none border-none uppercase font-extrabold" value={headerSubtitle} onChange={(e) => setHeaderSubtitle(e.target.value)} style={{ width: `${(totalDays * 35) + 105}px` }} placeholder="MODULE1:FACET1:PHASE-1/1" />
                                             </div>
                                         </div>
                                     </th>
@@ -684,14 +687,14 @@ const SevenTNTDayCycleChart = () => {
                                         <td className="border-2 border-black p-0 font-extrabold bg-white text-black" style={{ fontSize: getFS(15) }}>{d.day}</td>
 
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center px-1 outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m1b} onChange={(e) => {
+                                            <input id={`auto_$d_m1b`} className="w-full text-center px-1 outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m1b} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m1b = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m1t} onChange={(e) => {
+                                            <input id={`auto_$d_m1t`} className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m1t} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m1t = e.target.value;
                                                 setRowsData(newData);
@@ -699,14 +702,14 @@ const SevenTNTDayCycleChart = () => {
                                         </td>
 
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center px-1 outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m2b} onChange={(e) => {
+                                            <input id={`auto_$d_m2b`} className="w-full text-center px-1 outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m2b} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m2b = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m2t} onChange={(e) => {
+                                            <input id={`auto_$d_m2t`} className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m2t} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m2t = e.target.value;
                                                 setRowsData(newData);
@@ -714,14 +717,14 @@ const SevenTNTDayCycleChart = () => {
                                         </td>
 
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center px-1 outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m3b} onChange={(e) => {
+                                            <input id={`auto_$d_m3b`} className="w-full text-center px-1 outline-none bg-transparent font-bold uppercase leading-tight" style={{ fontSize: getFS(20) }} value={d.m3b} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m3b = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => {
+                                            <input id={`auto_$d_m3t`} className="w-full text-center outline-none bg-transparent font-bold" style={{ fontSize: getFS(20) }} value={d.m3t} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].m3t = e.target.value;
                                                 setRowsData(newData);
@@ -729,21 +732,21 @@ const SevenTNTDayCycleChart = () => {
                                         </td>
 
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(20) }} value={d.chap} onChange={(e) => {
+                                            <input id={`auto_$d_chap`} className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(20) }} value={d.chap} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].chap = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(20) }} value={d.verse} onChange={(e) => {
+                                            <input id={`auto_$d_verse`} className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(20) }} value={d.verse} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].verse = e.target.value;
                                                 setRowsData(newData);
                                             }} />
                                         </td>
                                         <td className="border-2 border-black p-0 bg-white">
-                                            <input className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(20) }} value={d.art} onChange={(e) => {
+                                            <input id={`auto_$d_art`} className="w-full text-center outline-none bg-transparent font-extrabold text-black" style={{ fontSize: getFS(20) }} value={d.art} onChange={(e) => {
                                                 const newData = [...rowsData];
                                                 if (newData[dIdx]) newData[dIdx].art = e.target.value;
                                                 setRowsData(newData);
@@ -869,7 +872,7 @@ const SevenTNTDayCycleChart = () => {
                         <div key={dIdx} className="shrink-0 bg-white rounded-xl border border-gray-300 overflow-hidden shadow-sm">
                             <button
                                 type="button"
-                                className={`w-full px-4 py-3 font-bold text-left flex justify-between items-center transition-colors shrink-0 ${expandedDay === dIdx ? 'bg-[#c8a165] text-white' : 'bg-[#051220] hover:bg-gray-800 text-white'}`}
+                                className={`w-full px-4 py-3 font-bold text-center flex justify-between items-center transition-colors shrink-0 ${expandedDay === dIdx ? 'bg-[#c8a165] text-white' : 'bg-[#051220] hover:bg-gray-800 text-white'}`}
                                 onClick={() => setExpandedDay(expandedDay === dIdx ? -1 : dIdx)}
                             >
                                 <span className="tracking-wide text-lg">Day {dIdx + 1} Configuration</span>

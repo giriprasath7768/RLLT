@@ -80,6 +80,7 @@ from app.api.images import router as images_router
 from app.api.classroom import router as classroom_router
 from app.api.websockets import router as websockets_router
 from app.api.highlights import router as highlights_router
+from app.api.isi import router as isi_router
 
 app.include_router(auth_router, prefix="/api", tags=["auth"])
 app.include_router(profile_router, prefix="/api/profile", tags=["profile"])
@@ -106,6 +107,7 @@ app.include_router(images_router, prefix="/api/images", tags=["images"])
 app.include_router(classroom_router, prefix="/api/classroom", tags=["classroom"])
 app.include_router(websockets_router, prefix="/api", tags=["websockets"])
 app.include_router(highlights_router, prefix="/api/highlights", tags=["highlights"])
+app.include_router(isi_router, prefix="/api/isi", tags=["isi"])
 
 import os
 from fastapi.staticfiles import StaticFiles

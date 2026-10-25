@@ -482,18 +482,18 @@ const DLSizeChart = () => {
                                     <td className="border-2 border-black p-0 font-extrabold bg-white leading-none text-black" style={{ fontSize: getFS(25) }}>{d.day}</td>
                                     
                                     {/* M1 TEXT (Green) */}
-                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight truncate" style={{ color: greenColor, fontSize: getFS(23) }}>
+                                    <td className="border-2 border-black p-0 px-1 bg-white text-center font-bold leading-tight truncate" style={{ color: greenColor, fontSize: getFS(23) }}>
                                         {d.m1b}
                                     </td>
                                     
                                     {/* M2 TEXT (Green) */}
-                                    <td className="border-2 border-black p-0 px-1 bg-white text-left font-bold leading-tight truncate" style={{ color: greenColor, fontSize: getFS(23) }}>
+                                    <td className="border-2 border-black p-0 px-1 bg-white text-center font-bold leading-tight truncate" style={{ color: greenColor, fontSize: getFS(23) }}>
                                         {d.m2b}
                                     </td>
                                     
                                     {/* M3 TEXT (Split Green / Blue) */}
                                     <td className="border-2 border-black p-0 bg-white" style={{ fontSize: getFS(23) }}>
-                                        <div className="flex w-full h-full text-left leading-tight">
+                                        <div className="flex w-full h-full text-center leading-tight">
                                             <div className="w-1/2 px-1 font-bold border-r border-gray-200 h-full flex items-center" style={{ color: greenColor }}>
                                                 {d.m3b_morning}
                                             </div>
@@ -572,7 +572,7 @@ const DLSizeChart = () => {
 
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6 print:hidden">
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] py-3 px-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 gap-2">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-2 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-2 xl:mb-0">
                         <h1 className="text-2xl font-black tracking-tight mb-0.5 text-[#c8a165] whitespace-nowrap">{headerTitle}</h1>
                         <p className="text-[14px] font-medium text-gray-300 uppercase tracking-widest mb-1.5">Compact Mode (Read-Only)</p>
                     </div>

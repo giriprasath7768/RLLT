@@ -348,11 +348,11 @@ const EveningChart = () => {
                                                     <div className="flex items-center justify-center transform -rotate-90 text-[11px] font-extrabold uppercase whitespace-nowrap">{chunk.team}</div>
                                                 </th>
                                                 <th className="border-2 border-black p-0 text-[10px]">DAY</th>
-                                                <th className="border-2 border-black p-0 text-left pl-1 text-[11px]">{chunk.h1}</th>
+                                                <th className="border-2 border-black p-0 text-center pl-1 text-[11px]">{chunk.h1}</th>
                                                 <th className="border-2 border-black p-0 text-[10px]">TIME</th>
-                                                <th className="border-2 border-black p-0 text-left pl-1 text-[11px]">{chunk.h2}</th>
+                                                <th className="border-2 border-black p-0 text-center pl-1 text-[11px]">{chunk.h2}</th>
                                                 <th className="border-2 border-black p-0 text-[10px]">TIME</th>
-                                                <th className="border-2 border-black p-1 text-left pl-2 text-[14px]">EVENING SCRIPTURE</th>
+                                                <th className="border-2 border-black p-1 text-center pl-2 text-[14px]">EVENING SCRIPTURE</th>
                                                 <th className="border-2 border-black p-0 text-[10px]">TIME</th>
                                                 <th className="border-2 border-black p-0 text-[10px]">CHAP</th>
                                                 <th className="border-2 border-black p-0 text-[10px]">VERSE</th>
@@ -370,7 +370,7 @@ const EveningChart = () => {
                                                     <td className="border-2 border-black p-0 text-[11px] align-middle">{d.m1t}</td>
                                                     <td className="border-2 border-black p-0 uppercase text-[12px] align-middle">{d.m2b}</td>
                                                     <td className="border-2 border-black p-0 text-[11px] align-middle">{d.m2t}</td>
-                                                    <td className="border-2 border-black p-1 text-left uppercase align-middle text-[#E67E22] text-[13px]">{d.m3b}</td>
+                                                    <td className="border-2 border-black p-1 text-center uppercase align-middle text-[#E67E22] text-[13px]">{d.m3b}</td>
                                                     <td className="border-2 border-black p-0 text-[11px] align-middle">{d.m3t}</td>
                                                     <td className="border-2 border-black p-0 text-[11px] align-middle">{d.chap}</td>
                                                     <td className="border-2 border-black p-0 text-[11px] align-middle">{d.verse}</td>

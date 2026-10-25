@@ -147,7 +147,7 @@ const AssignChart = () => {
 
             <h2 className="text-xl font-bold text-[#051220] mb-4">Assigned Charts</h2>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <table className="w-full text-left">
+                <table className="w-full text-center">
                     <thead className="bg-gray-50 border-b border-gray-100">
                         <tr>
                             <th className="p-4 text-sm font-bold text-gray-600">User ID</th>

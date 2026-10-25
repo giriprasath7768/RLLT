@@ -114,7 +114,14 @@ const AdminSidebar = ({ visible, onHide }) => {
                         { label: 'Assessment Summary', icon: 'pi pi-list', to: '/admin/assessment-summary' }
                     ]
                 },
-                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: 'SMT Page', icon: 'pi pi-book', to: '/admin/book-index' }] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
+                    label: 'SMT',
+                    icon: 'pi pi-book',
+                    items: [
+                        { label: 'SMT Page', icon: 'pi pi-book', to: '/admin/book-index' },
+                        { label: 'SMT Formatter', icon: 'pi pi-sliders-h', to: '/admin/smt-formatter' }
+                    ]
+                }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{ label: '7TNT Word', icon: 'pi pi-file-word', to: '/admin/7tnt-word' }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
                     label: 'Classroom',
@@ -131,14 +138,22 @@ const AdminSidebar = ({ visible, onHide }) => {
                     icon: 'pi pi-chart-bar',
                     items: [
                         { label: 'Student Report', icon: 'pi pi-file', to: '/admin/reports/student-report' },
-                        { label: 'Honeycomb Report', icon: 'pi pi-th-large', to: '/admin/reports/honeycomb-report' }
+                        { label: 'Honeycomb Report', icon: 'pi pi-th-large', to: '/admin/reports/honeycomb-report' },
+                        { label: 'ISI Report', icon: 'pi pi-chart-pie', to: '/admin/reports/isi-report' },
+                        { label: 'Offline Reports', icon: 'pi pi-cloud-upload', to: '/admin/reports/offline-reports' },
+                        { label: 'User Session Tracking', icon: 'pi pi-history', to: '/admin/reports/user-sessions' }
                     ]
                 },
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
                     label: 'Light Digital Chart',
                     icon: 'pi pi-sun',
                     to: '/admin/light-chart-digital'
-                }] : [])
+                }] : []),
+                {
+                    label: 'ISI',
+                    icon: 'pi pi-file',
+                    to: '/admin/isi'
+                }
             ]
         },
         {

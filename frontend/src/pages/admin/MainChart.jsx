@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { TransformationColorPopup } from '../../components/TransformationColorPopup';
 import { extractBooksAndAuthors } from '../../utils/bookUtils';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
@@ -110,34 +111,6 @@ const MainChart = () => {
 
     // Transformation Colors Popup State
     const [inputColors, setInputColors] = useState({});
-    const [colorPopup, setColorPopup] = useState({ visible: false, x: 0, y: 0, targetId: null });
-    const transformationColors = [
-        '#00C0FF', '#00A638', '#3340CD', '#FAFA33',
-        '#BB43B1', '#FE6D01', '#FE0005'
-    ];
-
-    useEffect(() => {
-        const handleMouseUp = (e) => {
-            const activeEl = document.activeElement;
-            if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') && activeEl.id) {
-                if (activeEl.selectionStart !== activeEl.selectionEnd) {
-                    const rect = activeEl.getBoundingClientRect();
-                    setColorPopup({
-                        visible: true,
-                        x: Math.max(100, e.clientX),
-                        y: Math.max(20, rect.top - 60),
-                        targetId: activeEl.id
-                    });
-                    return;
-                }
-            }
-            if (!e.target.closest('.color-popup-container')) {
-                setColorPopup({ visible: false, x: 0, y: 0, targetId: null });
-            }
-        };
-        document.addEventListener('mouseup', handleMouseUp);
-        return () => document.removeEventListener('mouseup', handleMouseUp);
-    }, []);
 
     // Popup state
     const [showPopup, setShowPopup] = useState(false);
@@ -250,6 +223,10 @@ const MainChart = () => {
                             if (Array.isArray(parsed)) {
                                 setChartDays(parsed.length * 5);
                                 setChunks(parsed);
+                            } else if (parsed && parsed._isWrapped) {
+                                setChartDays(parsed.payload.length * 5);
+                                setChunks(parsed.payload);
+                                if (parsed.inputColors) setInputColors(parsed.inputColors);
                             } else if (parsed && parsed.chunks) {
                                 setChartDays(parsed.chunks.length * 5);
                                 setChunks(parsed.chunks);
@@ -327,7 +304,7 @@ const MainChart = () => {
         formData.append("phase", currentPhs);
         formData.append("banner_text", bannerText);
         formData.append("t_label", tLabel);
-        formData.append("state_payload", JSON.stringify({ chunks, inputColors }));
+        formData.append("state_payload", JSON.stringify({ _isWrapped: true, payload: chunks, inputColors }));
 
         if (logo1 && typeof logo1 === 'object' && logo1.file) {
             formData.append("logo1", logo1.file);
@@ -736,38 +713,12 @@ const MainChart = () => {
                 return null;
             })()}
 
-            <style>{`
-                ${Object.entries(inputColors).map(([id, color]) => `
-                    #${id} { color: ${color} !important; }
-                `).join('\n')}
-            `}</style>
-
-            {colorPopup.visible && (
-                <div 
-                    className="color-popup-container fixed z-[1000] bg-[#1a2234] border border-gray-600 rounded-lg p-3 shadow-2xl flex flex-col gap-3"
-                    style={{ left: colorPopup.x, top: colorPopup.y, transform: 'translateX(-50%)' }}
-                >
-                    <span className="text-[#fadfc3] text-[13px] font-bold text-center tracking-wide">Transformation Colors</span>
-                    <div className="flex gap-2 justify-center">
-                        {transformationColors.map(color => (
-                            <button
-                                key={color}
-                                onClick={() => {
-                                    setInputColors(prev => ({ ...prev, [colorPopup.targetId]: color }));
-                                    setColorPopup({ visible: false, x: 0, y: 0, targetId: null });
-                                }}
-                                className="w-7 h-7 rounded-full border-2 hover:scale-110 transition-transform shadow-md"
-                                style={{ backgroundColor: color, borderColor: 'rgba(255,255,255,0.4)' }}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
+            <TransformationColorPopup inputColors={inputColors} setInputColors={setInputColors} />
 
             <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden mb-6">
 
                 <div className="bg-gradient-to-r from-[#051220] to-[#0A1F35] p-6 flex flex-col xl:flex-row justify-between items-center text-white border-b-2 border-gray-100 pb-4 gap-4">
-                    <div className="flex-shrink-0 text-center xl:text-left mb-4 xl:mb-0">
+                    <div className="flex-shrink-0 text-center xl:text-center mb-4 xl:mb-0">
                         <h1 className="text-2xl font-black tracking-tight mb-1 text-[#c8a165] whitespace-nowrap">{chartDays === 40 ? "40 Days Main Chart" : "Main Chart - 30 Days"}</h1>
                         <p className="text-xs font-medium text-gray-300 uppercase tracking-widest mb-3">{chartDays} Days Tracking</p>
 
@@ -1013,7 +964,7 @@ const MainChart = () => {
                                                                 id={`promises_${cIdx}`}
                                                                 value={chunk.promises}
                                                                 onChange={(e) => updateChunk(cIdx, 'promises', e.target.value)}
-                                                                className="w-full h-full outline-none font-bold bg-transparent text-black font-serif tracking-tight text-left uppercase pl-2"
+                                                                className="w-full h-full outline-none font-bold bg-transparent text-black font-serif tracking-tight text-center uppercase pl-2"
                                                                 style={{ fontSize: getFS(20) }}
                                                                 placeholder="GOD'S PROMISES : ENTER GOD'S PROMISES HERE"
                                                             />
@@ -1236,7 +1187,7 @@ const MainChart = () => {
                         <div key={dIdx} className="shrink-0 bg-white rounded-xl border border-gray-300 overflow-hidden shadow-sm">
                             <button
                                 type="button"
-                                className={`w-full px-4 py-3 font-bold text-left flex justify-between items-center transition-colors shrink-0 ${expandedDay === dIdx ? 'bg-[#c8a165] text-white' : 'bg-[#051220] hover:bg-gray-800 text-white'}`}
+                                className={`w-full px-4 py-3 font-bold text-center flex justify-between items-center transition-colors shrink-0 ${expandedDay === dIdx ? 'bg-[#c8a165] text-white' : 'bg-[#051220] hover:bg-gray-800 text-white'}`}
                                 onClick={() => setExpandedDay(expandedDay === dIdx ? -1 : dIdx)}
                             >
                                 <span className="tracking-wide text-lg">Day {dIdx + 1} Configuration</span>

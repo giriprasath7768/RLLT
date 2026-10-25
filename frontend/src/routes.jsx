@@ -40,6 +40,8 @@ import SevenTNTMainChart from './pages/admin/SevenTNTMainChart';
 import LightChart from './pages/admin/LightChart';
 import StudentReport from './pages/admin/StudentReport';
 import HoneycombReport from './pages/admin/HoneycombReport';
+import OfflineReports from './pages/admin/OfflineReports';
+import UserSessionTracking from './pages/admin/UserSessionTracking';
 import SevenTNTPlayers from './pages/admin/SevenTNTPlayers';
 import SevenTNTPlayer from './pages/admin/SevenTNTPlayer';
 import SevenTNTContentManagement from './pages/admin/SevenTNTContentManagement';
@@ -63,6 +65,7 @@ import AdminSummaryPrintView from './pages/admin/AdminSummaryPrintView';
 import Recordings from './pages/Recordings';
 import WordEditor from './pages/admin/WordEditor';
 import BookIndex from './pages/admin/BookIndex';
+import SMTFormatter from './pages/admin/SMTFormatter';
 import ScreenRecorder from './pages/admin/ScreenRecorder';
 import ImageGallery from './pages/admin/ImageGallery';
 import DynamicCycleChart from './pages/admin/DynamicCycleChart';
@@ -76,6 +79,8 @@ import ClassroomAssignments from './pages/admin/ClassroomAssignments';
 import EvaluateAssignments from './pages/admin/EvaluateAssignments';
 import Shanaz357 from './pages/admin/Shanaz357';
 import LightChartDigital from './pages/admin/LightChartDigital';
+import ISI from './pages/admin/ISI';
+import ISIReport from './pages/admin/ISIReport';
 import Settings from './pages/admin/Settings';
 
 // Dashboard Components
@@ -187,8 +192,12 @@ const AppRoutes = () => {
                     <Route path="/admin/chart-listing/light-chart" element={<LightChart />} />
                     <Route path="/admin/reports/student-report" element={<StudentReport />} />
                     <Route path="/admin/reports/honeycomb-report" element={<HoneycombReport />} />
+                    <Route path="/admin/reports/isi-report" element={<ISIReport />} />
+                    <Route path="/admin/reports/offline-reports" element={<OfflineReports />} />
+                    <Route path="/admin/reports/user-sessions" element={<UserSessionTracking />} />
                     <Route path="/admin/shanaz-357" element={<Shanaz357 />} />
                     <Route path="/admin/light-chart-digital" element={<LightChartDigital />} />
+                    <Route path="/admin/isi" element={<ISI />} />
                     <Route path="/admin/chart-listing/357-chart" element={<DynamicCycleChartView />} />
                     <Route path="/admin/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />
                     <Route path="/admin/chart-listing/7tnt-weekly-chart" element={<SevenTNTWeeklyChart />} />
@@ -199,6 +208,7 @@ const AppRoutes = () => {
                     <Route path="/admin/rllt-data" element={<RLLTTableData />} />
                     <Route path="/admin/image-gallery" element={<ImageGallery />} />
                     <Route path="/admin/book-index" element={<BookIndex />} />
+                    <Route path="/admin/smt-formatter" element={<SMTFormatter />} />
                     <Route path="/admin/players" element={<Players />} />
                     <Route path="/admin/7tnt-players" element={<SevenTNTPlayers />} />
                     <Route path="/admin/ttomt-357-player" element={<TtoMT357Player />} />
@@ -231,6 +241,8 @@ const AppRoutes = () => {
                 <Route path="/dashboard/student/charts" element={<StudentChartListing />} />
                 <Route path="/dashboard/student/players" element={<StudentPlayers />} />
                 <Route path="/dashboard/student/book-index" element={<BookIndex />} />
+                <Route path="/dashboard/student/isi" element={<ISI />} />
+                <Route path="/dashboard/student/isi-report" element={<ISIReport />} />
                 <Route path="/dashboard/student/recordings" element={<Recordings />} />
                 <Route path="/dashboard/student/classroom" element={<StudentClassroom />} />
                 <Route path="/dashboard/student/classroom/assignments" element={<StudentAssignments />} />

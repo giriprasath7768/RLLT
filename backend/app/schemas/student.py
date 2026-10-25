@@ -50,6 +50,7 @@ class StudentResponse(StudentBase):
     role: str
     assessment_status: Optional[str] = "pending"
     activation_email_sent: Optional[bool] = False
+    location_id: Optional[UUID] = None
     location_name: Optional[str] = None
     country: Optional[str] = None
     admin_name: Optional[str] = None
