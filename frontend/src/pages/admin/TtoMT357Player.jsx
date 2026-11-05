@@ -988,6 +988,8 @@ const TtoMT357Player = () => {
         formData.append("banner_text", bannerText);
         formData.append("chart_type", is24x7Format ? "24x7 Chart" : "Main Chart");
         formData.append("t_label", "T");
+        formData.append("date", new Date().toLocaleDateString('en-GB').replace(/\//g, '-'));
+        formData.append("time", new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
         formData.append("state_payload", JSON.stringify(newChunks));
 
         try {

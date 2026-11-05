@@ -9,7 +9,9 @@ import shutil
 from typing import Optional
 
 from app.db.database import get_db
-from app.db.models import OilChartMapping
+from app.db.models import OilChartMapping, User
+from app.api.auth import get_current_user_optional
+from app.api.charts import ensure_chart_columns_ready, resolve_chart_creator_meta
 
 router = APIRouter()
 
@@ -24,10 +26,16 @@ async def sync_oil_chart(
     banner_text: str = Form(""),
     t_label: str = Form(""),
     state_payload: str = Form(...),
+    user_id: Optional[str] = Form(None),
+    location: Optional[str] = Form(None),
+    date: Optional[str] = Form(None),
+    time: Optional[str] = Form(None),
     logo: Optional[UploadFile] = File(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
 ):
     try:
+        await ensure_chart_columns_ready(db)
         logo_url = None
         
         # Check if an existing row exists to preserve its logo if an empty file is sent
@@ -37,6 +45,10 @@ async def sync_oil_chart(
             OilChartMapping.phase == phase
         ))
         existing = result.scalars().first()
+
+        resolved_user_id, resolved_location, resolved_date, resolved_time = await resolve_chart_creator_meta(
+            db, current_user, user_id, location, date, time, existing
+        )
 
         if logo and logo.filename:
             # Save the new file
@@ -60,7 +72,11 @@ async def sync_oil_chart(
             banner_text=banner_text,
             t_label=t_label,
             logo_url=logo_url,
-            state_payload=state_payload
+            state_payload=state_payload,
+            user_id=resolved_user_id,
+            location=resolved_location,
+            date=resolved_date,
+            time=resolved_time,
         )
         
         on_conflict_stmt = upsert_stmt.on_conflict_do_update(
@@ -69,14 +85,25 @@ async def sync_oil_chart(
                 'banner_text': upsert_stmt.excluded.banner_text,
                 't_label': upsert_stmt.excluded.t_label,
                 'state_payload': upsert_stmt.excluded.state_payload,
-                'logo_url': upsert_stmt.excluded.logo_url
+                'logo_url': upsert_stmt.excluded.logo_url,
+                'user_id': upsert_stmt.excluded.user_id,
+                'location': upsert_stmt.excluded.location,
+                'date': upsert_stmt.excluded.date,
+                'time': upsert_stmt.excluded.time,
             }
         )
         
         await db.execute(on_conflict_stmt)
         await db.commit()
         
-        return {"status": "success", "logo_url": logo_url}
+        return {
+            "status": "success",
+            "logo_url": logo_url,
+            "user_id": str(resolved_user_id) if resolved_user_id else None,
+            "location": resolved_location,
+            "date": resolved_date,
+            "time": resolved_time,
+        }
         
     except Exception as e:
         await db.rollback()
@@ -85,6 +112,7 @@ async def sync_oil_chart(
 
 @router.get("/list")
 async def list_oil_charts(db: AsyncSession = Depends(get_db)):
+    await ensure_chart_columns_ready(db)
     result = await db.execute(select(OilChartMapping).order_by(OilChartMapping.module, OilChartMapping.facet, OilChartMapping.phase))
     mappings = result.scalars().all()
     
@@ -97,13 +125,18 @@ async def list_oil_charts(db: AsyncSession = Depends(get_db)):
             "label": label,
             "module": m.module,
             "facet": m.facet,
-            "phase": m.phase
+            "phase": m.phase,
+            "user_id": str(m.user_id) if m.user_id else None,
+            "location": m.location,
+            "date": m.date,
+            "time": m.time,
         })
     return charts
 
 
 @router.get("/sync/{module}/{facet}/{phase}")
 async def get_oil_chart(module: int, facet: int, phase: int, db: AsyncSession = Depends(get_db)):
+    await ensure_chart_columns_ready(db)
     result = await db.execute(select(OilChartMapping).filter(
         OilChartMapping.module == module,
         OilChartMapping.facet == facet,
@@ -121,7 +154,11 @@ async def get_oil_chart(module: int, facet: int, phase: int, db: AsyncSession = 
         "banner_text": mapping.banner_text,
         "t_label": mapping.t_label,
         "logo_url": mapping.logo_url,
-        "state_payload": mapping.state_payload
+        "state_payload": mapping.state_payload,
+        "user_id": str(mapping.user_id) if mapping.user_id else None,
+        "location": mapping.location,
+        "date": mapping.date,
+        "time": mapping.time,
     }
 
 

@@ -19,6 +19,25 @@ async def lifespan(app: FastAPI):
             except Exception as e2:
                 # Column likely already exists
                 pass
+        # Ensure user_id, location, date, time columns exist on all chart mapping tables
+        for tbl in [
+            "chart_mappings",
+            "vcard_mappings",
+            "oil_chart_mappings",
+            "seven_tnt_chart_mappings",
+            "seven_tnt_day_cycle_chart_mappings",
+        ]:
+            for col_def in [
+                "user_id UUID",
+                "location VARCHAR",
+                "date VARCHAR",
+                "time VARCHAR",
+            ]:
+                try:
+                    from sqlalchemy import text
+                    await conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN IF NOT EXISTS {col_def};"))
+                except Exception:
+                    pass
     yield
 
 app = FastAPI(title="Media Platform API", lifespan=lifespan)

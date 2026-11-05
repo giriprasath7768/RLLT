@@ -156,6 +156,8 @@ const OilChart = () => {
         formData.append("phase", phs);
         formData.append("banner_text", bannerText);
         formData.append("t_label", tLabel);
+        formData.append("date", new Date().toLocaleDateString('en-GB').replace(/\//g, '-'));
+        formData.append("time", new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
         formData.append("state_payload", JSON.stringify({ _isWrapped: true, payload: rows, inputColors }));
 
         if (logo1 && typeof logo1 === 'object' && logo1.file) {

@@ -342,7 +342,7 @@ const TTomTPlayer = () => {
     };
 
     const searchParams = new URLSearchParams(location.search);
-    const trackingDays = parseInt(searchParams.get('days')) || 30;
+    const queryDaysParam = parseInt(searchParams.get('days'), 10);
 
     const [fetchedPayload, setFetchedPayload] = useState([]);
     const [fetchedFilter, setFetchedFilter] = useState('main');
@@ -680,9 +680,20 @@ const TTomTPlayer = () => {
             try {
                 p = typeof payloadString === 'string' ? JSON.parse(payloadString) : payloadString;
             } catch (e) { }
-        } else if (fetchedPayload && fetchedPayload.length > 0) {
+        } else if (fetchedPayload && (Array.isArray(fetchedPayload) ? fetchedPayload.length > 0 : Object.keys(fetchedPayload).length > 0)) {
             p = fetchedPayload;
         }
+
+        if (p && !Array.isArray(p) && typeof p === 'object') {
+            if (p._isWrapped && Array.isArray(p.payload)) {
+                p = p.payload;
+            } else if (Array.isArray(p.chunks)) {
+                p = p.chunks;
+            } else if (p.fullPlan && Array.isArray(p.fullPlan.chunks)) {
+                p = p.fullPlan.chunks;
+            }
+        }
+        if (!Array.isArray(p)) p = [];
 
         if (filter === 'morning_evening' && p && p.length > 0 && booksDB.length > 0 && chaptersDB.length > 0) {
             const is24x7 = JSON.stringify(p).includes('"m4b"');
@@ -696,17 +707,59 @@ const TTomTPlayer = () => {
         }
 
         return p;
-    }, [location.state?.payload, location.state?.filter, booksDB, chaptersDB]);
+    }, [location.state?.payload, location.state?.filter, fetchedPayload, fetchedFilter, booksDB, chaptersDB]);
+
+    const payloadDaysCount = React.useMemo(() => {
+        if (!Array.isArray(parsedPayload) || parsedPayload.length === 0) return 0;
+        let count = 0;
+        for (const chunk of parsedPayload) {
+            if (Array.isArray(chunk?.days)) {
+                count += chunk.days.length;
+            }
+        }
+        return count;
+    }, [parsedPayload]);
+
+    // Actual number of active days in this chart/player session
+    const availableDays = React.useMemo(() => {
+        if (payloadDaysCount > 0) {
+            if (!isNaN(queryDaysParam) && queryDaysParam > 0 && queryDaysParam < payloadDaysCount) {
+                return queryDaysParam;
+            }
+            return payloadDaysCount;
+        }
+        if (!isNaN(queryDaysParam) && queryDaysParam > 0) {
+            return queryDaysParam;
+        }
+        return 30;
+    }, [payloadDaysCount, queryDaysParam]);
+
+    // Total number of day slots rendered in the grid:
+    // - If <= 30 days: show 1..30 (1..availableDays active, remaining deactivated)
+    // - If 31..40 days: show 1..40 (1..availableDays active, remaining deactivated)
+    // - If > 40 days: show 1..availableDays (all active, with vertical scroll beyond 40)
+    const totalGridSlots = React.useMemo(() => {
+        if (availableDays <= 30) return 30;
+        if (availableDays <= 40) return 40;
+        return availableDays;
+    }, [availableDays]);
+
+    const trackingDays = totalGridSlots;
 
     const activeDayNode = React.useMemo(() => {
         let dayNode = null;
+        let runningIdx = 0;
         for (const chunk of parsedPayload) {
             if (chunk.days) {
-                const match = chunk.days.find(d => d.day === selectedDay);
-                if (match) {
-                    dayNode = match;
-                    break;
+                for (const d of chunk.days) {
+                    runningIdx += 1;
+                    const dNum = d.day ?? d.id ?? runningIdx;
+                    if (Number(dNum) === Number(selectedDay)) {
+                        dayNode = d;
+                        break;
+                    }
                 }
+                if (dayNode) break;
             }
         }
         return dayNode;
@@ -715,7 +768,7 @@ const TTomTPlayer = () => {
     const playlistBooks = React.useMemo(() => {
         if (!activeDayNode) return [{ name: "PROVERBS 1", type: "default" }];
         const dayNode = activeDayNode;
-        const filter = location.state?.filter || 'main';
+        const filter = location.state?.filter || fetchedFilter || 'main';
 
         let fullList = [];
 
@@ -731,18 +784,18 @@ const TTomTPlayer = () => {
                 eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
             } else {
                 const morningRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b_morning].filter(Boolean);
-                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: 'morning' })));
+                morningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'morning' })));
 
                 const eveningRaw = [dayNode.m3b_evening].filter(Boolean);
-                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: 'evening' })));
+                eveningRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'evening' })));
             }
         } else {
-            const defaultRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m4b].filter(Boolean);
+            const defaultRaw = [dayNode.m1b, dayNode.m2b, dayNode.m3b, dayNode.m3b_morning, dayNode.m3b_evening, dayNode.m4b, dayNode.m4b_morning, dayNode.m4b_evening].filter(Boolean);
             defaultRaw.forEach(str => explodeBookString(str, booksDB).forEach(b => fullList.push({ name: b, type: 'default' })));
         }
 
         return fullList.length ? fullList : [{ name: "PROVERBS 1", type: "default" }];
-    }, [activeDayNode, booksDB, location.state?.filter]);
+    }, [activeDayNode, booksDB, location.state?.filter, fetchedFilter, parsedPayload]);
 
     useEffect(() => {
         playerStateRef.current = { activeTrackName, playlistBooks, contentDB, activeLanguage, selectedDay };
@@ -758,6 +811,63 @@ const TTomTPlayer = () => {
     const placeholderImg = "/lighthouse.jpeg";
 
     const tz = playerWidth / 2;
+
+    const [isSavingReport, setIsSavingReport] = useState(false);
+    const [reportFeedback, setReportFeedback] = useState(null);
+
+    const handleThumbsUpReport = async () => {
+        if (isSavingReport) return;
+        setIsSavingReport(true);
+        setReportFeedback(null);
+        setFinishedDays(prev => new Set(prev).add(selectedDay));
+        incrementReadingPlanTouch();
+
+        try {
+            const dayPadded = selectedDay.toString().padStart(2, '0');
+            const bannerText = `RLLT-MDL${moduleVal} FCT${facetVal} PHS${phaseVal} DAY ${dayPadded} : 👍`;
+            const chosenColor = (playerBorderColor && playerBorderColor !== '#000000')
+                ? playerBorderColor.toUpperCase()
+                : '#00C0FF';
+            const tracksStr = Array.isArray(playlistBooks)
+                ? playlistBooks.map(b => b.name).join(', ')
+                : '';
+
+            const res = await axios.post(
+                'http://' + window.location.hostname + ':8000/api/isi/ttomt',
+                {
+                    module: Number(moduleVal) || 1,
+                    facet: Number(facetVal) || 1,
+                    phase: Number(phaseVal) || 1,
+                    day: Number(selectedDay) || 1,
+                    phase_days: Number(availableDays) || 30,
+                    art: activeDayNode?.art || '0',
+                    tracks: tracksStr,
+                    filter_type: location.state?.filter || fetchedFilter || 'main',
+                    thumbs_up_count: 1,
+                    color_code: chosenColor,
+                    theme_color: chosenColor,
+                    banner_text: bannerText,
+                },
+                { withCredentials: true }
+            );
+
+            const rec = res.data?.record;
+            setReportFeedback({
+                type: 'success',
+                message: `Saved ${bannerText} (${rec?.username || 'User'})`,
+            });
+            setTimeout(() => setReportFeedback(null), 4000);
+        } catch (err) {
+            console.error('Failed to save TTomT report record:', err);
+            setReportFeedback({
+                type: 'error',
+                message: 'Failed to save TTomT report. Please try again.',
+            });
+            setTimeout(() => setReportFeedback(null), 4000);
+        } finally {
+            setIsSavingReport(false);
+        }
+    };
 
     return (
         <div className="min-h-[100dvh] bg-gray-100 flex items-center justify-center sm:px-4 py-4 sm:py-8 font-sans transition-colors duration-500 overflow-y-auto">
@@ -808,11 +918,11 @@ const TTomTPlayer = () => {
                         <div className="bg-black text-white px-3 py-2 flex flex-col relative w-full">
                             <div className="flex justify-between items-center mb-1">
                                 {userRole === 'ttom_user' ? (
-                                    <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors p-0.5" title="Logout">
+                                    <button onClick={handleLogout} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors p-0.5 flex-shrink-0" title="Logout">
                                         <i className="pi pi-power-off text-xl"></i>
                                     </button>
                                 ) : (
-                                    <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-white transition-colors p-0.5" title="Back to Dashboard">
+                                    <button onClick={() => navigate(-1)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white transition-colors p-0.5 flex-shrink-0" title="Back to Dashboard">
                                         <i className="pi pi-bars text-xl"></i>
                                     </button>
                                 )}
@@ -830,14 +940,30 @@ const TTomTPlayer = () => {
                                             setIsPlaying(false);
                                         }
                                     }}
-                                    className="text-gray-400 hover:text-white transition-colors p-0.5 flex-shrink-0"
+                                    className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white transition-colors p-0.5 flex-shrink-0"
                                 >
                                     <i className="pi pi-info-circle text-xl lg:text-2xl"></i>
                                 </button>
                             </div>
-                            <div className="text-center mt-1 flex justify-center items-center">
-                                <span className="text-[#7292d3] tracking-[0.2em] font-black text-[18px] mr-2">R L L T</span>
-                                <span className="text-white text-[12px] font-bold tracking-widest leading-none mt-1">- MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
+                            <div className="mt-1 flex justify-between items-center">
+                                <div className="w-7 h-7 flex-shrink-0" aria-hidden="true"></div>
+                                <div className="flex-1 text-center flex justify-center items-center">
+                                    <span className="text-[#7292d3] tracking-[0.2em] font-black text-[18px] mr-2">R L L T</span>
+                                    <span className="text-white text-[12px] font-bold tracking-widest leading-none mt-1">- MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleThumbsUpReport}
+                                    disabled={isSavingReport}
+                                    title="Mark Day Done & Generate TTomT Report"
+                                    className={`w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer select-none flex-shrink-0 ${
+                                        completedDays.has(selectedDay)
+                                            ? 'bg-emerald-500/25 ring-1 ring-emerald-400 scale-105'
+                                            : 'hover:bg-white/15 active:scale-95'
+                                    } ${isSavingReport ? 'opacity-60 cursor-wait' : ''}`}
+                                >
+                                    <span className="text-base leading-none">👍</span>
+                                </button>
                             </div>
                         </div>
 
@@ -846,6 +972,32 @@ const TTomTPlayer = () => {
                             <span className="text-white font-black text-base tracking-wider">DAY {selectedDay.toString().padStart(2, '0')} :</span>
                             <span className="text-red-700 font-black text-xs tracking-wider">ART {activeDayNode?.art || "0"}</span>
                         </div>
+                        {reportFeedback && (
+                            <div
+                                className={`px-3 py-1.5 text-[11px] font-bold flex items-center justify-between gap-2 border-b border-[#1a2234] ${
+                                    reportFeedback.type === 'success'
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'bg-red-600 text-white'
+                                }`}
+                            >
+                                <span className="truncate">{reportFeedback.message}</span>
+                                {reportFeedback.type === 'success' && userRole && userRole !== 'ttom_user' && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            navigate(
+                                                userRole === 'student'
+                                                    ? '/dashboard/student/ttomt-report'
+                                                    : '/admin/reports/ttomt-report'
+                                            )
+                                        }
+                                        className="px-2 py-0.5 rounded bg-white text-emerald-800 font-extrabold text-[10px] uppercase tracking-wider hover:bg-emerald-50 shrink-0 cursor-pointer"
+                                    >
+                                        View Report
+                                    </button>
+                                )}
+                            </div>
+                        )}
 
                         {/* Playlist & Player Shared Wrapper */}
                         <div className="bg-[#37475a] w-full pt-0 pb-1 flex flex-col">
@@ -1008,18 +1160,29 @@ const TTomTPlayer = () => {
                                 }}
                             >
                                 <div className="p-3 pb-8 bg-black w-full rounded-none sm:rounded-b-lg">
-                                    <div className={`grid grid-cols-5 ${trackingDays > 30 ? 'gap-y-[15px]' : 'gap-y-[30px]'} gap-x-2`}>
-                                        {Array.from({ length: trackingDays }, (_, i) => i + 1).map((num) => {
-                                            const isCompleted = completedDays.has(num);
+                                    <div className={`grid grid-cols-5 ${totalGridSlots > 30 ? 'gap-y-[15px]' : 'gap-y-[30px]'} gap-x-2 ${totalGridSlots > 40 ? 'max-h-[330px] overflow-y-auto ttomt-days-scroll' : ''}`}>
+                                        {Array.from({ length: totalGridSlots }, (_, i) => i + 1).map((num) => {
+                                            const isDeactivated = num > availableDays;
+                                            const isCompleted = !isDeactivated && completedDays.has(num);
                                             return (
                                                 <div key={num} className="flex justify-center">
                                                     <div
                                                         onClick={() => {
+                                                            if (isDeactivated) return;
                                                             setSelectedDay(num);
                                                             incrementReadingPlanTouch();
                                                         }}
-                                                        className={`flex items-center justify-center font-black transition-all duration-300 select-none text-[13px] sm:text-[14px] rounded-lg ${trackingDays > 30 ? 'w-6 h-6 sm:w-7 sm:h-7' : 'w-7 h-7 sm:w-8 sm:h-8'} cursor-pointer opacity-100 ${selectedDay === num ? 'bg-blue-500 text-white scale-125 ring-2 ring-blue-300' : (isCompleted ? 'bg-blue-500 text-white opacity-90' : 'text-white hover:text-blue-200')}`}
-                                                        title={`Day ${num}`}
+                                                        aria-disabled={isDeactivated}
+                                                        className={`flex items-center justify-center font-black transition-all duration-300 select-none text-[13px] sm:text-[14px] rounded-lg ${totalGridSlots > 30 ? 'w-6 h-6 sm:w-7 sm:h-7' : 'w-7 h-7 sm:w-8 sm:h-8'} ${
+                                                            isDeactivated
+                                                                ? 'text-gray-600 bg-gray-900/60 border border-gray-800 opacity-35 cursor-not-allowed pointer-events-none'
+                                                                : selectedDay === num
+                                                                    ? 'bg-blue-500 text-white scale-125 ring-2 ring-blue-300 cursor-pointer opacity-100'
+                                                                    : isCompleted
+                                                                        ? 'bg-blue-500 text-white opacity-90 cursor-pointer'
+                                                                        : 'text-white hover:text-blue-200 cursor-pointer opacity-100'
+                                                        }`}
+                                                        title={isDeactivated ? `Day ${num} (Inactive)` : `Day ${num}`}
                                                     >
                                                         {num}
                                                     </div>
@@ -1064,7 +1227,7 @@ const TTomTPlayer = () => {
                         {/* Header (Black) */}
                         <div className="bg-black text-white px-4 py-2 flex flex-col relative w-full">
                             <div className="flex justify-between items-center mb-1">
-                                <div className="p-1 invisible">
+                                <div className="w-7 h-7 flex items-center justify-center p-1 invisible flex-shrink-0">
                                     <i className="pi pi-times text-xl"></i>
                                 </div>
                                 <div className="flex-1 text-center font-black text-[18px] tracking-[0.2em] flex justify-center items-baseline px-2 leading-none">
@@ -1079,15 +1242,32 @@ const TTomTPlayer = () => {
                                         const vp = document.getElementById('ttomt-video-player');
                                         if (vp) vp.pause();
                                     }}
-                                    className="text-blue-400 hover:text-white transition-colors p-1 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] relative z-[99] flex-shrink-0"
+                                    className="w-7 h-7 flex items-center justify-center text-blue-400 hover:text-white transition-colors p-1 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] relative z-[99] flex-shrink-0"
                                     style={{ pointerEvents: 'auto' }}
                                 >
                                     <i className="pi pi-info-circle text-xl sm:text-2xl"></i>
                                 </button>
                             </div>
-                            <div className="text-center mt-1 flex justify-center items-center">
-                                <span className="text-[#7292d3] tracking-[0.2em] font-black text-[18px] mr-2">R L L T</span>
-                                <span className="text-white text-[11px] font-bold tracking-widest leading-none mt-1">- MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
+                            <div className="mt-1 flex justify-between items-center">
+                                <div className="w-7 h-7 flex-shrink-0" aria-hidden="true"></div>
+                                <div className="flex-1 text-center flex justify-center items-center">
+                                    <span className="text-[#7292d3] tracking-[0.2em] font-black text-[18px] mr-2">R L L T</span>
+                                    <span className="text-white text-[11px] font-bold tracking-widest leading-none mt-1">- MODULE:{moduleVal} - FACET:{facetVal} - PHASE:{phaseVal}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleThumbsUpReport}
+                                    disabled={isSavingReport}
+                                    title="Mark Day Done & Generate TTomT Report"
+                                    className={`w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer select-none flex-shrink-0 relative z-[99] ${
+                                        completedDays.has(selectedDay)
+                                            ? 'bg-emerald-500/25 ring-1 ring-emerald-400 scale-105'
+                                            : 'hover:bg-white/15 active:scale-95'
+                                    } ${isSavingReport ? 'opacity-60 cursor-wait' : ''}`}
+                                    style={{ pointerEvents: 'auto' }}
+                                >
+                                    <span className="text-base leading-none">👍</span>
+                                </button>
                             </div>
                         </div>
 
@@ -1284,6 +1464,16 @@ const TTomTPlayer = () => {
             <style jsx>{`
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 0px;
+                    background: transparent;
+                }
+                .ttomt-days-scroll {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+                .ttomt-days-scroll::-webkit-scrollbar {
+                    display: none;
+                    width: 0px;
+                    height: 0px;
                     background: transparent;
                 }
             `}</style>

@@ -12,6 +12,11 @@ router = APIRouter()
 
 @router.get("/", response_model=List[RlltLookupResponse])
 async def get_all_rllt(db: AsyncSession = Depends(get_db)):
+    try:
+        from app.api.charts import ensure_chart_columns_ready
+        await ensure_chart_columns_ready(db)
+    except Exception:
+        pass
     result = await db.execute(select(RlltLookup).order_by(RlltLookup.module, RlltLookup.facet, RlltLookup.phase, RlltLookup.day))
     data = result.scalars().all()
     return data

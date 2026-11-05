@@ -78,9 +78,13 @@ import ClassroomQnA from './pages/admin/ClassroomQnA';
 import ClassroomAssignments from './pages/admin/ClassroomAssignments';
 import EvaluateAssignments from './pages/admin/EvaluateAssignments';
 import Shanaz357 from './pages/admin/Shanaz357';
+import ReadingPlan from './pages/admin/ReadingPlan';
+import ReadingPlanView from './pages/admin/ReadingPlanView';
+import ReadingPlanListing from './pages/admin/ReadingPlanListing';
 import LightChartDigital from './pages/admin/LightChartDigital';
 import ISI from './pages/admin/ISI';
 import ISIReport from './pages/admin/ISIReport';
+import TTomTReport from './pages/admin/TTomTReport';
 import Settings from './pages/admin/Settings';
 
 // Dashboard Components
@@ -163,6 +167,8 @@ const AppRoutes = () => {
                 <Route path="/admin/chart-listing/twenty-four-seven-chart" element={<TwentyFourSevenChartView />} />
                 <Route path="/admin/chart-listing/twenty-four-seven-morning-evening-chart" element={<TwentyFourSevenMorningEveningChart />} />
                 <Route path="/admin/chart-listing/main-chart" element={<MainChartView />} />
+                <Route path="/admin/chart-listing/reading-plan" element={<ReadingPlanListing />} />
+                <Route path="/admin/reading-plan/view" element={<ReadingPlanView />} />
                 <Route path="/admin/chart-listing/morning-evening-chart" element={<MorningEveningChart />} />
                 <Route path="/admin/chart-listing/dl-size-chart" element={<DLSizeChart />} />
                 <Route path="/admin/chart-listing/twenty-four-seven-dl-size-chart" element={<TwentyFourSevenDLSizeChart />} />
@@ -193,9 +199,11 @@ const AppRoutes = () => {
                     <Route path="/admin/reports/student-report" element={<StudentReport />} />
                     <Route path="/admin/reports/honeycomb-report" element={<HoneycombReport />} />
                     <Route path="/admin/reports/isi-report" element={<ISIReport />} />
+                    <Route path="/admin/reports/ttomt-report" element={<TTomTReport />} />
                     <Route path="/admin/reports/offline-reports" element={<OfflineReports />} />
                     <Route path="/admin/reports/user-sessions" element={<UserSessionTracking />} />
                     <Route path="/admin/shanaz-357" element={<Shanaz357 />} />
+                    <Route path="/admin/reading-plan" element={<ReadingPlan />} />
                     <Route path="/admin/light-chart-digital" element={<LightChartDigital />} />
                     <Route path="/admin/isi" element={<ISI />} />
                     <Route path="/admin/chart-listing/357-chart" element={<DynamicCycleChartView />} />
@@ -243,6 +251,7 @@ const AppRoutes = () => {
                 <Route path="/dashboard/student/book-index" element={<BookIndex />} />
                 <Route path="/dashboard/student/isi" element={<ISI />} />
                 <Route path="/dashboard/student/isi-report" element={<ISIReport />} />
+                <Route path="/dashboard/student/ttomt-report" element={<TTomTReport />} />
                 <Route path="/dashboard/student/recordings" element={<Recordings />} />
                 <Route path="/dashboard/student/classroom" element={<StudentClassroom />} />
                 <Route path="/dashboard/student/classroom/assignments" element={<StudentAssignments />} />
@@ -254,6 +263,8 @@ const AppRoutes = () => {
                 <Route path="/dashboard/student/chart-listing/twenty-four-seven-morning-evening" element={<TwentyFourSevenMorningEveningChart />} />
                 <Route path="/dashboard/student/chart-listing/twenty-four-seven-dl-size-chart" element={<TwentyFourSevenDLSizeChart />} />
                 <Route path="/dashboard/student/chart-listing/main-chart" element={<MainChartView />} />
+                <Route path="/dashboard/student/chart-listing/reading-plan" element={<ReadingPlanListing />} />
+                <Route path="/dashboard/student/reading-plan/view" element={<ReadingPlanView />} />
                 <Route path="/dashboard/student/chart-listing/357-chart" element={<DynamicCycleChartView />} />
                 <Route path="/dashboard/student/chart-listing/7tnt-main-chart" element={<SevenTNTMainChartView />} />
                 <Route path="/dashboard/student/chart-listing/7tnt-weekly-chart" element={<SevenTNTWeeklyChart />} />

@@ -1003,11 +1003,12 @@ const HoneycombReport = () => {
 
                     {/* Mother Tongue */}
                     <div className="flex-1 border border-gray-300 rounded-[12px] overflow-hidden flex bg-white shadow-sm relative cursor-pointer hover:shadow-md transition-shadow">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-[#c2410c] text-white text-[11px] font-black tracking-widest px-10 py-1.5 rounded-b-lg z-10 shadow-md">MOTHER TONGUE</div>
-                        
-                        <div className="flex-1 bg-white relative flex items-center justify-center p-4 pt-8">
-                            <div className="relative flex items-center justify-center w-full h-full">
-                                <img src="/mothertoung.png" alt="Mother Tongue Scroll" className="w-full h-full object-contain drop-shadow-sm" />
+                        <div className="flex-1 bg-white relative flex flex-col items-center justify-between px-1.5 py-2.5 gap-2">
+                            <div className="bg-[#c2410c] text-white text-[11px] font-black tracking-widest px-8 py-1.5 rounded-none z-10 shadow-sm text-center">
+                                MOTHER TONGUE
+                            </div>
+                            <div className="relative flex items-center justify-center w-full flex-1">
+                                <img src="/mothertoung.png" alt="Mother Tongue Scroll" className="w-full h-[135px] object-fill drop-shadow-sm" />
                                 <div className="absolute inset-0 flex items-center justify-center px-8">
                                     <input
                                         type="text"
@@ -1023,7 +1024,7 @@ const HoneycombReport = () => {
                             </div>
                         </div>
 
-                        <div className="w-24 border-l border-gray-200 flex flex-col items-center justify-center p-2 bg-white z-0 pt-8 pb-2">
+                        <div className="w-24 border-l border-gray-200 flex flex-col items-center justify-center p-2 bg-white z-0 py-3">
                             <i className="pi pi-file-word text-[#ea580c] text-[36px] mb-1"></i>
                             <div className="text-[10px] font-bold text-center leading-tight px-1 text-gray-800">7 TNT<br />WORD COUNT</div>
                             <div className="text-[24px] font-black mt-1 text-gray-900">
@@ -1060,15 +1061,17 @@ const HoneycombReport = () => {
                     <div className="w-full md:w-[32%] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm">
                         <div className="bg-[#1e3a8a] text-white py-2 px-3 flex flex-col justify-center items-center gap-1.5 text-[12px] font-bold uppercase border-b border-blue-900 leading-tight rounded-t-[8px] text-center">
                             <span className="tracking-widest">TRANSFORMATION</span>
-                            <div className="w-full flex gap-2 text-[10px] font-black items-center justify-start">
-                                <span className="bg-[#172554] px-2 py-0.5 rounded border border-[#1e3a8a] shadow-inner" title="Total Touch Count (Pencils + Wisdom)">
-                                    TOUCH COUNT: {totalTouchCounts.transformation.toLocaleString()}
+                            <div className="w-full flex text-[13px] font-black items-center justify-center">
+                                <span className="bg-[#172554] px-3.5 py-1 rounded border border-[#1e3a8a] shadow-inner inline-flex items-center gap-1.5 tracking-wider" title="Total Touch Count (Pencils + Wisdom)">
+                                    <span>TC</span>
+                                    <span>:</span>
+                                    <span>{totalTouchCounts.transformation.toLocaleString()}</span>
                                 </span>
                             </div>
                         </div>
 
                         {/* Pencils Area */}
-                        <div className="flex px-1 gap-[2px] h-[190px] pt-[4px] pb-[4px] w-full mt-1 overflow-x-auto custom-scrollbar">
+                        <div className="flex px-1 gap-[2px] h-[180px] pt-[4px] pb-[4px] w-full mt-1 overflow-x-auto custom-scrollbar">
                             <div className="flex w-full min-w-[320px] justify-center items-stretch gap-[2px]">
                                 <Pencil label="FAMILY" baseNum="1" bodyColorClass="bg-[#00BFFF]" tipColorClass="text-[#00BFFF]" textColor="text-black" />
                                 <DividerBox letter="W" letterColor="text-[#8e2b8c]" num="1" />
@@ -1092,7 +1095,7 @@ const HoneycombReport = () => {
                         </div>
 
                         {/* List */}
-                        <div className="flex-1 px-4 py-4 text-[12px] font-extrabold space-y-[8px]">
+                        <div className="flex-1 flex flex-col justify-between px-4 py-2.5 text-[12px] font-extrabold space-y-[5px]">
                             <div className="flex items-center group cursor-pointer"><span className="text-black w-5 text-right pr-1">1.</span> <span className="text-[#8e2b8c] text-[15px] font-serif w-4 text-center">W</span> <span className="text-black tracking-wider ml-1">ISDOM OF GOD</span></div>
                             <div className="flex items-center group cursor-pointer"><span className="text-black w-5 text-right pr-1">2.</span> <span className="text-[#294291] text-[15px] font-serif w-4 text-center">I</span> <span className="text-black tracking-wider ml-1">MAGINATION</span></div>
                             <div className="flex items-center group cursor-pointer"><span className="text-black w-5 text-right pr-1">3.</span> <span className="text-[#86c5f7] text-[15px] font-serif w-4 text-center">S</span> <span className="text-black tracking-wider ml-1">CRIPTURES TO PRAYER</span></div>
@@ -1102,7 +1105,7 @@ const HoneycombReport = () => {
                         </div>
 
                         {/* Audio Player */}
-                        <div className="bg-[#228B22] border-[4px] border-[#ea580c] m-3 mt-auto rounded flex items-center justify-between px-4 py-2 shadow-inner cursor-pointer hover:bg-[#1e7b1e] transition-colors">
+                        <div className="bg-[#228B22] border-[4px] border-[#ea580c] m-2.5 mt-auto rounded flex items-center justify-between px-4 py-1.5 shadow-inner cursor-pointer hover:bg-[#1e7b1e] transition-colors">
                             <i className="pi pi-play text-2xl text-gray-900 drop-shadow"></i>
                             <span className="text-xs font-bold text-gray-900">0:00</span>
                             <span className="font-extrabold text-[14px] tracking-[0.2em] text-gray-900">PROVERBS 1</span>
@@ -1112,16 +1115,18 @@ const HoneycombReport = () => {
                     </div>
 
                     {/* Col 2: TEAM TRANSFORMATION */}
-                    <div className="w-full md:flex-[1.25] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm overflow-hidden">
+                    <div className="w-full md:flex-1 flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm overflow-hidden">
                         <div className="bg-[#1e3a8a] text-white py-2 px-3 flex flex-col justify-center items-center gap-1.5 text-[12px] font-bold uppercase border-b border-blue-900 leading-tight rounded-t-[8px] text-center">
                             <span className="tracking-widest">TEAM TRANSFORMATION</span>
-                            <div className="w-full flex gap-2 text-[10px] font-black items-center justify-start">
-                                <span className="bg-[#172554] px-2 py-0.5 rounded border border-[#1e3a8a] shadow-inner" title="Team Transformation Touch Count">
-                                    TOUCH COUNT: {totalTouchCounts.team_transformation.toLocaleString()}
+                            <div className="w-full flex text-[13px] font-black items-center justify-center">
+                                <span className="bg-[#172554] px-3.5 py-1 rounded border border-[#1e3a8a] shadow-inner inline-flex items-center gap-1.5 tracking-wider" title="Team Transformation Touch Count">
+                                    <span>TC</span>
+                                    <span>:</span>
+                                    <span>{totalTouchCounts.team_transformation.toLocaleString()}</span>
                                 </span>
                             </div>
                         </div>
-                        <div className="flex-1 relative flex items-stretch justify-center cursor-pointer min-h-[420px]">
+                        <div className="flex-1 relative flex items-stretch justify-center cursor-pointer min-h-[380px]">
                             <img
                                 src="/team_transformation_scroll.png"
                                 alt="Team Transformation Scroll"
@@ -1131,19 +1136,21 @@ const HoneycombReport = () => {
                     </div>
 
                     {/* Col 3: RLLT TtomT */}
-                    <div className="w-full md:flex-[1.2] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm overflow-hidden">
+                    <div className="w-full md:w-[28%] flex flex-col bg-white border border-gray-300 rounded-[8px] shadow-sm overflow-hidden">
                         <div className="bg-[#1e3a8a] text-white py-2 px-3 flex flex-col justify-center items-center gap-1.5 text-[12px] font-bold border-b border-blue-900 leading-tight rounded-t-[8px] text-center">
                             <span className="tracking-widest">RLLT TtomT</span>
-                            <div className="w-full flex gap-2 text-[10px] font-black items-center justify-start">
-                                <span className="bg-[#172554] px-2 py-0.5 rounded border border-[#1e3a8a] shadow-inner" title="Reading Plan Touch Count">
-                                    TOUCH COUNT: {totalTouchCounts.klt_reading_plan.toLocaleString()}
+                            <div className="w-full flex text-[13px] font-black items-center justify-center">
+                                <span className="bg-[#172554] px-3.5 py-1 rounded border border-[#1e3a8a] shadow-inner inline-flex items-center gap-1.5 tracking-wider" title="Reading Plan Touch Count">
+                                    <span>TC</span>
+                                    <span>:</span>
+                                    <span>{totalTouchCounts.klt_reading_plan.toLocaleString()}</span>
                                 </span>
                             </div>
                         </div>
 
-                        <div className="flex-1 relative flex items-stretch justify-center bg-black overflow-hidden rounded-b-[8px] min-h-[420px]">
+                        <div className="flex-1 relative flex items-stretch justify-center bg-white overflow-hidden rounded-b-[8px] min-h-[380px]">
                             <img
-                                src="/rllt_ttomt_player.png"
+                                src="/rllt_ttomt_player.png?v=3"
                                 alt="RLLT TtomT"
                                 className="w-full h-full md:absolute md:inset-0 object-fill block"
                             />

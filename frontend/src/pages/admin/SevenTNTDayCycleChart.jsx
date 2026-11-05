@@ -443,6 +443,8 @@ const SevenTNTDayCycleChart = () => {
         formData.append("facet", fct);
         formData.append("phase", phs);
         formData.append("banner_text", "7TNT DAY CYCLE CHART");
+        formData.append("date", new Date().toLocaleDateString('en-GB').replace(/\//g, '-'));
+        formData.append("time", new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
         formData.append("t_label", "T");
         formData.append("state_payload", JSON.stringify({ _isWrapped: true, payload: rowsData, inputColors }));
 

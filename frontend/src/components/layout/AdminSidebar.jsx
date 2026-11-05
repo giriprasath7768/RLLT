@@ -140,6 +140,7 @@ const AdminSidebar = ({ visible, onHide }) => {
                         { label: 'Student Report', icon: 'pi pi-file', to: '/admin/reports/student-report' },
                         { label: 'Honeycomb Report', icon: 'pi pi-th-large', to: '/admin/reports/honeycomb-report' },
                         { label: 'ISI Report', icon: 'pi pi-chart-pie', to: '/admin/reports/isi-report' },
+                        { label: 'TTomT Report', icon: 'pi pi-thumbs-up', to: '/admin/reports/ttomt-report' },
                         { label: 'Offline Reports', icon: 'pi pi-cloud-upload', to: '/admin/reports/offline-reports' },
                         { label: 'User Session Tracking', icon: 'pi pi-history', to: '/admin/reports/user-sessions' }
                     ]
@@ -166,6 +167,11 @@ const AdminSidebar = ({ visible, onHide }) => {
                     to: '/admin/shanaz-357'
                 }] : []),
                 ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
+                    label: 'Reading Plan',
+                    icon: 'pi pi-book',
+                    to: '/admin/reading-plan'
+                }] : []),
+                ...(userRole === 'super_admin' || userRole === 'admin' || userRole === 'leader' ? [{
                     label: 'Chart Creation',
                     icon: 'pi pi-chart-bar',
                     items: [
@@ -182,6 +188,7 @@ const AdminSidebar = ({ visible, onHide }) => {
                     icon: 'pi pi-list',
                     items: [
                         { label: 'Main Chart', icon: 'pi pi-eye', to: '/admin/chart-listing/main-chart' },
+                        { label: 'Reading Plan', icon: 'pi pi-book', to: '/admin/chart-listing/reading-plan' },
                         { label: '3-5-7 Chart', icon: 'pi pi-calendar-plus', to: '/admin/chart-listing/357-chart' },
                         { label: '7TNT Main Chart', icon: 'pi pi-table', to: '/admin/chart-listing/7tnt-main-chart' },
                         { label: '7TNT Day Cycle Chart', icon: 'pi pi-table', to: '/admin/chart-listing/7tnt-day-cycle' },

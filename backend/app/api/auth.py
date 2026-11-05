@@ -48,14 +48,18 @@ async def _ensure_user_sessions_table_ready(db: AsyncSession):
 
 async def _resolve_user_location_and_name(db: AsyncSession, user: User, role_name: str):
     from app.db.models import Location, Admin, Leader, SuperAdmin
-    loc_id = user.location_id
-    display_name = user.name
+    loc_id = getattr(user, "location_id", None)
+    display_name = getattr(user, "name", None)
+    fallback_address = getattr(user, "address", None)
 
-    if role_name == "super_admin" and not display_name:
+    if role_name == "super_admin":
         sa_res = await db.execute(select(SuperAdmin).where(SuperAdmin.user_id == user.id))
         sa = sa_res.scalars().first()
-        if sa and sa.name:
-            display_name = sa.name
+        if sa:
+            if not display_name and sa.name:
+                display_name = sa.name
+            if not fallback_address and sa.address:
+                fallback_address = sa.address
     elif role_name == "admin":
         adm_res = await db.execute(select(Admin).where(Admin.user_id == user.id))
         adm = adm_res.scalars().first()
@@ -64,12 +68,16 @@ async def _resolve_user_location_and_name(db: AsyncSession, user: User, role_nam
                 display_name = adm.name
             if not loc_id and adm.location_id:
                 loc_id = adm.location_id
+            if not fallback_address and adm.address:
+                fallback_address = adm.address
     elif role_name == "leader":
         ldr_res = await db.execute(select(Leader).where(Leader.user_id == user.id))
         ldr = ldr_res.scalars().first()
         if ldr:
             if not display_name and ldr.name:
                 display_name = ldr.name
+            if not fallback_address and ldr.address:
+                fallback_address = ldr.address
             if not loc_id and ldr.admin_id:
                 adm_res = await db.execute(select(Admin).where(Admin.id == ldr.admin_id))
                 adm = adm_res.scalars().first()
@@ -84,8 +92,12 @@ async def _resolve_user_location_and_name(db: AsyncSession, user: User, role_nam
             parts = [loc.country, loc.city]
             loc_name = ", ".join([p for p in parts if p])
 
+    if not loc_name and fallback_address:
+        loc_name = fallback_address
+
     if not display_name:
-        display_name = user.email.split("@")[0] if user.email else "User"
+        email_val = getattr(user, "email", None)
+        display_name = email_val.split("@")[0] if email_val else "User"
 
     return display_name, loc_id, loc_name
 
@@ -389,6 +401,22 @@ async def get_current_user_optional(request: Request, db: AsyncSession = Depends
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
+    if not user:
+        from app.db.models import TTOMUser
+        ttom_result = await db.execute(select(TTOMUser).where(TTOMUser.id == user_id))
+        ttom_user = ttom_result.scalars().first()
+        if ttom_user:
+            class MockUser:
+                id = ttom_user.id
+                email = None
+                name = ttom_user.name
+                role = "ttom_user"
+                location_id = ttom_user.location_id
+                address = ttom_user.address
+                is_active = ttom_user.is_active
+                assessment_status = "pending"
+                assessment_marks = None
+            return MockUser()
     return user
 
 @router.get("/me", response_model=UserInfo)
@@ -556,6 +584,7 @@ async def list_user_sessions(
 
 @router.post("/forgot-password", response_model=dict)
 async def forgot_password(
+    request: Request,
     body: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -583,7 +612,7 @@ async def forgot_password(
     if user:
         # Generate a unique token and compute expiry
         token = str(uuid_mod.uuid4())
-        expires_at = datetime.utcnow() + timedelta(minutes=15)
+        expires_at = datetime.utcnow() + timedelta(minutes=30)
 
         reset_entry = PasswordReset(
             user_id=user.id,
@@ -593,8 +622,14 @@ async def forgot_password(
         db.add(reset_entry)
         await db.commit()
 
-        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
-        send_password_reset_email(to_email=user.email, reset_url=reset_url)
+        origin = (request.headers.get("origin") or settings.FRONTEND_URL or "http://localhost").rstrip("/")
+        reset_url = f"{origin}/reset-password?token={token}"
+        sent = await asyncio.to_thread(send_password_reset_email, to_email=user.email, reset_url=reset_url)
+        if not sent:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send password reset email. Please try again.",
+            )
 
     return {"message": safe_message}
 

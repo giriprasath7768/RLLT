@@ -348,6 +348,8 @@ const VCardChart = () => {
         formData.append('phase', selectedChart.phase);
         formData.append('banner_text', bannerText);
         formData.append('t_label', tLabel);
+        formData.append('date', new Date().toLocaleDateString('en-GB').replace(/\//g, '-'));
+        formData.append('time', new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
         formData.append('state_payload', JSON.stringify(vCards));
 
         try {

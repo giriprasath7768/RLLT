@@ -19,6 +19,7 @@ const Settings = () => {
         ],
         'Non-Digital': [
             { label: 'SHANAZ 357' },
+            { label: 'Reading Plan' },
             { label: 'Chart Creation', items: [
                 'Chart Creation - Main Chart', 'Chart Creation - 3-5-7 Chart', 
                 'Chart Creation - 7TNT Main Chart', 'Chart Creation - 7TNT Day Cycle Chart', 

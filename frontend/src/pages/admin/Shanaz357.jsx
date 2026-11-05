@@ -111,8 +111,8 @@ const Shanaz357 = () => {
     const [chaptersDB, setChaptersDB] = useState([]);
     const [selectedBooks, setSelectedBooks] = useState([]);
     const [rlltDB, setRlltDB] = useState([]);
-    const [mdl, setMdl] = useState(1);
-    const [fct, setFct] = useState(1);
+    const [mdl, setMdl] = useState(5);
+    const [fct, setFct] = useState(2);
     const [phs, setPhs] = useState(1);
     const [cycle, setCycle] = useState(3);
     const [isViewing, setIsViewing] = useState(false);
@@ -124,25 +124,6 @@ const Shanaz357 = () => {
     const [userRole, setUserRole] = useState(null);
     const navigate = useNavigate();
     const toast = React.useRef(null);
-
-    useEffect(() => {
-        const days = parseInt(enteredDays);
-        if (!days || isNaN(days)) return;
-
-        const mod4Match = rlltDB.find(d => Number(d.module) === 4 && Number(d.day) === days);
-        if (mod4Match) {
-            setMdl(4);
-            setFct(Number(mod4Match.facet));
-            return;
-        }
-
-        const mod5Match = rlltDB.find(d => Number(d.module) === 5 && Number(d.day) === days);
-        if (mod5Match) {
-            setMdl(5);
-            setFct(Number(mod5Match.facet));
-            return;
-        }
-    }, [enteredDays, rlltDB]);
 
     useEffect(() => {
         axios.get('http://' + window.location.hostname + ':8000/api/me', { withCredentials: true })
@@ -192,13 +173,8 @@ const Shanaz357 = () => {
         return unique.sort((a, b) => a - b);
     })();
 
-    // Derived available options based on selections (1 up to the highest recorded value)
-    const availableFacets = (() => {
-        let max = 1;
-        const unique = [...new Set(rlltDB.filter(d => Number(d.module) === Number(mdl)).map(d => Number(d.facet)))];
-        if (unique.length > 0) max = Math.max(max, ...unique);
-        return Array.from({ length: max }, (_, i) => i + 1);
-    })();
+    // Facets start at 2 and go up to 5 (2, 3, 4, 5)
+    const availableFacets = [2, 3, 4, 5];
 
     const availablePhases = (() => {
         let max = 1;
@@ -210,23 +186,17 @@ const Shanaz357 = () => {
     // Sync cascading defaults
     useEffect(() => {
         if (availableFacets.length > 0 && !availableFacets.includes(fct)) {
-            setFct(Math.max(...availableFacets)); // Default to highest facet
+            setFct(2); // Default to starting facet 2
         }
     }, [mdl, availableFacets, fct]);
 
     useEffect(() => {
         if (availablePhases.length > 0 && !availablePhases.includes(phs)) {
-            setPhs(Math.max(...availablePhases)); // Default to highest phase
+            setPhs(1); // Default to phase 1
         }
     }, [mdl, fct, availablePhases, phs]);
 
-    let eachPhsDays = 0;
-    let currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct) && Number(d.phase) === Number(phs));
-    if (!currentPhaseData) {
-        // Fallback if exact phase not found
-        currentPhaseData = rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
-    }
-    eachPhsDays = currentPhaseData ? currentPhaseData.scheduled_value_days : 0;
+    const numberOfDaysForPhase = parseInt(enteredDays, 10) > 0 ? parseInt(enteredDays, 10) : 0;
     const stats = React.useMemo(() => {
         let bks = selectedBooks.length;
         let chp = 0;
@@ -599,6 +569,8 @@ const Shanaz357 = () => {
         formData.append("banner_text", bannerText);
         formData.append("chart_type", isSpecialProcess ? "24x7 Chart" : "Main Chart");
         formData.append("t_label", "T");
+        formData.append("date", new Date().toLocaleDateString('en-GB').replace(/\//g, '-'));
+        formData.append("time", new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
         formData.append("state_payload", JSON.stringify(newChunks));
 
         try {
@@ -908,23 +880,15 @@ const Shanaz357 = () => {
 
                     {/* Lower Controls Section */}
                     <div className="calc-border-4 rounded-lg p-3 bg-[#fdfbf6] mb-4">
-                        {/* Plus/Minus Section */}
+                        {/* MDL Section */}
                         <div className="flex items-center justify-between mb-3 gap-2">
                             <div className="flex-1 h-6 bg-white border border-[#a48654] rounded-[4px] shadow-[inset_2px_2px_0_#e8dcb9,inset_-2px_-2px_0_#ffffff]"></div>
-                            <button
-                                className={`text-xl font-bold px-1 pb-1 ${uniqueModules.indexOf(mdl) > 0 ? 'text-[#8c7355] hover:text-[#5c4a35] [text-shadow:1px_1px_0_#fff]' : 'text-gray-300'}`}
-                                onClick={handleDecrement} disabled={uniqueModules.indexOf(mdl) <= 0}
-                            >-</button>
 
                             <div className="border border-[#b38728] bg-[#f7eedc] px-6 py-1 rounded-[4px] flex flex-col items-center justify-center min-w-[70px] shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#d4af37]">
                                 <div className="text-[11px] font-black text-[#69512a] [text-shadow:1px_1px_0_#fff]">MDL.</div>
                                 <div className="text-xl font-black text-[#8c7355] leading-none mt-0.5 [text-shadow:1px_1px_0_#fff]">{mdl}</div>
                             </div>
 
-                            <button
-                                className={`text-xl font-bold px-1 pb-1 ${uniqueModules.indexOf(mdl) < uniqueModules.length - 1 ? 'text-[#8c7355] hover:text-[#5c4a35] [text-shadow:1px_1px_0_#fff]' : 'text-gray-300'}`}
-                                onClick={handleIncrement} disabled={uniqueModules.indexOf(mdl) >= uniqueModules.length - 1}
-                            >+</button>
                             <div className="flex-1 h-6 bg-white border border-[#a48654] rounded-[4px] shadow-[inset_2px_2px_0_#e8dcb9,inset_-2px_-2px_0_#ffffff]"></div>
                         </div>
 
@@ -949,8 +913,8 @@ const Shanaz357 = () => {
                             </div>
                             <div className="w-[2px] border-l border-l-[#7a9e7a] border-r border-r-white my-1"></div>
                             <div className="flex flex-col items-center flex-[1.5]">
-                                <div className="text-xs font-black mb-1 [text-shadow:1px_1px_0_#fff]">EACH PHS.</div>
-                                <div className="text-base font-black flex items-center h-5 [text-shadow:1px_1px_0_#fff]">{eachPhsDays ? `${eachPhsDays} DAYS` : '0 DAYS'}</div>
+                                <div className="text-[10px] sm:text-xs font-black mb-1 leading-tight [text-shadow:1px_1px_0_#fff]">NUMBER OF DAYS FOR PHASE</div>
+                                <div className="text-base font-black flex items-center h-5 [text-shadow:1px_1px_0_#fff]">{numberOfDaysForPhase ? `${numberOfDaysForPhase} DAYS` : '0 DAYS'}</div>
                             </div>
                         </div>
 
@@ -962,8 +926,12 @@ const Shanaz357 = () => {
                             <button onClick={() => handleViewClick(false)} disabled={isViewing} className={`flex items-center justify-center gap-1.5 border border-[#1f3b1f] text-[#1f3b1f] rounded-[4px] py-1.5 text-xs font-black bg-white hover:bg-[#eaf4ea] transition-all shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#b5ccb5] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),inset_-1px_-1px_2px_rgba(255,255,255,0.2)] [text-shadow:1px_1px_0_#fff] ${isViewing ? 'opacity-50' : ''}`}>
                                 <i className={`pi ${isViewing ? 'pi-spin pi-spinner' : 'pi-eye'} text-sm drop-shadow-[1px_1px_0_rgba(200,200,200,1)]`}></i> VIEW
                             </button>
-                            <button className="flex items-center justify-center gap-1.5 border border-[#4a2459] text-[#4a2459] rounded-[4px] py-1.5 text-xs font-black bg-white hover:bg-[#f3eaf5] transition-all shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#d8b8e0] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),inset_-1px_-1px_2px_rgba(255,255,255,0.2)] [text-shadow:1px_1px_0_#fff]">
-                                <i className="pi pi-send text-sm drop-shadow-[1px_1px_0_rgba(200,200,200,1)]"></i> SEND
+                            <button
+                                type="button"
+                                onClick={handleSubmit}
+                                className="flex items-center justify-center gap-1.5 border border-[#4a2459] text-[#4a2459] rounded-[4px] py-1.5 text-xs font-black bg-white hover:bg-[#f3eaf5] transition-all shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#d8b8e0] active:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),inset_-1px_-1px_2px_rgba(255,255,255,0.2)] [text-shadow:1px_1px_0_#fff]"
+                            >
+                                <i className="pi pi-table text-sm drop-shadow-[1px_1px_0_rgba(200,200,200,1)]"></i> GENERATE CHART
                             </button>
                         </div>
                     </div>

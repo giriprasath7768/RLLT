@@ -294,7 +294,9 @@ const DailyISIModal = ({ isOpen, onClose, onInsert }) => {
                     </div>
 
                     <p className="text-[#1e293b] font-bold text-sm tracking-wide mb-4 uppercase">
-                        EACH PHASE IS {scheduledDays} DAYS-ART {artTime}
+                        {Number(mdl) === 5
+                            ? `PHASE ${phs} HAS ${scheduledDays} DAYS-ART ${artTime}`
+                            : `EACH PHASE IS ${scheduledDays} DAYS-ART ${artTime}`}
                     </p>
 
                     <button className="w-full border-2 border-[#1bc5fc] text-[#1e293b] font-bold text-sm py-1.5 rounded-full mb-4">

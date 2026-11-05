@@ -308,10 +308,33 @@ class ChartMapping(Base):
     t_label = Column(String, nullable=True)
     logo_url = Column(String, nullable=True)
     state_payload = Column(String, nullable=False) # JSON blob stringified
+    user_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    location = Column(String, nullable=True)
+    date = Column(String, nullable=True)
+    time = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     __table_args__ = (UniqueConstraint('module', 'facet', 'phase', name='uq_chart_mapping_mfp'),)
+
+class ReadingPlanChartMapping(Base):
+    __tablename__ = "reading_plan_chart_mappings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    module = Column(Integer, nullable=False, default=5)
+    facet = Column(Integer, nullable=False, default=2)
+    phase = Column(Integer, nullable=False, default=1)
+    banner_text = Column(String, nullable=True)
+    t_label = Column(String, nullable=True)
+    logo_url = Column(String, nullable=True)
+    state_payload = Column(String, nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    created_by = Column(String, nullable=True)
+    location = Column(String, nullable=True)
+    date = Column(String, nullable=True)
+    time = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 class VCardMapping(Base):
     __tablename__ = "vcard_mappings"
@@ -324,6 +347,10 @@ class VCardMapping(Base):
     t_label = Column(String, nullable=True)
     logo_url = Column(String, nullable=True)
     state_payload = Column(String, nullable=False) # JSON blob stringified
+    user_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    location = Column(String, nullable=True)
+    date = Column(String, nullable=True)
+    time = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -340,6 +367,10 @@ class OilChartMapping(Base):
     t_label = Column(String, nullable=True)
     logo_url = Column(String, nullable=True)
     state_payload = Column(String, nullable=False) # JSON blob stringified
+    user_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    location = Column(String, nullable=True)
+    date = Column(String, nullable=True)
+    time = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -463,6 +494,10 @@ class SevenTNTChartMapping(Base):
     t_label = Column(String, nullable=True)
     logo_url = Column(String, nullable=True)
     state_payload = Column(String, nullable=False) # JSON blob stringified
+    user_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    location = Column(String, nullable=True)
+    date = Column(String, nullable=True)
+    time = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -479,6 +514,10 @@ class SevenTNTDayCycleChartMapping(Base):
     t_label = Column(String, nullable=True)
     logo_url = Column(String, nullable=True)
     state_payload = Column(String, nullable=False) # JSON blob stringified
+    user_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    location = Column(String, nullable=True)
+    date = Column(String, nullable=True)
+    time = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

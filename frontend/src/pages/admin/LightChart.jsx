@@ -37,52 +37,167 @@ const NT_BOOKS = ["MAT","MAR","LUK","JOH","ACT","ROM","1CO","2CO","GAL","EPH","P
 const PRO_BOOKS = ["PRO"];
 const PSA_BOOKS = ["PSA"];
 
+const parseArtStringToMins = (val) => {
+    if (!val) return 0;
+    if (typeof val === 'number') return val;
+    const t = val.toString().trim().toLowerCase();
+    if (t.includes('h')) {
+        const match = t.match(/(\d+)\s*h[.\s]*(\d*)m?/);
+        if (match) {
+            return (parseInt(match[1] || 0, 10) * 60) + parseInt(match[2] || 0, 10);
+        }
+    } else if (t.includes('.')) {
+        const parts = t.split('.');
+        let sStr = (parts[1] || '0').replace(/[^\d]/g, '');
+        if (sStr.length === 1) sStr += '0';
+        return (parseInt(parts[0] || 0, 10) || 0) + ((parseInt(sStr.substring(0, 2), 10) || 0) / 60);
+    }
+    return parseInt(t.replace(/[^\d]/g, ''), 10) || 0;
+};
+
+const parseDateTimeToMs = (dateStr, timeStr) => {
+    if (!dateStr) return 0;
+    const cleanDate = String(dateStr).trim().replace(/\//g, '-');
+    const parts = cleanDate.split('-');
+    if (parts.length !== 3) return 0;
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return 0;
+
+    let hours = 0;
+    let minutes = 0;
+    if (timeStr) {
+        const tMatch = String(timeStr).trim().match(/(\d+):(\d+)\s*(AM|PM)?/i);
+        if (tMatch) {
+            hours = parseInt(tMatch[1], 10) || 0;
+            minutes = parseInt(tMatch[2], 10) || 0;
+            const ampm = (tMatch[3] || '').toUpperCase();
+            if (ampm === 'PM' && hours < 12) hours += 12;
+            if (ampm === 'AM' && hours === 12) hours = 0;
+        }
+    }
+    return new Date(year, month, day, hours, minutes).getTime() || 0;
+};
+
+const getChartSortTimestamp = (chart) => {
+    if (!chart) return 0;
+    if (chart.created_at) {
+        const isoTs = new Date(chart.created_at).getTime();
+        if (!isNaN(isoTs) && isoTs > 0) return isoTs;
+    }
+    try {
+        if (chart.state_payload) {
+            const parsed = typeof chart.state_payload === 'string'
+                ? JSON.parse(chart.state_payload)
+                : chart.state_payload;
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                const cDate = parsed.createdDate || chart.date;
+                const cTime = parsed.createdTime || chart.time;
+                const ts = parseDateTimeToMs(cDate, cTime);
+                if (ts > 0) return ts;
+            }
+        }
+    } catch (e) {}
+    return parseDateTimeToMs(chart.date, chart.time);
+};
+
 const parseChartPhase = (statePayloadStr) => {
     let ot = new Set(), nt = new Set(), pro = new Set(), psa = new Set(), psa119 = new Set(), dpsa = new Set();
     let chap = 0, ver = 0, artMins = 0, daysCount = 0;
+    let numDaysMeta = 0, numPersonsMeta = 0, grandChp = 0, grandVer = 0, grandArtMins = 0, chunksCount = 0;
     try {
-        const payload = JSON.parse(statePayloadStr);
+        const payload = typeof statePayloadStr === 'string' ? JSON.parse(statePayloadStr) : statePayloadStr;
+        let chunks = [];
         if (Array.isArray(payload)) {
-            payload.forEach(chunk => {
-                if(chunk.days) {
+            chunks = payload;
+        } else if (payload && typeof payload === 'object') {
+            const fullPlan = payload.fullPlan && typeof payload.fullPlan === 'object' ? payload.fullPlan : {};
+            chunks = Array.isArray(payload.payload)
+                ? payload.payload
+                : (Array.isArray(payload.chunks)
+                    ? payload.chunks
+                    : (Array.isArray(fullPlan.chunks) ? fullPlan.chunks : []));
+            numDaysMeta = Number(payload.numDays || fullPlan.numDays) || 0;
+            numPersonsMeta = Number(payload.numPersons || fullPlan.numPersons) || 0;
+            grandChp = Number(payload.grandTotalChapters || fullPlan.grandTotalChapters) || 0;
+            grandVer = Number(payload.grandTotalVerses || fullPlan.grandTotalVerses) || 0;
+            grandArtMins = Number(payload.grandTotalArtMins || fullPlan.grandTotalArtMins) || 0;
+        }
+
+        chunksCount = Array.isArray(chunks) ? chunks.length : 0;
+        const bookKeys = ['m1b', 'm2b', 'm3b', 'm3b_morning', 'm3b_evening', 'm4b', 'm4b_morning', 'm4b_evening', 'm5b'];
+
+        if (Array.isArray(chunks)) {
+            chunks.forEach(chunk => {
+                if (chunk && Array.isArray(chunk.days)) {
                     chunk.days.forEach(d => {
+                        if (!d) return;
                         daysCount++;
                         chap += Number(d.chap) || 0;
                         ver += Number(d.verse) || 0;
-                        if(d.art) {
-                            let t = d.art.toString().toLowerCase();
-                            if (t.includes('h')) {
-                                const match = t.match(/(\d+)h\.?(\d+)m?/);
-                                if (match) { artMins += (parseInt(match[1] || 0) * 60) + parseInt(match[2] || 0); }
-                            } else if (t.includes('.')) {
-                                const parts = t.split('.');
-                                let sStr = parts[1] || "0";
-                                if (sStr.length === 1) sStr += '0';
-                                artMins += parseInt(parts[0] || 0) + (parseInt(sStr.substring(0, 2)) / 60);
-                            } else {
-                                artMins += parseInt(t) || 0;
-                            }
+                        if (d.artMins !== undefined && d.artMins !== null && Number(d.artMins) > 0) {
+                            artMins += Number(d.artMins);
+                        } else if (d.art) {
+                            artMins += parseArtStringToMins(d.art);
                         }
-                        ['m1b','m2b','m3b','m4b','m5b'].forEach(key => {
-                            if(d[key]) {
-                                const bksStr = d[key].toString().toUpperCase();
-                                const match = bksStr.match(/^(\d?[A-Z]+)\b/);
-                                if(match) {
-                                    let bk = match[1];
-                                    if(bk === 'PSA' && bksStr.includes('119')) { psa119.add('PSA119'); }
-                                    else if (OT_BOOKS.includes(bk)) { ot.add(bk); }
-                                    else if (NT_BOOKS.includes(bk)) { nt.add(bk); }
-                                    else if (PRO_BOOKS.includes(bk)) { pro.add(bk); }
-                                    else if (PSA_BOOKS.includes(bk)) { psa.add(bk); }
-                                }
+                        bookKeys.forEach(key => {
+                            if (d[key]) {
+                                const rawStr = d[key].toString().toUpperCase();
+                                rawStr.split(',').forEach(seg => {
+                                    const segClean = seg.trim();
+                                    if (!segClean) return;
+                                    if (segClean.includes('DAVID') || segClean.includes('D.PSA') || segClean.includes('DPSA')) {
+                                        dpsa.add('DPSA');
+                                        return;
+                                    }
+                                    const match = segClean.match(/^(\d?\s*[A-Z]+)\b/);
+                                    if (match) {
+                                        const bk = match[1].replace(/\s+/g, '');
+                                        if (bk === 'PSA' || bk === 'PSALM' || bk === 'PSALMS') {
+                                            if (segClean.includes('119') && !segClean.includes('-')) {
+                                                psa119.add('PSA119');
+                                            } else {
+                                                psa.add('PSA');
+                                            }
+                                        } else if (PRO_BOOKS.includes(bk) || bk === 'PROV' || bk === 'PROVERBS') {
+                                            pro.add('PRO');
+                                        } else if (OT_BOOKS.includes(bk)) {
+                                            ot.add(bk);
+                                        } else if (NT_BOOKS.includes(bk)) {
+                                            nt.add(bk);
+                                        }
+                                    }
+                                });
                             }
                         });
                     });
                 }
             });
         }
-    } catch(e) {}
-    return { ot_bks: ot.size, nt_bks: nt.size, pro: pro.size, psa: psa.size, psa119: psa119.size, dpsa: dpsa.size, chp: chap, ver: ver, artMins: artMins, day: daysCount };
+    } catch (e) {}
+
+    const resolvedDays = numDaysMeta > 0 ? numDaysMeta : daysCount;
+    const resolvedChp = grandChp > 0 ? grandChp : chap;
+    const resolvedVer = grandVer > 0 ? grandVer : ver;
+    const resolvedArtMins = grandArtMins > 0 ? grandArtMins : artMins;
+    const resolvedWe5 = resolvedDays > 0 ? Math.max(1, Math.ceil(resolvedDays / 5)) : (chunksCount || 6);
+    const resolvedPpl = numPersonsMeta > 0 ? numPersonsMeta : (resolvedDays || 30);
+
+    return {
+        ot_bks: ot.size,
+        nt_bks: nt.size,
+        pro: pro.size,
+        psa: psa.size,
+        psa119: psa119.size,
+        dpsa: dpsa.size,
+        chp: resolvedChp,
+        ver: resolvedVer,
+        artMins: resolvedArtMins,
+        day: resolvedDays,
+        we5: resolvedWe5,
+        ppl: resolvedPpl
+    };
 };
 
 
@@ -110,84 +225,6 @@ const LightChartTable = ({ moduleNum, rlltDB, chartsDB, tableFontSize }) => {
         const tableRows5 = [];
         let snoCounter = 36;
         for (let currentFacet = 1; currentFacet <= 5; currentFacet++) {
-            let facetRows = dbRows.filter(r => r.facet === currentFacet).sort((a, b) => a.phase - b.phase);
-            if (facetRows.length === 0) {
-                if (currentFacet === 1) {
-                    facetRows = [
-                        { facet: 1, phase: 1 },
-                        { facet: 1, phase: 2 },
-                        { facet: 1, phase: 3 },
-                        { facet: 1, phase: 4 },
-                        { facet: 1, phase: 5 }
-                    ];
-                } else {
-                    facetRows = [{ facet: currentFacet, phase: 1 }];
-                }
-            }
-
-            let cumulativeOT = 0;
-            let cumulativeNT = 0;
-            let cumulativePro = 0;
-            let cumulativePsa = 0;
-            let cumulativePsa119 = 0;
-            let cumulativeDpsa = 0;
-            let cumulativeChp = 0;
-            let cumulativeVer = 0;
-            let cumulativeArtMins = 0;
-
-            let lastDay = '';
-            let lastWe5 = '';
-            let lastArt = '';
-            let lastPpl = '';
-            let lastPhs = '';
-
-            let relevantCharts = (chartsDB || []).filter(c => c.module === 5 && c.facet === currentFacet);
-            if (relevantCharts.length > 0) {
-                relevantCharts.forEach(chart => {
-                    let p = parseChartPhase(chart.state_payload);
-                    cumulativeOT += p.ot_bks;
-                    cumulativeNT += p.nt_bks;
-                    cumulativePro += p.pro;
-                    cumulativePsa += p.psa;
-                    cumulativePsa119 += p.psa119;
-                    cumulativeDpsa += p.dpsa;
-                    cumulativeChp += p.chp;
-                    cumulativeVer += p.ver;
-                    cumulativeArtMins += p.artMins;
-                    if (p.day > 0) lastDay = p.day;
-                    lastWe5 = 6;
-                    lastPpl = 30;
-                });
-                
-                if (cumulativeArtMins > 0) {
-                    let h = Math.floor(cumulativeArtMins / 60);
-                    let m = Math.round(cumulativeArtMins % 60);
-                    lastArt = h > 0 ? (m > 0 ? `${h}h.${m}m` : `${h}h`) : `${m}m`;
-                }
-            } else {
-                facetRows.forEach(dbRow => {
-                    cumulativeOT += Number(dbRow.ot_bks) || 0;
-                    cumulativeNT += Number(dbRow.nt_bks) || 0;
-                    cumulativePro += Number(dbRow.pro) || 0;
-                    cumulativePsa += Number(dbRow.psa) || 0;
-                    cumulativePsa119 += Number(dbRow.psa119) || 0;
-                    cumulativeDpsa += Number(dbRow.dpsa) || 0;
-                    cumulativeChp += Number(dbRow.chp) || 0;
-                    cumulativeVer += Number(dbRow.ver) || 0;
-
-                    if (dbRow.day) lastDay = dbRow.day;
-                    if (dbRow.we5) lastWe5 = dbRow.we5;
-                    if (dbRow.art) lastArt = dbRow.art;
-                    if (dbRow.ppl) lastPpl = dbRow.ppl;
-                    if (dbRow.phase) lastPhs = dbRow.phase;
-                });
-            }
-
-            const parsedDay = Number(lastDay) || 0;
-            const calculatedWe5 = lastDay ? (parsedDay / dynamicFormat).toString() : '';
-
-            let defaultPhs = '5';
-
             if (currentFacet === 1) {
                 tableRows5.push({
                     sno: snoCounter++,
@@ -208,24 +245,76 @@ const LightChartTable = ({ moduleNum, rlltDB, chartsDB, tableFontSize }) => {
                     ppl: '30',
                     isLastOfFacet1: true
                 });
-            } else {
+                continue;
+            }
+
+            let addedPhaseRowForFacet = false;
+            for (let phaseNum = 1; phaseNum <= 5; phaseNum++) {
+                const phaseCharts = (chartsDB || []).filter(
+                    c => Number(c.module) === 5 && Number(c.facet) === currentFacet && Number(c.phase) === phaseNum && c.state_payload
+                );
+
+                if (phaseCharts.length > 0) {
+                    const sortedPhaseCharts = [...phaseCharts].sort((a, b) => getChartSortTimestamp(b) - getChartSortTimestamp(a));
+                    const latestChart = sortedPhaseCharts[0];
+                    const p = parseChartPhase(latestChart.state_payload);
+
+                    const dayVal = p.day > 0 ? String(p.day) : String(latestChart.tracking_days || 30);
+                    const we5Val = p.we5 > 0 ? String(p.we5) : '6';
+                    const pplVal = p.ppl > 0 ? String(p.ppl) : dayVal;
+
+                    const totalChartBooks = p.ot_bks + p.nt_bks + p.pro + p.psa + p.psa119 + p.dpsa;
+                    const bksVal = totalChartBooks > 0 ? String(totalChartBooks) : '66';
+
+                    let artVal = '-';
+                    if (p.artMins > 0) {
+                        const roundedMins = Math.round(p.artMins);
+                        const h = Math.floor(roundedMins / 60);
+                        const m = roundedMins % 60;
+                        artVal = h > 0 ? (m > 0 ? `${h}h.${m}m` : `${h}h`) : `${m}m`;
+                    }
+
+                    tableRows5.push({
+                        sno: snoCounter++,
+                        fct: currentFacet,
+                        dayPpl: dayVal,
+                        bks: bksVal,
+                        phs: String(phaseNum),
+                        we5: we5Val,
+                        ot: p.ot_bks > 0 ? String(p.ot_bks) : '-',
+                        nt: p.nt_bks > 0 ? String(p.nt_bks) : '-',
+                        pro: p.pro > 0 ? String(p.pro) : '-',
+                        psa: p.psa > 0 ? String(p.psa) : '-',
+                        psa119: p.psa119 > 0 ? String(p.psa119) : '-',
+                        dpsa: p.dpsa > 0 ? String(p.dpsa) : '-',
+                        chp: p.chp > 0 ? String(p.chp) : '-',
+                        ver: p.ver > 0 ? String(p.ver) : '-',
+                        art: artVal,
+                        ppl: pplVal,
+                        isLastOfFacet1: false
+                    });
+                    addedPhaseRowForFacet = true;
+                }
+            }
+
+            if (!addedPhaseRowForFacet) {
                 tableRows5.push({
                     sno: snoCounter++,
                     fct: currentFacet,
-                    dayPpl: lastDay || '30',
+                    dayPpl: '30',
                     bks: '66',
-                    phs: defaultPhs,
-                    we5: lastWe5 || '-',
-                    ot: cumulativeOT > 0 ? cumulativeOT.toString() : '-',
-                    nt: cumulativeNT > 0 ? cumulativeNT.toString() : '-',
-                    pro: cumulativePro > 0 ? cumulativePro.toString() : '-',
-                    psa: cumulativePsa > 0 ? cumulativePsa.toString() : '-',
-                    psa119: cumulativePsa119 > 0 ? cumulativePsa119.toString() : '-',
-                    dpsa: cumulativeDpsa > 0 ? cumulativeDpsa.toString() : '-',
-                    chp: cumulativeChp > 0 ? cumulativeChp.toString() : '-',
-                    ver: cumulativeVer > 0 ? cumulativeVer.toString() : '-',
-                    art: lastArt || '-',
-                    ppl: lastPpl || '-',
+                    phs: '5',
+                    we5: '-',
+                    ot: '-',
+                    nt: '-',
+                    pro: '-',
+                    psa: '-',
+                    psa119: '-',
+                    dpsa: '-',
+                    chp: '-',
+                    ver: '-',
+                    art: '-',
+                    ppl: '-',
                     isLastOfFacet1: false
                 });
             }
@@ -539,16 +628,19 @@ const LightChart = () => {
         const fetchRefs = async () => {
             try {
                 const baseUrl = `http://${window.location.hostname}:8000`;
-                const [booksRes, chaptersRes, rlltRes, chartsRes] = await Promise.all([
+                const [booksRes, chaptersRes, rlltRes, chartsRes, rpRes] = await Promise.all([
                     axios.get(`${baseUrl}/api/books`, { withCredentials: true }),
                     axios.get(`${baseUrl}/api/chapters`, { withCredentials: true }),
                     axios.get(`${baseUrl}/api/rllt_lookup`, { withCredentials: true }),
-                    axios.get(`${baseUrl}/api/charts/list`, { withCredentials: true })
+                    axios.get(`${baseUrl}/api/charts/list`, { withCredentials: true }),
+                    axios.get(`${baseUrl}/api/charts/reading-plans`, { withCredentials: true }).catch(() => ({ data: [] }))
                 ]);
                 setBooksDB(Array.isArray(booksRes.data) ? booksRes.data : []);
                 setChaptersDB(Array.isArray(chaptersRes.data) ? chaptersRes.data : []);
                 setRlltDB(Array.isArray(rlltRes.data) ? rlltRes.data : []);
-                setChartsDB(Array.isArray(chartsRes.data) ? chartsRes.data : []);
+                const baseCharts = Array.isArray(chartsRes.data) ? chartsRes.data : [];
+                const rpCharts = Array.isArray(rpRes.data) ? rpRes.data.filter(r => r && r.state_payload) : [];
+                setChartsDB([...rpCharts, ...baseCharts]);
             } catch (err) {
                 console.error("Failed to fetch references:", err);
                 setBooksDB([]);

@@ -27,6 +27,7 @@ const screenPaths = {
     '7 TNT Content management': '/admin/7tnt-content',
     'Locations': '/admin/locations',
     'SHANAZ 357': '/admin/shanaz-357',
+    'Reading Plan': '/admin/reading-plan',
     'Chart Creation - Main Chart': '/admin/charts',
     'Chart Creation - 3-5-7 Chart': '/admin/chart-creation/357-chart',
     'Chart Creation - 7TNT Main Chart': '/admin/chart-creation/7tnt-main-chart',

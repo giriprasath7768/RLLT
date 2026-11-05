@@ -1,4 +1,7 @@
 import smtplib
+import socket
+import ssl
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import logging
@@ -6,16 +9,105 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+
+class _IPv4SMTP(smtplib.SMTP):
+    """SMTP subclass that prefers IPv4 to avoid Docker IPv6 connection drops/timeouts."""
+
+    def _get_socket(self, host, port, timeout):
+        last_err = None
+        for family in (socket.AF_INET, socket.AF_UNSPEC):
+            try:
+                addrs = socket.getaddrinfo(host, port, family, socket.SOCK_STREAM)
+            except OSError as e:
+                last_err = e
+                continue
+            for res in addrs:
+                af, socktype, proto, canonname, sa = res
+                sock = None
+                try:
+                    sock = socket.socket(af, socktype, proto)
+                    if timeout is not None and timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                        sock.settimeout(timeout)
+                    if self.source_address:
+                        sock.bind(self.source_address)
+                    sock.connect(sa)
+                    return sock
+                except OSError as e:
+                    last_err = e
+                    if sock is not None:
+                        sock.close()
+        if last_err is not None:
+            raise last_err
+        raise OSError(f"Could not resolve {host}:{port}")
+
+
+class _IPv4SMTP_SSL(smtplib.SMTP_SSL):
+    """SMTP_SSL subclass that prefers IPv4 to avoid Docker IPv6 connection drops/timeouts."""
+
+    def _get_socket(self, host, port, timeout):
+        last_err = None
+        for family in (socket.AF_INET, socket.AF_UNSPEC):
+            try:
+                addrs = socket.getaddrinfo(host, port, family, socket.SOCK_STREAM)
+            except OSError as e:
+                last_err = e
+                continue
+            for res in addrs:
+                af, socktype, proto, canonname, sa = res
+                sock = None
+                try:
+                    sock = socket.socket(af, socktype, proto)
+                    if timeout is not None and timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                        sock.settimeout(timeout)
+                    if self.source_address:
+                        sock.bind(self.source_address)
+                    sock.connect(sa)
+                    return self.context.wrap_socket(sock, server_hostname=self._host)
+                except OSError as e:
+                    last_err = e
+                    if sock is not None:
+                        sock.close()
+        if last_err is not None:
+            raise last_err
+        raise OSError(f"Could not resolve {host}:{port}")
+
+
 def _get_smtp_server():
-    """Initializes and returns an SMTP connection."""
-    try:
-        server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
-        server.starttls()
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        return server
-    except Exception as e:
-        logger.error(f"Failed to connect to SMTP server: {e}")
-        return None
+    """Initializes and returns an SMTP connection with IPv4 preference, retries, and SSL fallback."""
+    context = ssl.create_default_context()
+    last_error = None
+
+    for attempt in range(1, 4):
+        try:
+            if int(settings.SMTP_PORT) == 465:
+                server = _IPv4SMTP_SSL(settings.SMTP_HOST, int(settings.SMTP_PORT), timeout=20, context=context)
+                server.ehlo()
+            else:
+                server = _IPv4SMTP(settings.SMTP_HOST, int(settings.SMTP_PORT), timeout=20)
+                server.ehlo()
+                server.starttls(context=context)
+                server.ehlo()
+            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            return server
+        except Exception as e:
+            last_error = e
+            logger.warning("SMTP connect attempt %d/3 on %s:%s failed: %s", attempt, settings.SMTP_HOST, settings.SMTP_PORT, e)
+            time.sleep(0.8 * attempt)
+
+    # Fallback to implicit SSL on port 465 if STARTTLS on port 587 was unexpectedly closed
+    if int(settings.SMTP_PORT) != 465:
+        try:
+            server = _IPv4SMTP_SSL(settings.SMTP_HOST, 465, timeout=20, context=context)
+            server.ehlo()
+            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            logger.info("Connected to SMTP server via SSL fallback on port 465")
+            return server
+        except Exception as e:
+            last_error = e
+            logger.error("SMTP SSL fallback on port 465 failed: %s", e)
+
+    logger.error("Failed to connect to SMTP server after retries: %s", last_error)
+    return None
 
 def _build_reset_email_html(reset_url: str) -> str:
     """Build a professional HTML email body for password reset."""
@@ -84,6 +176,31 @@ def _build_admin_creation_email_html(name: str, password: str, email: str) -> st
 </body>
 </html>"""
 
+def _dispatch_mime_message(msg: MIMEMultipart, to_email: str, label: str) -> bool:
+    """Send a prepared MIMEMultipart message with retry on connection drop."""
+    for send_attempt in range(1, 3):
+        server = _get_smtp_server()
+        if not server:
+            continue
+        try:
+            server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
+            try:
+                server.quit()
+            except Exception:
+                pass
+            logger.info("%s email sent to %s", label, to_email)
+            return True
+        except Exception as e:
+            logger.warning("Attempt %d to send %s email to %s failed: %s", send_attempt, label, to_email, e)
+            try:
+                server.close()
+            except Exception:
+                pass
+            time.sleep(0.5)
+    logger.error("Failed to send %s email to %s", label, to_email)
+    return False
+
+
 def send_password_reset_email(to_email: str, reset_url: str) -> bool:
     """Send a password-reset email via generic SMTP."""
     msg = MIMEMultipart("alternative")
@@ -94,17 +211,7 @@ def send_password_reset_email(to_email: str, reset_url: str) -> bool:
     html_body = _build_reset_email_html(reset_url)
     msg.attach(MIMEText(html_body, "html"))
 
-    try:
-        server = _get_smtp_server()
-        if server:
-            server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
-            server.quit()
-            logger.info("Password-reset email sent to %s", to_email)
-            return True
-        return False
-    except Exception as e:
-        logger.error("Failed to send reset email to %s: %s", to_email, str(e))
-        return False
+    return _dispatch_mime_message(msg, to_email, "Password-reset")
 
 
 def send_admin_creation_email(to_email: str, name: str, password: str) -> bool:
@@ -117,17 +224,7 @@ def send_admin_creation_email(to_email: str, name: str, password: str) -> bool:
     html_body = _build_admin_creation_email_html(name, password, to_email)
     msg.attach(MIMEText(html_body, "html"))
 
-    try:
-        server = _get_smtp_server()
-        if server:
-            server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
-            server.quit()
-            logger.info("Admin creation email sent to %s", to_email)
-            return True
-        return False
-    except Exception as e:
-        logger.error("Failed to send admin creation email to %s: %s", to_email, str(e))
-        return False
+    return _dispatch_mime_message(msg, to_email, "Admin creation")
 
 def _build_leader_creation_email_html(name: str, password: str, email: str) -> str:
     """Build a professional HTML email body for new Leader creation."""
@@ -174,17 +271,7 @@ def send_leader_creation_email(to_email: str, name: str, password: str) -> bool:
     html_body = _build_leader_creation_email_html(name, password, to_email)
     msg.attach(MIMEText(html_body, "html"))
 
-    try:
-        server = _get_smtp_server()
-        if server:
-            server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
-            server.quit()
-            logger.info("Leader creation email sent to %s", to_email)
-            return True
-        return False
-    except Exception as e:
-        logger.error("Failed to send leader creation email to %s: %s", to_email, str(e))
-        return False
+    return _dispatch_mime_message(msg, to_email, "Leader creation")
 
 def _build_student_creation_email_html(name: str, enrollment: str, password: str, email: str) -> str:
     """Build a professional HTML email body for new Student creation."""
@@ -232,14 +319,4 @@ def send_student_activation_email(to_email: str, name: str, enrollment: str, pas
     html_body = _build_student_creation_email_html(name, enrollment, password, to_email)
     msg.attach(MIMEText(html_body, "html"))
 
-    try:
-        server = _get_smtp_server()
-        if server:
-            server.sendmail(settings.MAIL_FROM, to_email, msg.as_string())
-            server.quit()
-            logger.info("Student creation email sent to %s", to_email)
-            return True
-        return False
-    except Exception as e:
-        logger.error("Failed to send student email config: %s", str(e))
-        return False
+    return _dispatch_mime_message(msg, to_email, "Student activation")

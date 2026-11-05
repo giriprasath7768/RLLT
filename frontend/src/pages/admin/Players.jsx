@@ -13,19 +13,36 @@ const Players = () => {
     const [rows, setRows] = useState(10);
     const navigate = useNavigate();
 
+    const computePayloadDays = (payloadStr, fallbackDays) => {
+        try {
+            const parsed = typeof payloadStr === 'string' ? JSON.parse(payloadStr) : payloadStr;
+            if (parsed && typeof parsed === 'object') {
+                if (parsed.numDays && Number(parsed.numDays) > 0) return Number(parsed.numDays);
+                let chunks = Array.isArray(parsed) ? parsed : (parsed.payload || parsed.chunks || parsed?.fullPlan?.chunks);
+                if (Array.isArray(chunks)) {
+                    const total = chunks.reduce((sum, ch) => sum + (Array.isArray(ch?.days) ? ch.days.length : 0), 0);
+                    if (total > 0) return total;
+                }
+            }
+        } catch (e) { }
+        return fallbackDays || 30;
+    };
+
     useEffect(() => {
         axios.get('http://' + window.location.hostname + ':8000/api/charts/list', { withCredentials: true })
             .then(res => {
                 const mapped = res.data.map(chartData => {
                     const payloadStr = chartData.state_payload || "";
                     const is24x7 = payloadStr.includes('"m4b"');
-                    const trackingDaysLabel = chartData.tracking_days ? `${chartData.tracking_days} Days` : '30 Days';
+                    const actualDays = computePayloadDays(payloadStr, chartData.tracking_days);
+                    const trackingDaysLabel = `${actualDays} Days`;
 
                     return {
                         chartData,
                         is24x7,
                         chartName: chartData.banner_text || `Module ${chartData.module} / Phase ${chartData.phase}`,
-                        trackingDays: trackingDaysLabel
+                        trackingDays: trackingDaysLabel,
+                        actualDays
                     };
                 });
                 setCharts(mapped);
@@ -35,7 +52,8 @@ const Players = () => {
     }, []);
 
     const navigateToPlayer = (chartData, filter, days, isTtomT) => {
-        const queryDays = days === '40 Days' ? 40 : 30;
+        const parsedDays = parseInt(String(days), 10);
+        const queryDays = !isNaN(parsedDays) && parsedDays > 0 ? parsedDays : computePayloadDays(chartData.state_payload, chartData.tracking_days);
         if (isTtomT) {
             navigate(`/admin/ttomt-player?days=${queryDays}`, {
                 state: {
