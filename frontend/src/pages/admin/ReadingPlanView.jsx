@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Toast } from 'primereact/toast';
@@ -346,12 +346,20 @@ const ReadingPlanView = () => {
 
     const [isSavingChart, setIsSavingChart] = useState(false);
     const [isDownloadingChart, setIsDownloadingChart] = useState(false);
+    const [isPrintingChart, setIsPrintingChart] = useState(false);
+    const [exportProgress, setExportProgress] = useState(null);
     const [isLoadingChart, setIsLoadingChart] = useState(false);
     const [chartFontSize, setChartFontSize] = useState(12);
     const [isBold, setIsBold] = useState(true);
     const [isItalic, setIsItalic] = useState(false);
     const [isUnderline, setIsUnderline] = useState(false);
     const [wrapText, setWrapText] = useState(true);
+
+    // On-screen pagination for large charts (200+ weeks) so DOM stays fast & responsive
+    const [currentScreenPage, setCurrentScreenPage] = useState(1);
+    const [pagesPerScreen, setPagesPerScreen] = useState(10); // 10 chart pages = 50 weeks per view (0 = Show All)
+    const [weekRangeFrom, setWeekRangeFrom] = useState('1');
+    const [weekRangeTo, setWeekRangeTo] = useState('50');
 
     const [activeColorBoxPopupId, setActiveColorBoxPopupId] = useState(null);
     const [editingColorBoxId, setEditingColorBoxId] = useState(null);
@@ -397,18 +405,24 @@ const ReadingPlanView = () => {
         const plan = reconstructPlanFromSavedData(data);
         if (plan) {
             setGeneratedPlan(plan);
-            sessionStorage.setItem('latest_reading_plan', JSON.stringify(plan));
+            try {
+                sessionStorage.setItem('latest_reading_plan', JSON.stringify(plan));
+            } catch (e) {}
         }
         if (data.id) {
             setReadingPlanId(data.id);
         }
         if (data.banner_text) {
             setBannerText(data.banner_text);
-            sessionStorage.setItem('latest_reading_plan_banner', data.banner_text);
+            try {
+                sessionStorage.setItem('latest_reading_plan_banner', data.banner_text);
+            } catch (e) {}
         } else if (plan) {
             const defaultHeading = `MAIN CHART - ${plan.numDays} DAYS`;
             setBannerText(defaultHeading);
-            sessionStorage.setItem('latest_reading_plan_banner', defaultHeading);
+            try {
+                sessionStorage.setItem('latest_reading_plan_banner', defaultHeading);
+            } catch (e) {}
         }
         if (data.t_label) {
             setTLabel(data.t_label);
@@ -501,8 +515,10 @@ const ReadingPlanView = () => {
                 const incomingBanner = location.state.bannerText || `MAIN CHART - ${incomingPlan.numDays} DAYS`;
                 setBannerText(incomingBanner);
                 if (location.state.tLabel) setTLabel(location.state.tLabel);
-                sessionStorage.setItem('latest_reading_plan', JSON.stringify(incomingPlan));
-                sessionStorage.setItem('latest_reading_plan_banner', incomingBanner);
+                try {
+                    sessionStorage.setItem('latest_reading_plan', JSON.stringify(incomingPlan));
+                    sessionStorage.setItem('latest_reading_plan_banner', incomingBanner);
+                } catch (e) {}
 
                 if (location.state.autoPrint) {
                     setTimeout(() => handlePrintReadingPlan(incomingPlan), 600);
@@ -524,7 +540,9 @@ const ReadingPlanView = () => {
                     const cachedPlan = normalizePlanPhaseLabels(JSON.parse(cachedStr));
                     if (cachedPlan && Array.isArray(cachedPlan.chunks)) {
                         setGeneratedPlan(cachedPlan);
-                        sessionStorage.setItem('latest_reading_plan', JSON.stringify(cachedPlan));
+                        try {
+                            sessionStorage.setItem('latest_reading_plan', JSON.stringify(cachedPlan));
+                        } catch (e) {}
                         const cachedBanner = sessionStorage.getItem('latest_reading_plan_banner') || `MAIN CHART - ${cachedPlan.numDays} DAYS`;
                         setBannerText(cachedBanner);
                         return;
@@ -560,7 +578,11 @@ const ReadingPlanView = () => {
                     ch.id === chunkId ? { ...ch, ...updates } : ch
                 )
             };
-            sessionStorage.setItem('latest_reading_plan', JSON.stringify(updated));
+            if (updated.chunks.length <= 250) {
+                try {
+                    sessionStorage.setItem('latest_reading_plan', JSON.stringify(updated));
+                } catch (e) {}
+            }
             return updated;
         });
     };
@@ -652,8 +674,10 @@ const ReadingPlanView = () => {
             }
 
             setBannerText(resolvedChartName);
-            sessionStorage.setItem('latest_reading_plan', JSON.stringify(generatedPlan));
-            sessionStorage.setItem('latest_reading_plan_banner', resolvedChartName);
+            try {
+                sessionStorage.setItem('latest_reading_plan', JSON.stringify(generatedPlan));
+                sessionStorage.setItem('latest_reading_plan_banner', resolvedChartName);
+            } catch (e) {}
 
             toast.current?.show({
                 severity: 'success',
@@ -674,242 +698,817 @@ const ReadingPlanView = () => {
         }
     };
 
-    const capturePaginatedA4Pages = async (sizeConfig = PRINT_SIZE_OPTIONS[0]) => {
-        const chartEl = document.getElementById('reading-plan-printable-area');
-        if (!chartEl) return [];
+    const printSelectedWeekIdSet = useMemo(() => new Set(printSelectedWeekIds), [printSelectedWeekIds]);
 
-        chartEl.querySelectorAll('input').forEach(inp => {
-            if (inp.type !== 'file') {
-                inp.setAttribute('value', inp.value);
+    const loadLogoImageElement = (logoState) =>
+        new Promise((resolve) => {
+            const url = typeof logoState === 'object' && logoState !== null ? logoState.url : logoState;
+            if (!url) {
+                resolve(null);
+                return;
             }
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = url;
         });
 
-        const pageElements = Array.from(chartEl.querySelectorAll('.rllt-print-page'));
-        const targets = pageElements.length > 0 ? pageElements : [chartEl];
+    const getExportPagesData = (planToUse, sizeConfig) => {
+        if (!planToUse || !Array.isArray(planToUse.chunks)) return [];
+        const customFilter = Boolean(sizeConfig?.key && sizeConfig.key !== 'a4' && printModalSizeKey);
+        const filteredChunks = customFilter
+            ? planToUse.chunks.filter((c) => printSelectedWeekIdSet.has(c.id))
+            : planToUse.chunks;
+        const chunksToPaginate = filteredChunks.length > 0 ? filteredChunks : planToUse.chunks.slice(0, 1);
+        const weeksPerPage = customFilter
+            ? (printWeeksPerPage > 0 ? printWeeksPerPage : Math.max(1, chunksToPaginate.length))
+            : 5;
 
+        const pages = [];
+        for (let i = 0; i < chunksToPaginate.length; i += weeksPerPage) {
+            pages.push(chunksToPaginate.slice(i, i + weeksPerPage));
+        }
+        return pages;
+    };
+
+    const renderReadingPlanPageToCanvas = (
+        canvas,
+        pageChunks,
+        isLastPage,
+        planToUse,
+        sizeConfig,
+        logoImgs,
+        wrapCache
+    ) => {
         const pageWidthMm = sizeConfig?.pageWidthMm || 210;
         const pageHeightMm = sizeConfig?.pageHeightMm || 297;
         const marginXMm = sizeConfig?.marginXMm ?? 6;
         const marginYMm = sizeConfig?.marginYMm ?? 6;
         const maxContentWidthMm = pageWidthMm - marginXMm * 2;
         const maxContentHeightMm = pageHeightMm - marginYMm * 2;
-        const a4ContentAspectRatio = maxContentHeightMm / maxContentWidthMm;
+        const aspectRatio = maxContentHeightMm / maxContentWidthMm;
 
-        const isCustomPrintSize = sizeConfig?.key && sizeConfig.key !== 'a4';
+        const isCustomSize = Boolean(sizeConfig?.key && sizeConfig.key !== 'a4');
         const isSmallFormat = ['a6', 'a7', 'visa', 'dl'].includes(sizeConfig?.key);
         const activeBoldnessConfig =
-            BOLDNESS_LEVEL_OPTIONS.find(b => b.level === printBoldnessLevel) || BOLDNESS_LEVEL_OPTIONS[3];
+            BOLDNESS_LEVEL_OPTIONS.find((b) => b.level === printBoldnessLevel) || BOLDNESS_LEVEL_OPTIONS[3];
+
+        const customFilter = isCustomSize && Boolean(printModalSizeKey);
+        const selColCount = TABLE_COLUMN_DEFINITIONS.filter((c) => Boolean(printSelectedCols[c.key])).length;
+        const checkColVisible = (colKey) => {
+            if (!customFilter) return true;
+            if (selColCount === 0) return colKey === 'date';
+            return Boolean(printSelectedCols[colKey]);
+        };
+
+        const cols = TABLE_COLUMN_DEFINITIONS.filter((c) => checkColVisible(c.key));
+        const numCols = cols.length;
+        const totalWeight = cols.reduce((s, c) => s + c.weight, 0) || 100;
+
+        const showTopHdr = !customFilter || printShowTopHeader;
+        const showPromRow = !customFilter || printShowPromisesRow;
+        const showSubRow = !customFilter || printShowSubtotalRow;
+        const showGrandRow = !customFilter || printShowGrandTotalRow;
+
+        const logicalW = isSmallFormat
+            ? numCols <= 6
+                ? 640
+                : numCols <= 10
+                ? 700
+                : 760
+            : 1000;
+        const targetPageH = Math.round(logicalW * aspectRatio);
+
+        const fontSizePx = isCustomSize
+            ? isSmallFormat && numCols <= 6
+                ? Math.max(printFontSize + 2, 16)
+                : printFontSize
+            : chartFontSize;
+        const fontWeightStr = isCustomSize ? activeBoldnessConfig.weight : isBold ? '800' : '400';
+        const fontStyleStr = !isCustomSize && isItalic ? 'italic' : 'normal';
+        const strokePx = isCustomSize ? activeBoldnessConfig.strokePx : 0;
+        const lineHeightPx = Math.max(fontSizePx + 2, Math.round(fontSizePx * (isSmallFormat ? 1.14 : 1.2)));
+        const cellPadX = isSmallFormat ? 2 : 4;
+        const cellPadY = isSmallFormat ? 2 : 3;
+        const greenColor = isSmallFormat ? '#007a33' : '#00b050';
+        const blueColor = '#002060';
+        const tableFont = `${fontStyleStr} ${fontWeightStr} ${fontSizePx}px "Arial Narrow", "Oswald", Arial, sans-serif`;
+
+        const colWidths = cols.map((c) => (c.weight / totalWeight) * logicalW);
+        const colX = [];
+        let accX = 0;
+        for (let i = 0; i < colWidths.length; i++) {
+            colX.push(accX);
+            accX += colWidths[i];
+        }
+        const colIndexByKey = {};
+        cols.forEach((c, idx) => {
+            colIndexByKey[c.key] = idx;
+        });
+
+        const getSpanBounds = (startIdx, spanCount) => {
+            if (startIdx < 0 || spanCount <= 0 || startIdx >= cols.length) return { x: 0, w: 0 };
+            const x = colX[startIdx];
+            let w = 0;
+            for (let k = startIdx; k < Math.min(cols.length, startIdx + spanCount); k++) {
+                w += colWidths[k];
+            }
+            return { x, w };
+        };
+
+        const measureCtx = canvas.getContext('2d');
+        measureCtx.font = tableFont;
+
+        const wrapTextLines = (rawText, maxW, forceSingleLine = false) => {
+            const str = String(rawText ?? '').trim();
+            if (!str) return [''];
+            const availW = Math.max(12, Math.floor(maxW));
+            const shouldWrap = wrapText && !forceSingleLine;
+            const cacheKey = `${tableFont}|${availW}|${shouldWrap ? 1 : 0}|${str}`;
+            if (wrapCache.has(cacheKey)) return wrapCache.get(cacheKey);
+
+            if (!shouldWrap || measureCtx.measureText(str).width <= availW) {
+                const single = [str];
+                wrapCache.set(cacheKey, single);
+                return single;
+            }
+
+            const words = str.split(/\s+/);
+            const lines = [];
+            let curLine = '';
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                const candidate = curLine ? `${curLine} ${word}` : word;
+                if (measureCtx.measureText(candidate).width <= availW) {
+                    curLine = candidate;
+                } else {
+                    if (curLine) lines.push(curLine);
+                    curLine = word;
+                }
+            }
+            if (curLine) lines.push(curLine);
+            const result = lines.length > 0 ? lines : [str];
+            wrapCache.set(cacheKey, result);
+            return result;
+        };
+
+        // Build row descriptors to compute exact natural heights first
+        const rowDescriptors = [];
+        const hasTeamCol = checkColVisible('team');
+        const hasPhaseSideCol = checkColVisible('phaseSide');
+        const remAfterTeam = Math.max(0, numCols - (hasTeamCol ? 1 : 0));
+        let promisesColSpan = remAfterTeam;
+        let colorBoxColSpan = 0;
+        if (remAfterTeam >= 3) {
+            colorBoxColSpan = Math.min(4, Math.max(1, Math.round(remAfterTeam / 3)));
+            promisesColSpan = remAfterTeam - colorBoxColSpan;
+        } else if (remAfterTeam === 2) {
+            promisesColSpan = 1;
+            colorBoxColSpan = 1;
+        }
+
+        pageChunks.forEach((chunk) => {
+            if (showPromRow) {
+                const promStartIdx = hasTeamCol ? 1 : 0;
+                const promBounds = getSpanBounds(promStartIdx, promisesColSpan);
+                const fullPromText = [chunk.promises, chunk.promiseNote, chunk.promiseInput]
+                    .map((s) => String(s || '').trim())
+                    .filter(Boolean)
+                    .join(' ');
+                const lines = wrapTextLines(fullPromText, promBounds.w - cellPadX * 2);
+                const h = Math.max(26, lines.length * lineHeightPx + cellPadY * 2);
+                rowDescriptors.push({ type: 'promises', chunk, naturalH: h, h });
+            }
+
+            const hdrRowIdx = rowDescriptors.length;
+            rowDescriptors.push({ type: 'weekHeader', chunk, naturalH: 24, h: 24 });
+
+            (chunk.days || []).forEach((d) => {
+                let maxLines = 1;
+                cols.forEach((col, cIdx) => {
+                    const colW = colWidths[cIdx];
+                    if (col.key === 'date') {
+                        maxLines = Math.max(maxLines, wrapTextLines(d.dateLabel, colW - cellPadX * 2).length);
+                    } else if (col.key === 'reg1Book') {
+                        maxLines = Math.max(maxLines, wrapTextLines(d.m1b, colW - cellPadX * 2).length);
+                    } else if (col.key === 'reg1Time') {
+                        maxLines = Math.max(maxLines, wrapTextLines(d.m1t, colW - cellPadX * 2).length);
+                    } else if (col.key === 'reg2Book') {
+                        maxLines = Math.max(maxLines, wrapTextLines(d.m2b, colW - cellPadX * 2).length);
+                    } else if (col.key === 'reg2Time') {
+                        maxLines = Math.max(maxLines, wrapTextLines(d.m2t, colW - cellPadX * 2).length);
+                    } else if (col.key === 'otherBooks') {
+                        const halfW = colW / 2 - cellPadX * 2;
+                        maxLines = Math.max(
+                            maxLines,
+                            wrapTextLines(d.m3b_morning, halfW).length,
+                            wrapTextLines(d.m3b_evening, halfW).length
+                        );
+                    } else if (col.key === 'otherTime') {
+                        const halfW = colW / 2 - cellPadX * 2;
+                        maxLines = Math.max(
+                            maxLines,
+                            wrapTextLines(d.m3t_morning, halfW).length,
+                            wrapTextLines(d.m3t_evening, halfW).length
+                        );
+                    } else if (col.key === 'art') {
+                        maxLines = Math.max(maxLines, wrapTextLines(d.art, colW - cellPadX * 2).length);
+                    }
+                });
+                const dayH = Math.max(24, maxLines * lineHeightPx + cellPadY * 2);
+                rowDescriptors.push({ type: 'day', chunk, day: d, naturalH: dayH, h: dayH });
+            });
+
+            if (showSubRow) {
+                rowDescriptors.push({ type: 'subtotal', chunk, naturalH: 24, h: 24 });
+            }
+
+            const endRowIdx = rowDescriptors.length - 1;
+            rowDescriptors[hdrRowIdx].teamEndRowIdx = showSubRow ? endRowIdx - 1 : endRowIdx;
+            rowDescriptors[hdrRowIdx].phaseEndRowIdx = endRowIdx;
+        });
+
+        if (isLastPage && showGrandRow) {
+            rowDescriptors.push({ type: 'grandTotal', naturalH: 25, h: 25 });
+            const quoteText =
+                'It is the same with my word. I send it out, and it always produces fruit. It will accomplish all I want it to, and it will prosper everywhere I send it. Isaiah 55:11';
+            const quoteLines = wrapTextLines(quoteText, logicalW - 16);
+            const quoteH = Math.max(25, quoteLines.length * lineHeightPx + cellPadY * 2);
+            rowDescriptors.push({ type: 'quote', quoteText, naturalH: quoteH, h: quoteH });
+        }
+
+        const hdrRow1H = showTopHdr ? (isSmallFormat ? 44 : 54) : 0;
+        const hdrRow2H = showTopHdr ? (isSmallFormat ? 48 : 62) : 0;
+        const topHeaderH = hdrRow1H + hdrRow2H;
+        const footerH = Math.max(22, lineHeightPx + 8);
+
+        const naturalTableH = rowDescriptors.reduce((s, r) => s + r.naturalH, 0);
+        const naturalPageH = topHeaderH + naturalTableH + footerH;
+        const safeTargetHeight = targetPageH - 4;
+        const deficit = Math.max(0, safeTargetHeight - naturalPageH);
+
+        if (deficit > 0 && rowDescriptors.length > 0) {
+            const dayRowIndices = [];
+            const compactRowIndices = [];
+            rowDescriptors.forEach((r, idx) => {
+                if (r.type === 'day') dayRowIndices.push(idx);
+                else compactRowIndices.push(idx);
+            });
+
+            if (dayRowIndices.length === 0) {
+                const baseAdd = Math.floor(deficit / rowDescriptors.length);
+                const rem = deficit % rowDescriptors.length;
+                rowDescriptors.forEach((r, idx) => {
+                    r.h = r.naturalH + baseAdd + (idx < rem ? 1 : 0);
+                });
+            } else {
+                const evenShare = Math.floor(deficit / rowDescriptors.length);
+                const compactAddEach = Math.min(6, Math.max(0, Math.floor(evenShare * 0.35)));
+                const totalCompactUsed = compactAddEach * compactRowIndices.length;
+                const remForDays = Math.max(0, deficit - totalCompactUsed);
+                const dayBaseAdd = Math.floor(remForDays / dayRowIndices.length);
+                const dayRem = remForDays % dayRowIndices.length;
+
+                compactRowIndices.forEach((rIdx) => {
+                    rowDescriptors[rIdx].h = rowDescriptors[rIdx].naturalH + compactAddEach;
+                });
+                dayRowIndices.forEach((rIdx, dPos) => {
+                    rowDescriptors[rIdx].h = rowDescriptors[rIdx].naturalH + dayBaseAdd + (dPos < dayRem ? 1 : 0);
+                });
+            }
+        }
+
+        const finalTableH = rowDescriptors.reduce((s, r) => s + r.h, 0);
+        const finalPageH = topHeaderH + finalTableH + footerH;
+
+        const scale = isSmallFormat ? 2.5 : 2;
+        canvas.width = Math.ceil(logicalW * scale);
+        canvas.height = Math.ceil(finalPageH * scale);
+
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, logicalW, finalPageH);
+
+        const drawStyledText = (lines, centerX, centerY, color = '#000000', customFont = null, align = 'center') => {
+            ctx.save();
+            ctx.font = customFont || tableFont;
+            ctx.fillStyle = color;
+            ctx.textAlign = align;
+            ctx.textBaseline = 'middle';
+            const totalTextH = lines.length * lineHeightPx;
+            const startY = centerY - totalTextH / 2 + lineHeightPx / 2;
+            for (let i = 0; i < lines.length; i++) {
+                const lineStr = lines[i];
+                const ly = startY + i * lineHeightPx;
+                if (strokePx > 0 && !customFont) {
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = strokePx;
+                    ctx.strokeText(lineStr, centerX, ly);
+                }
+                ctx.fillText(lineStr, centerX, ly);
+                if (!isCustomSize && isUnderline && !customFont && lineStr) {
+                    const tw = ctx.measureText(lineStr).width;
+                    const ux = align === 'center' ? centerX - tw / 2 : centerX;
+                    ctx.beginPath();
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(ux, ly + fontSizePx * 0.45);
+                    ctx.lineTo(ux + tw, ly + fontSizePx * 0.45);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        };
+
+        // 1. Draw Top Header Block
+        if (showTopHdr) {
+            const rightW = 160;
+            const tBoxW = 55;
+            const centerW = logicalW - tBoxW - rightW;
+
+            // Row 1: T box
+            ctx.fillStyle = '#00b050';
+            ctx.fillRect(0, 0, tBoxW, hdrRow1H);
+            drawStyledText([String(tLabel || 'T')], tBoxW / 2, hdrRow1H / 2, '#ffffff', 'bold 30px Georgia, "Times New Roman", serif');
+
+            // Row 1: Center Title
+            const titleText = `REAL LIFE LEADERSHIP TRAINING - ${planToUse.headerSubtitle || ''}`;
+            drawStyledText(
+                [titleText],
+                tBoxW + centerW / 2,
+                hdrRow1H / 2,
+                '#ff0000',
+                `bold ${isSmallFormat ? 15 : 18}px "Times New Roman", Times, serif`
+            );
+
+            // Row 1: Right 160px Date/Time + PH Grid
+            const rightX = logicalW - rightW;
+            const halfR1 = hdrRow1H / 2;
+            ctx.fillStyle = '#00b050';
+            ctx.fillRect(rightX + 100, 0, 60, hdrRow1H);
+
+            drawStyledText(
+                [(planToUse.selectedDateText || '').replace(/\//g, '-')],
+                rightX + 50,
+                halfR1 / 2,
+                '#000000',
+                'bold 12px Inter, Arial, sans-serif'
+            );
+            drawStyledText(['PH'], rightX + 130, halfR1 / 2, '#ffffff', '900 14px Inter, Arial, sans-serif');
+            drawStyledText(
+                [planToUse.selectedTimeText || ''],
+                rightX + 50,
+                halfR1 + halfR1 / 2,
+                '#000000',
+                'bold 12px Inter, Arial, sans-serif'
+            );
+            drawStyledText(
+                [String(planToUse.phs ?? 1)],
+                rightX + 130,
+                halfR1 + halfR1 / 2,
+                '#ffffff',
+                'bold 16px Inter, Arial, sans-serif'
+            );
+
+            // Row 2: 3 Logo Boxes (85px each)
+            const logoBoxW = 85;
+            for (let lIdx = 0; lIdx < 3; lIdx++) {
+                const lx = lIdx * logoBoxW;
+                const img = logoImgs[lIdx];
+                if (img && img.width > 0 && img.height > 0) {
+                    const pad = 4;
+                    const maxW = logoBoxW - pad * 2;
+                    const maxH = hdrRow2H - pad * 2;
+                    const ratio = Math.min(maxW / img.width, maxH / img.height);
+                    const dw = img.width * ratio;
+                    const dh = img.height * ratio;
+                    ctx.drawImage(img, lx + (logoBoxW - dw) / 2, hdrRow1H + (hdrRow2H - dh) / 2, dw, dh);
+                }
+            }
+
+            // Row 2: Orange Banner Box
+            const bannerX = logoBoxW * 3;
+            const bannerW = logicalW - bannerX - rightW;
+            ctx.save();
+            ctx.strokeStyle = '#e47636';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(bannerX + 4, hdrRow1H + 4, bannerW - 8, hdrRow2H - 8);
+            ctx.restore();
+            drawStyledText(
+                [String(bannerText || '').toUpperCase()],
+                bannerX + bannerW / 2,
+                hdrRow1H + hdrRow2H / 2,
+                '#000000',
+                `bold ${isSmallFormat ? 16 : 20}px Inter, Arial, sans-serif`
+            );
+
+            // Row 2: Right 160px BK - AR Block
+            const halfR2 = hdrRow2H / 2;
+            ctx.fillStyle = '#ffff00';
+            ctx.fillRect(rightX, hdrRow1H, rightW, hdrRow2H);
+            drawStyledText(
+                ['B K - A R'],
+                rightX + rightW / 2,
+                hdrRow1H + halfR2 / 2,
+                '#000000',
+                '900 17px Georgia, serif'
+            );
+            drawStyledText(
+                [`${planToUse.bkArBks || '6 6'} - ${planToUse.bkArArt || '4 0 +'}`],
+                rightX + rightW / 2,
+                hdrRow1H + halfR2 + halfR2 / 2,
+                '#000000',
+                '900 15px Inter, Arial, sans-serif'
+            );
+
+            // Header Borders
+            ctx.save();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(1, 1, logicalW - 2, topHeaderH - 1);
+            // Row 1 bottom line
+            ctx.beginPath();
+            ctx.moveTo(0, hdrRow1H);
+            ctx.lineTo(logicalW, hdrRow1H);
+            // T box right line
+            ctx.moveTo(tBoxW, 0);
+            ctx.lineTo(tBoxW, hdrRow1H);
+            // Right block left line
+            ctx.moveTo(rightX, 0);
+            ctx.lineTo(rightX, topHeaderH);
+            // Right Row 1 inner grid lines
+            ctx.moveTo(rightX + 100, 0);
+            ctx.lineTo(rightX + 100, hdrRow1H);
+            ctx.moveTo(rightX, halfR1);
+            ctx.lineTo(logicalW, halfR1);
+            // Logo vertical dividers
+            ctx.moveTo(logoBoxW, hdrRow1H);
+            ctx.lineTo(logoBoxW, topHeaderH);
+            ctx.moveTo(logoBoxW * 2, hdrRow1H);
+            ctx.lineTo(logoBoxW * 2, topHeaderH);
+            ctx.moveTo(logoBoxW * 3, hdrRow1H);
+            ctx.lineTo(logoBoxW * 3, topHeaderH);
+            // BK-AR horizontal divider
+            ctx.moveTo(rightX, hdrRow1H + halfR2);
+            ctx.lineTo(logicalW, hdrRow1H + halfR2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 2. Compute Y coordinates for each table row
+        const rowY = [];
+        let curY = topHeaderH;
+        for (let i = 0; i < rowDescriptors.length; i++) {
+            rowY.push(curY);
+            curY += rowDescriptors[i].h;
+        }
+
+        const cellBorderWidth = isSmallFormat ? 1.75 : 1.5;
+        const drawCellRect = (x, y, w, h) => {
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = cellBorderWidth;
+            ctx.strokeRect(x, y, w, h);
+        };
+
+        // Draw Table Rows
+        const verticalSpanTasks = [];
+
+        for (let rIdx = 0; rIdx < rowDescriptors.length; rIdx++) {
+            const row = rowDescriptors[rIdx];
+            const ry = rowY[rIdx];
+            const rh = row.h;
+
+            if (row.type === 'promises') {
+                const { chunk } = row;
+                let curColIdx = 0;
+                if (hasTeamCol) {
+                    drawCellRect(colX[0], ry, colWidths[0], rh);
+                    curColIdx = 1;
+                }
+                if (promisesColSpan > 0) {
+                    const b = getSpanBounds(curColIdx, promisesColSpan);
+                    drawCellRect(b.x, ry, b.w, rh);
+                    const prefixStr = [chunk.promises, chunk.promiseNote]
+                        .map((s) => String(s || '').trim())
+                        .filter(Boolean)
+                        .join(' ');
+                    const bodyStr = String(chunk.promiseInput || '').trim();
+                    const combined = [prefixStr, bodyStr].filter(Boolean).join('   ');
+                    const lines = wrapTextLines(combined, b.w - cellPadX * 2);
+                    drawStyledText(lines, b.x + b.w / 2, ry + rh / 2, '#000000');
+                    curColIdx += promisesColSpan;
+                }
+                if (colorBoxColSpan > 0) {
+                    const b = getSpanBounds(curColIdx, colorBoxColSpan);
+                    drawCellRect(b.x, ry, b.w, rh);
+                    ctx.save();
+                    ctx.strokeStyle = chunk.borderColor || '#00b0f0';
+                    ctx.lineWidth = 3.5;
+                    ctx.strokeRect(b.x + 2.5, ry + 2.5, Math.max(4, b.w - 5), Math.max(4, rh - 5));
+                    ctx.restore();
+                    if (chunk.colorBoxText) {
+                        const txtColor = chunk.colorBoxTextColor || '#000000';
+                        drawStyledText(
+                            wrapTextLines(chunk.colorBoxText, b.w - 10, true),
+                            b.x + b.w / 2,
+                            ry + rh / 2,
+                            txtColor
+                        );
+                    }
+                }
+            } else if (row.type === 'weekHeader') {
+                const { chunk } = row;
+                cols.forEach((col, cIdx) => {
+                    const cx = colX[cIdx];
+                    const cw = colWidths[cIdx];
+                    if (col.key === 'team') {
+                        const endR = row.teamEndRowIdx ?? rIdx;
+                        const spanH = rowY[endR] + rowDescriptors[endR].h - ry;
+                        verticalSpanTasks.push({
+                            x: cx,
+                            y: ry,
+                            w: cw,
+                            h: spanH,
+                            text: String(chunk.teamLabel ?? `${chunk.teamPrefix || 'TEAM / WEEK - '}${chunk.weekNumber}`).toUpperCase()
+                        });
+                    } else if (col.key === 'phaseSide') {
+                        const endR = row.phaseEndRowIdx ?? rIdx;
+                        const spanH = rowY[endR] + rowDescriptors[endR].h - ry;
+                        verticalSpanTasks.push({
+                            x: cx,
+                            y: ry,
+                            w: cw,
+                            h: spanH,
+                            text: `MDL ${planToUse.mdl}: FCT ${planToUse.fct}: PHS - ${planToUse.phs}`
+                        });
+                    } else {
+                        drawCellRect(cx, ry, cw, rh);
+                        let label = '';
+                        if (col.key === 'date') label = 'DATE';
+                        else if (col.key === 'reg1Book') label = chunk.h1 || '';
+                        else if (col.key === 'reg1Time') label = 'TIME';
+                        else if (col.key === 'reg2Book') label = chunk.h2 || '';
+                        else if (col.key === 'reg2Time') label = 'TIME';
+                        else if (col.key === 'otherBooks') label = chunk.h3 || '';
+                        else if (col.key === 'otherTime') label = 'TIME';
+                        else if (col.key === 'chap') label = 'CHAP';
+                        else if (col.key === 'verse') label = 'VERSE';
+                        else if (col.key === 'art') label = 'ART';
+                        else if (col.key === 'day') label = 'DAY';
+                        if (label) {
+                            drawStyledText([String(label).toUpperCase()], cx + cw / 2, ry + rh / 2, '#000000');
+                        }
+                    }
+                });
+            } else if (row.type === 'day') {
+                const d = row.day;
+                cols.forEach((col, cIdx) => {
+                    if (col.key === 'team' || col.key === 'phaseSide') return;
+                    const cx = colX[cIdx];
+                    const cw = colWidths[cIdx];
+                    drawCellRect(cx, ry, cw, rh);
+
+                    if (col.key === 'date') {
+                        drawStyledText(wrapTextLines(d.dateLabel, cw - cellPadX * 2), cx + cw / 2, ry + rh / 2, '#000000');
+                    } else if (col.key === 'reg1Book') {
+                        drawStyledText(wrapTextLines(d.m1b, cw - cellPadX * 2), cx + cw / 2, ry + rh / 2, greenColor);
+                    } else if (col.key === 'reg1Time') {
+                        drawStyledText(wrapTextLines(d.m1t, cw - cellPadX * 2), cx + cw / 2, ry + rh / 2, '#000000');
+                    } else if (col.key === 'reg2Book') {
+                        drawStyledText(wrapTextLines(d.m2b, cw - cellPadX * 2), cx + cw / 2, ry + rh / 2, greenColor);
+                    } else if (col.key === 'reg2Time') {
+                        drawStyledText(wrapTextLines(d.m2t, cw - cellPadX * 2), cx + cw / 2, ry + rh / 2, '#000000');
+                    } else if (col.key === 'otherBooks') {
+                        const halfW = cw / 2;
+                        ctx.beginPath();
+                        ctx.strokeStyle = '#000000';
+                        ctx.lineWidth = cellBorderWidth;
+                        ctx.moveTo(cx + halfW, ry);
+                        ctx.lineTo(cx + halfW, ry + rh);
+                        ctx.stroke();
+                        drawStyledText(
+                            wrapTextLines(d.m3b_morning, halfW - cellPadX * 2),
+                            cx + halfW / 2,
+                            ry + rh / 2,
+                            greenColor
+                        );
+                        drawStyledText(
+                            wrapTextLines(d.m3b_evening, halfW - cellPadX * 2),
+                            cx + halfW + halfW / 2,
+                            ry + rh / 2,
+                            blueColor
+                        );
+                    } else if (col.key === 'otherTime') {
+                        const halfW = cw / 2;
+                        ctx.beginPath();
+                        ctx.strokeStyle = '#000000';
+                        ctx.lineWidth = cellBorderWidth;
+                        ctx.moveTo(cx + halfW, ry);
+                        ctx.lineTo(cx + halfW, ry + rh);
+                        ctx.stroke();
+                        drawStyledText(
+                            wrapTextLines(d.m3t_morning, halfW - cellPadX * 2),
+                            cx + halfW / 2,
+                            ry + rh / 2,
+                            greenColor
+                        );
+                        drawStyledText(
+                            wrapTextLines(d.m3t_evening, halfW - cellPadX * 2),
+                            cx + halfW + halfW / 2,
+                            ry + rh / 2,
+                            blueColor
+                        );
+                    } else if (col.key === 'chap') {
+                        drawStyledText([String(d.chap ?? '')], cx + cw / 2, ry + rh / 2, '#000000');
+                    } else if (col.key === 'verse') {
+                        drawStyledText([String(d.verse ?? '')], cx + cw / 2, ry + rh / 2, '#000000');
+                    } else if (col.key === 'art') {
+                        drawStyledText(wrapTextLines(d.art, cw - cellPadX * 2), cx + cw / 2, ry + rh / 2, '#000000');
+                    }
+                });
+            } else if (row.type === 'subtotal') {
+                const { chunk } = row;
+                if (checkColVisible('team')) {
+                    const idx = colIndexByKey.team;
+                    drawCellRect(colX[idx], ry, colWidths[idx], rh);
+                }
+                if (checkColVisible('date')) {
+                    const idx = colIndexByKey.date;
+                    drawCellRect(colX[idx], ry, colWidths[idx], rh);
+                }
+                const reg1Cols = ['reg1Book', 'reg1Time'].filter(checkColVisible);
+                if (reg1Cols.length > 0) {
+                    const b = getSpanBounds(colIndexByKey[reg1Cols[0]], reg1Cols.length);
+                    drawCellRect(b.x, ry, b.w, rh);
+                    drawStyledText(wrapTextLines(chunk.m1TotalStr, b.w - cellPadX * 2), b.x + b.w / 2, ry + rh / 2, '#000000');
+                }
+                const reg2Cols = ['reg2Book', 'reg2Time'].filter(checkColVisible);
+                if (reg2Cols.length > 0) {
+                    const b = getSpanBounds(colIndexByKey[reg2Cols[0]], reg2Cols.length);
+                    drawCellRect(b.x, ry, b.w, rh);
+                    drawStyledText(wrapTextLines(chunk.m2TotalStr, b.w - cellPadX * 2), b.x + b.w / 2, ry + rh / 2, '#000000');
+                }
+                const otherCols = ['otherBooks', 'otherTime'].filter(checkColVisible);
+                if (otherCols.length > 0) {
+                    const b = getSpanBounds(colIndexByKey[otherCols[0]], otherCols.length);
+                    drawCellRect(b.x, ry, b.w, rh);
+                    drawStyledText(wrapTextLines(chunk.m3TotalStr, b.w - cellPadX * 2), b.x + b.w / 2, ry + rh / 2, '#000000');
+                }
+                if (checkColVisible('chap')) {
+                    const idx = colIndexByKey.chap;
+                    drawCellRect(colX[idx], ry, colWidths[idx], rh);
+                    drawStyledText([String(chunk.chapTotal ?? '')], colX[idx] + colWidths[idx] / 2, ry + rh / 2, '#000000');
+                }
+                if (checkColVisible('verse')) {
+                    const idx = colIndexByKey.verse;
+                    drawCellRect(colX[idx], ry, colWidths[idx], rh);
+                    drawStyledText([String(chunk.verseTotal ?? '')], colX[idx] + colWidths[idx] / 2, ry + rh / 2, '#000000');
+                }
+                const artDayCols = ['art', 'day'].filter(checkColVisible);
+                if (artDayCols.length > 0) {
+                    const b = getSpanBounds(colIndexByKey[artDayCols[0]], artDayCols.length);
+                    drawCellRect(b.x, ry, b.w, rh);
+                    drawStyledText(wrapTextLines(chunk.artTotalStr, b.w - cellPadX * 2), b.x + b.w / 2, ry + rh / 2, '#000000');
+                }
+
+                // Bold 2px bottom border for week separation
+                ctx.save();
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, ry + rh);
+                ctx.lineTo(logicalW, ry + rh);
+                ctx.stroke();
+                ctx.restore();
+            } else if (row.type === 'grandTotal') {
+                const leftKeys = ['team', 'date', 'reg1Book', 'reg1Time', 'reg2Book', 'reg2Time', 'otherBooks', 'otherTime'].filter(
+                    checkColVisible
+                );
+                const rightKeys = ['art', 'day', 'phaseSide'].filter(checkColVisible);
+                const totalLabel = `TOTAL AVERAGE READING TIME    ${planToUse.grandTotalArtHrMins || ''}`;
+                if (leftKeys.length > 0) {
+                    const bLeft = getSpanBounds(0, leftKeys.length);
+                    drawCellRect(bLeft.x, ry, bLeft.w, rh);
+                    drawStyledText(wrapTextLines(totalLabel, bLeft.w - 8), bLeft.x + bLeft.w / 2, ry + rh / 2, '#000000');
+                    if (checkColVisible('chap')) {
+                        const idx = colIndexByKey.chap;
+                        drawCellRect(colX[idx], ry, colWidths[idx], rh);
+                        drawStyledText([String(planToUse.grandTotalChapters ?? '')], colX[idx] + colWidths[idx] / 2, ry + rh / 2, '#000000');
+                    }
+                    if (checkColVisible('verse')) {
+                        const idx = colIndexByKey.verse;
+                        drawCellRect(colX[idx], ry, colWidths[idx], rh);
+                        drawStyledText([String(planToUse.grandTotalVerses ?? '')], colX[idx] + colWidths[idx] / 2, ry + rh / 2, '#000000');
+                    }
+                    if (rightKeys.length > 0) {
+                        const bRight = getSpanBounds(colIndexByKey[rightKeys[0]], rightKeys.length);
+                        drawCellRect(bRight.x, ry, bRight.w, rh);
+                        drawStyledText(
+                            wrapTextLines(planToUse.grandTotalArtCompact || '', bRight.w - 4),
+                            bRight.x + bRight.w / 2,
+                            ry + rh / 2,
+                            '#000000'
+                        );
+                    }
+                } else {
+                    drawCellRect(0, ry, logicalW, rh);
+                    drawStyledText(wrapTextLines(totalLabel, logicalW - 12), logicalW / 2, ry + rh / 2, '#000000');
+                }
+            } else if (row.type === 'quote') {
+                drawCellRect(0, ry, logicalW, rh);
+                const quoteFont = `italic ${fontWeightStr} ${fontSizePx}px "Arial Narrow", "Oswald", Arial, sans-serif`;
+                drawStyledText(
+                    wrapTextLines(row.quoteText, logicalW - 16),
+                    logicalW / 2,
+                    ry + rh / 2,
+                    '#000000',
+                    quoteFont
+                );
+            }
+        }
+
+        // Draw Vertical Spanned Cells (TEAM / WEEK and MDL:FCT:PHS)
+        verticalSpanTasks.forEach((task) => {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(task.x + 1, task.y + 1, Math.max(0, task.w - 2), Math.max(0, task.h - 2));
+            drawCellRect(task.x, task.y, task.w, task.h);
+            ctx.save();
+            ctx.translate(task.x + task.w / 2, task.y + task.h / 2);
+            ctx.rotate(-Math.PI / 2);
+            drawStyledText([task.text], 0, 0, '#000000');
+            ctx.restore();
+        });
+
+        // Outer 2px Table Border
+        ctx.save();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, topHeaderH + 1, logicalW - 2, finalTableH - 2);
+        ctx.restore();
+
+        // 3. Draw Bottom Footer Bar
+        const footerY = topHeaderH + finalTableH + footerH / 2;
+        drawStyledText(
+            [String(planToUse.footerPhaseText || '').toUpperCase()],
+            logicalW / 2,
+            footerY,
+            '#000000'
+        );
+
+        return canvas.toDataURL('image/jpeg', 0.92);
+    };
+
+    const capturePaginatedA4Pages = async (
+        sizeConfig = PRINT_SIZE_OPTIONS[0],
+        planOverride = null,
+        onPageRendered = null
+    ) => {
+        const activePlan = planOverride || generatedPlan;
+        if (!activePlan) return [];
+
+        const pagesToRender = getExportPagesData(activePlan, sizeConfig);
+        if (!pagesToRender.length) return [];
+
+        const logoImgs = await Promise.all([
+            loadLogoImageElement(logo1),
+            loadLogoImageElement(logo2),
+            loadLogoImageElement(logo3)
+        ]);
+
+        const offscreenCanvas = document.createElement('canvas');
+        const wrapCache = new Map();
         const capturedPages = [];
+        const totalPages = pagesToRender.length;
 
-        for (let i = 0; i < targets.length; i++) {
-            const pageNode = targets[i];
-            const tableContainer = pageNode.querySelector('.rllt-table-container');
-            const tableEl = pageNode.querySelector('.rllt-pdf-table');
-            const trElements = tableEl ? Array.from(tableEl.querySelectorAll('tr')) : [];
+        for (let i = 0; i < totalPages; i++) {
+            setExportProgress({
+                current: i + 1,
+                total: totalPages,
+                percent: Math.round(((i + 1) / totalPages) * 100)
+            });
 
-            const prevPageStyles = {
-                boxSizing: pageNode.style.boxSizing,
-                width: pageNode.style.width,
-                minWidth: pageNode.style.minWidth,
-                maxWidth: pageNode.style.maxWidth,
-                height: pageNode.style.height,
-                minHeight: pageNode.style.minHeight,
-                maxHeight: pageNode.style.maxHeight,
-                paddingRight: pageNode.style.paddingRight,
-                display: pageNode.style.display,
-                flexDirection: pageNode.style.flexDirection,
-                justifyContent: pageNode.style.justifyContent,
-                chartFontSize: pageNode.style.getPropertyValue('--chart-font-size'),
-                chartFontWeight: pageNode.style.getPropertyValue('--chart-font-weight'),
-                chartTextStroke: pageNode.style.getPropertyValue('--chart-text-stroke')
-            };
-            const prevContainerStyles = tableContainer
-                ? {
-                      flex: tableContainer.style.flex,
-                      height: tableContainer.style.height
-                  }
-                : null;
-            const prevTableStyles = tableEl
-                ? {
-                      height: tableEl.style.height,
-                      flex: tableEl.style.flex
-                  }
-                : null;
-            const prevTrHeights = trElements.map(tr => tr.style.height);
+            // Yield every 4 pages so the browser UI & progress indicator stay smooth even for 200+ weeks
+            if (i > 0 && i % 4 === 0) {
+                await new Promise((r) => setTimeout(r, 0));
+            }
 
-            const activeColDomCount = tableEl ? tableEl.querySelectorAll('colgroup col').length || 13 : 13;
-            const captureWidth = isSmallFormat
-                ? activeColDomCount <= 6
-                    ? 640
-                    : activeColDomCount <= 10
-                    ? 700
-                    : 760
-                : 1000;
-            const targetA4Height = Math.round(captureWidth * a4ContentAspectRatio);
+            const isLastPage = i === totalPages - 1;
+            const dataUrl = renderReadingPlanPageToCanvas(
+                offscreenCanvas,
+                pagesToRender[i],
+                isLastPage,
+                activePlan,
+                sizeConfig,
+                logoImgs,
+                wrapCache
+            );
 
-            try {
-                if (isSmallFormat) {
-                    pageNode.classList.add('rllt-small-print-capture');
-                }
-                if (isCustomPrintSize) {
-                    const effectiveSizePx =
-                        isSmallFormat && activeColDomCount <= 6
-                            ? Math.max(printFontSize + 2, 16)
-                            : printFontSize;
-                    pageNode.style.setProperty('--chart-font-size', `${effectiveSizePx}px`);
-                    pageNode.style.setProperty('--chart-font-weight', activeBoldnessConfig.weight);
-                    pageNode.style.setProperty(
-                        '--chart-text-stroke',
-                        activeBoldnessConfig.strokePx > 0 ? `${activeBoldnessConfig.strokePx}px currentColor` : '0px'
-                    );
-                }
-
-                // Step 1: Set fixed capture width (+4px right buffer) and auto height so we can measure natural row & page heights
-                pageNode.style.boxSizing = 'border-box';
-                pageNode.style.width = `${captureWidth + 4}px`;
-                pageNode.style.minWidth = `${captureWidth + 4}px`;
-                pageNode.style.maxWidth = `${captureWidth + 4}px`;
-                pageNode.style.paddingRight = '4px';
-                pageNode.style.height = 'auto';
-                pageNode.style.minHeight = '0px';
-                pageNode.style.maxHeight = 'none';
-                pageNode.style.display = 'flex';
-                pageNode.style.flexDirection = 'column';
-                pageNode.style.justifyContent = 'flex-start';
-
-                if (tableContainer) {
-                    tableContainer.style.flex = '0 0 auto';
-                    tableContainer.style.height = 'auto';
-                }
-                if (tableEl) {
-                    tableEl.style.height = 'auto';
-                }
-                trElements.forEach(tr => {
-                    tr.style.height = 'auto';
-                });
-
-                // Step 2: Measure natural height of the page and each individual row (accounting for wrapped 2-line text)
-                const naturalPageH = Math.ceil(pageNode.getBoundingClientRect().height);
-                const naturalRowHeights = trElements.map(tr => Math.ceil(tr.getBoundingClientRect().height));
-
-                // Step 3: Distribute remaining vertical space (deficit) across rows so page fills target height without clipping
-                const safeTargetHeight = targetA4Height - 6;
-                let deficit = Math.max(0, safeTargetHeight - naturalPageH);
-                if (deficit > 0 && trElements.length > 0) {
-                    const applyDeficit = (totalExtraPx) => {
-                        const dayRowIndices = [];
-                        const compactRowIndices = [];
-                        trElements.forEach((tr, idx) => {
-                            if (tr.classList.contains('rllt-day-row')) {
-                                dayRowIndices.push(idx);
-                            } else {
-                                compactRowIndices.push(idx);
-                            }
-                        });
-
-                        if (dayRowIndices.length === 0) {
-                            const baseAdd = Math.floor(totalExtraPx / trElements.length);
-                            const remainder = totalExtraPx % trElements.length;
-                            trElements.forEach((tr, idx) => {
-                                const addPx = baseAdd + (idx < remainder ? 1 : 0);
-                                tr.style.height = `${naturalRowHeights[idx] + addPx}px`;
-                            });
-                            return;
-                        }
-
-                        // Give compact rows (God's Promises, Week Header, Subtotal, Grand Total) at most +6px so they stay sleek & aligned
-                        const evenShare = Math.floor(totalExtraPx / trElements.length);
-                        const compactAddEach = Math.min(6, Math.max(0, Math.floor(evenShare * 0.35)));
-                        const totalCompactUsed = compactAddEach * compactRowIndices.length;
-                        const remainingForDays = Math.max(0, totalExtraPx - totalCompactUsed);
-
-                        const dayBaseAdd = Math.floor(remainingForDays / dayRowIndices.length);
-                        const dayRemainder = remainingForDays % dayRowIndices.length;
-
-                        compactRowIndices.forEach((rIdx) => {
-                            trElements[rIdx].style.height = `${naturalRowHeights[rIdx] + compactAddEach}px`;
-                        });
-                        dayRowIndices.forEach((rIdx, dPos) => {
-                            const addPx = dayBaseAdd + (dPos < dayRemainder ? 1 : 0);
-                            trElements[rIdx].style.height = `${naturalRowHeights[rIdx] + addPx}px`;
-                        });
-                    };
-
-                    applyDeficit(deficit);
-
-                    // If subpixel border-collapse rounding pushed height over safeTargetHeight, trim excess
-                    const measuredAfter = Math.ceil(pageNode.getBoundingClientRect().height);
-                    if (measuredAfter > safeTargetHeight) {
-                        const excess = measuredAfter - safeTargetHeight;
-                        deficit = Math.max(0, deficit - excess);
-                        applyDeficit(deficit);
-                    }
-                }
-
-                // Step 4: Capture with a 6px bottom buffer and 4px right buffer so SVG foreignObject rendering never clips the bottom or right border
-                const finalCaptureHeight = Math.ceil(pageNode.getBoundingClientRect().height) + 6;
-
-                const dataUrl = await htmlToImage.toPng(pageNode, {
-                    quality: 1.0,
-                    width: captureWidth + 4,
-                    height: finalCaptureHeight,
-                    pixelRatio: isSmallFormat ? 3 : 2,
-                    backgroundColor: '#ffffff',
-                    cacheBust: true,
-                    filter: (node) => {
-                        if (node?.classList) {
-                            if (
-                                node.classList.contains('print-hide-empty-camera') ||
-                                node.classList.contains('color-box-popup')
-                            ) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                });
-
+            if (onPageRendered) {
+                onPageRendered(dataUrl, i, totalPages);
+            } else {
                 capturedPages.push(dataUrl);
-            } finally {
-                pageNode.classList.remove('rllt-small-print-capture');
-                pageNode.style.boxSizing = prevPageStyles.boxSizing;
-                pageNode.style.width = prevPageStyles.width;
-                pageNode.style.minWidth = prevPageStyles.minWidth;
-                pageNode.style.maxWidth = prevPageStyles.maxWidth;
-                pageNode.style.paddingRight = prevPageStyles.paddingRight;
-                pageNode.style.height = prevPageStyles.height;
-                pageNode.style.minHeight = prevPageStyles.minHeight;
-                pageNode.style.maxHeight = prevPageStyles.maxHeight;
-                pageNode.style.display = prevPageStyles.display;
-                pageNode.style.flexDirection = prevPageStyles.flexDirection;
-                pageNode.style.justifyContent = prevPageStyles.justifyContent;
-                if (prevPageStyles.chartFontSize) {
-                    pageNode.style.setProperty('--chart-font-size', prevPageStyles.chartFontSize);
-                } else {
-                    pageNode.style.removeProperty('--chart-font-size');
-                }
-                if (prevPageStyles.chartFontWeight) {
-                    pageNode.style.setProperty('--chart-font-weight', prevPageStyles.chartFontWeight);
-                } else {
-                    pageNode.style.removeProperty('--chart-font-weight');
-                }
-                if (prevPageStyles.chartTextStroke) {
-                    pageNode.style.setProperty('--chart-text-stroke', prevPageStyles.chartTextStroke);
-                } else {
-                    pageNode.style.removeProperty('--chart-text-stroke');
-                }
-
-                if (tableContainer && prevContainerStyles) {
-                    tableContainer.style.flex = prevContainerStyles.flex;
-                    tableContainer.style.height = prevContainerStyles.height;
-                }
-                if (tableEl && prevTableStyles) {
-                    tableEl.style.height = prevTableStyles.height;
-                    tableEl.style.flex = prevTableStyles.flex;
-                }
-                trElements.forEach((tr, idx) => {
-                    tr.style.height = prevTrHeights[idx];
-                });
             }
         }
 
@@ -918,18 +1517,16 @@ const ReadingPlanView = () => {
 
     const handlePrintReadingPlan = async (planOverride = null, sizeKey = 'a4') => {
         const activePlan = planOverride || generatedPlan;
-        if (!activePlan) return;
-        const sizeConfig = PRINT_SIZE_OPTIONS.find(opt => opt.key === sizeKey) || PRINT_SIZE_OPTIONS[0];
-        const chartEl = document.getElementById('reading-plan-printable-area');
-        if (!chartEl) {
-            window.print();
-            return;
-        }
+        if (!activePlan || isPrintingChart) return;
+        const sizeConfig = PRINT_SIZE_OPTIONS.find((opt) => opt.key === sizeKey) || PRINT_SIZE_OPTIONS[0];
 
         setActiveColorBoxPopupId(null);
+        setIsPrintingChart(true);
 
         const printWindow = window.open('', '_blank', 'width=1100,height=850');
         if (!printWindow) {
+            setIsPrintingChart(false);
+            setExportProgress(null);
             window.print();
             return;
         }
@@ -957,7 +1554,7 @@ const ReadingPlanView = () => {
         `);
 
         try {
-            const pageDataUrls = await capturePaginatedA4Pages(sizeConfig);
+            const pageDataUrls = await capturePaginatedA4Pages(sizeConfig, activePlan);
             if (!pageDataUrls.length) {
                 printWindow.close();
                 window.print();
@@ -1028,12 +1625,21 @@ const ReadingPlanView = () => {
                 <body>
                     ${pagesHtml}
                     <script>
-                        window.onload = function() {
-                            setTimeout(function() {
-                                window.focus();
-                                window.print();
-                            }, 250);
-                        };
+                        (function() {
+                            var imgs = Array.prototype.slice.call(document.images || []);
+                            Promise.all(imgs.map(function(img) {
+                                if (img.complete) return Promise.resolve();
+                                return new Promise(function(res) {
+                                    img.onload = res;
+                                    img.onerror = res;
+                                });
+                            })).then(function() {
+                                setTimeout(function() {
+                                    window.focus();
+                                    window.print();
+                                }, 150);
+                            });
+                        })();
                     </script>
                 </body>
                 </html>
@@ -1042,49 +1648,60 @@ const ReadingPlanView = () => {
         } catch (err) {
             console.error('Error preparing print chart:', err);
             printWindow.close();
+        } finally {
+            setIsPrintingChart(false);
+            setExportProgress(null);
         }
     };
 
     const openCustomPrintModal = (sizeKey) => {
         if (!generatedPlan || !Array.isArray(generatedPlan.chunks)) return;
-        const validExisting = printSelectedWeekIds.filter(id =>
-            generatedPlan.chunks.some(c => c.id === id)
-        );
+        const chunkIdSet = new Set(generatedPlan.chunks.map((c) => c.id));
+        const validExisting = printSelectedWeekIds.filter((id) => chunkIdSet.has(id));
         if (validExisting.length === 0) {
-            setPrintSelectedWeekIds(generatedPlan.chunks.map(c => c.id));
+            setPrintSelectedWeekIds(generatedPlan.chunks.map((c) => c.id));
         } else {
             setPrintSelectedWeekIds(validExisting);
         }
+        setWeekRangeFrom('1');
+        setWeekRangeTo(String(generatedPlan.chunks.length));
         setPrintModalSizeKey(sizeKey);
     };
 
+    const selectWeekRange = () => {
+        if (!generatedPlan || !Array.isArray(generatedPlan.chunks)) return;
+        const total = generatedPlan.chunks.length;
+        const start = Math.max(1, Math.min(total, parseInt(weekRangeFrom, 10) || 1));
+        const end = Math.max(start, Math.min(total, parseInt(weekRangeTo, 10) || total));
+        const selected = generatedPlan.chunks.slice(start - 1, end).map((c) => c.id);
+        setPrintSelectedWeekIds(selected);
+    };
+
     const togglePrintWeekSelection = (chunkId) => {
-        setPrintSelectedWeekIds(prev =>
-            prev.includes(chunkId)
-                ? prev.filter(id => id !== chunkId)
-                : [...prev, chunkId]
+        setPrintSelectedWeekIds((prev) =>
+            prev.includes(chunkId) ? prev.filter((id) => id !== chunkId) : [...prev, chunkId]
         );
     };
 
     const toggleSelectAllWeeks = () => {
         if (!generatedPlan || !Array.isArray(generatedPlan.chunks)) return;
-        const allIds = generatedPlan.chunks.map(c => c.id);
-        const allSelected = allIds.length > 0 && allIds.every(id => printSelectedWeekIds.includes(id));
+        const allIds = generatedPlan.chunks.map((c) => c.id);
+        const allSelected = allIds.length > 0 && allIds.length === printSelectedWeekIds.length && allIds.every((id) => printSelectedWeekIdSet.has(id));
         setPrintSelectedWeekIds(allSelected ? [] : allIds);
     };
 
     const togglePrintColumnSelection = (colKey) => {
-        setPrintSelectedCols(prev => ({
+        setPrintSelectedCols((prev) => ({
             ...prev,
             [colKey]: !prev[colKey]
         }));
     };
 
     const toggleSelectAllColumns = () => {
-        const allSelected = TABLE_COLUMN_DEFINITIONS.every(col => Boolean(printSelectedCols[col.key]));
+        const allSelected = TABLE_COLUMN_DEFINITIONS.every((col) => Boolean(printSelectedCols[col.key]));
         if (allSelected) {
             const cleared = {};
-            TABLE_COLUMN_DEFINITIONS.forEach(col => {
+            TABLE_COLUMN_DEFINITIONS.forEach((col) => {
                 cleared[col.key] = false;
             });
             setPrintSelectedCols(cleared);
@@ -1094,24 +1711,20 @@ const ReadingPlanView = () => {
     };
 
     const handleDownloadReadingPlan = async (sizeKeyOverride = 'a4') => {
-        if (!generatedPlan) return;
-        const chartEl = document.getElementById('reading-plan-printable-area');
-        if (!chartEl) return;
+        if (!generatedPlan || isDownloadingChart) return;
 
-        const sizeConfig = PRINT_SIZE_OPTIONS.find(opt => opt.key === sizeKeyOverride) || PRINT_SIZE_OPTIONS[0];
+        const sizeConfig = PRINT_SIZE_OPTIONS.find((opt) => opt.key === sizeKeyOverride) || PRINT_SIZE_OPTIONS[0];
 
         setIsDownloadingChart(true);
         setActiveColorBoxPopupId(null);
 
         try {
-            const pageDataUrls = await capturePaginatedA4Pages(sizeConfig);
-            if (!pageDataUrls.length) return;
-
             const isLandscape = sizeConfig.pageWidthMm > sizeConfig.pageHeightMm;
             const pdf = new jsPDF({
                 orientation: isLandscape ? 'landscape' : 'portrait',
                 unit: 'mm',
-                format: [sizeConfig.pageWidthMm, sizeConfig.pageHeightMm]
+                format: [sizeConfig.pageWidthMm, sizeConfig.pageHeightMm],
+                compress: true
             });
 
             const pageWidthMm = sizeConfig.pageWidthMm;
@@ -1121,13 +1734,14 @@ const ReadingPlanView = () => {
             const maxContentWidthMm = pageWidthMm - marginXMm * 2;
             const maxContentHeightMm = pageHeightMm - marginYMm * 2;
 
-            for (let i = 0; i < pageDataUrls.length; i++) {
-                if (i > 0) {
+            let renderedCount = 0;
+            await capturePaginatedA4Pages(sizeConfig, generatedPlan, (dataUrl, pageIdx) => {
+                if (pageIdx > 0) {
                     pdf.addPage([pageWidthMm, pageHeightMm], isLandscape ? 'landscape' : 'portrait');
                 }
                 pdf.addImage(
-                    pageDataUrls[i],
-                    'PNG',
+                    dataUrl,
+                    'JPEG',
                     marginXMm,
                     marginYMm,
                     maxContentWidthMm,
@@ -1135,21 +1749,25 @@ const ReadingPlanView = () => {
                     undefined,
                     'FAST'
                 );
-            }
+                renderedCount++;
+            });
+
+            if (renderedCount === 0) return;
 
             const rawTitle = (bannerText || `MAIN_CHART_${generatedPlan.numDays || 30}_DAYS`).trim();
             const sizeSuffix = sizeConfig.key !== 'a4' ? `_${sizeConfig.key.toUpperCase()}` : '';
-            const safeFileName = (rawTitle
-                .replace(/[^a-zA-Z0-9-_ ]/g, '')
-                .trim()
-                .replace(/\s+/g, '_') || 'Reading_Plan_Chart') + sizeSuffix;
+            const safeFileName =
+                (rawTitle
+                    .replace(/[^a-zA-Z0-9-_ ]/g, '')
+                    .trim()
+                    .replace(/\s+/g, '_') || 'Reading_Plan_Chart') + sizeSuffix;
 
             pdf.save(`${safeFileName}.pdf`);
 
             toast.current?.show({
                 severity: 'success',
                 summary: 'Chart Downloaded',
-                detail: `Downloaded "${safeFileName}.pdf".`,
+                detail: `Downloaded "${safeFileName}.pdf" (${renderedCount} ${renderedCount === 1 ? 'page' : 'pages'}).`,
                 life: 3000
             });
         } catch (err) {
@@ -1162,6 +1780,7 @@ const ReadingPlanView = () => {
             });
         } finally {
             setIsDownloadingChart(false);
+            setExportProgress(null);
         }
     };
 
@@ -1169,12 +1788,13 @@ const ReadingPlanView = () => {
     const wrapCls = wrapText ? 'whitespace-normal break-words' : 'whitespace-nowrap overflow-hidden text-ellipsis';
 
     const isCustomFilterActive = Boolean(printModalSizeKey);
-    const activeModalSizeConfig = PRINT_SIZE_OPTIONS.find(opt => opt.key === printModalSizeKey) || null;
+    const activeModalSizeConfig = PRINT_SIZE_OPTIONS.find((opt) => opt.key === printModalSizeKey) || null;
 
-    const selectedColCount = TABLE_COLUMN_DEFINITIONS.filter(c => Boolean(printSelectedCols[c.key])).length;
+    const selectedColCount = TABLE_COLUMN_DEFINITIONS.filter((c) => Boolean(printSelectedCols[c.key])).length;
     const allWeeksSelected = Boolean(
         generatedPlan?.chunks?.length &&
-        generatedPlan.chunks.every(c => printSelectedWeekIds.includes(c.id))
+            generatedPlan.chunks.length === printSelectedWeekIds.length &&
+            generatedPlan.chunks.every((c) => printSelectedWeekIdSet.has(c.id))
     );
     const allColsSelected = selectedColCount === TABLE_COLUMN_DEFINITIONS.length;
 
@@ -1184,7 +1804,7 @@ const ReadingPlanView = () => {
         return Boolean(printSelectedCols[colKey]);
     };
 
-    const activeCols = TABLE_COLUMN_DEFINITIONS.filter(c => isColVisible(c.key));
+    const activeCols = TABLE_COLUMN_DEFINITIONS.filter((c) => isColVisible(c.key));
     const totalActiveCols = activeCols.length;
     const totalActiveColWeight = activeCols.reduce((sum, c) => sum + c.weight, 0) || 100;
 
@@ -1193,20 +1813,35 @@ const ReadingPlanView = () => {
     const effectiveShowSubtotalRow = !isCustomFilterActive || printShowSubtotalRow;
     const effectiveShowGrandTotalRow = !isCustomFilterActive || printShowGrandTotalRow;
 
-    const paginatedWeekPages = [];
-    if (generatedPlan && Array.isArray(generatedPlan.chunks)) {
-        const filteredChunks = isCustomFilterActive
-            ? generatedPlan.chunks.filter(c => printSelectedWeekIds.includes(c.id))
-            : generatedPlan.chunks;
-        const chunksToPaginate = filteredChunks.length > 0 ? filteredChunks : generatedPlan.chunks.slice(0, 1);
-        const weeksPerPage = isCustomFilterActive
-            ? (printWeeksPerPage > 0 ? printWeeksPerPage : Math.max(1, chunksToPaginate.length))
-            : 5;
+    const paginatedWeekPages = useMemo(() => {
+        const pages = [];
+        if (generatedPlan && Array.isArray(generatedPlan.chunks)) {
+            const filteredChunks = isCustomFilterActive
+                ? generatedPlan.chunks.filter((c) => printSelectedWeekIdSet.has(c.id))
+                : generatedPlan.chunks;
+            const chunksToPaginate = filteredChunks.length > 0 ? filteredChunks : generatedPlan.chunks.slice(0, 1);
+            const weeksPerPage = isCustomFilterActive
+                ? printWeeksPerPage > 0
+                    ? printWeeksPerPage
+                    : Math.max(1, chunksToPaginate.length)
+                : 5;
 
-        for (let i = 0; i < chunksToPaginate.length; i += weeksPerPage) {
-            paginatedWeekPages.push(chunksToPaginate.slice(i, i + weeksPerPage));
+            for (let i = 0; i < chunksToPaginate.length; i += weeksPerPage) {
+                pages.push(chunksToPaginate.slice(i, i + weeksPerPage));
+            }
         }
-    }
+        return pages;
+    }, [generatedPlan, isCustomFilterActive, printSelectedWeekIdSet, printWeeksPerPage]);
+
+    const totalChartPages = paginatedWeekPages.length;
+    const totalScreenGroups = pagesPerScreen > 0 ? Math.max(1, Math.ceil(totalChartPages / pagesPerScreen)) : 1;
+    const safeScreenPage = Math.min(Math.max(1, currentScreenPage), totalScreenGroups);
+    const screenStartPageIdx = pagesPerScreen > 0 ? (safeScreenPage - 1) * pagesPerScreen : 0;
+    const screenEndPageIdx = pagesPerScreen > 0 ? Math.min(totalChartPages, screenStartPageIdx + pagesPerScreen) : totalChartPages;
+    const visibleWeekPages = useMemo(
+        () => paginatedWeekPages.slice(screenStartPageIdx, screenEndPageIdx),
+        [paginatedWeekPages, screenStartPageIdx, screenEndPageIdx]
+    );
 
     return (
         <div className="min-h-screen bg-gray-100 p-2 sm:p-4 font-sans select-none">
@@ -1412,11 +2047,17 @@ const ReadingPlanView = () => {
                             <button
                                 type="button"
                                 onClick={() => handleDownloadReadingPlan('a4')}
-                                disabled={isDownloadingChart}
+                                disabled={isDownloadingChart || isPrintingChart}
                                 className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs sm:text-sm font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                             >
                                 <i className={`pi ${isDownloadingChart ? 'pi-spin pi-spinner' : 'pi-download'} text-xs sm:text-sm`}></i>
-                                <span>{isDownloadingChart ? 'Downloading...' : 'Download Chart'}</span>
+                                <span>
+                                    {isDownloadingChart
+                                        ? exportProgress
+                                            ? `Downloading (${exportProgress.current}/${exportProgress.total})...`
+                                            : 'Downloading...'
+                                        : 'Download Chart'}
+                                </span>
                             </button>
                         </div>
                     )}
@@ -1424,25 +2065,42 @@ const ReadingPlanView = () => {
 
                 {/* Second Row (Next Line): Print Size Buttons (Print A4, Print A5, Print A6, Print A7, Print Visa, Print DL Size) */}
                 {generatedPlan && (
-                    <div className="flex flex-wrap items-center justify-end gap-2 pt-2.5 border-t border-gray-200">
-                        {PRINT_SIZE_OPTIONS.map((opt) => (
-                            <button
-                                key={opt.key}
-                                type="button"
-                                onClick={() => {
-                                    if (opt.key === 'a4') {
-                                        handlePrintReadingPlan(null, 'a4');
-                                    } else {
-                                        openCustomPrintModal(opt.key);
-                                    }
-                                }}
-                                title={`${opt.label} (${opt.dimLabel})`}
-                                className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#007020] hover:bg-[#008a28] text-white text-xs sm:text-sm font-bold transition-colors shadow-sm cursor-pointer"
-                            >
-                                <i className="pi pi-print text-xs"></i>
-                                <span>{opt.label}</span>
-                            </button>
-                        ))}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-gray-200">
+                        <div className="flex items-center gap-2">
+                            {exportProgress && (
+                                <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 text-[#0B2149] px-3 py-1.5 rounded-md text-xs font-extrabold">
+                                    <i className="pi pi-spin pi-spinner text-xs text-blue-600"></i>
+                                    <span>
+                                        Processing Page {exportProgress.current} of {exportProgress.total} ({exportProgress.percent}%)...
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            {PRINT_SIZE_OPTIONS.map((opt) => (
+                                <button
+                                    key={opt.key}
+                                    type="button"
+                                    disabled={isPrintingChart || isDownloadingChart}
+                                    onClick={() => {
+                                        if (opt.key === 'a4') {
+                                            handlePrintReadingPlan(null, 'a4');
+                                        } else {
+                                            openCustomPrintModal(opt.key);
+                                        }
+                                    }}
+                                    title={`${opt.label} (${opt.dimLabel})`}
+                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#007020] hover:bg-[#008a28] disabled:opacity-50 text-white text-xs sm:text-sm font-bold transition-colors shadow-sm cursor-pointer"
+                                >
+                                    <i className={`pi ${isPrintingChart && opt.key === 'a4' ? 'pi-spin pi-spinner' : 'pi-print'} text-xs`}></i>
+                                    <span>
+                                        {isPrintingChart && opt.key === 'a4' && exportProgress
+                                            ? `Print A4 (${exportProgress.current}/${exportProgress.total})...`
+                                            : opt.label}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
@@ -1493,20 +2151,51 @@ const ReadingPlanView = () => {
                                             Check or uncheck the weeks (teams) you want to print
                                         </p>
                                     </div>
-                                    <label className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-extrabold uppercase cursor-pointer select-none">
-                                        <input
-                                            type="checkbox"
-                                            checked={allWeeksSelected}
-                                            onChange={toggleSelectAllWeeks}
-                                            className="accent-[#00b050] w-4 h-4 cursor-pointer"
-                                        />
-                                        <span>Select All</span>
-                                    </label>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {generatedPlan.chunks.length > 10 && (
+                                            <div className="flex items-center gap-1.5 bg-gray-100 border border-gray-300 rounded-md px-2 py-1 text-xs font-bold text-[#0B2149]">
+                                                <span>Week</span>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    max={generatedPlan.chunks.length}
+                                                    value={weekRangeFrom}
+                                                    onChange={(e) => setWeekRangeFrom(e.target.value)}
+                                                    className="w-14 h-6 px-1 text-center rounded border border-gray-300 bg-white font-black text-xs"
+                                                />
+                                                <span>to</span>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    max={generatedPlan.chunks.length}
+                                                    value={weekRangeTo}
+                                                    onChange={(e) => setWeekRangeTo(e.target.value)}
+                                                    className="w-14 h-6 px-1 text-center rounded border border-gray-300 bg-white font-black text-xs"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={selectWeekRange}
+                                                    className="px-2 py-0.5 rounded bg-[#0B2149] hover:bg-[#16376b] text-white text-[11px] font-extrabold uppercase cursor-pointer"
+                                                >
+                                                    Select Range
+                                                </button>
+                                            </div>
+                                        )}
+                                        <label className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-extrabold uppercase cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked={allWeeksSelected}
+                                                onChange={toggleSelectAllWeeks}
+                                                className="accent-[#00b050] w-4 h-4 cursor-pointer"
+                                            />
+                                            <span>Select All</span>
+                                        </label>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                <div className="max-h-[190px] overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-5 gap-2">
                                     {generatedPlan.chunks.map((chunk) => {
-                                        const isChecked = printSelectedWeekIds.includes(chunk.id);
+                                        const isChecked = printSelectedWeekIdSet.has(chunk.id);
                                         const labelStr = chunk.teamLabel || `${chunk.teamPrefix || 'TEAM / WEEK - '}${chunk.weekNumber}`;
                                         return (
                                             <label
@@ -1830,6 +2519,82 @@ const ReadingPlanView = () => {
                         </div>
                     </div>
 
+                    {/* On-Screen Pagination Bar (keeps DOM fast when viewing 200+ weeks; Print & Download always include all pages) */}
+                    {totalChartPages > 5 && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-slate-100 border-b border-gray-300 text-xs font-bold text-[#0B2149] print:hidden">
+                            <div className="flex items-center gap-2">
+                                <span>
+                                    Viewing Chart Pages <strong>{screenStartPageIdx + 1}–{screenEndPageIdx}</strong> of <strong>{totalChartPages}</strong>
+                                    {' '}({generatedPlan.chunks.length} Total Weeks • Print & Download include all pages)
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-gray-600 mr-1">Pages per view:</span>
+                                {[
+                                    { val: 5, label: '5 Pages (25 Wks)' },
+                                    { val: 10, label: '10 Pages (50 Wks)' },
+                                    { val: 20, label: '20 Pages (100 Wks)' },
+                                    { val: 0, label: `Show All (${totalChartPages})` }
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.val}
+                                        type="button"
+                                        onClick={() => {
+                                            setPagesPerScreen(opt.val);
+                                            setCurrentScreenPage(1);
+                                        }}
+                                        className={`px-2 py-1 rounded border text-[11px] font-extrabold transition-colors cursor-pointer ${
+                                            pagesPerScreen === opt.val
+                                                ? 'bg-[#0B2149] text-white border-[#0B2149]'
+                                                : 'bg-white hover:bg-gray-200 text-[#0B2149] border-gray-300'
+                                        }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                                {pagesPerScreen > 0 && totalScreenGroups > 1 && (
+                                    <div className="flex items-center gap-1 ml-2">
+                                        <button
+                                            type="button"
+                                            disabled={safeScreenPage <= 1}
+                                            onClick={() => setCurrentScreenPage(1)}
+                                            className="px-2 py-1 rounded border border-gray-300 bg-white hover:bg-gray-200 disabled:opacity-40 cursor-pointer"
+                                        >
+                                            First
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={safeScreenPage <= 1}
+                                            onClick={() => setCurrentScreenPage((p) => Math.max(1, p - 1))}
+                                            className="px-2.5 py-1 rounded border border-gray-300 bg-white hover:bg-gray-200 disabled:opacity-40 cursor-pointer"
+                                        >
+                                            Prev
+                                        </button>
+                                        <span className="px-2 font-black">
+                                            {safeScreenPage} / {totalScreenGroups}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            disabled={safeScreenPage >= totalScreenGroups}
+                                            onClick={() => setCurrentScreenPage((p) => Math.min(totalScreenGroups, p + 1))}
+                                            className="px-2.5 py-1 rounded border border-gray-300 bg-white hover:bg-gray-200 disabled:opacity-40 cursor-pointer"
+                                        >
+                                            Next
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={safeScreenPage >= totalScreenGroups}
+                                            onClick={() => setCurrentScreenPage(totalScreenGroups)}
+                                            className="px-2 py-1 rounded border border-gray-300 bg-white hover:bg-gray-200 disabled:opacity-40 cursor-pointer"
+                                        >
+                                            Last
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Printable RLLT Chart Area (Paginated at 5 Weeks per Page, with Full Header on Each Page) */}
                     <div className="overflow-x-auto p-2 sm:p-4 bg-gray-100 print:p-0 print:bg-white">
                         <div
@@ -1842,7 +2607,8 @@ const ReadingPlanView = () => {
                             }}
                             className="w-full min-w-[1000px] rllt-condensed select-text flex flex-col gap-6 print:block print:gap-0"
                         >
-                            {paginatedWeekPages.map((pageChunks, pageIdx) => {
+                            {visibleWeekPages.map((pageChunks, localIdx) => {
+                                const pageIdx = screenStartPageIdx + localIdx;
                                 const isLastPage = pageIdx === paginatedWeekPages.length - 1;
 
                                 return (
@@ -2412,6 +3178,64 @@ const ReadingPlanView = () => {
                             })}
                         </div>
                     </div>
+
+                    {/* Bottom On-Screen Pagination Bar */}
+                    {totalChartPages > 5 && pagesPerScreen > 0 && totalScreenGroups > 1 && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-slate-100 border-t border-gray-300 text-xs font-bold text-[#0B2149] print:hidden">
+                            <span>
+                                Viewing Chart Pages <strong>{screenStartPageIdx + 1}–{screenEndPageIdx}</strong> of <strong>{totalChartPages}</strong>
+                            </span>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    disabled={safeScreenPage <= 1}
+                                    onClick={() => {
+                                        setCurrentScreenPage(1);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    className="px-2.5 py-1 rounded border border-gray-300 bg-white hover:bg-gray-200 disabled:opacity-40 cursor-pointer"
+                                >
+                                    First
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={safeScreenPage <= 1}
+                                    onClick={() => {
+                                        setCurrentScreenPage((p) => Math.max(1, p - 1));
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    className="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-200 disabled:opacity-40 cursor-pointer"
+                                >
+                                    Prev
+                                </button>
+                                <span className="px-2.5 font-black">
+                                    {safeScreenPage} / {totalScreenGroups}
+                                </span>
+                                <button
+                                    type="button"
+                                    disabled={safeScreenPage >= totalScreenGroups}
+                                    onClick={() => {
+                                        setCurrentScreenPage((p) => Math.min(totalScreenGroups, p + 1));
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    className="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-200 disabled:opacity-40 cursor-pointer"
+                                >
+                                    Next
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={safeScreenPage >= totalScreenGroups}
+                                    onClick={() => {
+                                        setCurrentScreenPage(totalScreenGroups);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    className="px-2.5 py-1 rounded border border-gray-300 bg-white hover:bg-gray-200 disabled:opacity-40 cursor-pointer"
+                                >
+                                    Last
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="max-w-[1300px] mx-auto bg-white p-12 rounded-lg shadow-sm border border-gray-200 text-center">

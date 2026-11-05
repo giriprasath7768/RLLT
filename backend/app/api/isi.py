@@ -715,8 +715,7 @@ async def save_ttomt_report_record(
     else:
         student_category = getattr(current_user, "category", None)
 
-    day_str = str(payload.day).zfill(2)
-    computed_banner = payload.banner_text or f"RLLT-MDL{payload.module} FCT{payload.facet} PHS{payload.phase} DAY {day_str} : 👍"
+    computed_banner = payload.banner_text or f"RLLT-MDL{payload.module} FCT{payload.facet} PHS{payload.phase} DAY {payload.day} DONE 😊 😊 😊 😊 😊 ✅"
     raw_color = (payload.color_code or payload.theme_color or "#37475A").strip()
     sticker_color = raw_color.upper() if raw_color.startswith("#") else "#37475A"
 

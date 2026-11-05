@@ -601,20 +601,33 @@ const ReadingPlan = () => {
 
     const handleNumberClick = (num) => {
         setDayValidationError('');
+        const digit = num.toString();
         if (cycle === 5) {
             setEnteredPersons(prev => {
-                if (prev.length < 3) {
-                    return prev + num.toString();
+                const clean = String(prev || '').replace(/\D/g, '');
+                if (clean.length < 5) {
+                    return clean + digit;
                 }
-                return prev;
+                return clean;
             });
         } else {
+            if (cycle !== 3) setCycle(3);
             setEnteredDays(prev => {
-                if (prev.length < 3) {
-                    return prev + num.toString();
+                const clean = String(prev || '').replace(/\D/g, '');
+                if (clean.length < 3) {
+                    return clean + digit;
                 }
-                return prev;
+                return clean;
             });
+        }
+    };
+
+    const handleBackspaceClick = () => {
+        setDayValidationError('');
+        if (cycle === 5) {
+            setEnteredPersons(prev => String(prev || '').slice(0, -1));
+        } else {
+            setEnteredDays(prev => String(prev || '').slice(0, -1));
         }
     };
 
@@ -1369,8 +1382,12 @@ const ReadingPlan = () => {
         };
 
         setGeneratedPlan(newGeneratedPlan);
-        sessionStorage.setItem('latest_reading_plan', JSON.stringify(newGeneratedPlan));
-        sessionStorage.setItem('latest_reading_plan_banner', resolvedBanner);
+        try {
+            sessionStorage.setItem('latest_reading_plan', JSON.stringify(newGeneratedPlan));
+            sessionStorage.setItem('latest_reading_plan_banner', resolvedBanner);
+        } catch (e) {
+            console.warn('Could not cache reading plan in sessionStorage:', e);
+        }
 
         const baseRoute = userRole === 'student' ? '/dashboard/student' : '/admin';
         navigate(`${baseRoute}/reading-plan/view`, {
@@ -1818,19 +1835,57 @@ const ReadingPlan = () => {
                                             )}
                                         </div>
                                         <div className="flex-[1.8] border border-[#a48654] bg-[#fdfbf6] rounded-[4px] flex justify-evenly items-center px-1.5 py-2 sm:py-1.5 shadow-[inset_2px_2px_0_#ffffff,inset_-2px_-2px_0_#e8dcb9]">
-                                            <button onClick={() => setCycle(3)} className="font-bold text-[10px] sm:text-xs transition-colors flex flex-col items-center justify-center text-center leading-tight px-1 flex-1">
+                                            <div
+                                                onClick={() => setCycle(3)}
+                                                className="font-bold text-[10px] sm:text-xs transition-colors flex flex-col items-center justify-center text-center leading-tight px-1 flex-1 cursor-pointer"
+                                            >
                                                 <span className={cycle === 3 ? 'text-[#0B2149] font-black [text-shadow:1px_1px_0_#ddd]' : 'text-[#888] font-bold hover:text-gray-600'}>Number of Days</span>
-                                                {enteredDays && (
-                                                    <span className="text-[#c00000] text-sm sm:text-base font-black mt-1 [text-shadow:1px_1px_0_#ffcccc]">{enteredDays}</span>
-                                                )}
-                                            </button>
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    maxLength={3}
+                                                    value={enteredDays}
+                                                    onFocus={() => setCycle(3)}
+                                                    onChange={(e) => {
+                                                        setCycle(3);
+                                                        setDayValidationError('');
+                                                        const val = e.target.value.replace(/\D/g, '').slice(0, 3);
+                                                        setEnteredDays(val);
+                                                    }}
+                                                    placeholder="000"
+                                                    className={`mt-1 w-14 sm:w-16 h-6 sm:h-7 text-center rounded border text-xs sm:text-sm font-black tracking-widest focus:outline-none transition-all ${
+                                                        cycle === 3
+                                                            ? 'bg-white border-[#0B2149] text-[#c00000] ring-1 ring-[#0B2149]/30 shadow-inner'
+                                                            : 'bg-[#fbf6ec] border-[#d3c09b] text-[#c00000]'
+                                                    } placeholder:text-[#c7b99e] placeholder:font-bold`}
+                                                />
+                                            </div>
                                             <div className="h-8 sm:h-10 w-[2px] shrink-0 border-l border-l-[#c7a96b] border-r border-r-white"></div>
-                                            <button onClick={() => setCycle(5)} className="font-bold text-[10px] sm:text-xs transition-colors flex flex-col items-center justify-center text-center leading-tight px-1 flex-1">
+                                            <div
+                                                onClick={() => setCycle(5)}
+                                                className="font-bold text-[10px] sm:text-xs transition-colors flex flex-col items-center justify-center text-center leading-tight px-1 flex-1 cursor-pointer"
+                                            >
                                                 <span className={cycle === 5 ? 'text-[#0B2149] font-black [text-shadow:1px_1px_0_#ddd]' : 'text-[#888] font-bold hover:text-gray-600'}>Number of Person</span>
-                                                {enteredPersons && (
-                                                    <span className="text-[#c00000] text-sm sm:text-base font-black mt-1 [text-shadow:1px_1px_0_#ffcccc]">{enteredPersons}</span>
-                                                )}
-                                            </button>
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    maxLength={5}
+                                                    value={enteredPersons}
+                                                    onFocus={() => setCycle(5)}
+                                                    onChange={(e) => {
+                                                        setCycle(5);
+                                                        setDayValidationError('');
+                                                        const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                                                        setEnteredPersons(val);
+                                                    }}
+                                                    placeholder="00000"
+                                                    className={`mt-1 w-16 sm:w-20 h-6 sm:h-7 text-center rounded border text-xs sm:text-sm font-black tracking-widest focus:outline-none transition-all ${
+                                                        cycle === 5
+                                                            ? 'bg-white border-[#0B2149] text-[#c00000] ring-1 ring-[#0B2149]/30 shadow-inner'
+                                                            : 'bg-[#fbf6ec] border-[#d3c09b] text-[#c00000]'
+                                                    } placeholder:text-[#c7b99e] placeholder:font-bold`}
+                                                />
+                                            </div>
                                             <div className="h-8 sm:h-10 w-[2px] shrink-0 border-l border-l-[#c7a96b] border-r border-r-white"></div>
                                             <button onClick={() => setCycle(7)} className="font-bold text-[10px] sm:text-xs transition-colors flex flex-col items-center justify-center text-center leading-tight px-1 flex-1">
                                                 <span className={cycle === 7 ? 'text-[#0B2149] font-black [text-shadow:1px_1px_0_#ddd]' : 'text-[#888] font-bold hover:text-gray-600'}>Duration</span>
@@ -2019,12 +2074,21 @@ const ReadingPlan = () => {
                                 {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                                     <button
                                         key={num}
+                                        type="button"
                                         onClick={() => handleNumberClick(num)}
                                         className="text-[#0B2149] font-bold text-xl sm:text-2xl w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-[#ebd8b7] rounded transition-colors"
                                     >
                                         {num}
                                     </button>
                                 ))}
+                                <button
+                                    type="button"
+                                    onClick={handleBackspaceClick}
+                                    title="Backspace"
+                                    className="text-[#9c2929] font-bold text-base sm:text-lg w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-[#f8d7da] rounded transition-colors"
+                                >
+                                    <i className="pi pi-delete-left text-sm sm:text-base"></i>
+                                </button>
                             </div>
                         )}
                     </div>

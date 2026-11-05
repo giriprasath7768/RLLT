@@ -1946,9 +1946,9 @@ const TTomTReport = () => {
                                                     </td>
 
                                                     {/* TTomT Sticker Column */}
-                                                    <td className="py-3.5 px-4 min-w-[280px]">
+                                                    <td className="py-3.5 px-4 min-w-[290px]">
                                                         <div
-                                                            className={`rounded-xl px-4 py-3 shadow-sm flex flex-col justify-center max-w-[310px] ${
+                                                            className={`rounded-xl px-4 py-3.5 shadow-sm flex flex-col justify-center max-w-[310px] ${
                                                                 isWhiteSticker
                                                                     ? 'border border-slate-300'
                                                                     : ''
@@ -1959,19 +1959,18 @@ const TTomTReport = () => {
                                                             }`}
                                                             style={{ backgroundColor: bgHex }}
                                                         >
-                                                            <div className="font-extrabold text-[14px] leading-snug tracking-tight">
-                                                                RLLT - MDL:{r.module} - FCT:{r.facet} - PHS:{r.phase}
+                                                            <div className="font-extrabold text-[14.5px] leading-snug tracking-tight">
+                                                                RLLT-MDL{r.module} FCT{r.facet} PHS{r.phase} DAY {r.day}
                                                             </div>
-                                                            <div className="font-extrabold text-[14.5px] leading-snug tracking-tight mt-0.5 flex items-center justify-between gap-2">
-                                                                <span className="inline-flex items-center gap-1.5">
-                                                                    <span>DAY {dayPadded} :</span>
-                                                                    <span className="text-base leading-none">👍</span>
-                                                                    <span className="text-xs font-black uppercase px-1.5 py-0.5 rounded bg-black/15">
-                                                                        DONE
-                                                                    </span>
-                                                                </span>
-                                                                <span className="text-xs font-extrabold opacity-90">
-                                                                    ART {r.art || '0'}
+                                                            <div className="font-extrabold text-[14.5px] leading-snug tracking-tight mt-0.5 flex items-center flex-wrap gap-1.5">
+                                                                <span>DONE</span>
+                                                                <span className="inline-flex items-center gap-1 text-[15px]">
+                                                                    <span>😊</span>
+                                                                    <span>😊</span>
+                                                                    <span>😊</span>
+                                                                    <span>😊</span>
+                                                                    <span>😊</span>
+                                                                    <span>✅</span>
                                                                 </span>
                                                             </div>
                                                         </div>

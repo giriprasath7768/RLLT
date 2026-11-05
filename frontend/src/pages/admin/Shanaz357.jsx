@@ -196,7 +196,11 @@ const Shanaz357 = () => {
         }
     }, [mdl, fct, availablePhases, phs]);
 
+    const currentPhaseData =
+        rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct) && Number(d.phase) === Number(phs)) ||
+        rlltDB.find(d => Number(d.module) === Number(mdl) && Number(d.facet) === Number(fct));
     const numberOfDaysForPhase = parseInt(enteredDays, 10) > 0 ? parseInt(enteredDays, 10) : 0;
+    const eachPhsDays = numberOfDaysForPhase || (currentPhaseData ? (Number(currentPhaseData.scheduled_value_days) || Number(currentPhaseData.day) || 0) : 0);
     const stats = React.useMemo(() => {
         let bks = selectedBooks.length;
         let chp = 0;
@@ -465,6 +469,7 @@ const Shanaz357 = () => {
         };
 
         const is24x7Format = isSpecialProcess;
+        const isMainChart = !isSpecialProcess;
         const use5Segments = is24x7Format;
         const daysPerChunk = cycle;
 

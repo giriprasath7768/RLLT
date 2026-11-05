@@ -824,7 +824,7 @@ const TTomTPlayer = () => {
 
         try {
             const dayPadded = selectedDay.toString().padStart(2, '0');
-            const bannerText = `RLLT-MDL${moduleVal} FCT${facetVal} PHS${phaseVal} DAY ${dayPadded} : 👍`;
+            const bannerText = `RLLT-MDL${moduleVal} FCT${facetVal} PHS${phaseVal} DAY ${selectedDay} DONE 😊 😊 😊 😊 😊 ✅`;
             const chosenColor = (playerBorderColor && playerBorderColor !== '#000000')
                 ? playerBorderColor.toUpperCase()
                 : '#00C0FF';
