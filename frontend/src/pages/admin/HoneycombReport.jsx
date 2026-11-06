@@ -4,6 +4,7 @@ import { StudentService } from '../../services/studentService';
 import { Dropdown } from 'primereact/dropdown';
 import { jsPDF } from 'jspdf';
 import * as htmlToImage from 'html-to-image';
+import MotherTongueScroll from '../../components/admin/MotherTongueScroll';
 
 const DividerBox = ({ letter, letterColor, num, onClick }) => {
     const hexColor = letterColor.match(/\[(.*?)\]/)[1];
@@ -1002,29 +1003,16 @@ const HoneycombReport = () => {
                     </div>
 
                     {/* Mother Tongue */}
-                    <div className="flex-1 border border-gray-300 rounded-[12px] overflow-hidden flex bg-white shadow-sm relative cursor-pointer hover:shadow-md transition-shadow">
-                        <div className="flex-1 bg-white relative flex flex-col items-center justify-between px-1.5 py-2.5 gap-2">
-                            <div className="bg-[#c2410c] text-white text-[11px] font-black tracking-widest px-8 py-1.5 rounded-none z-10 shadow-sm text-center">
-                                MOTHER TONGUE
-                            </div>
-                            <div className="relative flex items-center justify-center w-full flex-1">
-                                <img src="/mothertoung.png" alt="Mother Tongue Scroll" className="w-full h-[135px] object-fill drop-shadow-sm" />
-                                <div className="absolute inset-0 flex items-center justify-center px-8">
-                                    <input
-                                        type="text"
-                                        value={motherTongue}
-                                        onChange={(e) => {
-                                            setMotherTongue(e.target.value);
-                                            localStorage.setItem('rllt_mother_tongue', e.target.value);
-                                        }}
-                                        placeholder="MOTHER TONGUE"
-                                        className="font-black text-[#4a2e15] tracking-widest text-[14px] lg:text-[16px] uppercase text-center bg-transparent border-none outline-none focus:ring-0 w-full mt-1 placeholder-[#4a2e15]/60"
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                    <div className="flex-1 border border-gray-300 rounded-[12px] flex bg-white shadow-sm relative min-h-[160px] hover:shadow-md transition-shadow">
+                        <MotherTongueScroll
+                            value={motherTongue}
+                            onChange={(val) => {
+                                setMotherTongue(val);
+                                localStorage.setItem('rllt_mother_tongue', val);
+                            }}
+                        />
 
-                        <div className="w-24 border-l border-gray-200 flex flex-col items-center justify-center p-2 bg-white z-0 py-3">
+                        <div className="w-24 border-l border-gray-200 flex flex-col items-center justify-center p-2 bg-white z-0 py-3 rounded-r-[11px]">
                             <i className="pi pi-file-word text-[#ea580c] text-[36px] mb-1"></i>
                             <div className="text-[10px] font-bold text-center leading-tight px-1 text-gray-800">7 TNT<br />WORD COUNT</div>
                             <div className="text-[24px] font-black mt-1 text-gray-900">
